@@ -1,0 +1,9 @@
+fastapi==0.128.0
+uvicorn==0.40.0
+sqlalchemy==2.0.46
+passlib==1.7.4
+bcrypt<4
+pydantic[email]
+python-jose[cryptography]
+python-multipart
+python-dotenv

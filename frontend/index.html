@@ -1,0 +1,1525 @@
+<!-- =========================================================
+USLY — HTML v11 (PL ONLY) — POD BACKEND
+BAZA: HTML v9/v10 + WPROWADZONE ZMIANY:
+1) Organizator: osobne ustawienia profilu vs Towarzysz
+2) Plany Organizatora: wg „Organizator - plany”
+3) Plany Towarzysza: wg „Towarzysz - plany”
+4) Ustawienia = ikona koła zębatego (bez dodatkowych ikon)
+5) Towarzysz: zakres wieku jako SUWAKI + lepszy opis po co to jest
+6) Zainteresowania: podpowiedzi po # (HTML-only: datalist + duża lista)
+7) Towarzysz: W okolicy = mapa + osoby + wydarzenia (lista wydarzeń ma osobną zakładkę i zostaje)
+8) Towarzysz: Grupy = widoczne wg zainteresowań z profilu
+9) Towarzysz: dodanie znajomego do grupy (UI hook)
+10) Brak wersji EN: całość po polsku (bez przełącznika języka)
+11) Ikonki do planów (data-plan-icon) dla łatwego rozróżniania w backendzie
+12) Ujednolicenia ID pod backend:
+   - regCityUser -> regCity (użytkownik) + regCityPartner (organizator)
+   - prefAgeFrom/prefAgeTo -> regPrefAgeFrom/regPrefAgeTo (rejestracja)
+   - geolokalizacja: btnUseLocation (bez inline onclick)
+========================================================= -->
+
+<div class="stage" id="appRoot">
+  <div class="phone" aria-label="USLY phone shell">
+    <div class="screenHost">
+      <!-- Ambient background -->
+      <div class="ambient" aria-hidden="true">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+      </div>
+
+      <!-- TOAST -->
+      <div class="toast" id="toast" aria-live="polite" aria-atomic="true"></div>
+
+      <!-- GLOBAL MODAL -->
+      <div class="modalOverlay" id="modalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" id="modalBox">
+          <div class="modalTop">
+            <div class="mTitle" id="modalTitle">USLY</div>
+            <button class="xBtn" type="button" onclick="closeModal()">✕</button>
+          </div>
+          <div class="modalScroll" id="modalScroll">
+            <div id="modalBody"></div>
+          </div>
+          <div class="modalFooter">
+            <button class="btn secondary" type="button" onclick="closeModal()">Wróć</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+      USER TABBAR (Nearby / Chats / Events / Groups / Settings)
+      ========================================================== -->
+      <nav class="tabbar" id="tabbarUser" aria-label="Dolna nawigacja — Towarzysz">
+        <button id="tabNearby" type="button" onclick="go('S4_NEARBY')">
+          <div class="ico"><span aria-hidden="true"></span></div>
+          <div>W okolicy</div>
+        </button>
+        <button id="tabChats" type="button" onclick="go('S6_CHATS_LIST')">
+          <div class="ico" style="position:relative;">
+            <span aria-hidden="true"></span>
+            <span class="pill" id="badgeChats" style="position:absolute;right:-6px;top:-6px;min-width:22px;justify-content:center;display:none;">0</span>
+          </div>
+          <div>Czaty</div>
+        </button>
+        <button id="tabEvents" type="button" onclick="go('S7_EVENTS')">
+          <div class="ico"><span aria-hidden="true"></span></div>
+          <div>Wydarzenia</div>
+        </button>
+        <button id="tabGroups" type="button" onclick="go('S8_GROUPS')">
+          <div class="ico"><span aria-hidden="true"></span></div>
+          <div>Grupy</div>
+        </button>
+        <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
+        <button id="tabSettingsUser" type="button" onclick="go('S10_SETTINGS')">
+          <div class="ico" aria-hidden="true">⚙</div>
+          <div>Ustawienia</div>
+        </button>
+      </nav>
+
+      <!-- =========================================================
+      ORGANIZER TABBAR
+      Panel / Nowe / Wydarzenia / Wiadomości / Ustawienia
+      (Powiadomienia są w dzwonku na górze)
+      ========================================================== -->
+      <nav class="tabbar" id="tabbarPartner" aria-label="Dolna nawigacja — Organizator">
+        <button id="ptabDash" type="button" onclick="go('S9_PARTNER')">
+          <div class="ico"><span aria-hidden="true"></span></div>
+          <div>Panel</div>
+        </button>
+        <button id="ptabCreate" type="button" onclick="go('S9_PARTNER_CREATE')">
+          <div class="ico"><span aria-hidden="true"></span></div>
+          <div>Nowe</div>
+        </button>
+        <button id="ptabMyEvents" type="button" onclick="go('S9_PARTNER_EVENTS')">
+          <div class="ico"><span aria-hidden="true"></span></div>
+          <div>Wydarzenia</div>
+        </button>
+        <button id="ptabMsgs" type="button" onclick="go('S9_PARTNER_MESSAGES')">
+          <div class="ico" style="position:relative;">
+            <span aria-hidden="true"></span>
+            <span class="pill" id="badgePartnerMsgs" style="position:absolute;right:-6px;top:-6px;min-width:22px;justify-content:center;display:none;">0</span>
+          </div>
+          <div>Wiadomości</div>
+        </button>
+        <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
+        <button id="ptabSettings" type="button" onclick="go('S10_SETTINGS')">
+          <div class="ico" aria-hidden="true">⚙</div>
+          <div>Ustawienia</div>
+        </button>
+      </nav>
+
+      <!-- =========================================================
+      S0 WELCOME / START (PL ONLY)
+      ========================================================== -->
+      <section class="view active" id="S0_WELCOME" aria-label="Start">
+        <header class="topbar">
+          <div class="ghostBtn" aria-hidden="true">◀</div>
+          <div class="brandCenter">
+            <div class="brandRow">
+              <img id="brandLogo" class="brandLogo" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Poznawaj ludzi przez zainteresowania, nie wygląd.</div>
+              </div>
+            </div>
+          </div>
+          <!-- brak języka (PL only) -->
+          <div class="ghostBtn" aria-hidden="true">•</div>
+        </header>
+
+        <div class="content hero">
+          <div class="heroCard">
+            <div class="heroHeader">
+              <div class="heroHello">Poznaj kogoś po tym, co lubi</div>
+              <div class="heroSub">Wybierz tryb, a potem wejdź do środka.</div>
+            </div>
+
+            <div class="segLabel">Tryb</div>
+            <div class="seg wide" role="tablist" aria-label="Tryb konta">
+              <button class="segBtn on" id="roleUserBtn" type="button" onclick="selectRole('user')">Towarzysz</button>
+              <button class="segBtn" id="rolePartnerBtn" type="button" onclick="selectRole('partner')">Organizator</button>
+            </div>
+
+            <div class="heroBadges">
+              <div class="pill">Wejdź i zacznij rozmawiać</div>
+              <div class="pill">#zainteresowania = dopasowania</div>
+              <div class="pill">Wydarzenia i grupy w okolicy</div>
+            </div>
+
+            <div class="row mt12">
+              <button class="btn" type="button" onclick="go('S1_LOGIN')">Zaloguj się</button>
+              <button class="btn secondary" type="button" onclick="go('S2_REGISTER')">Zarejestruj się</button>
+            </div>
+
+            <div class="mt12 center promoLine">
+              Dołącz w 60 sekund — prosto, bez spiny, z kontrolą prywatności.
+            </div>
+          </div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Plany</div>
+            <div class="sectionSub">Podgląd funkcji dla wybranego trybu.</div>
+            <button class="btn secondary" type="button" onclick="go('S11_PLANS')">Zobacz plany</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S1 LOGIN (PL ONLY)
+      ========================================================== -->
+      <section class="view" id="S1_LOGIN" aria-label="Logowanie">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline" id="roleLabelLogin">Towarzysz</div>
+              </div>
+            </div>
+          </div>
+          <div class="ghostBtn" aria-hidden="true">•</div>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Zaloguj się</div>
+            <div class="sectionSub">Demo UI — bez backendu.</div>
+
+            <label class="mt12">Tryb</label>
+            <div class="seg wide">
+              <button class="segBtn on" id="roleUserBtnLogin" type="button" onclick="selectRole('user')">Towarzysz</button>
+              <button class="segBtn" id="rolePartnerBtnLogin" type="button" onclick="selectRole('partner')">Organizator</button>
+            </div>
+
+            <label class="mt12">Email / nick</label>
+            <input id="loginId" type="text" placeholder="np. ola_88 / ola@email.com" autocomplete="username" />
+
+            <label>Hasło</label>
+            <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+            <button class="btn mt12" type="button" onclick="loginPrimary()">Zaloguj się</button>
+
+            <div class="divider mt16"><span>albo</span></div>
+
+            <button class="btn social apple mt12" type="button" onclick="loginSocial('apple')">
+              <span class="sIco"></span> <span>Kontynuuj z Apple</span>
+            </button>
+            <button class="btn social google mt10" type="button" onclick="loginSocial('google')">
+              <span class="sIco">G</span> <span>Kontynuuj z Google</span>
+            </button>
+            <button class="btn social fb mt10" type="button" onclick="loginSocial('facebook')">
+              <span class="sIco">f</span> <span>Kontynuuj z Facebook</span>
+            </button>
+
+            <div class="mt16 center">
+              <span class="link" onclick="go('S2_REGISTER')">Nie masz konta? Zarejestruj się</span>
+              <span class="dotSep"> · </span>
+              <span class="link" onclick="openForgot()">Nie pamiętasz hasła?</span>
+            </div>
+          </div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Plany</div>
+            <div class="sectionSub">Zobacz różnice funkcji przed zalogowaniem.</div>
+            <button class="btn secondary" type="button" onclick="go('S11_PLANS')">Podgląd planów</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S2 REGISTER (PL ONLY) + UJEDNOLICONE ID
+      ========================================================== -->
+      <section class="view" id="S2_REGISTER" aria-label="Rejestracja">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline" id="roleLabelRegister">Towarzysz</div>
+              </div>
+            </div>
+          </div>
+          <div class="ghostBtn" aria-hidden="true">•</div>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Zarejestruj się</div>
+            <div class="sectionSub" id="regSubLine">Stwórz konto i ustaw profil.</div>
+
+            <label>Tryb</label>
+            <div class="seg wide">
+              <button class="segBtn on" id="roleUserBtn2" type="button" onclick="selectRole('user')">Towarzysz</button>
+              <button class="segBtn" id="rolePartnerBtn2" type="button" onclick="selectRole('partner')">Organizator</button>
+            </div>
+
+            <!-- ===================== USER (Towarzysz) ===================== -->
+            <div id="regUserBox">
+              <label class="mt12">Wiek *</label>
+              <input id="regAge" type="number" min="16" max="99" placeholder="np. 24" />
+
+              <!-- City + geolokalizacja (bez inline onclick) -->
+              <label class="mt12">Miasto *</label>
+              <div class="row">
+                <div style="flex:1;">
+                  <!-- UJEDNOLICONE: regCityUser -> regCity -->
+                  <input id="regCity" type="text" placeholder="np. Warszawa" />
+                </div>
+                <!-- UJEDNOLICONE: bind przez id, bez inline onclick -->
+                <button class="btn secondary small" id="btnUseLocation" type="button">
+                  Użyj lokalizacji
+                </button>
+              </div>
+              <input id="regGeoLat" type="hidden" value="" />
+              <input id="regGeoLng" type="hidden" value="" />
+              <div class="tMuted mt10" style="text-align:left;">
+                Docelowo: miasto uzupełniane z aktualnej lokalizacji (GPS) po zgodzie użytkownika.
+              </div>
+
+              <!-- ZAKRES WIEKU — SUWAKI (UJEDNOLICONE: regPrefAgeFrom/regPrefAgeTo) -->
+              <div class="hintCard mt16">
+                <div class="hintTitle">Zakres wieku sugestii</div>
+                <div class="hintText">
+                  Ustaw, w jakim wieku mają być osoby, które aplikacja będzie Ci podpowiadać —
+                  dzięki temu dopasowania będą bliższe temu, czego szukasz.
+                </div>
+
+                <div class="row mt12" style="align-items:flex-end;">
+                  <div style="flex:1;">
+                    <label class="tMuted">Od</label>
+                    <input id="regPrefAgeFrom" type="range" min="16" max="99" value="18" />
+                    <div class="tMuted" style="text-align:left;">Wybrano: <span id="regPrefAgeFromVal">18</span></div>
+                  </div>
+                  <div style="flex:1;">
+                    <label class="tMuted">Do</label>
+                    <input id="regPrefAgeTo" type="range" min="16" max="99" value="35" />
+                    <div class="tMuted" style="text-align:left;">Wybrano: <span id="regPrefAgeToVal">35</span></div>
+                  </div>
+                </div>
+
+                <div class="tMuted mt10" style="text-align:left;">
+                  To ustawienie dotyczy tylko rekomendacji. W każdej chwili możesz je zmienić w Ustawieniach.
+                </div>
+              </div>
+
+              <label class="mt12">Nick / imię (publiczne) *</label>
+              <input id="regNick" type="text" placeholder="np. Ola / ola_88" />
+
+              <label class="mt12">Zainteresowania *</label>
+              <div class="hashRow">
+                <span class="hashPrefix">#</span>
+                <input id="regInterestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
+              </div>
+              <div class="chips" id="regInterestChips"></div>
+              <div class="typeahead" id="regInterestTypeahead"></div>
+
+              <!-- Avatar + AI hooks -->
+              <div class="hintCard mt12">
+                <div class="hintTitle">Awatar</div>
+                <div class="hintText">Dodaj zdjęcie lub wygeneruj awatar (AI).</div>
+                <div class="row mt12">
+                  <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
+                  <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
+                </div>
+                <div class="tMuted mt10" style="text-align:left;">
+                  Backend hook: generowanie awatara AI (prompt + styl + zapis do profilu).
+                </div>
+              </div>
+
+              <!-- PLAN TOWARZYSZA (NOWE: FREE/PLUS/PREMIUM/VIP) + IKONY -->
+              <div class="hintCard mt12" id="regUserPlanBox">
+                <div class="hintTitle">Plan Towarzysza</div>
+                <div class="hintText">Wybierz plan i zobacz co zawiera (ceny + funkcje).</div>
+
+                <div class="seg wide mt12">
+                  <button class="segBtn on" id="uplan_free" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE</button>
+                  <button class="segBtn" id="uplan_plus" type="button" onclick="setUserPlan('plus')" data-plan="plus" data-plan-icon="💙">💙 PLUS</button>
+                </div>
+                <div class="seg wide mt10">
+                  <button class="segBtn" id="uplan_premium" type="button" onclick="setUserPlan('premium')" data-plan="premium" data-plan-icon="💜">💜 PREMIUM</button>
+                  <button class="segBtn" id="uplan_vip" type="button" onclick="setUserPlan('vip')" data-plan="vip" data-plan-icon="🖤">🖤 VIP</button>
+                </div>
+
+                <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
+              </div>
+            </div>
+
+            <!-- ===================== ORGANIZER (Organizator) ===================== -->
+            <div id="regPartnerBox" style="display:none;">
+              <div class="hintCard mt12">
+                <div class="hintTitle">Dane organizatora</div>
+                <div class="hintText">Te dane będą widoczne w Twoim profilu organizatora i przy wydarzeniach.</div>
+
+                <label class="mt12">Nazwa firmy / miejsca *</label>
+                <input id="regCompany" type="text" placeholder="np. Kawiarnia Aurora" />
+
+                <label class="mt12">Kategoria *</label>
+                <select id="regCategory">
+                  <option value="gastro">Gastro</option>
+                  <option value="fitness">Fitness</option>
+                  <option value="kultura">Kultura</option>
+                  <option value="beauty">Beauty</option>
+                  <option value="inne">Inne</option>
+                </select>
+
+                <label class="mt12">Miasto *</label>
+                <!-- Żeby nie kolidować z regCity (użytkownik): regCityPartner -->
+                <select id="regCityPartner">
+                  <option>Warszawa</option>
+                  <option>Kraków</option>
+                  <option>Gdańsk</option>
+                  <option>Wrocław</option>
+                  <option>Poznań</option>
+                </select>
+
+                <label class="mt12">Opis (opcjonalnie)</label>
+                <textarea id="regOrgAbout" maxlength="500" placeholder="Krótki opis firmy / miejsca (max 500)"></textarea>
+                <div class="charHint"><span id="regOrgAboutCount">0</span>/500</div>
+              </div>
+
+              <!-- Logo upload -->
+              <div class="hintCard mt12">
+                <div class="hintTitle">Logo organizatora</div>
+                <div class="hintText">Dodaj logo, żeby użytkownicy łatwiej rozpoznawali Twoje wydarzenia.</div>
+                <input id="regLogo" type="file" accept="image/*" />
+                <div class="row mt12" style="align-items:center;">
+                  <div class="avatar big" id="orgLogoPreview"></div>
+                  <div class="tMuted" style="text-align:left;">
+                    Backend hook: upload + CDN URL + zapis do profilu organizatora.
+                  </div>
+                </div>
+              </div>
+
+              <!-- PLAN ORGANIZATORA (NOWE: wg załącznika) + IKONY -->
+              <div class="hintCard mt12" id="regPartnerPlanBox">
+                <div class="hintTitle">Plan organizatora</div>
+                <div class="hintText">W demo wybierasz plan, żeby zobaczyć różnice. Docelowo: płatności + limity funkcji.</div>
+
+                <div class="seg wide mt12">
+                  <button class="segBtn on" id="pplan_free" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE PARTNER</button>
+                  <button class="segBtn" id="pplan_pro" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">💼 PRO PARTNER</button>
+                </div>
+                <div class="seg wide mt10">
+                  <button class="segBtn" id="pplan_premium" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">💎 PREMIUM PARTNER</button>
+                  <button class="segBtn" id="pplan_enterprise" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">🏆 ENTERPRISE</button>
+                </div>
+
+                <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
+              </div>
+            </div>
+
+            <label class="mt12">Email *</label>
+            <input id="regEmail" type="email" placeholder="np. ola@email.com" autocomplete="email" />
+
+            <label class="mt12">Hasło *</label>
+            <input id="regPass" type="password" placeholder="Minimum 8 znaków" autocomplete="new-password" />
+
+            <div class="mt16 legalBox">
+              <label class="checkRow">
+                <input id="acceptTerms" type="checkbox" />
+                <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin</span> *</span>
+              </label>
+              <label class="checkRow mt10">
+                <input id="acceptRodo" type="checkbox" />
+                <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności</span> *</span>
+              </label>
+            </div>
+
+            <button class="btn mt16" type="button" onclick="registerPrimary()">Utwórz konto</button>
+
+            <div class="divider mt16"><span>albo</span></div>
+            <button class="btn social apple mt12" type="button" onclick="signupSocial('apple')">
+              <span class="sIco"></span> <span>Załóż konto z Apple</span>
+            </button>
+            <button class="btn social google mt10" type="button" onclick="signupSocial('google')">
+              <span class="sIco">G</span> <span>Załóż konto z Google</span>
+            </button>
+            <button class="btn social fb mt10" type="button" onclick="signupSocial('facebook')">
+              <span class="sIco">f</span> <span>Załóż konto z Facebook</span>
+            </button>
+          </div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Plany</div>
+            <div class="sectionSub">Podgląd funkcji dla wybranego trybu.</div>
+            <button class="btn secondary" type="button" onclick="go('S11_PLANS')">Zobacz plany</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S3 PROFILE SETUP (Towarzysz — po rejestracji / demo)
+      ========================================================== -->
+      <section class="view" id="S3_PROFILE_SETUP" aria-label="Ustawienia profilu (start)">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Profil</div>
+              </div>
+            </div>
+          </div>
+          <!-- dzwonek -->
+          <button class="topIconBtn" id="notifBtnSetup" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Dokończ profil</div>
+            <div class="sectionSub">Uzupełnij podstawy — pomoże to w dopasowaniach.</div>
+
+            <div class="row mt16" style="align-items:center;">
+              <div class="avatar big" id="userAvatar"></div>
+              <div style="text-align:left;flex:1;">
+                <div style="font-weight:950;">Twoja tożsamość</div>
+                <div style="font-size:13px;color:var(--muted);font-weight:800;">Zdjęcie lub awatar (demo).</div>
+              </div>
+              <div class="planPill" id="planPillSetup">FREE</div>
+            </div>
+
+            <div class="row mt12">
+              <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
+              <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
+            </div>
+
+            <label class="mt12">Miasto</label>
+            <select id="setupCity">
+              <option>Warszawa</option>
+              <option>Kraków</option>
+              <option>Gdańsk</option>
+              <option>Wrocław</option>
+              <option>Poznań</option>
+            </select>
+
+            <label class="mt12">BIO (max 250)</label>
+            <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
+            <div class="charHint"><span id="bioCount">0</span>/250</div>
+
+            <label class="mt12">Zainteresowania</label>
+            <div class="hashRow">
+              <span class="hashPrefix">#</span>
+              <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
+            </div>
+            <div class="typeahead" id="interestTypeahead"></div>
+            <div class="chips" id="interestChips"></div>
+
+            <button class="btn mt16" type="button" onclick="finishProfileSetup()">Zapisz i przejdź dalej</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S4 NEARBY (Towarzysz) — MAPA + LUDZIE + WYDARZENIA
+      ========================================================== -->
+      <section class="view" id="S4_NEARBY" aria-label="W okolicy">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">W okolicy</div>
+              </div>
+            </div>
+          </div>
+          <!-- dzwonek = jedyna ikona -->
+          <button class="topIconBtn" id="notifBtnNearby" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="mapCard">
+            <!-- “Mapa” demo; JS/Backend: realna mapa + markery -->
+            <div class="mapReal" id="nearbyMap" aria-label="Mapa okolicy">
+              <div class="mapTiles"></div>
+              <div class="mapRoads"></div>
+              <div class="mapRiver"></div>
+              <div class="mapDistricts" aria-hidden="true"></div>
+              <div class="mapLabels" aria-hidden="true"></div>
+
+              <!-- Demo markery (osoby / wydarzenia) -->
+              <button class="marker person" style="left:46%;top:36%;" type="button" aria-label="Osoba 1" onclick="openMapMarker('person', 0)">
+                <div class="mk"></div><div class="pulse"></div>
+              </button>
+              <button class="marker event" style="left:70%;top:28%;" type="button" aria-label="Wydarzenie 1" onclick="openMapMarker('event', 0)">
+                <div class="mk"></div><div class="pulse"></div>
+              </button>
+              <button class="marker person" style="left:26%;top:68%;" type="button" aria-label="Osoba 2" onclick="openMapMarker('person', 1)">
+                <div class="mk"></div><div class="pulse"></div>
+              </button>
+              <button class="marker event" style="left:58%;top:62%;" type="button" aria-label="Wydarzenie 2" onclick="openMapMarker('event', 1)">
+                <div class="mk"></div><div class="pulse"></div>
+              </button>
+              <button class="marker event" style="left:18%;top:40%;" type="button" aria-label="Wydarzenie 3" onclick="openMapMarker('event', 2)">
+                <div class="mk"></div><div class="pulse"></div>
+              </button>
+              <button class="marker person" style="left:78%;top:74%;" type="button" aria-label="Osoba 3" onclick="openMapMarker('person', 2)">
+                <div class="mk"></div><div class="pulse"></div>
+              </button>
+            </div>
+
+            <div class="mapMeta">
+              <div class="mapTitle">W okolicy</div>
+              <div class="mapSub">Kliknij znacznik, aby podejrzeć osobę lub wydarzenie.</div>
+            </div>
+          </div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Ludzie w okolicy</div>
+            <div class="sectionSub">Lista na podstawie lokalizacji (demo).</div>
+            <div class="mt12">
+              <input id="nearbyPeopleSearch" type="text" placeholder="np. Alex / Maja" />
+            </div>
+            <div class="col mt16" id="nearbyPeopleList"></div>
+          </div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Wydarzenia w okolicy</div>
+            <div class="sectionSub">Kliknij kartę, aby wejść w szczegóły.</div>
+            <div class="col mt16" id="nearbyEventsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S5 PERSON PROFILE
+      ========================================================== -->
+      <section class="view" id="S5_PERSON_PROFILE" aria-label="Profil osoby">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline" id="personTitle">—</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnPerson" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="row" style="align-items:center;">
+              <div class="avatar big" id="personAvatar"></div>
+              <div style="text-align:left;flex:1;">
+                <div class="sectionTitle" id="personNick">—</div>
+                <div class="sectionSub" id="personMeta">—</div>
+              </div>
+              <button class="btn small secondary" type="button" onclick="openPersonMenu()">⋯</button>
+            </div>
+
+            <div class="divider mt16"><span>#</span></div>
+            <div class="chips" id="personInterests"></div>
+
+            <div class="row mt16">
+              <button class="btn" type="button" onclick="startChatFromProfile()">Napisz</button>
+              <button class="btn secondary" type="button" onclick="addFriendFromProfile()">Dodaj do znajomych</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S6 CHATS LIST
+      ========================================================== -->
+      <section class="view" id="S6_CHATS_LIST" aria-label="Czaty">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Czaty</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnChats" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Szukaj czatów</div>
+            <div class="sectionSub">Po nazwie rozmowy</div>
+            <input id="chatSearch" type="text" placeholder="np. Alex" />
+          </div>
+
+          <div class="col mt16" id="chatList"></div>
+
+          <!-- AI moderation hook -->
+          <div class="card mt16">
+            <div class="sectionTitle">Moderacja AI</div>
+            <div class="sectionSub">
+              Backend hook: wykrywanie treści obraźliwych i seksualnych w czatach (flagowanie + blokada + raport).
+            </div>
+            <div class="tMuted mt10" style="text-align:left;">
+              UI hook: oznacz wiadomość jako „w trakcie weryfikacji” lub „ukryta” oraz pokaż opcję odwołania.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S6B CHAT THREAD
+      ========================================================== -->
+      <section class="view" id="S6B_CHAT_THREAD" aria-label="Wątek czatu">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline" id="chatTitle">—</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" type="button" onclick="openChatMenu()" aria-label="Menu"></button>
+        </header>
+
+        <div class="content chatContent">
+          <div id="chatBubbles"></div>
+        </div>
+
+        <div class="inputDock">
+          <input id="chatInput" type="text" placeholder="Napisz wiadomość." />
+          <button class="btn small" type="button" onclick="sendChat()">Wyślij</button>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S7 EVENTS (lista) — osobna zakładka zostaje bez zmian
+      ========================================================== -->
+      <section class="view" id="S7_EVENTS" aria-label="Wydarzenia">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Wydarzenia</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnEvents" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Wydarzenia</div>
+            <div class="sectionSub">Przeglądaj i zapisuj się — płatności są poza aplikacją.</div>
+
+            <!-- jeśli w JS są taby: "Okolica" / "Obserwowane" -->
+            <div class="seg wide mt12" role="tablist" aria-label="Filtr wydarzeń">
+              <button class="segBtn on" id="eventsTabNearby" type="button" onclick="setEventsTab('nearby')">Okolica</button>
+              <button class="segBtn" id="eventsTabFollowed" type="button" onclick="setEventsTab('followed')">Obserwowane</button>
+            </div>
+
+            <div class="mt12">
+              <input id="eventsSearch" type="text" placeholder="Szukaj po nazwie / # (np. muzyka)" />
+            </div>
+          </div>
+
+          <div class="col mt16" id="eventsList"></div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S7B EVENT DETAIL
+      ========================================================== -->
+      <section class="view" id="S7B_EVENT_DETAIL" aria-label="Szczegóły wydarzenia">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline" id="eventTitleTop">—</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" type="button" onclick="openEventMenu()" aria-label="Menu"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="row" style="align-items:center;justify-content:space-between;">
+              <div>
+                <div class="sectionTitle" id="evTitle">—</div>
+                <div class="sectionSub" id="evMeta">—</div>
+              </div>
+              <div class="planPill" id="evBadge">FREE</div>
+            </div>
+
+            <div class="divider mt16"><span>#</span></div>
+            <div class="chips" id="evInterestChips"></div>
+
+            <p class="mt16" id="evDesc">—</p>
+
+            <!-- Ticketing -->
+            <div class="hintCard mt16" id="evTicketBox">
+              <div class="hintTitle">Bilety</div>
+              <div class="row mt12" style="align-items:center;justify-content:space-between;">
+                <div class="tStrong" id="evTicketType">Bezpłatne</div>
+                <div class="planPill" id="evTicketPricePill">0 zł</div>
+              </div>
+              <div class="sectionSub mt10" id="evTicketPriceLine">—</div>
+              <a class="btn mt12" id="evTicketLink" href="#" target="_blank" rel="noopener noreferrer">
+                Przejdź do zakupu / rezerwacji
+              </a>
+              <div class="legalBox mt16">
+                <div class="sectionSub">
+                  USLY nie sprzedaje biletów i nie jest organizatorem tego wydarzenia. Link przenosi do zewnętrznej strony,
+                  na której organizator prowadzi sprzedaż lub rezerwacje.
+                </div>
+              </div>
+            </div>
+
+            <div class="row mt16">
+              <button class="btn" type="button" onclick="toggleSaveEvent()">Zapisz</button>
+              <button class="btn secondary" type="button" onclick="toggleInterestedEvent()">Zainteresowany</button>
+            </div>
+
+            <div class="row mt12">
+              <button class="btn secondary" type="button" onclick="openShare()">Udostępnij</button>
+            </div>
+
+            <div class="tMuted mt12" style="text-align:left;" id="interestedNote">
+              Jeśli zaznaczysz „Zainteresowany”, organizator zobaczy Cię na liście zainteresowanych.
+            </div>
+
+            <div class="row mt16">
+              <button class="btn secondary" type="button" onclick="openChatWithOrganizer()">Napisz do organizatora</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S8 GROUPS + S8B GROUP THREAD
+      ========================================================== -->
+      <section class="view" id="S8_GROUPS" aria-label="Grupy">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Grupy</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnGroups" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Grupy według Twoich zainteresowań</div>
+            <div class="sectionSub">Lista budowana na bazie # ustawionych w profilu (demo / backend hook).</div>
+            <div class="mt12">
+              <input id="groupSearch" type="text" placeholder="Szukaj grupy (np. #kino)" />
+            </div>
+          </div>
+
+          <!-- UJEDNOLICONY HOOK: grupy na bazie zainteresowań -->
+          <div class="col mt16" id="groupList" data-scope="byInterests"></div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Propozycje osób</div>
+            <div class="sectionSub">Na bazie wspólnych #.</div>
+            <div class="col mt12" id="groupPeopleSuggestions"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="S8B_GROUP_THREAD" aria-label="Wątek grupy">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline" id="groupTitle">—</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" type="button" onclick="openGroupMenu()" aria-label="Menu"></button>
+        </header>
+
+        <div class="content chatContent">
+          <div id="groupBubbles"></div>
+
+          <!-- NOWE: dodanie znajomego, który ma podobne zainteresowania, do grupy -->
+          <div class="hintCard mt16" id="groupInviteHook">
+            <div class="hintTitle">Dodaj znajomego do tej grupy</div>
+            <div class="hintText">
+              Jeśli Twój znajomy ma podobne zainteresowania, możesz dodać go do grupy, nawet jeśli nie widzi jej na swojej liście.
+              (Docelowo: weryfikacja uprawnień + zaproszenie / dodanie przez backend.)
+            </div>
+            <button class="btn secondary mt12" id="btnInviteFriendToGroup" type="button" onclick="openInviteFriendToGroup()">
+              Dodaj znajomego
+            </button>
+          </div>
+        </div>
+
+        <div class="inputDock">
+          <input id="groupInput" type="text" placeholder="Napisz w grupie." />
+          <button class="btn small" type="button" onclick="sendGroup()">Wyślij</button>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S9 ORGANIZER DASHBOARD
+      ========================================================== -->
+      <section class="view" id="S9_PARTNER" aria-label="Panel organizatora">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Panel organizatora</div>
+              </div>
+            </div>
+          </div>
+          <!-- dzwonek -->
+          <button class="topIconBtn" id="notifBtnPartner" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="heroCard">
+            <div class="row" style="align-items:center;justify-content:space-between;">
+              <div style="text-align:left;">
+                <div class="sectionTitle" style="margin:0;">Plan organizatora</div>
+                <div class="sectionSub" id="partnerPlanLine">—</div>
+              </div>
+              <div class="planPill" id="partnerPlanPill">FREE</div>
+            </div>
+
+            <div class="tMuted mt10" style="text-align:left;">
+              Backend hook: statystyki zależne od planu (limity, raporty, widoczność, eksport).
+            </div>
+          </div>
+
+          <div class="analyticsGrid mt16" id="partnerStatsGrid" data-plan-scope="partner">
+            <div class="metricCard" data-min-plan="free">
+              <div class="metricTop">
+                <div class="metricLabel">Wydarzenia</div><div class="metricDot"></div>
+              </div>
+              <div class="metricVal" id="m_events_val">2</div>
+              <div class="metricSub">Łącznie</div>
+            </div>
+
+            <div class="metricCard" data-min-plan="pro">
+              <div class="metricTop">
+                <div class="metricLabel">Wyświetlenia profilu</div><div class="metricDot"></div>
+              </div>
+              <div class="metricVal" id="m_views_val">—</div>
+              <div class="metricSub">Pro+</div>
+            </div>
+
+            <div class="metricCard" data-min-plan="pro">
+              <div class="metricTop">
+                <div class="metricLabel">Kliknięcia</div><div class="metricDot"></div>
+              </div>
+              <div class="metricVal" id="m_clicks_val">—</div>
+              <div class="metricSub">Pro+</div>
+            </div>
+
+            <div class="metricCard" data-min-plan="premium">
+              <div class="metricTop">
+                <div class="metricLabel">Konwersje</div><div class="metricDot"></div>
+              </div>
+              <div class="metricVal" id="m_conv_val">—</div>
+              <div class="metricSub">Premium+</div>
+            </div>
+          </div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Skróty</div>
+            <div class="sectionSub">Najczęstsze akcje (demo UI).</div>
+            <div class="row mt16">
+              <button class="btn" type="button" onclick="go('S9_PARTNER_CREATE')">Dodaj wydarzenie</button>
+              <button class="btn secondary" type="button" onclick="go('S9_PARTNER_EVENTS')">Moje wydarzenia</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S9_PARTNER_CREATE — tworzenie wydarzenia (organizator)
+      ========================================================== -->
+      <section class="view" id="S9_PARTNER_CREATE" aria-label="Nowe wydarzenie">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Nowe wydarzenie</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnPartnerCreate" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Utwórz wydarzenie</div>
+            <div class="sectionSub">Demo UI — backend doda walidację, limity planu i publikację.</div>
+
+            <label class="mt12">Nazwa *</label>
+            <input id="peTitle" type="text" placeholder="np. Koncert na żywo" />
+
+            <label class="mt12">Miasto *</label>
+            <input id="peCity" type="text" placeholder="np. Warszawa" />
+
+            <label class="mt12">Kiedy *</label>
+            <input id="peWhen" type="text" placeholder="np. Sobota 18:00" />
+
+            <label class="mt12">Gdzie *</label>
+            <input id="peWhere" type="text" placeholder="np. Centrum" />
+
+            <label class="mt12">Zainteresowanie / hashtag *</label>
+            <div class="hashRow">
+              <span class="hashPrefix">#</span>
+              <input id="peInterest" type="text" placeholder="np. muzyka" list="interestsDatalist" />
+            </div>
+
+            <label class="mt12">Opis</label>
+            <textarea id="peDesc" maxlength="600" placeholder="Krótki opis wydarzenia (max 600)"></textarea>
+
+            <!-- ticketing -->
+            <div class="hintCard mt16">
+              <div class="hintTitle">Bilety (opcjonalnie)</div>
+              <div class="hintText">USLY nie sprzedaje biletów — podajesz link do zewnętrznej sprzedaży / rezerwacji.</div>
+
+              <label class="mt12">Rodzaj</label>
+              <select id="pePaidMode">
+                <option value="free">Bezpłatne</option>
+                <option value="paid_fixed">Płatne — cena stała</option>
+                <option value="paid_range">Płatne — przedział</option>
+              </select>
+
+              <div class="row mt12">
+                <div style="flex:1;">
+                  <label class="tMuted">Cena (zł)</label>
+                  <input id="pePrice" type="number" min="0" placeholder="np. 49" />
+                </div>
+                <div style="flex:1;">
+                  <label class="tMuted">Od (zł)</label>
+                  <input id="pePriceFrom" type="number" min="0" placeholder="np. 29" />
+                </div>
+              </div>
+
+              <label class="mt12">Do (zł)</label>
+              <input id="pePriceTo" type="number" min="0" placeholder="np. 79" />
+
+              <label class="mt12">Link do biletów / rezerwacji</label>
+              <input id="peTicketLink" type="url" placeholder="https://..." />
+            </div>
+
+            <button class="btn mt16" type="button" onclick="publishPartnerEvent()">Opublikuj (demo)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S9_PARTNER_EVENTS — lista wydarzeń organizatora + moderator view hook
+      ========================================================== -->
+      <section class="view" id="S9_PARTNER_EVENTS" aria-label="Wydarzenia organizatora">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Twoje wydarzenia</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnPartnerEvents" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Twoje wydarzenia</div>
+            <div class="sectionSub">Edytuj, podglądaj zainteresowanych, sprawdzaj statystyki (wg planu).</div>
+          </div>
+          <div class="col mt16" id="partnerEventsList"></div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Moderator (hook)</div>
+            <div class="sectionSub">
+              Backend hook: lista zgłoszeń / moderacja treści wydarzeń oraz czatów organizatora.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S9_PARTNER_MESSAGES — inbox
+      ========================================================== -->
+      <section class="view" id="S9_PARTNER_MESSAGES" aria-label="Wiadomości organizatora">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Wiadomości</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnPartnerMsgs" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Skrzynka</div>
+            <div class="sectionSub">Wiadomości od użytkowników (demo).</div>
+            <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." class="mt12" />
+          </div>
+
+          <div class="col mt16" id="partnerMsgList"></div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S10 SETTINGS — RÓŻNE DLA TOWARZYSZA I ORGANIZATORA
+      ========================================================== -->
+      <section class="view" id="S10_SETTINGS" aria-label="Ustawienia">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Ustawienia</div>
+              </div>
+            </div>
+          </div>
+          <button class="topIconBtn" id="notifBtnSettings" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+        </header>
+
+        <div class="content">
+          <!-- ===================== SETTINGS: Towarzysz ===================== -->
+          <div class="card" id="settingsUserBox">
+            <div class="sectionTitle">Profil Towarzysza</div>
+            <div class="sectionSub">Edytuj dane publiczne i preferencje dopasowań.</div>
+
+            <label class="mt12">Nick</label>
+            <input id="setNick" type="text" placeholder="np. Ola_88" />
+
+            <label class="mt12">BIO</label>
+            <textarea id="setBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
+            <div class="charHint"><span id="setBioCount">0</span>/250</div>
+
+            <label class="mt12">Miasto</label>
+            <input id="setCity" type="text" placeholder="np. Warszawa" />
+
+            <div class="hintCard mt16">
+              <div class="hintTitle">Zakres wieku sugestii</div>
+              <div class="hintText">
+                Dzięki temu ustawieniu USLY podpowiada Ci osoby w wybranym przedziale wieku.
+                To nie jest blokada — tylko filtr rekomendacji, który możesz w każdej chwili zmienić.
+              </div>
+
+              <div class="row mt12" style="align-items:flex-end;">
+                <div style="flex:1;">
+                  <label class="tMuted">Od</label>
+                  <input id="setPrefAgeFrom" type="range" min="16" max="99" value="18" />
+                  <div class="tMuted" style="text-align:left;">Wybrano: <span id="setPrefAgeFromVal">18</span></div>
+                </div>
+                <div style="flex:1;">
+                  <label class="tMuted">Do</label>
+                  <input id="setPrefAgeTo" type="range" min="16" max="99" value="35" />
+                  <div class="tMuted" style="text-align:left;">Wybrano: <span id="setPrefAgeToVal">35</span></div>
+                </div>
+              </div>
+            </div>
+
+            <label class="mt12">Zainteresowania</label>
+            <div class="hashRow">
+              <span class="hashPrefix">#</span>
+              <input id="setInterestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
+            </div>
+            <div class="typeahead" id="setInterestTypeahead"></div>
+            <div class="chips" id="setInterestChips"></div>
+
+            <div class="sectionTitle mt16">Plan</div>
+            <div class="sectionSub">Zmień plan i zobacz co zawiera (cena + funkcje).</div>
+
+            <div id="settingsUserPlanBox">
+              <div class="seg wide mt12">
+                <button class="segBtn on" id="uplan_free_set" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE</button>
+                <button class="segBtn" id="uplan_plus_set" type="button" onclick="setUserPlan('plus')" data-plan="plus" data-plan-icon="💙">💙 PLUS</button>
+              </div>
+              <div class="seg wide mt10">
+                <button class="segBtn" id="uplan_premium_set" type="button" onclick="setUserPlan('premium')" data-plan="premium" data-plan-icon="💜">💜 PREMIUM</button>
+                <button class="segBtn" id="uplan_vip_set" type="button" onclick="setUserPlan('vip')" data-plan="vip" data-plan-icon="🖤">🖤 VIP</button>
+              </div>
+            </div>
+
+            <button class="btn secondary mt16" type="button" onclick="go('S11_PLANS')">Szczegóły planów</button>
+            <button class="btn mt16" type="button" onclick="saveSettings()">Zapisz zmiany</button>
+
+            <button class="btn secondary mt12" type="button" onclick="openBugReport()">
+              Zgłoś błąd
+            </button>
+          </div>
+
+          <!-- ===================== SETTINGS: Organizator ===================== -->
+          <div class="card" id="settingsPartnerBox" style="display:none;">
+            <div class="sectionTitle">Profil organizatora</div>
+            <div class="sectionSub">
+              Te ustawienia są inne niż u Towarzysza — odpowiadają danym z rejestracji organizatora.
+            </div>
+
+            <label class="mt12">Nazwa firmy / miejsca</label>
+            <input id="setOrgCompany" type="text" placeholder="np. Kawiarnia Aurora" />
+
+            <label class="mt12">Kategoria</label>
+            <select id="setOrgCategory">
+              <option value="gastro">Gastro</option>
+              <option value="fitness">Fitness</option>
+              <option value="kultura">Kultura</option>
+              <option value="beauty">Beauty</option>
+              <option value="inne">Inne</option>
+            </select>
+
+            <label class="mt12">Miasto</label>
+            <select id="setOrgCity">
+              <option>Warszawa</option>
+              <option>Kraków</option>
+              <option>Gdańsk</option>
+              <option>Wrocław</option>
+              <option>Poznań</option>
+            </select>
+
+            <label class="mt12">Opis</label>
+            <textarea id="setOrgAbout" maxlength="500" placeholder="Krótki opis firmy / miejsca (max 500)"></textarea>
+            <div class="charHint"><span id="setOrgAboutCount">0</span>/500</div>
+
+            <div class="hintCard mt16">
+              <div class="hintTitle">Logo</div>
+              <div class="hintText">Docelowo: upload + CDN URL + zapis w profilu.</div>
+              <input id="setOrgLogo" type="file" accept="image/*" />
+              <div class="row mt12" style="align-items:center;">
+                <div class="avatar big" id="setOrgLogoPreview"></div>
+                <div class="tMuted" style="text-align:left;">
+                  Backend hook: walidacja pliku + storage + aktualizacja profilu.
+                </div>
+              </div>
+            </div>
+
+            <div class="sectionTitle mt16">Plan</div>
+            <div class="sectionSub">Zmień plan i zobacz co zawiera (cena + funkcje).</div>
+
+            <div id="settingsPartnerPlanBox">
+              <div class="seg wide mt12">
+                <button class="segBtn on" id="pplan_free_set" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE PARTNER</button>
+                <button class="segBtn" id="pplan_pro_set" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">💼 PRO PARTNER</button>
+              </div>
+              <div class="seg wide mt10">
+                <button class="segBtn" id="pplan_premium_set" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">💎 PREMIUM PARTNER</button>
+                <button class="segBtn" id="pplan_enterprise_set" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">🏆 ENTERPRISE</button>
+              </div>
+            </div>
+
+            <button class="btn secondary mt16" type="button" onclick="go('S11_PLANS')">Szczegóły planów</button>
+            <button class="btn mt16" type="button" onclick="savePartnerSettings()">Zapisz zmiany</button>
+
+            <button class="btn secondary mt12" type="button" onclick="openBugReport()">
+              Zgłoś błąd
+            </button>
+          </div>
+
+          <div class="card mt16">
+            <div class="sectionTitle">Dokumenty</div>
+            <div class="sectionSub">Regulamin i Polityka prywatności.</div>
+            <div class="row mt16">
+              <button class="btn secondary" type="button" onclick="openTerms()">Regulamin</button>
+              <button class="btn secondary" type="button" onclick="openRodo()">Polityka prywatności</button>
+            </div>
+          </div>
+
+          <button class="btn danger mt16" type="button" onclick="logout()">Wyloguj</button>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S11 PLANS (ROLE-SCOPED) — DOKŁADNIE WG ZAŁĄCZNIKÓW
+      ========================================================== -->
+      <section class="view" id="S11_PLANS" aria-label="Plany">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Plany</div>
+              </div>
+            </div>
+          </div>
+          <div class="ghostBtn" aria-hidden="true">•</div>
+        </header>
+
+        <div class="content">
+          <!-- ===================== Towarzysz ===================== -->
+          <div id="plansUserOnly">
+            <div class="card">
+              <div class="sectionTitle">Plany Towarzysza</div>
+              <div class="sectionSub">Nowa struktura funkcji (Free / Plus / Premium / VIP).</div>
+            </div>
+
+            <div class="card mt16" data-plan="free" data-plan-icon="🆓">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">🆓 FREE</div>
+                <div class="planPill">0 zł</div>
+              </div>
+              <p class="mt12">• ✅ Czaty 1:1 (bez limitu liczby rozmów)</p>
+              <p>• ✅ Przeglądanie profili / wydarzeń / partnerów</p>
+              <p>• ✅ Dołączenie do 1 aktywnego wydarzenia / grupy</p>
+              <p>• ✅ Podstawowe filtry (lokalizacja, kategoria)</p>
+              <p>• ✅ Otrzymywanie zaproszeń do czatu</p>
+              <p>• ❌ Brak inicjowania czatu jako pierwszy (lub limit dzienny, np. 3)</p>
+              <p>• ❌ Brak widoczności „kto mnie oglądał”</p>
+              <p>• ❌ Brak wyróżnienia profilu</p>
+              <button class="btn secondary mt16" type="button" onclick="setUserPlan('free')">Wybierz</button>
+            </div>
+
+            <div class="card mt16" data-plan="plus" data-plan-icon="💙">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">💙 PLUS</div>
+                <div class="planPill">29 zł / miesiąc</div>
+              </div>
+              <p class="mt12">• ✅ Nielimitowane inicjowanie czatów 1:1</p>
+              <p>• ✅ Dołączenie do 3 wydarzeń / grup jednocześnie</p>
+              <p>• ✅ Zapis do ulubionych (profile, wydarzenia)</p>
+              <p>• ✅ Historia czatów bez limitu</p>
+              <p>• ✅ Delikatne oznaczenie profilu („Plus user”)</p>
+              <button class="btn secondary mt16" type="button" onclick="setUserPlan('plus')">Wybierz</button>
+            </div>
+
+            <div class="card mt16" data-plan="premium" data-plan-icon="💜">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">💜 PREMIUM</div>
+                <div class="planPill">59 zł / miesiąc</div>
+              </div>
+              <p class="mt12">• ✅ Priorytetowe wyświetlanie profilu</p>
+              <p>• ✅ Możliwość tworzenia własnych wydarzeń / grup</p>
+              <p>• ✅ Dołączenie do nielimitowanej liczby wydarzeń</p>
+              <p>• ✅ Informacja: kto odwiedził mój profil</p>
+              <p>• ✅ Zaawansowane filtry (zainteresowania, aktywność, typ relacji)</p>
+              <p>• ✅ Status „Premium” widoczny w czatach</p>
+              <button class="btn secondary mt16" type="button" onclick="setUserPlan('premium')">Wybierz</button>
+            </div>
+
+            <div class="card mt16" data-plan="vip" data-plan-icon="🖤">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">🖤 VIP</div>
+                <div class="planPill">99 zł / miesiąc</div>
+              </div>
+              <p class="mt12">• 🚀 Boost profilu (np. 1× dziennie / 3× tygodniowo)</p>
+              <p>• 🚀 Wyróżnienie wizualne w listach i czatach</p>
+              <p>• 🚀 Priorytetowe zaproszenia / rekomendacje</p>
+              <p>• 🚀 Wcześniejszy dostęp do nowych funkcji</p>
+              <p>• 🚀 Badge „VIP” (silny efekt psychologiczny)</p>
+              <button class="btn secondary mt16" type="button" onclick="setUserPlan('vip')">Wybierz</button>
+            </div>
+          </div>
+
+          <!-- ===================== Organizator ===================== -->
+          <div id="plansPartnerOnly" style="display:none;">
+            <div class="card">
+              <div class="sectionTitle">Plany Organizatora</div>
+              <div class="sectionSub">Nowa struktura planów (Free Partner / Pro Partner / Premium Partner / Enterprise).</div>
+            </div>
+
+            <div class="card mt16" data-plan="free" data-plan-icon="🆓">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">🆓 FREE PARTNER — „Bądź w ekosystemie”</div>
+                <div class="planPill">0 zł</div>
+              </div>
+              <p class="mt12">• ✅ Profil firmy (logo, opis, lokalizacja)</p>
+              <p>• ✅ Widoczność w katalogu partnerów</p>
+              <p>• ✅ Otrzymywanie wiadomości od użytkowników</p>
+              <p>• ✅ Udział w wydarzeniach tworzonych przez innych</p>
+              <p>• ❌ Brak inicjowania czatu z użytkownikiem</p>
+              <p>• ❌ Brak statystyk</p>
+              <p>• ❌ Brak wyróżnień</p>
+              <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('free')">Wybierz</button>
+            </div>
+
+            <div class="card mt16" data-plan="pro" data-plan-icon="💼">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">💼 PRO PARTNER — „Pozyskuj klientów”</div>
+                <div class="planPill">149 zł / miesiąc</div>
+              </div>
+              <p class="mt12">• ✅ Inicjowanie czatów z użytkownikami</p>
+              <p>• ✅ Tworzenie wydarzeń / ofert firmowych</p>
+              <p>• ✅ Do 3 aktywnych wydarzeń jednocześnie</p>
+              <p>• ✅ Podstawowe statystyki: wyświetlenia profilu, kliknięcia, liczba czatów</p>
+              <p>• ✅ Oznaczenie „Pro Partner”</p>
+              <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('pro')">Wybierz</button>
+            </div>
+
+            <div class="card mt16" data-plan="premium" data-plan-icon="💎">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">💎 PREMIUM PARTNER — „Bądź wybierany”</div>
+                <div class="planPill">299 zł / miesiąc</div>
+              </div>
+              <p class="mt12">• 🚀 Priorytetowe wyświetlanie profilu</p>
+              <p>• 🚀 Do 10 aktywnych wydarzeń / ofert</p>
+              <p>• 🚀 Zaawansowane statystyki: źródła leadów, konwersje czat → kontakt</p>
+              <p>• 🚀 Wyróżnienie wizualne (kolor / badge)</p>
+              <p>• 🚀 Możliwość przypięcia oferty na górze listy</p>
+              <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('premium')">Wybierz</button>
+            </div>
+
+            <div class="card mt16" data-plan="enterprise" data-plan-icon="🏆">
+              <div class="row" style="align-items:center;justify-content:space-between;">
+                <div class="sectionTitle">🏆 ENTERPRISE — „Zdominuj kategorię”</div>
+                <div class="planPill">599 zł+ / miesiąc</div>
+              </div>
+              <p class="mt12">• 🧠 Nielimitowane wydarzenia / oferty</p>
+              <p>• 🧠 Dedykowane pozycje promowane</p>
+              <p>• 🧠 Wczesny dostęp do nowych funkcji</p>
+              <p>• 🧠 Dedykowany onboarding</p>
+              <p>• 🧠 Możliwość integracji (API / eksport leadów)</p>
+              <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('enterprise')">Wybierz</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      S12 NOTIFICATIONS (bell-only UI)
+      ========================================================== -->
+      <section class="view" id="S12_NOTIFICATIONS" aria-label="Powiadomienia">
+        <header class="topbar">
+          <button class="backBtn" type="button" onclick="back()">◀</button>
+          <div class="brandCenter small">
+            <div class="brandRow">
+              <img class="brandLogo sm" src="PASTE_YOUR_CODEPEN_ASSET_URL_HERE" alt="USLY logo" />
+              <div class="brandText">
+                <div class="brandName">USLY</div>
+                <div class="brandTagline">Powiadomienia</div>
+              </div>
+            </div>
+          </div>
+          <div class="ghostBtn" aria-hidden="true">•</div>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <div class="sectionTitle">Powiadomienia</div>
+            <div class="sectionSub">Dzwonek na górze — bez dodatkowych ikon.</div>
+          </div>
+
+          <div class="col mt16" id="notifList"></div>
+
+          <div class="card mt16">
+            <div class="sectionSub">Brak nowych powiadomień (demo).</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+      DATALIST: DUŻA LISTA ZAINTERESOWAŃ (HTML-only typeahead seed)
+      Używane przez: regInterestInput, interestInput, setInterestInput, peInterest
+      ========================================================== -->
+      <datalist id="interestsDatalist">
+        <!-- Jedzenie / picie -->
+        <option value="kawa"></option><option value="herbata"></option><option value="matcha"></option><option value="kuchnia włoska"></option>
+        <option value="kuchnia azjatycka"></option><option value="gotowanie"></option><option value="pieczenie"></option><option value="sushi"></option>
+        <option value="wino"></option><option value="craft beer"></option><option value="degustacje"></option><option value="restauracje"></option>
+        <option value="street food"></option><option value="wegetarianizm"></option><option value="weganizm"></option><option value="pieczenie chleba"></option>
+
+        <!-- Muzyka / kultura -->
+        <option value="muzyka"></option><option value="koncerty"></option><option value="festiwale"></option><option value="jazz"></option>
+        <option value="rock"></option><option value="pop"></option><option value="hip-hop"></option><option value="elektronika"></option>
+        <option value="klasyczna"></option><option value="śpiew"></option><option value="gitara"></option><option value="piano"></option>
+        <option value="teatr"></option><option value="opera"></option><option value="kino"></option><option value="filmy"></option>
+        <option value="seriale"></option><option value="fotografia"></option><option value="wystawy"></option><option value="muzea"></option>
+
+        <!-- Sport / ruch -->
+        <option value="siłownia"></option><option value="bieganie"></option><option value="rower"></option><option value="spacer"></option>
+        <option value="trekking"></option><option value="góry"></option><option value="wspinaczka"></option><option value="joga"></option>
+        <option value="pilates"></option><option value="crossfit"></option><option value="pływanie"></option><option value="taniec"></option>
+        <option value="zumba"></option><option value="sztuki walki"></option><option value="boks"></option><option value="mma"></option>
+        <option value="koszykówka"></option><option value="piłka nożna"></option><option value="tenis"></option><option value="badminton"></option>
+
+        <!-- Tech / gry -->
+        <option value="technologia"></option><option value="startup"></option><option value="programowanie"></option><option value="AI"></option>
+        <option value="UX"></option><option value="design"></option><option value="gry"></option><option value="planszówki"></option>
+        <option value="RPG"></option><option value="szachy"></option><option value="e-sport"></option><option value="retro gaming"></option>
+        <option value="fantasy"></option><option value="sci-fi"></option><option value="anime"></option><option value="manga"></option>
+
+        <!-- Rozwój / nauka -->
+        <option value="czytanie"></option><option value="książki"></option><option value="psychologia"></option><option value="rozwój osobisty"></option>
+        <option value="nauka języków"></option><option value="podcasty"></option><option value="medytacja"></option><option value="mindfulness"></option>
+        <option value="filozofia"></option><option value="historia"></option><option value="nauka"></option><option value="astronomia"></option>
+
+        <!-- Kreatywne -->
+        <option value="rysunek"></option><option value="malarstwo"></option><option value="grafika"></option><option value="ilustracja"></option>
+        <option value="ceramika"></option><option value="DIY"></option><option value="rękodzieło"></option><option value="szydełkowanie"></option>
+        <option value="robienie na drutach"></option><option value="kaligrafia"></option><option value="pisanie"></option><option value="poezja"></option>
+
+        <!-- Podróże / outdoor -->
+        <option value="podróże"></option><option value="city break"></option><option value="camping"></option><option value="vanlife"></option>
+        <option value="morze"></option><option value="jeziora"></option><option value="survival"></option><option value="bushcraft"></option>
+
+        <!-- Zwierzęta / natura -->
+        <option value="psy"></option><option value="koty"></option><option value="zwierzęta"></option><option value="ogród"></option>
+        <option value="rośliny"></option><option value="urban gardening"></option><option value="ptaki"></option><option value="akwarystyka"></option>
+
+        <!-- Dłuższy „ogon” (żeby podpowiedzi były bogate) -->
+        <option value="wolontariat"></option><option value="eventy"></option><option value="networking"></option><option value="biznes"></option>
+        <option value="marketing"></option><option value="social media"></option><option value="tworzenie treści"></option><option value="montaż wideo"></option>
+        <option value="podcast"></option><option value="stand-up"></option><option value="komedia"></option><option value="gotowanie na mieście"></option>
+        <option value="kawiarnie"></option><option value="kultura miejska"></option><option value="architektura"></option><option value="moda"></option>
+        <option value="second hand"></option><option value="streetwear"></option><option value="kosmetyki"></option><option value="pielęgnacja"></option>
+        <option value="tatuaże"></option><option value="motoryzacja"></option><option value="motocykle"></option><option value="kolekcjonerstwo"></option>
+        <option value="winyle"></option><option value="modelarstwo"></option><option value="origami"></option><option value="gry logiczne"></option>
+        <option value="krzyżówki"></option><option value="sudoku"></option><option value="łamigłówki"></option><option value="escape roomy"></option>
+        <option value="kryptowaluty"></option><option value="finanse osobiste"></option><option value="inwestowanie"></option><option value="nieruchomości"></option>
+        <option value="zdrowe jedzenie"></option><option value="meal prep"></option><option value="keto"></option><option value="zero waste"></option>
+        <option value="ekologia"></option><option value="recykling"></option><option value="thrifting"></option><option value="planowanie"></option>
+        <option value="organizacja"></option><option value="minimalizm"></option><option value="slow life"></option><option value="mindset"></option>
+      </datalist>
+    </div>
+  </div>
+</div>
+<div id="ageCheckWrapper" style="margin-top:12px;">
+  <label for="regBirthDate"><strong>Data urodzenia</strong></label>
+  <input 
+    type="date" 
+    id="regBirthDate" 
+    required
+  />
+  <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
+    Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.
+  </div>
+</div>

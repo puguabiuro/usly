@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+
+# Env / secrets
+.env
+backend/.env
+
+# Local databases
+*.db
+backend/usly.db
+
+# Uploads / generated files
+backend/uploads/
+uploads/
+
+# Alembic cache
+alembic/__pycache__/
+backend/alembic/__pycache__/
+backend/alembic/versions/__pycache__/
+
+# Logs
+*.log
