@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import json
-
-
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -41,9 +39,7 @@ from models import (
     EventSignup,
     UserStatus,
 )
-
 from schemas import EventCreate, EventUpdate, EventOut
-
 from security import (
     hash_password,
     verify_password,
@@ -52,7 +48,29 @@ from security import (
     create_access_token,
 )
 
-app = FastAPI()
+app = FastAPI(title="USLY API")
+
+# ---- CORS (prod: konkretna domena, bez '*') ----
+# Na Render ustawisz: FRONTEND_ORIGIN=https://usly-app.onrender.com
+# Lokalnie moesz ustawi: FRONTEND_ORIGIN=http://localhost:5173
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "")
+
+allowed_origins = [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+]
+
+if frontend_origin:
+    allowed_origins.append(frontend_origin)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Healthcheck (for deploy / monitoring)
 @app.get("/healthz")
@@ -71,17 +89,17 @@ def join_event(
 ):
     db = SessionLocal()
     try:
-        # 1) event musi istnieć
+        # 1) event musi istnie
         event = db.query(Event).filter(Event.id == event_id).first()
 
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
-        # 2) musi być published
+        # 2) musi by published
         if event.status != "published":
             raise HTTPException(status_code=409, detail="EVENT_NOT_PUBLISHED")
 
-        # 3) capacity (jeśli ustawione)
+        # 3) capacity (jeli ustawione)
         if event.capacity is not None:
             current_count = (
                 db.query(EventSignup)
@@ -92,7 +110,7 @@ def join_event(
             if current_count >= event.capacity:
                 raise HTTPException(status_code=409, detail="EVENT_FULL")
 
-        # 4) czy user już zapisany
+        # 4) czy user ju zapisany
         existing = (
             db.query(EventSignup)
             .filter(
@@ -138,16 +156,16 @@ def leave_event(
 ):
     db = SessionLocal()
     try:
-        # 1) event musi istnieć
+        # 1) event musi istnie
         event = db.query(Event).filter(Event.id == event_id).first()
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
-        # 2) tylko dla published (trzymamy spójnie z join)
+        # 2) tylko dla published (trzymamy spjnie z join)
         if event.status != "published":
             raise HTTPException(status_code=409, detail="EVENT_NOT_PUBLISHED")
 
-        # 3) musi istnieć zapis
+        # 3) musi istnie zapis
         signup = (
             db.query(EventSignup)
             .filter(
@@ -159,7 +177,7 @@ def leave_event(
         if not signup:
             raise HTTPException(status_code=409, detail="NOT_JOINED")
 
-        # 4) usuń zapis
+        # 4) usu zapis
         db.delete(signup)
         db.commit()
 
@@ -211,7 +229,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content=fail(
             code=ErrorCode.INTERNAL_ERROR,
-            message="Wystąpił nieoczekiwany błąd serwera",
+            message="Wystpi nieoczekiwany bd serwera",
         ),
     )
 
@@ -241,31 +259,6 @@ def _audit(db, *, action: str, request: Request, user_id: int | None, details: s
     db.add(log)
     db.commit()
 
-
-# =========================
-# CORS
-# =========================
-allowed_origins = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    ""
-).split(",")
-allowed_origins = [o.strip() for o in allowed_origins if o.strip()]
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
-
-
-@app.get("/health")
-def health():
-    return ok({"status": "ok"})
-
-
 @app.get("/crash-test")
 def crash_test():
     1 / 0
@@ -280,11 +273,11 @@ def _is_at_least_16(dob: date) -> bool:
 
 
 # =========================
-# AUTH – REGISTER
+# AUTH  REGISTER
 # =========================
-# UWAGA: RegisterRequest/RegisterResponse muszą istnieć w Twoim projekcie.
-# Jeśli masz je w innym pliku, zmień import tutaj.
-from schemas import RegisterRequest, RegisterResponse  # <- jeśli masz gdzie indziej, podmień
+# UWAGA: RegisterRequest/RegisterResponse musz istnie w Twoim projekcie.
+# Jeli masz je w innym pliku, zmie import tutaj.
+from schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
 
 
 @app.post("/auth/register", response_model=RegisterResponse)
@@ -293,7 +286,7 @@ def register(payload: RegisterRequest):
     if not _is_at_least_16(payload.dob):
         raise ApiException(status_code=403, code=ErrorCode.AGE_TOO_LOW)
 
-    # LEGAL – wymagane zgody
+    # LEGAL  wymagane zgody
     if not payload.accept_terms:
         raise ApiException(status_code=422, code=ErrorCode.TERMS_REQUIRED)
 
@@ -303,7 +296,7 @@ def register(payload: RegisterRequest):
         if existing:
             raise ApiException(status_code=409, code=ErrorCode.EMAIL_ALREADY_EXISTS)
 
-        # UWAGA: UserRole i UserStatus muszą istnieć w Twoim projekcie.
+    # UWAGA: UserRole i UserStatus musz istnie w Twoim projekcie.
  
 
         role_value = UserRole.PARTNER.value if payload.role == "partner" else UserRole.USER.value
@@ -336,7 +329,7 @@ def register(payload: RegisterRequest):
 
 
 # =========================
-# LEGAL – TERMS v1
+# LEGAL  TERMS v1
 # =========================
 @app.get("/legal/terms")
 def get_terms():
@@ -346,16 +339,16 @@ def get_terms():
             "version": "v1",
             "content": (
                 "Regulamin USLY v1\n\n"
-                "1. Serwis przeznaczony jest wyłącznie dla osób, które ukończyły 16 lat.\n"
-                "2. Użytkownik zobowiązuje się do podawania prawdziwych danych.\n"
-                "3. Szczegółowe warunki korzystania zostaną uzupełnione.\n"
+                "1. Serwis przeznaczony jest wycznie dla osb, ktre ukoczyy 16 lat.\n"
+                "2. Uytkownik zobowizuje si do podawania prawdziwych danych.\n"
+                "3. Szczegowe warunki korzystania zostan uzupenione.\n"
             ),
         }
     )
 
 
 # =========================
-# LEGAL – PRIVACY v1
+# LEGAL  PRIVACY v1
 # =========================
 @app.get("/legal/privacy")
 def get_privacy():
@@ -364,18 +357,18 @@ def get_privacy():
             "type": "privacy",
             "version": "v1",
             "content": (
-                "Polityka prywatności USLY v1\n\n"
-                "1. Administratorem danych jest USLY (dane administratora do uzupełnienia).\n"
-                "2. Przetwarzamy dane w celu założenia i obsługi konta oraz świadczenia usług.\n"
-                "3. Podstawy prawne, odbiorcy danych, okres przechowywania i prawa użytkownika "
-                "zostaną doprecyzowane w wersji produkcyjnej.\n"
+                "Polityka prywatnoci USLY v1\n\n"
+                "1. Administratorem danych jest USLY (dane administratora do uzupenienia).\n"
+                "2. Przetwarzamy dane w celu zaoenia i obsugi konta oraz wiadczenia usug.\n"
+                "3. Podstawy prawne, odbiorcy danych, okres przechowywania i prawa uytkownika "
+                "zostan doprecyzowane w wersji produkcyjnej.\n"
             ),
         }
     )
 
 
 # =========================
-# AUTH – LOGIN
+# AUTH  LOGIN
 # =========================
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -422,7 +415,7 @@ def login(payload: LoginRequest, request: Request):
 
 
 # =========================
-# AUTH – LOGOUT
+# AUTH  LOGOUT
 # =========================
 @app.post("/auth/logout")
 def logout(request: Request, current_user: User = Depends(get_current_user)):
@@ -435,7 +428,7 @@ def logout(request: Request, current_user: User = Depends(get_current_user)):
 
 
 # =========================
-# AUTH — /auth/me
+# AUTH  /auth/me
 # =========================
 @app.get("/auth/me")
 def auth_me(current_user: User = Depends(get_current_user)):
@@ -476,7 +469,7 @@ def partner_or_admin(current_user: User = Depends(require_role("partner", "admin
 
 
 # =========================
-# PROFILE — USER — GET /users/me
+# PROFILE  USER  GET /users/me
 # =========================
 @app.get("/users/me")
 def users_me(current_user: User = Depends(require_role("user"))):
@@ -518,7 +511,7 @@ def users_me(current_user: User = Depends(require_role("user"))):
 
 
 # =========================
-# PROFILE — USER — PATCH /users/me
+# PROFILE  USER  PATCH /users/me
 # =========================
 class UserMePatch(BaseModel):
     nick: Optional[str] = Field(default=None)
@@ -623,7 +616,7 @@ def users_me_patch(
 
 
 # =========================
-# PROFILE — PARTNER — GET /partners/me
+# PROFILE  PARTNER  GET /partners/me
 # =========================
 @app.get("/partners/me")
 def partners_me(current_user: User = Depends(require_role("partner"))):
@@ -655,7 +648,7 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
 
 
 # =========================
-# PROFILE — PARTNER — PATCH /partners/me
+# PROFILE  PARTNER  PATCH /partners/me
 # =========================
 class PartnerMePatch(BaseModel):
     nazwa: Optional[str] = Field(default=None, max_length=120)
@@ -715,7 +708,7 @@ def partners_me_patch(
 
 
 # =========================
-# UPLOADS (v1) — AVATAR (USER)
+# UPLOADS (v1)  AVATAR (USER)
 # POST /uploads/avatar
 # =========================
 AVATARS_DIR = Path("uploads") / "avatars"
@@ -776,7 +769,7 @@ async def upload_avatar(
 
 
 # =========================
-# UPLOADS (v1) — LOGO (PARTNER)
+# UPLOADS (v1)  LOGO (PARTNER)
 # POST /uploads/logo
 # =========================
 LOGOS_DIR = Path("uploads") / "logos"
@@ -834,13 +827,13 @@ async def upload_logo(
 
 
 # =========================
-# EVENTS — CORE
+# EVENTS  CORE
 # PARTNER: CREATE + UPDATE EVENT
 # =========================
 def _ensure_utc(dt):
     """
-    SQLite często zwraca datetime bez tzinfo (naive). Traktujemy je jako UTC,
-    żeby nie było 500 przy porównaniach i żeby logika była spójna.
+    SQLite czsto zwraca datetime bez tzinfo (naive). Traktujemy je jako UTC,
+    eby nie byo 500 przy porwnaniach i eby logika bya spjna.
     """
     if dt is None:
         return None
@@ -1009,7 +1002,7 @@ def partner_update_event(
 
 
 # =========================
-# EVENTS — PARTNER: DELETE EVENT
+# EVENTS  PARTNER: DELETE EVENT
 # =========================
 @app.delete("/partners/events/{event_id}")
 def partner_delete_event(
@@ -1034,7 +1027,7 @@ def partner_delete_event(
 
 
 # =========================
-# EVENTS — STATUS FLOW
+# EVENTS  STATUS FLOW
 # =========================
 @app.post("/partners/events/{event_id}/publish")
 def partner_publish_event(
@@ -1095,7 +1088,7 @@ def partner_archive_event(
 
 
 # =========================
-# EVENTS — USER: LISTA EVENTÓW
+# EVENTS  USER: LISTA EVENTW
 # =========================
 @app.get("/events")
 def list_events(
@@ -1165,7 +1158,7 @@ def list_events(
 
 
 # =========================
-# EVENTS — USER: SZCZEGÓŁY EVENTU
+# EVENTS  USER: SZCZEGY EVENTU
 # =========================
 @app.get("/events/{event_id}")
 def get_event_details(event_id: int):
@@ -1206,7 +1199,7 @@ def get_event_details(event_id: int):
 
 
 # =========================
-# UPLOADS (v1) — EVENT COVER (PARTNER)
+# UPLOADS (v1)  EVENT COVER (PARTNER)
 # =========================
 EVENT_COVERS_DIR = Path("uploads") / "event-covers"
 EVENT_COVERS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1243,7 +1236,7 @@ async def upload_event_cover(
 
 
 # =========================
-# EVENTS — PARTNER: LISTA SWOICH EVENTÓW
+# EVENTS  PARTNER: LISTA SWOICH EVENTW
 # =========================
 @app.get("/partners/events")
 def partner_list_events(
@@ -1321,7 +1314,7 @@ def partner_list_events(
 
 
 # =========================
-# EVENTS — PARTNER: SZCZEGÓŁY SWOJEGO EVENTU
+# EVENTS  PARTNER: SZCZEGY SWOJEGO EVENTU
 # =========================
 @app.get("/partners/events/{event_id}")
 def partner_get_event_details(
@@ -1361,7 +1354,7 @@ def partner_get_event_details(
     finally:
         db.close()
 # =========================
-# EVENTS — USER: MOJE ZAPISY
+# EVENTS  USER: MOJE ZAPISY
 # GET /users/me/events?limit=10&offset=0&sort=created_at_desc
 # =========================
 @app.get("/users/me/events")
@@ -1436,7 +1429,7 @@ def my_event_signups(
     finally:
         db.close()
 # =========================
-# EVENTS — PARTNER: PARTICIPANTS
+# EVENTS  PARTNER: PARTICIPANTS
 # GET /partners/events/{id}/participants?limit=10&offset=0
 # =========================
 @app.get("/partners/events/{event_id}/participants")
@@ -1448,16 +1441,16 @@ def partner_event_participants(
 ):
     db = SessionLocal()
     try:
-        # 1) event musi istnieć
+        # 1) event musi istnie
         event = db.query(Event).filter(Event.id == event_id).first()
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
-        # 2) tylko właściciel
+        # 2) tylko waciciel
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
 
-        # 3) query zapisów + user
+        # 3) query zapisw + user
         q = (
             db.query(EventSignup, User)
             .join(User, User.id == EventSignup.user_id)
@@ -1501,7 +1494,7 @@ def partner_event_participants(
     finally:
         db.close()
 # =========================
-# EVENTS — PARTNER: STATS
+# EVENTS  PARTNER: STATS
 # GET /partners/events/{id}/stats
 # =========================
 @app.get("/partners/events/{event_id}/stats")
@@ -1511,12 +1504,12 @@ def partner_event_stats(
 ):
     db = SessionLocal()
     try:
-        # 1) event musi istnieć
+        # 1) event musi istnie
         event = db.query(Event).filter(Event.id == event_id).first()
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
-        # 2) tylko właściciel
+        # 2) tylko waciciel
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
 
@@ -1527,7 +1520,7 @@ def partner_event_stats(
             .count()
         )
 
-        capacity = event.capacity  # może być None
+        capacity = event.capacity  # moe by None
         spots_left = None
         if capacity is not None:
             spots_left = max(capacity - signups_count, 0)

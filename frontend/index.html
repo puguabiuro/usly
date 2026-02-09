@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pl">
-<head>
+<head>n  <link rel="icon" href="data:,">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>USLY</title>
@@ -275,9 +275,12 @@ pełny kod index.html: <!-- ====================================================
   
               <!-- ===================== USER (Towarzysz) ===================== -->
               <div id="regUserBox">
-                <label class="mt12">Wiek *</label>
-                <input id="regAge" type="number" min="16" max="99" placeholder="np. 24" />
-  
+                <label class="mt12">Data urodzenia *</label>
+                <input id="regBirthDate" type="date" required />
+                <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
+                 Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.
+                </div>
+
                 <!-- City + geolokalizacja (bez inline onclick) -->
                 <label class="mt12">Miasto *</label>
                 <div class="row">
@@ -1539,371 +1542,38 @@ pełny kod index.html: <!-- ====================================================
     </div>
   </div>
   
-  <script>
-    /** ====== KONFIG BACKENDU ======
-     * jeśli backend i frontend są na tej samej domenie: zostaw ""
-     * jeśli masz API osobno: np. "http://localhost:3000"
-     */
-    const API_BASE = "";
-    
-    async function api(path, { method="GET", body, token, headers } = {}) {
-      const url = API_BASE ? (API_BASE + path) : path;
-      const h = {
-        "Accept": "application/json",
-        ...(body ? {"Content-Type":"application/json"} : {}),
-        ...(token ? {"Authorization": `Bearer ${token}`} : {}),
-        ...(headers || {})
-      };
-      const res = await fetch(url, {
-        method,
-        headers: h,
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: "include"
-      });
-      const isJson = (res.headers.get("content-type") || "").includes("application/json");
-      const data = isJson ? await res.json().catch(()=>null) : await res.text().catch(()=>null);
-      if (!res.ok) {
-        const msg = (data && (data.message || data.error)) ? (data.message || data.error) : `HTTP ${res.status}`;
-        throw new Error(msg);
-      }
-      return data;
-    }
-    
-    const App = {
-      role: "user", // user|partner
-      navStack: ["S0_WELCOME"],
-      auth: { token: null, me: null },
-      plan: { user: "free", partner: "free" }
-    };
-    
-    const $ = (id)=>document.getElementById(id);
-    
-    /** ====== TOAST ====== */
-    let toastTimer=null;
-    function showToast(text){
-      const t=$("toast"); if(!t) return;
-      t.textContent=text;
-      t.style.display="block";
-      clearTimeout(toastTimer);
-      toastTimer=setTimeout(()=>{ t.style.display="none"; }, 2400);
-    }
-    
-    /** ====== MODAL ====== */
-    function openModal(title, html){
-      if($("modalTitle")) $("modalTitle").textContent = title || "USLY";
-      if($("modalBody")) $("modalBody").innerHTML = html || "";
-      const o=$("modalOverlay");
-      if(o){ o.style.display="flex"; o.setAttribute("aria-hidden","false"); }
-    }
-    function closeModal(){
-      const o=$("modalOverlay");
-      if(o){ o.style.display="none"; o.setAttribute("aria-hidden","true"); }
-    }
-    
-    /** ====== NAWIGACJA ====== */
-    function showView(id){
-      document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
-      const el=$(id);
-      if(el) el.classList.add("active");
-      setTabbars();
-    }
-    function go(id){
-      const cur = App.navStack[App.navStack.length-1];
-      if(cur!==id) App.navStack.push(id);
-      showView(id);
-    }
-    function back(){
-      if(App.navStack.length>1) App.navStack.pop();
-      showView(App.navStack[App.navStack.length-1]);
-    }
-    
-    /** ====== TAB BARY (user/partner) ====== */
-    function setActiveTab(scope, viewId){
-      const mapUser = {
-        "S4_NEARBY":"tabNearby",
-        "S6_CHATS_LIST":"tabChats",
-        "S7_EVENTS":"tabEvents",
-        "S8_GROUPS":"tabGroups",
-        "S10_SETTINGS":"tabSettingsUser"
-      };
-      const mapPartner = {
-        "S9_PARTNER":"ptabDash",
-        "S9_PARTNER_CREATE":"ptabCreate",
-        "S9_PARTNER_EVENTS":"ptabMyEvents",
-        "S9_PARTNER_MESSAGES":"ptabMsgs",
-        "S10_SETTINGS":"ptabSettings"
-      };
-    
-      const all = (scope==="user")
-        ? ["tabNearby","tabChats","tabEvents","tabGroups","tabSettingsUser"]
-        : ["ptabDash","ptabCreate","ptabMyEvents","ptabMsgs","ptabSettings"];
-    
-      all.forEach(id=>{ const b=$(id); if(b) b.classList.remove("active"); });
-    
-      const activeId = (scope==="user"?mapUser[viewId]:mapPartner[viewId]);
-      if(activeId && $(activeId)) $(activeId).classList.add("active");
-    }
-    
-    function setTabbars(){
-      const tabUser=$("tabbarUser");
-      const tabPartner=$("tabbarPartner");
-      const current = App.navStack[App.navStack.length-1];
-    
-      const isAuthArea = !["S0_WELCOME","S1_LOGIN","S2_REGISTER"].includes(current);
-      if(!isAuthArea){
-        if(tabUser) tabUser.style.display="none";
-        if(tabPartner) tabPartner.style.display="none";
-        return;
-      }
-    
-      if(App.role==="user"){
-        if(tabUser) tabUser.style.display="flex";
-        if(tabPartner) tabPartner.style.display="none";
-        setActiveTab("user", current);
-      } else {
-        if(tabUser) tabUser.style.display="none";
-        if(tabPartner) tabPartner.style.display="flex";
-        setActiveTab("partner", current);
-      }
-    }
-    
-    /** ====== ROLE SWITCH ====== */
-    function selectRole(role){
-      App.role = role;
-    
-      // segmenty (welcome/login/register)
-      const pairs = [
-        ["roleUserBtn","rolePartnerBtn"],
-        ["roleUserBtnLogin","rolePartnerBtnLogin"],
-        ["roleUserBtn2","rolePartnerBtn2"]
-      ];
-      pairs.forEach(([u,p])=>{
-        if($(u)) $(u).classList.toggle("on", role==="user");
-        if($(p)) $(p).classList.toggle("on", role==="partner");
-      });
-    
-      if($("roleLabelLogin")) $("roleLabelLogin").textContent = role==="user" ? "Towarzysz" : "Organizator";
-      if($("roleLabelRegister")) $("roleLabelRegister").textContent = role==="user" ? "Towarzysz" : "Organizator";
-    
-      // rejestracja: boxy
-      const regUserBox=$("regUserBox");
-      const regPartnerBox=$("regPartnerBox");
-      if(regUserBox && regPartnerBox){
-        regUserBox.style.display = role==="user" ? "block" : "none";
-        regPartnerBox.style.display = role==="partner" ? "block" : "none";
-      }
-    
-      // ustawienia: boxy
-      const settingsUserBox=$("settingsUserBox");
-      const settingsPartnerBox=$("settingsPartnerBox");
-      if(settingsUserBox && settingsPartnerBox){
-        settingsUserBox.style.display = role==="user" ? "block" : "none";
-        settingsPartnerBox.style.display = role==="partner" ? "block" : "none";
-      }
-    
-      // plany: role scoped
-      const plansUserOnly=$("plansUserOnly");
-      const plansPartnerOnly=$("plansPartnerOnly");
-      if(plansUserOnly && plansPartnerOnly){
-        plansUserOnly.style.display = role==="user" ? "block" : "none";
-        plansPartnerOnly.style.display = role==="partner" ? "block" : "none";
-      }
-    
-      setTabbars();
-    }
-    
-    /** ====== PLANY ====== */
-    function setUserPlan(plan){
-      App.plan.user = plan;
-      const ids = ["uplan_free","uplan_plus","uplan_premium","uplan_vip","uplan_free_set","uplan_plus_set","uplan_premium_set","uplan_vip_set"];
-      ids.forEach(id=>{
-        const b=$(id);
-        if(!b) return;
-        const dp=b.getAttribute("data-plan");
-        b.classList.toggle("on", dp===plan);
-      });
-      if($("planPillSetup")) $("planPillSetup").textContent = plan.toUpperCase();
-    }
-    function setPartnerPlan(plan){
-      App.plan.partner = plan;
-      const ids = ["pplan_free","pplan_pro","pplan_premium","pplan_enterprise","pplan_free_set","pplan_pro_set","pplan_premium_set","pplan_enterprise_set"];
-      ids.forEach(id=>{
-        const b=$(id);
-        if(!b) return;
-        const dp=b.getAttribute("data-plan");
-        b.classList.toggle("on", dp===plan);
-      });
-      if($("partnerPlanPill")) $("partnerPlanPill").textContent = plan.toUpperCase();
-      if($("partnerPlanLine")) $("partnerPlanLine").textContent = `Aktualnie: ${plan.toUpperCase()}`;
-    }
-    
-    /** ====== CHIPS (zainteresowania) ====== */
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])); }
-    
-    function addChip(containerId, value){
-      const c=$(containerId);
-      if(!c) return;
-      const v=value.trim();
-      if(!v) return;
-    
-      const existing=[...c.querySelectorAll(".chip")].map(x=>x.getAttribute("data-v"));
-      if(existing.includes(v.toLowerCase())) return;
-    
-      const chip=document.createElement("div");
-      chip.className="chip";
-      chip.setAttribute("data-v", v.toLowerCase());
-      chip.innerHTML = `#${escapeHtml(v)} <span class="x">✕</span>`;
-      chip.addEventListener("click", ()=>chip.remove());
-      c.appendChild(chip);
-    }
-    
-    function bindChips(inputId, chipsId){
-      const inp=$(inputId);
-      if(!inp) return;
-      inp.addEventListener("keydown", (e)=>{
-        if(e.key==="Enter" || e.key===","){
-          e.preventDefault();
-          addChip(chipsId, inp.value);
-          inp.value="";
-        }
-      });
-      inp.addEventListener("blur", ()=>{
-        if(inp.value.trim()){
-          addChip(chipsId, inp.value);
-          inp.value="";
-        }
-      });
-    }
-    
-    /** ====== SUWAKI AGE ====== */
-    function bindRange(id, outId){
-      const r=$(id), o=$(outId);
-      if(!r || !o) return;
-      const sync=()=>{ o.textContent=String(r.value); };
-      r.addEventListener("input", sync);
-      sync();
-    }
-    
-    /** ====== LICZNIKI TEXTAREA ====== */
-    function bindTextareaCount(id, outId){
-      const el=$(id), out=$(outId);
-      if(!el || !out) return;
-      const sync=()=>{ out.textContent=String(el.value.length); };
-      el.addEventListener("input", sync);
-      sync();
-    }
-    
-    /** ====== GEOLOKALIZACJA (btnUseLocation bez inline onclick) ====== */
-    function useLocation(){
-      if(!navigator.geolocation){
-        showToast("Brak geolokalizacji w przeglądarce.");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        pos=>{
-          const { latitude, longitude } = pos.coords;
-          if($("regGeoLat")) $("regGeoLat").value=String(latitude);
-          if($("regGeoLng")) $("regGeoLng").value=String(longitude);
-          showToast("Lokalizacja zapisana (demo).");
-        },
-        ()=>showToast("Brak zgody na lokalizację."),
-        { enableHighAccuracy:true, timeout:10000 }
-      );
-    }
-    
-    /** ====== HOOKI: LOGIN/REGISTER/ETC (żeby onclick nie wywalał błędów) ====== */
-    function loginSocial(p){ showToast(`Social login: ${p} (hook)`); }
-    function signupSocial(p){ showToast(`Social signup: ${p} (hook)`); }
-    function openForgot(){ openModal("Reset hasła", `<div class="sectionSub">Hook backend: reset hasła.</div>`); }
-    function openAddPhoto(){ showToast("Dodaj zdjęcie (hook)"); }
-    function openAvatarAI(){ showToast("Awatar AI (hook)"); }
-    function openTerms(){ openModal("Regulamin", `<div class="sectionSub">Tu treść / fetch z backendu.</div>`); }
-    function openRodo(){ openModal("Polityka prywatności", `<div class="sectionSub">Tu treść / fetch z backendu.</div>`); }
-    function openShare(){ showToast("Udostępnij (hook)"); }
-    
-    function loginPrimary(){
-      // tu podepniesz backend:
-      // api("/api/auth/login", { method:"POST", body:{ login: $("loginId").value, password:$("loginPass").value, role: App.role } })
-      // .then(...)
-      showToast("Zalogowano (demo).");
-      if(App.role==="user") go("S4_NEARBY"); else go("S9_PARTNER");
-    }
-    
-    function registerPrimary(){
-      // podstawowa walidacja, żeby działało “od razu”
-      const email=($("regEmail")?.value||"").trim();
-      const pass=($("regPass")?.value||"").trim();
-      if(!email||!pass){ showToast("Email i hasło są wymagane."); return; }
-      if(!$("acceptTerms")?.checked || !$("acceptRodo")?.checked){ showToast("Zaznacz zgody."); return; }
-    
-      if(App.role==="user"){
-        const age=Number(($("regAge")?.value||"").trim());
-        const city=($("regCity")?.value||"").trim();
-        const nick=($("regNick")?.value||"").trim();
-        if(!age||age<16){ showToast("Minimalny wiek to 16 lat."); return; }
-        if(!city||!nick){ showToast("Uzupełnij miasto i nick."); return; }
-        showToast("Konto utworzone (demo).");
-        go("S3_PROFILE_SETUP");
-      } else {
-        const company=($("regCompany")?.value||"").trim();
-        if(!company){ showToast("Podaj nazwę firmy/miejsca."); return; }
-        showToast("Konto organizatora utworzone (demo).");
-        go("S9_PARTNER");
-      }
-    }
-    
-    function finishProfileSetup(){ showToast("Profil zapisany (demo)."); go("S4_NEARBY"); }
-    function saveSettings(){ showToast("Zapisano ustawienia (demo)."); }
-    function savePartnerSettings(){ showToast("Zapisano organizatora (demo)."); }
-    function logout(){ App.navStack=["S0_WELCOME"]; showView("S0_WELCOME"); showToast("Wylogowano."); }
-    
-    function openMapMarker(type, idx){ showToast(`Marker: ${type} #${idx+1} (hook)`); }
-    function startChatFromProfile(){ showToast("Start czatu (hook)"); }
-    function addFriendFromProfile(){ showToast("Dodano do znajomych (hook)"); }
-    function openPersonMenu(){ showToast("Menu osoby (hook)"); }
-    
-    function sendChat(){ showToast("Wysłano (demo)"); }
-    function openChatMenu(){ showToast("Menu czatu (hook)"); }
-    
-    function setEventsTab(tab){ showToast(`Filtr: ${tab} (hook)`); }
-    function openEventMenu(){ showToast("Menu wydarzenia (hook)"); }
-    function toggleSaveEvent(){ showToast("Zapisano (hook)"); }
-    function toggleInterestedEvent(){ showToast("Zainteresowany (hook)"); }
-    function openChatWithOrganizer(){ showToast("Czat z organizatorem (hook)"); }
-    
-    function sendGroup(){ showToast("Wysłano do grupy (demo)"); }
-    function openGroupMenu(){ showToast("Menu grupy (hook)"); }
-    function openInviteFriendToGroup(){ openModal("Dodaj znajomego", `<div class="sectionSub">Hook backend: lista znajomych + invite.</div>`); }
-    
-    function publishPartnerEvent(){ showToast("Opublikowano (demo)."); }
-    function openGroupMenu(){ showToast("Menu grupy (hook)"); }
-    
-    /** ====== INIT ====== */
-    function init(){
-      selectRole("user");
-    
-      bindRange("regPrefAgeFrom","regPrefAgeFromVal");
-      bindRange("regPrefAgeTo","regPrefAgeToVal");
-      bindRange("setPrefAgeFrom","setPrefAgeFromVal");
-      bindRange("setPrefAgeTo","setPrefAgeToVal");
-    
-      bindTextareaCount("setupBio","bioCount");
-      bindTextareaCount("setBio","setBioCount");
-      bindTextareaCount("regOrgAbout","regOrgAboutCount");
-      bindTextareaCount("setOrgAbout","setOrgAboutCount");
-    
-      bindChips("regInterestInput","regInterestChips");
-      bindChips("interestInput","interestChips");
-      bindChips("setInterestInput","setInterestChips");
-    
-      const locBtn=$("btnUseLocation");
-      if(locBtn) locBtn.addEventListener("click", useLocation);
-    
-      showView(App.navStack[0]);
-    }
-    document.addEventListener("DOMContentLoaded", init);
-    </script>
-    
+</script> -->
+
+
+      <!-- === AUTH PANEL (MVP) === -->
+  <section id="auth-panel" style="margin-top: 24px; padding: 16px; border: 1px solid #ddd; border-radius: 12px;">
+    <h2>Auth (MVP)</h2>
+
+    <div style="display: grid; gap: 8px; max-width: 420px;">
+      <label>
+        Email
+        <input id="login-email" type="email" placeholder="email@example.com" autocomplete="email" style="width: 100%; padding: 8px;">
+      </label>
+
+      <label>
+        Hasło
+        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" style="width: 100%; padding: 8px;">
+      </label>
+
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button id="btn-login" type="button">Zaloguj</button>
+        <button id="btn-me" type="button">Pobierz /auth/me</button>
+        <button id="btn-logout" type="button">Wyloguj</button>
+      </div>
+
+      <pre id="auth-status" style="margin: 0; padding: 12px; background: #f7f7f7; border-radius: 8px; overflow:auto;">status: (brak)</pre>
+    </div>
+  </section>
+  <!-- === /AUTH PANEL (MVP) === -->
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+
     </body>
     </html>
     

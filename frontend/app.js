@@ -3,6 +3,19 @@ USLY — JS FINAL (v11) — SPÓJNY Z HTML v11 (PL ONLY)
 CEL: UI demo + przygotowanie pod backend (spójne ID, stan, hooki)
 ========================================================= */
 
+/* ------------------------- API Config -------------------------- */
+// Prod: ustawimy na URL backendu z Render (osobna domena)
+// Local: http://127.0.0.1:8001 (jak dziś uruchamiasz uvicorn)
+const API_BASE_URL =
+  window.USLY_API_BASE_URL ||
+  (location.hostname.includes("onrender.com")
+    ? "https://RENDER_BACKEND_URL_TU_WKLEIMY_PO_URUCHOMIENIU.onrender.com"
+    : "http://127.0.0.1:8001");
+
+// expose for api.js (plain scripts)
+window.API_BASE_URL = API_BASE_URL;
+
+
 /* ------------------------- App State -------------------------- */
 const App = {
   lang: "pl", // PL only (zgodnie z wymaganiem "brak wersji angielskiej")
@@ -405,24 +418,61 @@ function registerPrimary() {
   }
 
   if (App.role === "user") {
-    // UJEDNOLICONE ID: regCity
     const city = $("regCity")?.value?.trim();
-    const age = Number($("regAge")?.value || 0);
     const nick = $("regNick")?.value?.trim();
     const from = Number($("regPrefAgeFrom")?.value || 16);
     const to = Number($("regPrefAgeTo")?.value || 99);
 
-    if (!city || !nick || !age) {
-      toast("Uzupełnij wiek, miasto i nick");
+    const dobEl = $("regBirthDate");
+    const errEl = $("ageError");
+    const dob = (dobEl?.value || "").trim();
+
+    function showAgeError(msg) {
+      if (errEl) {
+        errEl.style.display = "block";
+        errEl.textContent = msg;
+      }
+      toast(msg);
+    }
+
+    function hideAgeError() {
+      if (errEl) errEl.style.display = "none";
+    }
+
+    if (!dob) {
+      showAgeError("Podaj datę urodzenia.");
+      return;
+    }
+
+    const birth = new Date(dob);
+    if (Number.isNaN(birth.getTime())) {
+      showAgeError("Nieprawidłowa data urodzenia.");
+      return;
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+
+    if (age < 16) {
+      showAgeError("Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.");
+      return;
+    }
+
+    hideAgeError();
+
+    if (!city || !nick) {
+      toast("Uzupełnij datę urodzenia, miasto i nick");
       return;
     }
 
     App.user.city = city;
     App.user.age = age;
+    App.user.dob = dob;
     App.user.nick = nick;
     App.user.prefAgeFrom = Math.min(from, to);
     App.user.prefAgeTo = Math.max(from, to);
-    // interests are managed by chips
   } else {
     const company = $("regCompany")?.value?.trim();
     const category = $("regCategory")?.value;
@@ -1632,425 +1682,142 @@ function init() {
   // Default: logged out
   $("appRoot")?.classList.toggle("isLoggedIn", App.isLoggedIn);
 
+  initAuthMvp();
   renderAll();
+}
+
+
+function initAuthMvp() {
+
+  console.log("AUTH MVP INIT");
+  const elEmail = document.getElementById("login-email");
+  const elPassword = document.getElementById("login-password");
+
+  const btnLogin = document.getElementById("btn-login");
+  const btnMe = document.getElementById("btn-me");
+  const btnLogout = document.getElementById("btn-logout");
+
+  const elStatus = document.getElementById("auth-status");
+
+  function setStatus(msg, obj = null) {
+    if (!elStatus) return;
+
+    if (obj) {
+      elStatus.textContent = msg + "\n" + JSON.stringify(obj, null, 2);
+    } else {
+      elStatus.textContent = msg;
+    }
+  }
+
+  function getToken() {
+    return localStorage.getItem("usly_token");
+  }
+
+  function setToken(token) {
+    localStorage.setItem("usly_token", token);
+  }
+
+  function clearToken() {
+    localStorage.removeItem("usly_token");
+  }
+
+  // Globalny auto-logout po 401/403 z apiFetch()
+  window.addEventListener("auth:logout", (e) => {
+      // api.js już czyści token, ale tu czyścimy też na wszelki wypadek
+      try { clearToken(); } catch (_) {}
+
+      const st = e && e.detail && e.detail.status ? e.detail.status : "?";
+      setStatus("⛔ Wylogowano automatycznie (HTTP " + st + ") — zaloguj się ponownie");
+    });
+
+  // --- LOGIN ---
+
+  if (btnLogin) {
+    btnLogin.addEventListener("click", async () => {
+
+      const email = elEmail?.value.trim();
+      const password = elPassword?.value.trim();
+
+      if (!email || !password) {
+        setStatus("❌ Podaj email i hasło");
+        return;
+      }
+
+      setStatus("⏳ Logowanie...");
+      try {
+        const data = await apiFetch("/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+        
+        if (!data?.success) {
+          setStatus("❌ " + (data?.message || "Login error"), data);
+          return;
+        }
+        const token = data.data.access_token;
+        
+        setToken(token);
+
+        setStatus("✅ Zalogowano. Token zapisany.");
+
+      } catch (err) {
+        console.error(err);
+        setStatus("❌ " + (err.userMessage || "Błąd logowania"));
+      }
+
+    });
+  }
+
+  // --- ME ---
+
+  if (btnMe) {
+      btnMe.addEventListener("click", async () => {
+
+        const token = getToken();
+
+        if (!token) {
+          setStatus("❌ Brak tokena — zaloguj się");
+          return;
+        }
+
+        setStatus("⏳ Pobieranie /auth/me...");
+
+        try {
+          const data = await apiFetch("/auth/me");
+          setStatus("✅ /auth/me OK", data);
+
+        } catch (err) {
+          console.error(err);
+
+          // 401/403 obsługuje apiFetch() -> emituje auth:logout i ustawia globalny komunikat
+          if (err && (err.status === 401 || err.status === 403)) {
+            return;
+          }
+
+          setStatus("❌ " + (err.userMessage || "Błąd"), err.data || err.message);
+        }
+
+      });
+    }
+
+    // --- LOGOUT ---
+
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => {
+      clearToken();
+      setStatus("👋 Wylogowano (token usunięty)");
+    });
+  }
+
 }
 
 // Run when DOM ready
 document.addEventListener("DOMContentLoaded", init);
-// === DODATEK: walidacja wieku 16+ ===
-(function () {
 
-  function calculateAge(birthDate) {
-    const today = new Date();
-    const birth = new Date(birthDate);
+// ===============================
+// AUTH MVP
+// ===============================
 
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  }
-
-  function blockIfUnder16() {
-    const birthInput = document.getElementById("regBirthDate");
-    const errorBox = document.getElementById("ageError");
-
-    if (!birthInput || !birthInput.value) return true;
-
-    const age = calculateAge(birthInput.value);
-
-    if (age < 16) {
-      errorBox.style.display = "block";
-      return false;
-    }
-
-    errorBox.style.display = "none";
-    return true;
-  }
-
-  // Reakcja natychmiast po zmianie daty
-  document.addEventListener("change", function (e) {
-    if (e.target && e.target.id === "regBirthDate") {
-      blockIfUnder16();
-    }
-  });
-
-  // Przechwycenie rejestracji (bez ingerencji w istniejący kod)
-  document.addEventListener("submit", function (e) {
-    const birthInput = document.getElementById("regBirthDate");
-    if (!birthInput) return;
-
-    if (!blockIfUnder16()) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, true);
-
-})();
-// === HOTFIX: data urodzenia (16+) dla registerPrimary() bez grzebania w istniejącym kodzie ===
-(function () {
-  function $(id) { return document.getElementById(id); }
-
-  function calcAgeFromDobISO(isoDate) {
-    const birth = new Date(isoDate);
-    if (Number.isNaN(birth.getTime())) return null;
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return age;
-  }
-
-  function ensureDobFieldInRegister() {
-    // Docelowe miejsce: sekcja użytkownika w rejestracji
-    const regUserBox = $("regUserBox");
-    if (!regUserBox) return;
-
-    // Jeśli już istnieje (bo wkleiłaś HTML), nic nie rób
-    if ($("regBirthDate")) return;
-
-    const wrap = document.createElement("div");
-    wrap.id = "ageCheckWrapper";
-    wrap.style.marginTop = "12px";
-    wrap.innerHTML = `
-      <label class="mt12"><strong>Data urodzenia *</strong></label>
-      <input type="date" id="regBirthDate" required />
-      <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
-        Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.
-      </div>
-    `;
-
-    // Wstawiamy na górze boxa usera (żeby było wysoko i widoczne)
-    regUserBox.insertBefore(wrap, regUserBox.firstChild);
-  }
-
-  function validateDobAndSyncAge() {
-    const dobEl = $("regBirthDate");
-    const errEl = $("ageError");
-    const ageEl = $("regAge"); // istniejące pole wieku w Twoim HTML
-
-    if (!dobEl) return { ok: true }; // jeśli nie ma pola, nie blokujemy (ale powinno być)
-    const dob = (dobEl.value || "").trim();
-
-    if (!dob) {
-      if (errEl) { errEl.style.display = "block"; errEl.textContent = "Podaj datę urodzenia."; }
-      return { ok: false };
-    }
-
-    const age = calcAgeFromDobISO(dob);
-    if (age === null) {
-      if (errEl) { errEl.style.display = "block"; errEl.textContent = "Nieprawidłowa data urodzenia."; }
-      return { ok: false };
-    }
-
-    if (age < 16) {
-      if (errEl) {
-        errEl.style.display = "block";
-        errEl.textContent = "Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.";
-      }
-      // Jeśli masz toast() w projekcie, pokaż też toast dla pewności
-      if (typeof toast === "function") toast("Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.");
-      return { ok: false, age };
-    }
-
-    if (errEl) errEl.style.display = "none";
-
-    // Twoja rejestracja używa regAge -> uzupełniamy automatycznie
-    if (ageEl) ageEl.value = String(age);
-
-    // Zachowaj to, co podał użytkownik (do późniejszego zapisu w backendzie)
-    try {
-      if (typeof App === "object" && App && App.user) App.user.dob = dob;
-    } catch (e) {}
-
-    return { ok: true, age, dob };
-  }
-
-  // 1) Upewnij się, że pole jest w ekranie rejestracji
-  // (po starcie i po każdej nawigacji/widoku – na wypadek renderów)
-  const ensure = () => {
-    ensureDobFieldInRegister();
-
-    const dobEl = $("regBirthDate");
-    if (dobEl && !dobEl.__ageHooked) {
-      dobEl.__ageHooked = true;
-      dobEl.addEventListener("change", validateDobAndSyncAge);
-      dobEl.addEventListener("input", validateDobAndSyncAge);
-    }
-  };
-
-  // odpalenie na start
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", ensure);
-  } else {
-    ensure();
-  }
-
-  // 2) Przechwyć rejestrację – bo u Ciebie to onclick registerPrimary()
-  const originalRegister = window.registerPrimary;
-  if (typeof originalRegister === "function") {
-    window.registerPrimary = function () {
-      ensure(); // na wypadek, gdyby widok się przełączył
-      const res = validateDobAndSyncAge();
-      if (!res.ok) return; // blokada <16 lub brak daty
-      return originalRegister.apply(this, arguments);
-    };
-  }
-
-  // 3) Jeśli używasz rejestracji społecznościowej, ona też wywołuje registerPrimary()
-  // (u Ciebie signupSocial -> registerPrimary) więc powyższe już to łapie. :contentReference[oaicite:2]{index=2}
-})();
-// === FIX: przenieś pole daty urodzenia do #regUserBox + walidacja 16+ ===
-(function () {
-  function $(id) { return document.getElementById(id); }
-
-  function calcAge(iso) {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return null;
-    const t = new Date();
-    let a = t.getFullYear() - d.getFullYear();
-    const m = t.getMonth() - d.getMonth();
-    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
-    return a;
-  }
-
-  function ensureDobInUserBox() {
-    const userBox = $("regUserBox");
-    if (!userBox) return;
-
-    // szukamy wrappera albo samego inputa
-    let wrap = $("ageCheckWrapper");
-    let dob = $("regBirthDate");
-
-    // jeśli nie ma nic — tworzymy
-    if (!dob) {
-      wrap = document.createElement("div");
-      wrap.id = "ageCheckWrapper";
-      wrap.style.marginTop = "12px";
-      wrap.innerHTML = `
-        <label class="mt12"><strong>Data urodzenia *</strong></label>
-        <input type="date" id="regBirthDate" required />
-        <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
-          Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.
-        </div>
-      `;
-      dob = wrap.querySelector("#regBirthDate");
-    }
-
-    // jeśli input jest, ale wrappera brak (bo wkleiłaś "luzem"), budujemy wrapper i owijamy
-    if (!wrap && dob) {
-      wrap = document.createElement("div");
-      wrap.id = "ageCheckWrapper";
-      wrap.style.marginTop = "12px";
-      const err = document.createElement("div");
-      err.id = "ageError";
-      err.style.display = "none";
-      err.style.color = "#d32f2f";
-      err.style.fontSize = "13px";
-      err.style.marginTop = "6px";
-      err.textContent = "Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.";
-      const lbl = document.createElement("label");
-      lbl.className = "mt12";
-      lbl.innerHTML = "<strong>Data urodzenia *</strong>";
-
-      // przenosimy dob do wrappera
-      const oldParent = dob.parentElement;
-      wrap.appendChild(lbl);
-      wrap.appendChild(dob);
-      wrap.appendChild(err);
-
-      // jeśli dob było w jakimś miejscu, usuń pusty stary rodzic tylko jeśli to ma sens (nie ruszamy layoutu agresywnie)
-      // (nic tu nie robimy, bo może to być duży blok)
-    }
-
-    // ustaw max = dzisiejsza data (żeby nie dało się wybrać przyszłości)
-    if (dob) {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, "0");
-      const dd = String(today.getDate()).padStart(2, "0");
-      dob.max = `${yyyy}-${mm}-${dd}`;
-    }
-
-    // najważniejsze: WRZUĆ (lub PRZENIEŚ) wrapper do regUserBox, nad pole wiek
-    const ageEl = $("regAge");
-    if (wrap && !userBox.contains(wrap)) {
-      if (ageEl && userBox.contains(ageEl)) userBox.insertBefore(wrap, ageEl);
-      else userBox.insertBefore(wrap, userBox.firstChild);
-    }
-  }
-
-  function validateDob() {
-    const dob = $("regBirthDate");
-    const err = $("ageError");
-    const ageEl = $("regAge");
-    if (!dob) return { ok: true };
-
-    if (!dob.value) {
-      if (err) { err.style.display = "block"; err.textContent = "Podaj datę urodzenia."; }
-      return { ok: false };
-    }
-
-    const age = calcAge(dob.value);
-    if (age === null) {
-      if (err) { err.style.display = "block"; err.textContent = "Nieprawidłowa data urodzenia."; }
-      return { ok: false };
-    }
-
-    if (age < 16) {
-      if (err) { err.style.display = "block"; err.textContent = "Nie możesz się zarejestrować – wymagane jest ukończone 16 lat."; }
-      if (typeof toast === "function") toast("Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.");
-      return { ok: false };
-    }
-
-    if (err) err.style.display = "none";
-
-    // Twoja rejestracja i tak czyta regAge, więc wypełniamy automatycznie
-    if (ageEl) ageEl.value = String(age);
-
-    // dowodowo: zapamiętaj co podał user (do backendu)
-    try { if (window.App && App.user) App.user.dob = dob.value; } catch (e) {}
-
-    return { ok: true };
-  }
-
-  function hook() {
-    ensureDobInUserBox();
-
-    const dob = $("regBirthDate");
-    if (dob && !dob.__hooked16) {
-      dob.__hooked16 = true;
-      dob.addEventListener("change", validateDob);
-      dob.addEventListener("input", validateDob);
-    }
-
-    const original = window.registerPrimary;
-    if (typeof original === "function" && !original.__wrapped16) {
-      function wrapped() {
-        ensureDobInUserBox();
-        const ok = validateDob().ok;
-        if (!ok) return;
-        return original.apply(this, arguments);
-      }
-      wrapped.__wrapped16 = true;
-      // oznaczamy też original żeby nie wrapować w pętli
-      original.__wrapped16 = true;
-      window.registerPrimary = wrapped;
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", hook);
-  } else {
-    hook();
-  }
-
-  // dodatkowo: po każdej nawigacji (u Ciebie jest go()/renderAll()) i tak DOM żyje, ale dla pewności odpalamy czasem
-  setTimeout(hook, 250);
-})();
-// === FINAL: ukrycie pola wieku (regAge), zostaje tylko data urodzenia ===
-(function () {
-  function hideAgeField() {
-    const ageInput = document.getElementById("regAge");
-    if (!ageInput) return;
-
-    // 1) zablokuj edycję
-    ageInput.readOnly = true;
-
-    // 2) ukryj wizualnie input
-    ageInput.style.display = "none";
-
-    // 3) spróbuj ukryć label (jeśli istnieje)
-    const label = ageInput.closest("label") || ageInput.previousElementSibling;
-    if (label && label.tagName === "LABEL") {
-      label.style.display = "none";
-    }
-
-    // 4) jeśli input jest w wrapperze (div), ukryj cały wrapper
-    const wrapper = ageInput.closest(".field, .form-group, .input-group, div");
-    if (wrapper) wrapper.style.display = "none";
-  }
-
-  function enforceDobAsSingleSource() {
-    const dob = document.getElementById("regBirthDate");
-    const age = document.getElementById("regAge");
-    if (!dob || !age) return;
-
-    // każda zmiana DOB → nadpisz wiek
-    dob.addEventListener("change", () => {
-      if (age.value) age.value = age.value; // wartość i tak jest ustawiana przez walidację
-    });
-  }
-
-  function run() {
-    hideAgeField();
-    enforceDobAsSingleSource();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
-  }
-
-  // na wypadek przełączania widoków (u Ciebie SPA)
-  setTimeout(run, 300);
-})();
-// === FIX: przywróć rejestrację i ukryj TYLKO pole regAge (bez psucia layoutu) ===
-(function () {
-  function showUpToRegUserBox(el) {
-    const stop = document.getElementById("regUserBox");
-    let cur = el;
-    while (cur && cur !== document.body) {
-      // cofamy ewentualne display:none ustawione wcześniej
-      if (cur.style && cur.style.display === "none") cur.style.display = "";
-      if (cur === stop) break;
-      cur = cur.parentElement;
-    }
-  }
-
-  function safeHideRegAge() {
-    const ageInput = document.getElementById("regAge");
-    if (!ageInput) return;
-
-    // 1) przywróć wszystko co mogło zostać ukryte przez wcześniejszy snippet
-    showUpToRegUserBox(ageInput);
-
-    // 2) znajdź label TYLKO jeśli jest powiązany z regAge
-    const label = document.querySelector('label[for="regAge"]') ||
-                  (ageInput.previousElementSibling && ageInput.previousElementSibling.tagName === "LABEL"
-                    ? ageInput.previousElementSibling
-                    : null);
-
-    if (label) {
-      label.style.display = "none"; // chowamy sam opis "Wiek"
-    }
-
-    // 3) Ukryj TYLKO input, ale nie jego kontenery (żeby nie zniknęły inne pola)
-    // Najbezpieczniej: zmień typ na hidden (nie rozwala układu)
-    ageInput.type = "hidden";
-    ageInput.required = false;
-    ageInput.readOnly = true;
-
-    // 4) Dla pewności usuń ewentualne style display:none z rodzica, jeśli ktoś je dostał
-    if (ageInput.parentElement && ageInput.parentElement.style.display === "none") {
-      ageInput.parentElement.style.display = "";
-    }
-  }
-
-  function run() {
-    safeHideRegAge();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
-  }
-
-  // U Ciebie widoki mogą się przełączać, więc jeszcze raz po chwili:
-  setTimeout(run, 250);
-  setTimeout(run, 800);
-})();
