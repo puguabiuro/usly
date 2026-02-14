@@ -207,30 +207,25 @@ app.mount("/uploads/static", StaticFiles(directory=str(UPLOADS_DIR)), name="uplo
 # =========================
 # Exceptions
 # =========================
-@dataclass
-class ApiException(Exception):
-    status_code: int
-    code: ErrorCode
-    message: str | None = None
-    details: object | None = None
+from exceptions import ApiException
+
 
 
 @app.exception_handler(ApiException)
 async def api_exception_handler(request: Request, exc: ApiException):
+    lang = request.headers.get("accept-language")
     return JSONResponse(
         status_code=exc.status_code,
-        content=fail(code=exc.code, message=exc.message, details=exc.details),
+        content=fail(code=exc.code, message=exc.message, details=exc.details, lang=lang),
     )
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    lang = request.headers.get("accept-language")
     return JSONResponse(
         status_code=500,
-        content=fail(
-            code=ErrorCode.INTERNAL_ERROR,
-            message="Wystpi nieoczekiwany bd serwera",
-        ),
+        content=fail(code=ErrorCode.INTERNAL_ERROR, lang=lang),
     )
 
 

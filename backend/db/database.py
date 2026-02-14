@@ -1,67 +1,44 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import annotations
 
+import os
+from pathlib import Path
+from typing import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-
-
-# Plik SQLite będzie utworzony w folderze backend/ jako: usly.db
-DATABASE_URL = "sqlite:///./backend/usly.db"
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.engine import Engine
 
 
 class Base(DeclarativeBase):
     pass
 
 
-# check_same_thread=False jest wymagane dla SQLite przy FastAPI (wielowątkowość)
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
+def _default_sqlite_url() -> str:
+    # backend/db/database.py -> backend/ is parents[1]
+    db_path = Path(__file__).resolve().parents[1] / "usly.db"
+    return f"sqlite:///{db_path.as_posix()}"
 
-SessionLocal = sessionmaker(
-    bind=engine,
-    autocommit=False,
-    autoflush=False,
-)
-def init_db() -> None:
-    # Import modeli tutaj, żeby SQLAlchemy je „zobaczyło”
-    from backend import models  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
-# --- Dependency: DB session (FastAPI Depends) ---
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-# === HOTFIX: stała ścieżka do SQLite w backend/usly.db + get_db ===
-from pathlib import Path
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+def get_database_url() -> str:
+    url = os.getenv("DATABASE_URL", "").strip()
+    return url or _default_sqlite_url()
 
-# jeśli Base nie istnieje w tym pliku, utwórz (bezpiecznie)
-try:
-    Base  # type: ignore[name-defined]
-except NameError:
-    from sqlalchemy.orm import declarative_base
-    Base = declarative_base()
 
-# db/database.py jest w: backend/db/database.py
-# więc backend/ to: parents[1]
-DB_PATH = Path(__file__).resolve().parents[1] / "usly.db"
-DATABASE_URL = f"sqlite:///{DB_PATH.as_posix()}"
+def make_engine(url: str) -> Engine:
+    # SQLite needs check_same_thread=False; Postgres does not.
+    if url.startswith("sqlite"):
+        return create_engine(url, connect_args={"check_same_thread": False})
+    return create_engine(url)
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+DATABASE_URL = get_database_url()
+engine = make_engine(DATABASE_URL)
 
-def get_db():
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+
+def get_db() -> Generator:
     db = SessionLocal()
     try:
         yield db

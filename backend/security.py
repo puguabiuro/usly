@@ -13,6 +13,8 @@ from passlib.exc import UnknownHashError
 
 from db.database import SessionLocal
 from models import User, UserStatus, AuditLog
+from error_codes import ErrorCode
+from exceptions import ApiException
 
 
 # =========================
@@ -97,7 +99,7 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> User:
     if not credentials or credentials.scheme.lower() != "bearer":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MISSING_TOKEN")
+        raise ApiException(status_code=401, code=ErrorCode.AUTH_REQUIRED)
 
     token = credentials.credentials
 
@@ -123,10 +125,10 @@ def get_current_user(
                 user_id = None
 
             _audit(db, action="TOKEN_EXPIRED", request=request, user_id=user_id, details=None)
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="TOKEN_EXPIRED")
+            raise ApiException(status_code=401, code=ErrorCode.AUTH_INVALID_TOKEN)
 
         except JWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="INVALID_TOKEN")
+            raise ApiException(status_code=401, code=ErrorCode.AUTH_INVALID_TOKEN)
 
         sub = payload.get("sub")
         if not sub:
