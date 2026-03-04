@@ -1,9 +1,30 @@
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from request_id_middleware import RequestIdMiddleware
 # -*- coding: utf-8 -*-
 
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# --- SENTRY (optional) ---
+# Enable by setting SENTRY_DSN in env (Render / local .env).
+# ENV can be: local | staging | prod
+import sentry_sdk
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+
+_SENTRY_DSN = os.getenv("SENTRY_DSN")
+_ENV = os.getenv("ENV", "local")
+if _SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=_SENTRY_DSN,
+        environment=_ENV,
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
+        send_default_pii=False,
+    )
 
 import json
 from dataclasses import dataclass
@@ -42,13 +63,21 @@ from models import (
 from schemas import EventCreate, EventUpdate, EventOut
 from security import (
     hash_password,
+require_role,
+create_access_token,
     verify_password,
     get_current_user,
-    require_role,
-    create_access_token,
 )
 
 app = FastAPI(title="USLY API")
+# Sentry middleware (enabled only when SENTRY_DSN is set)
+if _SENTRY_DSN:
+    app.add_middleware(SentryAsgiMiddleware)
+
+app.add_middleware(RequestIdMiddleware)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 # ---- CORS (prod: konkretna domena, bez '*') ----
 # Na Render ustawisz: FRONTEND_ORIGIN=https://usly-app.onrender.com
@@ -213,18 +242,54 @@ from exceptions import ApiException
 
 @app.exception_handler(ApiException)
 async def api_exception_handler(request: Request, exc: ApiException):
+    _rid = getattr(request.state, "request_id", None)
+    headers = {"x-request-id": _rid} if _rid else {}
     lang = request.headers.get("accept-language")
     return JSONResponse(
         status_code=exc.status_code,
+        headers=headers,
         content=fail(code=exc.code, message=exc.message, details=exc.details, lang=lang),
+    )
+
+
+
+from fastapi.exceptions import RequestValidationError
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    # language from headers (same as ApiException handler)
+    lang = request.headers.get("accept-language")
+
+    # Map known HTTPException.detail strings to ErrorCode, otherwise treat as INTERNAL_ERROR
+    code = ErrorCode.INTERNAL_ERROR
+    if isinstance(exc.detail, str):
+        try:
+            code = ErrorCode(exc.detail)
+        except Exception:
+            code = ErrorCode.INTERNAL_ERROR
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=fail(code=code, lang=lang),
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    lang = request.headers.get("accept-language")
+    return JSONResponse(
+        status_code=422,
+        content=fail(code=ErrorCode.VALIDATION_ERROR, details=exc.errors(), lang=lang),
     )
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    _rid = getattr(request.state, "request_id", None)
+    headers = {"x-request-id": _rid} if _rid else {}
     lang = request.headers.get("accept-language")
     return JSONResponse(
         status_code=500,
+        headers=headers,
         content=fail(code=ErrorCode.INTERNAL_ERROR, lang=lang),
     )
 
@@ -275,26 +340,25 @@ def _is_at_least_16(dob: date) -> bool:
 from schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
 
 
-@app.post("/auth/register", response_model=RegisterResponse)
-def register(payload: RegisterRequest):
-    # 16+
-    if not _is_at_least_16(payload.dob):
-        raise ApiException(status_code=403, code=ErrorCode.AGE_TOO_LOW)
-
-    # LEGAL  wymagane zgody
-    if not payload.accept_terms:
-        raise ApiException(status_code=422, code=ErrorCode.TERMS_REQUIRED)
-
+@app.post("/auth/register")
+@limiter.limit("3/minute")
+def register(request: Request, payload: RegisterRequest):
     db = SessionLocal()
     try:
+        # 16+
+        if not _is_at_least_16(payload.dob):
+            raise ApiException(status_code=403, code=ErrorCode.AGE_TOO_LOW)
+
+        # LEGAL — wymagane zgody
+        if not payload.accept_terms:
+            raise ApiException(status_code=422, code=ErrorCode.TERMS_REQUIRED)
+
         existing = db.query(User).filter(User.email == str(payload.email)).first()
         if existing:
             raise ApiException(status_code=409, code=ErrorCode.EMAIL_ALREADY_EXISTS)
 
-    # UWAGA: UserRole i UserStatus musz istnie w Twoim projekcie.
- 
-
-        role_value = UserRole.PARTNER.value if payload.role == "partner" else UserRole.USER.value
+        # UWAGA: UserRole i UserStatus muszą istnieć w Twoim projekcie.
+        role_value = "partner" if payload.role == "partner" else "user"
 
         user = User(
             email=str(payload.email),
@@ -319,6 +383,9 @@ def register(payload: RegisterRequest):
                 status=user.status,
             ).model_dump()
         )
+    except Exception as e:
+        print("REGISTER ERROR:", e)
+        raise
     finally:
         db.close()
 
@@ -370,7 +437,9 @@ class LoginRequest(BaseModel):
     password: str
 
 
+@limiter.limit("5/minute")
 @app.post("/auth/login")
+@limiter.limit("5/minute")
 def login(payload: LoginRequest, request: Request):
     db = SessionLocal()
     try:
@@ -1530,3 +1599,24 @@ def partner_event_stats(
         )
     finally:
         db.close()
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    _rid = getattr(request.state, "request_id", None)
+    headers = {"x-request-id": _rid} if _rid else {}
+    lang = request.headers.get("accept-language")
+    return JSONResponse(
+        status_code=429,
+        headers=headers,
+        content=fail(code=ErrorCode.RATE_LIMITED, lang=lang),
+    )
+
+from fastapi.responses import FileResponse
+
+@app.get("/api/legal/terms_pl")
+def get_terms_pl():
+    return FileResponse("legal/terms_pl.md")
+
+@app.get("/api/legal/terms_en")
+def get_terms_en():
+    return FileResponse("legal/terms_en.md")
