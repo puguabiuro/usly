@@ -33,3 +33,17 @@ typing_extensions==4.15.0
 uvicorn==0.40.0
 slowapi==0.1.9
 slowapi
+
+slowapi
+request-id-middleware
+python-dotenv
+sentry-sdk
+fastapi
+pydantic
+
+slowapi
+request-id-middleware
+python-dotenv
+sentry-sdk
+fastapi
+pydantic
