@@ -2,7 +2,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from .request_id_middleware import RequestIdMiddleware
+from request_id_middleware import RequestIdMiddleware
 # -*- coding: utf-8 -*-
 
 import os
