@@ -49,7 +49,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
 from backend.api_response import ok, fail
-from error_codes import ErrorCode
+from backend.error_codes import ErrorCode
 from db.database import SessionLocal
 from models import (
     User,
