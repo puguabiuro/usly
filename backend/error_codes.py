@@ -18,7 +18,23 @@ class ErrorCode(str, Enum):
 
     # --- GENERIC ---
     INTERNAL_ERROR = "INTERNAL_ERROR"
+    RATE_LIMITED = "RATE_LIMITED"
+
 
     # --- LOGIN ---
     INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
     ACCOUNT_INACTIVE = "ACCOUNT_INACTIVE"
+
+    EVENT_NOT_PUBLISHED = "EVENT_NOT_PUBLISHED"
+    ALREADY_JOINED = "ALREADY_JOINED"
+    NOT_JOINED = "NOT_JOINED"
+    FORBIDDEN_NOT_OWNER = "FORBIDDEN_NOT_OWNER"
+    INVALID_EVENT_DATES = "INVALID_EVENT_DATES"
+    INVALID_STATUS_TRANSITION = "INVALID_STATUS_TRANSITION"
+    INVALID_STATUS_FILTER = "INVALID_STATUS_FILTER"
+    INVALID_SORT = "INVALID_SORT"
+    invalid_file_type = "invalid_file_type"
+    file_too_large_max_5mb = "file_too_large_max_5mb"
+    age_min_must_be_lte_age_max = "age_min_must_be_lte_age_max"
+    interest_too_long_max_40 = "interest_too_long_max_40"
+    too_many_interests_max_20 = "too_many_interests_max_20"
