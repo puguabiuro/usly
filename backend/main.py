@@ -50,7 +50,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 from backend.api_response import ok, fail
 from backend.error_codes import ErrorCode
-from db.database import SessionLocal
+from backend.db.database import SessionLocal
 from models import (
     User,
     UserProfile,
