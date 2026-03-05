@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from error_codes import ErrorCode
+from backend.error_codes import ErrorCode
 from i18n import message_for
 
 
