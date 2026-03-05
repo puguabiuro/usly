@@ -48,7 +48,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
-from api_response import ok, fail
+from backend.api_response import ok, fail
 from error_codes import ErrorCode
 from db.database import SessionLocal
 from models import (
