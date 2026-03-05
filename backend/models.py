@@ -6,7 +6,7 @@ from enum import StrEnum
 from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from db.database import Base
+from backend.db.database import Base
 
 
 # =====================
