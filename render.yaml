@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: usly-backend-2
+    env: python
+    branch: master
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    envVars:
+      - key: SENTRY_DSN
+        value: "https://examplePublicKey@o0.ingest.sentry.io/0"
+      - key: ENV
+        value: "production"
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "1.0"
+      - key: FRONTEND_ORIGIN
+        value: "https://twoj-frontend.com"
+      - key: JWT_SECRET_KEY
+        value: "supersecretkey123456789"
+      - key: JWT_ALGORITHM
+        value: "HS256"
+      - key: JWT_EXPIRES_MINUTES
+        value: "60"
+      - key: LOG_LEVEL
+        value: "INFO"
