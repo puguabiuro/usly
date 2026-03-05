@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from error_codes import ErrorCode
+from backend.error_codes import ErrorCode
 
 
 @dataclass
