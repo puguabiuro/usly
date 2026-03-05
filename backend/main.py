@@ -51,7 +51,7 @@ from pydantic import BaseModel, EmailStr, Field
 from backend.api_response import ok, fail
 from backend.error_codes import ErrorCode
 from backend.db.database import SessionLocal
-from models import (
+from backend.models import (
     User,
     UserProfile,
     PartnerProfile,
@@ -60,8 +60,8 @@ from models import (
     EventSignup,
     UserStatus,
 )
-from schemas import EventCreate, EventUpdate, EventOut
-from security import (
+from backend.schemas import EventCreate, EventUpdate, EventOut
+from backend.security import (
     hash_password,
 require_role,
 create_access_token,
@@ -236,7 +236,7 @@ app.mount("/uploads/static", StaticFiles(directory=str(UPLOADS_DIR)), name="uplo
 # =========================
 # Exceptions
 # =========================
-from exceptions import ApiException
+from backend.exceptions import ApiException
 
 
 
@@ -337,7 +337,7 @@ def _is_at_least_16(dob: date) -> bool:
 # =========================
 # UWAGA: RegisterRequest/RegisterResponse musz istnie w Twoim projekcie.
 # Jeli masz je w innym pliku, zmie import tutaj.
-from schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
+from backend.schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
 
 
 @app.post("/auth/register")
