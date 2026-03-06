@@ -11,7 +11,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from models import Base  # noqa
+from backend.models import Base  # noqa
 
 target_metadata = Base.metadata
 
