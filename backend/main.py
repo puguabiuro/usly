@@ -576,6 +576,72 @@ def users_me(current_user: User = Depends(require_role("user"))):
         db.close()
 
 
+
+@app.get("/users/nearby")
+def users_nearby(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(User, UserProfile)
+            .join(UserProfile, UserProfile.user_id == User.id)
+            .filter(User.role == "user")
+            .filter(User.status == UserStatus.ACTIVE.value)
+            .filter(User.id != current_user.id)
+            .order_by(UserProfile.updated_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        total = (
+            db.query(User)
+            .join(UserProfile, UserProfile.user_id == User.id)
+            .filter(User.role == "user")
+            .filter(User.status == UserStatus.ACTIVE.value)
+            .filter(User.id != current_user.id)
+            .count()
+        )
+
+        items = []
+        for user, profile in rows:
+            zainteresowania = []
+            if profile.zainteresowania_json:
+                try:
+                    zainteresowania = json.loads(profile.zainteresowania_json) or []
+                except Exception:
+                    zainteresowania = []
+
+            items.append(
+                {
+                    "user_id": user.id,
+                    "nick": profile.nick,
+                    "miasto": profile.miasto,
+                    "bio": profile.bio,
+                    "zainteresowania": zainteresowania,
+                    "age_min": profile.age_min,
+                    "age_max": profile.age_max,
+                    "avatar_url": profile.avatar_url,
+                }
+            )
+
+        return ok(
+            {
+                "items": items,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "total": total,
+                },
+            }
+        )
+    finally:
+        db.close()
+
+
 # =========================
 # PROFILE  USER  PATCH /users/me
 # =========================
