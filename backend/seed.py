@@ -57,26 +57,46 @@ def _get_or_create_or_fix_user(
 
 
 def _seed_user_profiles(db):
-    user = db.query(User).filter(User.email == "user@test.com").first()
-    if not user:
-        print("SEED PROFILE: user not found")
-        return
+    profiles = [
+        {
+            "email": "user@test.com",
+            "nick": "Maja",
+            "miasto": "Warszawa",
+            "bio": "Lubie kawe i spacery",
+            "zainteresowania_json": '["kawa","joga","muzyka"]',
+        },
+        {
+            "email": "user2@test.com",
+            "nick": "Kasia",
+            "miasto": "Warszawa",
+            "bio": "Lubie psy i fotografie",
+            "zainteresowania_json": '["psy","fotografia","spacer"]',
+        },
+    ]
 
-    existing = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
-    if existing:
-        print("SEED PROFILE: already present")
-        return
+    for item in profiles:
+        user = db.query(User).filter(User.email == item["email"]).first()
+        if not user:
+            print(f'SEED PROFILE: user not found: {item["email"]}')
+            continue
 
-    profile = UserProfile(
-        user_id=user.id,
-        nick="Maja",
-        miasto="Warszawa",
-        bio="Lubie kawe i spacery",
-        zainteresowania_json='["kawa","joga","muzyka"]',
-    )
+        existing = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+        if existing:
+            print(f'SEED PROFILE: already present: {item["email"]}')
+            continue
 
-    db.add(profile)
-    print("SEED PROFILE: added")
+        profile = UserProfile(
+            user_id=user.id,
+            nick=item["nick"],
+            miasto=item["miasto"],
+            bio=item["bio"],
+            zainteresowania_json=item["zainteresowania_json"],
+        )
+
+        db.add(profile)
+        print(f'SEED PROFILE: added: {item["email"]}')
+
+
 def _seed_events(db):
     if db.query(Event).count() > 0:
         print("SEED EVENTS: already present")
@@ -129,6 +149,13 @@ def run_seed() -> None:
         _get_or_create_or_fix_user(
             db,
             email="user@test.com",
+            password="test12345",
+            role=UserRole.USER,
+        )
+
+        _get_or_create_or_fix_user(
+            db,
+            email="user2@test.com",
             password="test12345",
             role=UserRole.USER,
         )
