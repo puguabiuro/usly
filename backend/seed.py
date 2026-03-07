@@ -1,5 +1,7 @@
+from datetime import datetime, timedelta, UTC
+
 from backend.db.database import SessionLocal
-from backend.models import User, UserRole, UserStatus
+from backend.models import User, UserRole, UserStatus, Event, EventStatus
 from backend.security import hash_password
 
 
@@ -52,6 +54,46 @@ def _get_or_create_or_fix_user(
         print(f"SEED OK: {email}")
 
 
+
+def _seed_events(db):
+    if db.query(Event).count() > 0:
+        print("SEED EVENTS: already present")
+        return
+
+    partner = db.query(User).filter(User.email == "partner@test.com").first()
+    if not partner:
+        print("SEED EVENTS: partner not found")
+        return
+
+    now = datetime.now(UTC)
+
+    e1 = Event(
+        partner_user_id=partner.id,
+        title="City walk",
+        description="Walk and coffee",
+        city="Warszawa",
+        start_at=now + timedelta(days=2),
+        end_at=now + timedelta(days=2, hours=2),
+        capacity=20,
+        status=EventStatus.PUBLISHED.value,
+        pricing_type="free",
+    )
+
+    e2 = Event(
+        partner_user_id=partner.id,
+        title="Yoga in the park",
+        description="Morning yoga for beginners",
+        city="Warszawa",
+        start_at=now + timedelta(days=5),
+        end_at=now + timedelta(days=5, hours=1),
+        capacity=15,
+        status=EventStatus.PUBLISHED.value,
+        pricing_type="free",
+    )
+
+    db.add_all([e1, e2])
+    print("SEED EVENTS: added")
+
 def run_seed() -> None:
     db = SessionLocal()
     try:
@@ -75,6 +117,8 @@ def run_seed() -> None:
             password="test12345",
             role=UserRole.PARTNER,
         )
+
+        _seed_events(db)
 
         db.commit()
         print("SEED DONE")
