@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, UTC
 
 from backend.db.database import SessionLocal
-from backend.models import User, UserRole, UserStatus, Event, EventStatus
+from backend.models import User, UserRole, UserStatus, UserProfile, Event, EventStatus
 from backend.security import hash_password
 
 
@@ -55,6 +55,28 @@ def _get_or_create_or_fix_user(
 
 
 
+
+def _seed_user_profiles(db):
+    user = db.query(User).filter(User.email == "user@test.com").first()
+    if not user:
+        print("SEED PROFILE: user not found")
+        return
+
+    existing = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+    if existing:
+        print("SEED PROFILE: already present")
+        return
+
+    profile = UserProfile(
+        user_id=user.id,
+        nick="Maja",
+        miasto="Warszawa",
+        bio="Lubie kawe i spacery",
+        zainteresowania_json='["kawa","joga","muzyka"]',
+    )
+
+    db.add(profile)
+    print("SEED PROFILE: added")
 def _seed_events(db):
     if db.query(Event).count() > 0:
         print("SEED EVENTS: already present")
@@ -119,6 +141,7 @@ def run_seed() -> None:
         )
 
         _seed_events(db)
+        _seed_user_profiles(db)
 
         db.commit()
         print("SEED DONE")
