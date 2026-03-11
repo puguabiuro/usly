@@ -11,4 +11,6 @@ if [ -f ".env" ]; then
   set +a
 fi
 
-exec .venv/bin/uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}"
+venv/bin/alembic -c alembic.ini upgrade head
+
+exec venv/bin/uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}"
