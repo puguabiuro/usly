@@ -407,3 +407,51 @@ class EventSignup(Base):
     )
 
 
+
+# =====================
+# GROUPS
+# =====================
+
+class Group(Base):
+    __tablename__ = "groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    title: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
+    interest_tag: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+    )
+
+    members_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        CheckConstraint("members_count >= 0", name="ck_groups_members_count_non_negative"),
+    )

@@ -9,8 +9,8 @@ CEL: UI demo + przygotowanie pod backend (spójne ID, stan, hooki)
 const API_BASE_URL =
   window.USLY_API_BASE_URL ||
   (location.hostname.includes("onrender.com")
-    ? "https://RENDER_BACKEND_URL_TU_WKLEIMY_PO_URUCHOMIENIU.onrender.com"
-    : "http://127.0.0.1:8001");
+    ? "https://usly-backend-v2.onrender.com"
+    : "https://usly-backend-v2.onrender.com");
 
 // expose for api.js (plain scripts)
 window.API_BASE_URL = API_BASE_URL;
@@ -181,6 +181,16 @@ function go(viewId) {
 
   App.currentView = viewId;
   App.history.push(viewId);
+
+  if (viewId === "S10_SETTINGS") {
+    if ($("setNick")) $("setNick").value = App.user.nick || "";
+    if ($("setBio")) $("setBio").value = App.user.bio || "";
+    if ($("setCity")) $("setCity").value = App.user.city || "";
+    if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+    if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
+    safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom));
+    safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo));
+  }
 
   // Render after navigation
   renderAll();
@@ -355,26 +365,68 @@ function selectRole(role) {
 }
 
 /* ------------------------- Login / Signup (Demo) -------------------------- */
-function loginPrimary() {
-  // Demo login: mark logged in, route to suitable start screen
-  App.isLoggedIn = true;
-  $("appRoot")?.classList.add("isLoggedIn");
+async function loginPrimary() {
+  const email = $("loginId")?.value?.trim();
+  const password = $("loginPass")?.value?.trim();
 
-  updateTabbars();
+  if (!email || !password) {
+    toast("Podaj email i hasło");
+    return;
+  }
 
-  toast("Zalogowano (demo)");
-  if (App.role === "user") go("S4_NEARBY");
-  else go("S9_PARTNER");
+  try {
+    const data = await apiFetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!data?.success || !data?.data?.access_token) {
+      toast(data?.error?.message || "Błąd logowania");
+      return;
+    }
+
+    localStorage.setItem("usly_token", data.data.access_token);
+
+    const me = await apiFetch("/auth/me");
+    App.role = me?.role === "partner" ? "partner" : "user";
+    App.isLoggedIn = true;
+
+    if (App.role === "user") {
+      const profile = await apiFetch("/users/me");
+      if (profile?.success && profile?.data) {
+        App.user.nick = profile.data.nick || App.user.nick;
+        App.user.city = profile.data.miasto || App.user.city;
+        App.user.bio = profile.data.bio || "";
+        App.user.interests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
+        App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
+        App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
+      }
+    }
+
+    $("appRoot")?.classList.add("isLoggedIn");
+updateTabbars();
+
+if (App.role === "user") {
+  await Promise.all([loadNearbyPeople(), loadEvents(), loadGroups()]);
+}
+
+renderAll();
+
+toast("Zalogowano");
+if (App.role === "user") go("S4_NEARBY");
+else go("S9_PARTNER");
+  } catch (err) {
+    toast(err?.userMessage || "Błąd logowania");
+  }
 }
 
 function loginSocial(provider) {
-  toast(`Logowanie przez ${provider} (demo)`);
-  loginPrimary();
+  toast("Logowanie społecznościowe będzie dostępne wkrótce");
 }
 
 function signupSocial(provider) {
-  toast(`Rejestracja przez ${provider} (demo)`);
-  registerPrimary();
+  toast("Rejestracja społecznościowa będzie dostępna wkrótce");
 }
 
 function logout() {
@@ -401,7 +453,7 @@ function openForgot() {
 }
 
 /* ------------------------- Registration -------------------------- */
-function registerPrimary() {
+async function registerPrimary() {
   const terms = $("acceptTerms")?.checked;
   const rodo = $("acceptRodo")?.checked;
   if (!terms || !rodo) {
@@ -409,13 +461,14 @@ function registerPrimary() {
     return;
   }
 
-  // User vs Partner required fields (demo)
   const email = $("regEmail")?.value?.trim();
   const pass = $("regPass")?.value?.trim();
   if (!email || !pass || pass.length < 8) {
     toast("Uzupełnij email i hasło (min. 8 znaków)");
     return;
   }
+
+  let dob = "";
 
   if (App.role === "user") {
     const city = $("regCity")?.value?.trim();
@@ -425,7 +478,7 @@ function registerPrimary() {
 
     const dobEl = $("regBirthDate");
     const errEl = $("ageError");
-    const dob = (dobEl?.value || "").trim();
+    dob = (dobEl?.value || "").trim();
 
     function showAgeError(msg) {
       if (errEl) {
@@ -477,25 +530,66 @@ function registerPrimary() {
     const company = $("regCompany")?.value?.trim();
     const category = $("regCategory")?.value;
     const city = $("regCityPartner")?.value;
+    const dobEl = $("regBirthDatePartner");
+    dob = (dobEl?.value || "").trim();
+
+    if (!dob) {
+      toast("Podaj datę urodzenia.");
+      return;
+    }
+
     if (!company || !city) {
       toast("Uzupełnij nazwę i miasto organizatora");
       return;
     }
+
     App.partner.company = company;
     App.partner.category = category || "inne";
     App.partner.city = city || "Warszawa";
     App.partner.about = $("regOrgAbout")?.value?.trim() || "";
   }
 
-  App.isLoggedIn = true;
-  $("appRoot")?.classList.add("isLoggedIn");
-  updateTabbars();
+  try {
+    const data = await apiFetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password: pass,
+        dob,
+        role: App.role === "partner" ? "partner" : "user",
+        accept_terms: true,
+      }),
+    });
 
-  toast("Konto utworzone (demo)");
+    if (!data?.success || !data?.data?.id) {
+      toast(data?.error?.message || "Nie udało się utworzyć konta");
+      return;
+    }
 
-  // After registration go to setup or dashboard
-  if (App.role === "user") go("S3_PROFILE_SETUP");
-  else go("S9_PARTNER");
+    const loginData = await apiFetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pass }),
+    });
+
+    if (!loginData?.success || !loginData?.data?.access_token) {
+      toast("Konto utworzone, ale nie udało się zalogować automatycznie");
+      go("S1_LOGIN");
+      return;
+    }
+
+    localStorage.setItem("usly_token", loginData.data.access_token);
+    App.isLoggedIn = true;
+    $("appRoot")?.classList.add("isLoggedIn");
+    updateTabbars();
+
+    toast("Konto utworzone i zalogowano");
+    if (App.role === "user") go("S3_PROFILE_SETUP");
+    else go("S9_PARTNER");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się utworzyć konta");
+  }
 }
 
 /* ------------------------- Plans -------------------------- */
@@ -548,18 +642,46 @@ function setPartnerPlan(plan) {
 }
 
 /* ------------------------- Settings -------------------------- */
-function saveSettings() {
-  App.user.nick = $("setNick")?.value?.trim() || App.user.nick;
-  App.user.bio = $("setBio")?.value?.trim() || "";
-  App.user.city = $("setCity")?.value?.trim() || App.user.city;
+async function saveSettings() {
+  const nick = $("setNick")?.value?.trim() || App.user.nick;
+  const bio = $("setBio")?.value?.trim() || "";
+  const city = $("setCity")?.value?.trim() || App.user.city;
 
   const f = Number($("setPrefAgeFrom")?.value || App.user.prefAgeFrom);
   const t = Number($("setPrefAgeTo")?.value || App.user.prefAgeTo);
-  App.user.prefAgeFrom = Math.min(f, t);
-  App.user.prefAgeTo = Math.max(f, t);
+  const ageMin = Math.min(f, t);
+  const ageMax = Math.max(f, t);
 
-  toast("Zapisano ustawienia (demo)");
-  renderAll();
+  try {
+    const data = await apiFetch("/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nick: nick,
+        miasto: city,
+        bio: bio,
+        zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+        age_min: ageMin,
+        age_max: ageMax,
+      }),
+    });
+
+    if (!data?.success || !data?.data) {
+      toast(data?.error?.message || "Nie udało się zapisać ustawień");
+      return;
+    }
+
+    App.user.nick = data.data.nick || nick;
+    App.user.bio = data.data.bio || bio;
+    App.user.city = data.data.miasto || city;
+    App.user.prefAgeFrom = data.data.age_min ?? ageMin;
+    App.user.prefAgeTo = data.data.age_max ?? ageMax;
+
+    toast("Zapisano ustawienia");
+    renderAll();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się zapisać ustawień");
+  }
 }
 
 function savePartnerSettings() {
@@ -574,21 +696,11 @@ function savePartnerSettings() {
 
 /* ------------------------- Terms / Privacy -------------------------- */
 function openTerms() {
-  openModal("Regulamin", `
-    <div class="tStrong">Regulamin (podgląd)</div>
-    <div class="sectionSub mt10">
-      Tu w backendzie/produkcie wstawimy prawdziwy regulamin. Wersja demo.
-    </div>
-  `);
+  window.open("legal/terms_pl.docx", "_blank");
 }
 
 function openRodo() {
-  openModal("Polityka prywatności", `
-    <div class="tStrong">Polityka prywatności (podgląd)</div>
-    <div class="sectionSub mt10">
-      Tu w backendzie/produkcie wstawimy prawdziwą politykę prywatności. Wersja demo.
-    </div>
-  `);
+  window.open("legal/privacy_pl.docx", "_blank");
 }
 
 /* ------------------------- Avatar / Photo hooks -------------------------- */
@@ -612,13 +724,33 @@ function openAvatarAI() {
 }
 
 /* ------------------------- Profile Setup -------------------------- */
-function finishProfileSetup() {
-  // Save setup fields if exist
-  App.user.city = $("setupCity")?.value || App.user.city;
-  App.user.bio = $("setupBio")?.value?.trim() || App.user.bio;
+async function finishProfileSetup() {
+  const city = $("setupCity")?.value || App.user.city;
+  const bio = $("setupBio")?.value?.trim() || "";
 
-  toast("Profil zapisany (demo)");
-  go("S4_NEARBY");
+  try {
+    const data = await apiFetch("/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        miasto: city,
+        bio: bio,
+      }),
+    });
+
+    if (!data?.success || !data?.data) {
+      toast(data?.error?.message || "Nie udało się zapisać profilu");
+      return;
+    }
+
+    App.user.city = data.data.miasto || city;
+    App.user.bio = data.data.bio || bio;
+
+    toast("Profil zapisany");
+    go("S4_NEARBY");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się zapisać profilu");
+  }
 }
 
 /* ------------------------- Nearby / Map -------------------------- */
@@ -1592,6 +1724,97 @@ function priceLabel(ev) {
   return "0 zł";
 }
 
+function mapApiPersonToViewModel(p) {
+  return {
+    id: String(p.user_id),
+    nick: p.nick || "Uzytkownik",
+    city: p.miasto || "",
+    age: p.age_min || p.age_max || 0,
+    emoji: "🙂",
+    interests: Array.isArray(p.zainteresowania) ? p.zainteresowania : [],
+    bio: p.bio || "",
+    avatarUrl: p.avatar_url || "",
+  };
+}
+
+function mapApiGroupToViewModel(g) {
+  return {
+    id: String(g.id),
+    title: g.title || "Grupa",
+    interestTag: g.interest_tag || "",
+    members: Number(g.members_count || 0),
+    desc: g.description || "",
+  };
+}
+
+function mapApiEventToViewModel(e) {
+  const start = e?.start_at ? new Date(e.start_at) : null;
+  const when =
+    start && !Number.isNaN(start.getTime())
+      ? start.toLocaleString("pl-PL", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Termin wkrótce";
+
+  return {
+    id: String(e.id),
+    title: e.title || "Wydarzenie",
+    city: e.city || "",
+    when: when,
+    where: e.city || "",
+    interest: "wydarzenie",
+    desc: e.description || "",
+    paidMode: e.pricing_type || "free",
+    price: typeof e.price_fixed === "number" ? Math.round(e.price_fixed / 100) : null,
+    priceFrom: typeof e.price_min === "number" ? Math.round(e.price_min / 100) : null,
+    priceTo: typeof e.price_max === "number" ? Math.round(e.price_max / 100) : null,
+    ticketLink: e.payment_link || "#",
+    saved: false,
+    interested: false,
+    organizer: { id: String(e.partner_user_id || ""), name: "Organizator" },
+  };
+}
+
+
+async function loadNearbyPeople() {
+  try {
+    const data = await apiFetch("/users/nearby?limit=20");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.people = items.map(mapApiPersonToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadNearbyPeople failed", err);
+    return false;
+  }
+}
+
+async function loadEvents() {
+  try {
+    const data = await apiFetch("/events?limit=20");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.events = items.map(mapApiEventToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadEvents failed", err);
+    return false;
+  }
+}
+
+async function loadGroups() {
+  try {
+    const data = await apiFetch("/groups?limit=20");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.groups = items.map(mapApiGroupToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadGroups failed", err);
+    return false;
+  }
+}
+
 /* ------------------------- Render All -------------------------- */
 function renderAll() {
   // Keep role labels consistent
@@ -1612,10 +1835,7 @@ function renderAll() {
   const userAvatar = $("userAvatar");
   if (userAvatar) userAvatar.textContent = App.user.avatarEmoji || "🙂";
 
-  // Fill settings inputs (only if present)
-  if ($("setNick")) $("setNick").value = App.user.nick || "";
-  if ($("setBio")) $("setBio").value = App.user.bio || "";
-  if ($("setCity")) $("setCity").value = App.user.city || "";
+  // Fill settings inputs moved out of renderAll to avoid overwriting unsaved form edits
 
   // Settings range values
   if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
@@ -1681,9 +1901,11 @@ function init() {
 
   // Default: logged out
   $("appRoot")?.classList.toggle("isLoggedIn", App.isLoggedIn);
+  // initAuthMvp(); // martwy debug auth flow
 
-  initAuthMvp();
-  renderAll();
+  Promise.all([loadNearbyPeople(), loadEvents(), loadGroups()]).finally(() => {
+    renderAll();
+  });
 }
 
 

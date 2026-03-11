@@ -59,6 +59,7 @@ from backend.models import (
     AuditLog,
     EventSignup,
     UserStatus,
+    Group,
 )
 from backend.schemas import EventCreate, EventUpdate, EventOut
 from backend.security import (
@@ -1667,6 +1668,75 @@ def partner_event_stats(
         )
     finally:
         db.close()
+
+@app.get("/groups")
+def list_groups(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    db = SessionLocal()
+    try:
+        q = db.query(Group)
+
+        total = q.count()
+
+        groups = (
+            q.order_by(Group.members_count.desc(), Group.id.asc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        items = []
+        for g in groups:
+            items.append(
+                {
+                    "id": g.id,
+                    "title": g.title,
+                    "description": g.description,
+                    "interest_tag": g.interest_tag,
+                    "members_count": g.members_count,
+                    "created_at": g.created_at,
+                    "updated_at": g.updated_at,
+                }
+            )
+
+        return ok(
+            {
+                "items": items,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "total": total,
+                },
+            }
+        )
+    finally:
+        db.close()
+
+
+@app.get("/groups/{group_id}")
+def get_group_details(group_id: int):
+    db = SessionLocal()
+    try:
+        g = db.query(Group).filter(Group.id == group_id).first()
+        if not g:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        return ok(
+            {
+                "id": g.id,
+                "title": g.title,
+                "description": g.description,
+                "interest_tag": g.interest_tag,
+                "members_count": g.members_count,
+                "created_at": g.created_at,
+                "updated_at": g.updated_at,
+            }
+        )
+    finally:
+        db.close()
+
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):

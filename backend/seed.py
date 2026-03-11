@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, UTC
 
 from backend.db.database import SessionLocal
-from backend.models import User, UserRole, UserStatus, UserProfile, Event, EventStatus
+from backend.models import User, UserRole, UserStatus, UserProfile, Event, EventStatus, Group
 from backend.security import hash_password
 
 
@@ -32,7 +32,6 @@ def _get_or_create_or_fix_user(
 
     changed = False
 
-    # role/status poprawiamy „do porządku”
     if existing.role != role.value:
         existing.role = role.value
         changed = True
@@ -41,7 +40,6 @@ def _get_or_create_or_fix_user(
         existing.status = UserStatus.ACTIVE.value
         changed = True
 
-    # jeśli hash nie wygląda jak bcrypt (np. TEST_HASH), to go naprawiamy
     if not _looks_like_bcrypt(existing.password_hash):
         existing.password_hash = hash_password(password)
         changed = True
@@ -52,8 +50,6 @@ def _get_or_create_or_fix_user(
         print(f"SEED UPDATE: {email}")
     else:
         print(f"SEED OK: {email}")
-
-
 
 
 def _seed_user_profiles(db):
@@ -136,6 +132,49 @@ def _seed_events(db):
     db.add_all([e1, e2])
     print("SEED EVENTS: added")
 
+
+def _seed_groups(db):
+    if db.query(Group).count() > 0:
+        print("SEED GROUPS: already present")
+        return
+
+    groups = [
+        Group(
+            title="Kawosze Warszawa",
+            description="Nowe kawiarnie, spotkania, degustacje.",
+            interest_tag="kawa",
+            members_count=128,
+        ),
+        Group(
+            title="Kino i seriale",
+            description="Polecajki, seanse, dyskusje.",
+            interest_tag="kino",
+            members_count=214,
+        ),
+        Group(
+            title="Spacery i miasta",
+            description="Trasy, parki, małe odkrycia.",
+            interest_tag="spacer",
+            members_count=92,
+        ),
+        Group(
+            title="AI & Tech",
+            description="Nowinki, projekty, dyskusje.",
+            interest_tag="AI",
+            members_count=301,
+        ),
+        Group(
+            title="Fotografia",
+            description="Kadry, sprzęt, sesje.",
+            interest_tag="fotografia",
+            members_count=175,
+        ),
+    ]
+
+    db.add_all(groups)
+    print("SEED GROUPS: added")
+
+
 def run_seed() -> None:
     db = SessionLocal()
     try:
@@ -167,8 +206,11 @@ def run_seed() -> None:
             role=UserRole.PARTNER,
         )
 
+        db.flush()
+
         _seed_events(db)
         _seed_user_profiles(db)
+        _seed_groups(db)
 
         db.commit()
         print("SEED DONE")
