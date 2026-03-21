@@ -60,8 +60,11 @@ from backend.models import (
     EventSignup,
     UserStatus,
     Group,
+    GroupMembership,
+    Message,
+    Friendship,
 )
-from backend.schemas import EventCreate, EventUpdate, EventOut
+from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, MessageOut
 from backend.security import (
     hash_password,
 require_role,
@@ -86,10 +89,14 @@ app.add_middleware(SlowAPIMiddleware)
 frontend_origin = os.getenv("FRONTEND_ORIGIN", "")
 
 allowed_origins = [
+    "null",  # allow file:// frontend
+
     "http://127.0.0.1:5173",
     "http://localhost:5173",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
+    "http://127.0.0.1:5501",
+    "http://localhost:5501",
 ]
 
 if frontend_origin:
@@ -98,8 +105,8 @@ if frontend_origin:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -327,12 +334,12 @@ def crash_test():
     1 / 0
 
 
-def _is_at_least_16(dob: date) -> bool:
+def _is_at_least_18(dob: date) -> bool:
     today = date.today()
     years = today.year - dob.year
     if (today.month, today.day) < (dob.month, dob.day):
         years -= 1
-    return years >= 16
+    return years >= 18
 
 
 # =========================
@@ -348,8 +355,8 @@ from backend.schemas import RegisterRequest, RegisterResponse  # <- jeli masz gd
 def register(request: Request, payload: RegisterRequest):
     db = SessionLocal()
     try:
-        # 16+
-        if not _is_at_least_16(payload.dob):
+        # 18+
+        if not _is_at_least_18(payload.dob):
             raise ApiException(status_code=403, code=ErrorCode.AGE_TOO_LOW)
 
         # LEGAL — wymagane zgody
@@ -404,7 +411,7 @@ def get_terms():
             "version": "v1",
             "content": (
                 "Regulamin USLY v1\n\n"
-                "1. Serwis przeznaczony jest wycznie dla osb, ktre ukoczyy 16 lat.\n"
+                "1. Serwis przeznaczony jest wyłącznie dla osób, które ukończyły 18 lat.\n"
                 "2. Uytkownik zobowizuje si do podawania prawdziwych danych.\n"
                 "3. Szczegowe warunki korzystania zostan uzupenione.\n"
             ),
@@ -435,12 +442,18 @@ def get_privacy():
 # =========================
 # AUTH  LOGIN
 # =========================
+
+class CreateGroupRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=120)
+    description: str | None = Field(default=None, max_length=600)
+    interest_tag: str = Field(min_length=2, max_length=50)
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    expected_role: str | None = None
 
 
-@limiter.limit("5/minute")
 @app.post("/auth/login")
 @limiter.limit("5/minute")
 def login(payload: LoginRequest, request: Request):
@@ -460,6 +473,16 @@ def login(payload: LoginRequest, request: Request):
         if not verify_password(payload.password, user.password_hash):
             _audit(db, action="LOGIN_FAIL", request=request, user_id=user.id, details=f"email={email}")
             raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
+
+        if payload.expected_role and user.role != payload.expected_role:
+            _audit(
+                db,
+                action="LOGIN_FAIL_ROLE_MISMATCH",
+                request=request,
+                user_id=user.id,
+                details=f"email={email}, expected_role={payload.expected_role}, actual_role={user.role}",
+            )
+            raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
 
         access_token = create_access_token(user.id)
 
@@ -504,6 +527,76 @@ def auth_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "role": current_user.role,
     }
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+# =========================
+# AUTH  CHANGE PASSWORD
+# =========================
+@app.post("/auth/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not verify_password(payload.current_password, user.password_hash):
+            _audit(db, action="CHANGE_PASSWORD_FAIL", request=request, user_id=current_user.id, details="invalid_current_password")
+            raise HTTPException(status_code=400, detail="CURRENT_PASSWORD_INVALID")
+
+        if payload.current_password == payload.new_password:
+            raise HTTPException(status_code=400, detail="NEW_PASSWORD_SAME_AS_CURRENT")
+
+        user.password_hash = hash_password(payload.new_password)
+        db.add(user)
+        db.commit()
+
+        _audit(db, action="CHANGE_PASSWORD_SUCCESS", request=request, user_id=current_user.id, details=None)
+        return ok({"changed": True})
+    finally:
+        db.close()
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=8, max_length=128)
+
+
+# =========================
+# AUTH  DELETE ACCOUNT (SOFT DELETE)
+# =========================
+@app.post("/auth/delete-account")
+def delete_account(
+    payload: DeleteAccountRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not verify_password(payload.password, user.password_hash):
+            _audit(db, action="DELETE_ACCOUNT_FAIL", request=request, user_id=current_user.id, details="invalid_password")
+            raise HTTPException(status_code=400, detail="PASSWORD_INVALID")
+
+        user.status = UserStatus.DELETED.value
+        db.add(user)
+        db.commit()
+
+        _audit(db, action="DELETE_ACCOUNT_SUCCESS", request=request, user_id=current_user.id, details=None)
+        return ok({"deleted": True})
+    finally:
+        db.close()
+
 
 
 # =========================
@@ -571,10 +664,15 @@ def users_me(current_user: User = Depends(require_role("user"))):
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
                 "avatar_url": profile.avatar_url,
+                "plan": profile.plan,
+                "plan_source": profile.plan_source,
+                "plan_status": profile.plan_status,
+                "plan_updated_at": profile.plan_updated_at,
             }
         )
     finally:
         db.close()
+
 
 
 
@@ -586,6 +684,44 @@ def users_nearby(
 ):
     db = SessionLocal()
     try:
+        def calc_age(dob: date | None) -> int | None:
+            if not dob:
+                return None
+            today = date.today()
+            years = today.year - dob.year
+            if (today.month, today.day) < (dob.month, dob.day):
+                years -= 1
+            return years
+
+        def norm_city(v: str | None) -> str:
+            return (v or "").strip().lower()
+
+        def norm_tags(raw) -> set[str]:
+            if not raw:
+                return set()
+            if isinstance(raw, str):
+                try:
+                    raw = json.loads(raw)
+                except Exception:
+                    raw = []
+            if not isinstance(raw, list):
+                return set()
+            return {
+                str(x).strip().lower()
+                for x in raw
+                if str(x).strip()
+            }
+
+        my_profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+        if not my_profile:
+            return ok({"items": [], "pagination": {"limit": limit, "offset": offset, "total": 0}})
+
+        my_city = norm_city(my_profile.miasto)
+        my_tags = norm_tags(my_profile.zainteresowania_json)
+        my_age = calc_age(current_user.dob)
+        my_pref_min = my_profile.age_min
+        my_pref_max = my_profile.age_max
+
         rows = (
             db.query(User, UserProfile)
             .join(UserProfile, UserProfile.user_id == User.id)
@@ -593,41 +729,64 @@ def users_nearby(
             .filter(User.status == UserStatus.ACTIVE.value)
             .filter(User.id != current_user.id)
             .order_by(UserProfile.updated_at.desc())
-            .offset(offset)
-            .limit(limit)
             .all()
         )
 
-        total = (
-            db.query(User)
-            .join(UserProfile, UserProfile.user_id == User.id)
-            .filter(User.role == "user")
-            .filter(User.status == UserStatus.ACTIVE.value)
-            .filter(User.id != current_user.id)
-            .count()
-        )
-
-        items = []
+        matched_items = []
         for user, profile in rows:
-            zainteresowania = []
-            if profile.zainteresowania_json:
-                try:
-                    zainteresowania = json.loads(profile.zainteresowania_json) or []
-                except Exception:
-                    zainteresowania = []
+            other_city = norm_city(profile.miasto)
+            if my_city and other_city and my_city != other_city:
+                continue
 
-            items.append(
+            other_tags = norm_tags(profile.zainteresowania_json)
+            shared_tags = sorted(my_tags & other_tags)
+            if not shared_tags:
+                continue
+
+            other_age = calc_age(user.dob)
+            other_pref_min = profile.age_min
+            other_pref_max = profile.age_max
+
+            if my_age is None or other_age is None:
+                continue
+
+            # ja akceptuję drugą osobę
+            if my_pref_min is not None and other_age < my_pref_min:
+                continue
+            if my_pref_max is not None and other_age > my_pref_max:
+                continue
+
+            # druga osoba akceptuje mnie
+            if other_pref_min is not None and my_age < other_pref_min:
+                continue
+            if other_pref_max is not None and my_age > other_pref_max:
+                continue
+
+            matched_items.append(
                 {
                     "user_id": user.id,
                     "nick": profile.nick,
                     "miasto": profile.miasto,
                     "bio": profile.bio,
-                    "zainteresowania": zainteresowania,
+                    "zainteresowania": sorted(other_tags),
+                    "shared_zainteresowania": shared_tags,
+                    "shared_count": len(shared_tags),
+                    "age": other_age,
                     "age_min": profile.age_min,
                     "age_max": profile.age_max,
                     "avatar_url": profile.avatar_url,
                 }
             )
+
+        matched_items.sort(
+            key=lambda x: (
+                -int(x.get("shared_count") or 0),
+                x.get("nick") or "",
+            )
+        )
+
+        total = len(matched_items)
+        items = matched_items[offset:offset + limit]
 
         return ok(
             {
@@ -643,6 +802,59 @@ def users_nearby(
         db.close()
 
 
+@app.get("/users/{user_id}")
+def users_profile_by_id(
+    user_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        profile_row = (
+            db.query(User, UserProfile)
+            .join(UserProfile, UserProfile.user_id == User.id)
+            .filter(User.id == user_id)
+            .filter(User.role == "user")
+            .filter(User.status == UserStatus.ACTIVE.value)
+            .first()
+        )
+
+        if not profile_row:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user, profile = profile_row
+
+        zainteresowania = []
+        if profile.zainteresowania_json:
+            try:
+                zainteresowania = json.loads(profile.zainteresowania_json) or []
+            except Exception:
+                zainteresowania = []
+
+        age = None
+        if user.dob:
+            today = date.today()
+            age = today.year - user.dob.year
+            if (today.month, today.day) < (user.dob.month, user.dob.day):
+                age -= 1
+
+        return ok(
+            {
+                "user_id": user.id,
+                "nick": profile.nick,
+                "miasto": profile.miasto,
+                "bio": profile.bio,
+                "zainteresowania": zainteresowania,
+                "age": age,
+                "age_min": profile.age_min,
+                "age_max": profile.age_max,
+                "avatar_url": profile.avatar_url,
+            }
+        )
+    finally:
+        db.close()
+
+
+
 # =========================
 # PROFILE  USER  PATCH /users/me
 # =========================
@@ -654,6 +866,7 @@ class UserMePatch(BaseModel):
     age_min: Optional[int] = Field(default=None, ge=16, le=120)
     age_max: Optional[int] = Field(default=None, ge=16, le=120)
     avatar_url: Optional[str] = Field(default=None)
+    plan: Optional[str] = Field(default=None)
 
 
 def _trim(s: Optional[str]) -> Optional[str]:
@@ -711,13 +924,34 @@ def users_me_patch(
                     raise HTTPException(status_code=422, detail="interest_too_long_max_40")
                 cleaned.append(t)
 
-            if len(cleaned) > 20:
-                raise HTTPException(status_code=422, detail="too_many_interests_max_20")
+            interest_limits = {
+                "free": 5,
+                "plus": 10,
+                "premium": 20,
+                "vip": None,
+            }
+
+            current_plan = payload.plan if payload.plan is not None else profile.plan
+            current_plan = (current_plan or "free").lower()
+            interest_limit = interest_limits.get(current_plan, 5)
+
+            if interest_limit is not None and len(cleaned) > interest_limit:
+                raise HTTPException(
+                    status_code=422,
+                    detail="too_many_interests_max_20",
+                )
 
             profile.zainteresowania_json = json.dumps(cleaned, ensure_ascii=False)
 
         if payload.avatar_url is not None:
             profile.avatar_url = _trim(payload.avatar_url)
+
+        if payload.plan is not None:
+            allowed_plans = {"free", "plus", "premium", "vip"}
+            if payload.plan not in allowed_plans:
+                raise HTTPException(status_code=422, detail="INVALID_PLAN")
+            profile.plan = payload.plan
+            profile.plan_updated_at = datetime.utcnow()
 
         profile.updated_at = datetime.utcnow()
 
@@ -742,6 +976,10 @@ def users_me_patch(
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
                 "avatar_url": profile.avatar_url,
+                "plan": profile.plan,
+                "plan_source": profile.plan_source,
+                "plan_status": profile.plan_status,
+                "plan_updated_at": profile.plan_updated_at,
             }
         )
     finally:
@@ -999,6 +1237,8 @@ def partner_create_event(
             title=payload.title,
             description=payload.description,
             city=payload.city,
+            where=payload.where,
+            interest_tag=payload.interest_tag,
             start_at=_to_utc_naive(payload.start_at),
             end_at=_to_utc_naive(payload.end_at),
             capacity=payload.capacity,
@@ -1020,6 +1260,8 @@ def partner_create_event(
                 title=event.title,
                 description=event.description,
                 city=event.city,
+                where=event.where,
+                interest_tag=event.interest_tag,
                 start_at=event.start_at,
                 end_at=event.end_at,
                 capacity=event.capacity,
@@ -1080,6 +1322,10 @@ def partner_update_event(
             event.description = payload.description
         if payload.city is not None:
             event.city = payload.city
+        if payload.where is not None:
+            event.where = payload.where
+        if payload.interest_tag is not None:
+            event.interest_tag = payload.interest_tag
         if payload.start_at is not None:
             event.start_at = _to_utc_naive(payload.start_at)
         if payload.end_at is not None:
@@ -1116,6 +1362,8 @@ def partner_update_event(
                 title=event.title,
                 description=event.description,
                 city=event.city,
+                where=event.where,
+                interest_tag=event.interest_tag,
                 start_at=event.start_at,
                 end_at=event.end_at,
                 capacity=event.capacity,
@@ -1229,10 +1477,16 @@ def list_events(
     date: Optional[date] = None,
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
 ):
     db = SessionLocal()
     try:
-        q = db.query(Event).filter(Event.status == "published")
+        now_utc = datetime.utcnow()
+        q = (
+            db.query(Event)
+            .filter(Event.status == "published")
+            .filter(Event.end_at >= now_utc)
+        )
 
         if city is not None and city.strip() != "":
             q = q.filter(Event.city == city.strip())
@@ -1243,17 +1497,60 @@ def list_events(
             q = q.filter(Event.start_at >= start_dt)
             q = q.filter(Event.start_at <= end_dt)
 
-        total = q.count()
-
-        events = (
-            q.order_by(Event.start_at.asc())
-            .limit(limit)
-            .offset(offset)
-            .all()
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
         )
 
-        items = []
+        raw_interests = []
+        if profile and profile.zainteresowania_json:
+            try:
+                raw_interests = json.loads(profile.zainteresowania_json) or []
+            except Exception:
+                raw_interests = []
+
+        def norm_tag(value: str | None) -> str:
+            if not value:
+                return ""
+            v = value.strip().lower()
+            aliases = {
+                "foto": "fotografia",
+                "photo": "fotografia",
+                "film": "kino",
+                "movies": "kino",
+                "movie": "kino",
+                "tech": "ai",
+                "startup": "biznes",
+                "startups": "biznes",
+            }
+            return aliases.get(v, v)
+
+        user_interest_set = {norm_tag(x) for x in raw_interests if x and str(x).strip()}
+
+        events = q.all()
+        scored = []
+
         for e in events:
+            event_tag = norm_tag(e.interest_tag)
+            score = 1 if event_tag and event_tag in user_interest_set else 0
+            scored.append((score, e))
+
+        scored.sort(key=lambda x: (-x[0], x[1].start_at, x[1].id))
+        total = len(scored)
+        paged = scored[offset:offset + limit]
+
+        items = []
+        for score, e in paged:
+            signups_count = (
+                db.query(EventSignup)
+                .filter(EventSignup.event_id == e.id)
+                .count()
+            )
+            spots_left = None
+            if e.capacity is not None:
+                spots_left = max(e.capacity - signups_count, 0)
+
             items.append(
                 {
                     "id": e.id,
@@ -1261,9 +1558,13 @@ def list_events(
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
+                    "where": e.where,
+                    "interest_tag": e.interest_tag,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
                     "capacity": e.capacity,
+                    "signups_count": signups_count,
+                    "spots_left": spots_left,
                     "status": e.status,
                     "created_at": e.created_at,
                     "updated_at": e.updated_at,
@@ -1273,6 +1574,7 @@ def list_events(
                     "price_min": e.price_min,
                     "price_max": e.price_max,
                     "payment_link": e.payment_link,
+                    "_score": score,
                 }
             )
 
@@ -1306,6 +1608,15 @@ def get_event_details(event_id: int):
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
+        signups_count = (
+            db.query(EventSignup)
+            .filter(EventSignup.event_id == event.id)
+            .count()
+        )
+        spots_left = None
+        if event.capacity is not None:
+            spots_left = max(event.capacity - signups_count, 0)
+
         return ok(
             {
                 "id": event.id,
@@ -1313,9 +1624,12 @@ def get_event_details(event_id: int):
                 "title": event.title,
                 "description": event.description,
                 "city": event.city,
+                "interest_tag": event.interest_tag,
                 "start_at": event.start_at,
                 "end_at": event.end_at,
                 "capacity": event.capacity,
+                "signups_count": signups_count,
+                "spots_left": spots_left,
                 "status": event.status,
                 "created_at": event.created_at,
                 "updated_at": event.updated_at,
@@ -1417,6 +1731,7 @@ def partner_list_events(
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
+                    "interest_tag": e.interest_tag,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
                     "capacity": e.capacity,
@@ -1470,6 +1785,7 @@ def partner_get_event_details(
                 "title": event.title,
                 "description": event.description,
                 "city": event.city,
+                "interest_tag": event.interest_tag,
                 "start_at": event.start_at,
                 "end_at": event.end_at,
                 "capacity": event.capacity,
@@ -1630,6 +1946,63 @@ def partner_event_participants(
 # EVENTS  PARTNER: STATS
 # GET /partners/events/{id}/stats
 # =========================
+
+@app.get("/partners/dashboard/stats")
+def partner_dashboard_stats(
+    current_user: User = Depends(require_role("partner")),
+):
+    db = SessionLocal()
+    try:
+        now_utc = datetime.utcnow()
+
+        events = (
+            db.query(Event)
+            .filter(Event.partner_user_id == current_user.id)
+            .all()
+        )
+
+        draft_events = sum(1 for e in events if (e.status or "").lower() == "draft")
+
+        active_events = [
+            e for e in events
+            if (e.status or "").lower() == "published" and e.end_at is not None and e.end_at >= now_utc
+        ]
+
+        total_events = len(active_events)
+
+        active_event_ids = [e.id for e in active_events]
+        total_signups = 0
+        if active_event_ids:
+            total_signups = (
+                db.query(EventSignup)
+                .filter(EventSignup.event_id.in_(active_event_ids))
+                .count()
+            )
+
+        free_spots = 0
+        for e in active_events:
+            if e.capacity is None:
+                continue
+            signups_count = (
+                db.query(EventSignup)
+                .filter(EventSignup.event_id == e.id)
+                .count()
+            )
+            free_spots += max(e.capacity - signups_count, 0)
+
+        return ok(
+            {
+                "total_events": total_events,
+                "draft_events": draft_events,
+                "total_signups": total_signups,
+                "free_spots": free_spots,
+                "plan": current_user.plan if hasattr(current_user, "plan") else None,
+            }
+        )
+    finally:
+        db.close()
+
+
 @app.get("/partners/events/{event_id}/stats")
 def partner_event_stats(
     event_id: int,
@@ -1666,6 +2039,543 @@ def partner_event_stats(
                 "spots_left": spots_left,
             }
         )
+    finally:
+        db.close()
+
+
+class FriendRequestCreate(BaseModel):
+    addressee_user_id: int
+
+
+class FriendRequestRespond(BaseModel):
+    action: str = Field(pattern="^(accepted|rejected)$")
+
+
+# =========================
+# MESSAGES — PRIVATE (MVP TESTERSKI)
+# =========================
+@app.post("/messages/private")
+def send_private_message(
+    payload: PrivateMessageCreate,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        if payload.recipient_user_id == current_user.id:
+            raise HTTPException(status_code=422, detail="CANNOT_MESSAGE_SELF")
+
+        recipient = db.query(User).filter(User.id == payload.recipient_user_id).first()
+        if not recipient:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        msg = Message(
+            sender_user_id=current_user.id,
+            recipient_user_id=payload.recipient_user_id,
+            content=payload.content.strip(),
+            is_read=False,
+        )
+        db.add(msg)
+        db.commit()
+        db.refresh(msg)
+
+        return ok(
+            MessageOut(
+                id=msg.id,
+                sender_user_id=msg.sender_user_id,
+                recipient_user_id=msg.recipient_user_id,
+                group_id=msg.group_id,
+                content=msg.content,
+                created_at=msg.created_at,
+            ).model_dump()
+        )
+    finally:
+        db.close()
+
+
+@app.get("/messages/private/{user_id}")
+def list_private_messages(
+    user_id: int,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        other_user = db.query(User).filter(User.id == user_id).first()
+        if not other_user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        q = db.query(Message).filter(
+            Message.group_id.is_(None),
+            (
+                ((Message.sender_user_id == current_user.id) & (Message.recipient_user_id == user_id)) |
+                ((Message.sender_user_id == user_id) & (Message.recipient_user_id == current_user.id))
+            )
+        )
+
+        db.query(Message).filter(
+            Message.group_id.is_(None),
+            Message.sender_user_id == user_id,
+            Message.recipient_user_id == current_user.id,
+            Message.is_read.is_(False),
+        ).update(
+            {Message.is_read: True},
+            synchronize_session=False,
+        )
+        db.commit()
+
+        total = q.count()
+        rows = (
+            q.order_by(Message.created_at.asc(), Message.id.asc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        items = [
+            MessageOut(
+                id=m.id,
+                sender_user_id=m.sender_user_id,
+                recipient_user_id=m.recipient_user_id,
+                group_id=m.group_id,
+                content=m.content,
+                created_at=m.created_at,
+            ).model_dump()
+            for m in rows
+        ]
+
+        return ok({
+            "items": items,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "total": total,
+            },
+        })
+    finally:
+        db.close()
+
+
+
+@app.get("/messages/private")
+def list_private_conversations(
+    limit: int = Query(100, ge=1, le=500),
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(Message)
+            .filter(
+                Message.group_id.is_(None),
+                (
+                    (Message.sender_user_id == current_user.id) |
+                    (Message.recipient_user_id == current_user.id)
+                )
+            )
+            .order_by(Message.created_at.desc(), Message.id.desc())
+            .all()
+        )
+
+        latest_by_other_user_id = {}
+        for m in rows:
+            other_user_id = (
+                m.recipient_user_id
+                if m.sender_user_id == current_user.id
+                else m.sender_user_id
+            )
+            if other_user_id is None:
+                continue
+            if other_user_id not in latest_by_other_user_id:
+                latest_by_other_user_id[other_user_id] = m
+
+        other_user_ids = list(latest_by_other_user_id.keys())
+        users = (
+            db.query(User)
+            .filter(User.id.in_(other_user_ids))
+            .all()
+            if other_user_ids else []
+        )
+        user_profiles = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id.in_(other_user_ids))
+            .all()
+            if other_user_ids else []
+        )
+        partner_profiles = (
+            db.query(PartnerProfile)
+            .filter(PartnerProfile.user_id.in_(other_user_ids))
+            .all()
+            if other_user_ids else []
+        )
+
+        users_by_id = {u.id: u for u in users}
+        user_profiles_by_user_id = {p.user_id: p for p in user_profiles}
+        partner_profiles_by_user_id = {p.user_id: p for p in partner_profiles}
+
+        unread_counts = {}
+        unread_rows = (
+            db.query(Message.recipient_user_id, Message.sender_user_id)
+            .filter(
+                Message.group_id.is_(None),
+                Message.recipient_user_id == current_user.id,
+                Message.is_read.is_(False),
+            )
+            .all()
+        )
+        for _, sender_user_id in unread_rows:
+            if sender_user_id is None:
+                continue
+            unread_counts[sender_user_id] = unread_counts.get(sender_user_id, 0) + 1
+
+        items = []
+        for other_user_id, m in latest_by_other_user_id.items():
+            other = users_by_id.get(other_user_id)
+            user_profile = user_profiles_by_user_id.get(other_user_id)
+            partner_profile = partner_profiles_by_user_id.get(other_user_id)
+
+            role = getattr(other, "role", None)
+            if role == "partner":
+                display_name = (
+                    getattr(partner_profile, "nazwa", None)
+                    or getattr(user_profile, "nick", None)
+                )
+            else:
+                display_name = (
+                    getattr(user_profile, "nick", None)
+                    or getattr(partner_profile, "nazwa", None)
+                )
+
+            items.append({
+                "other_user_id": other_user_id,
+                "other_user_name": (
+                    display_name
+                    or getattr(other, "email", None)
+                    or f"Użytkownik #{other_user_id}"
+                ),
+                "last_message": m.content,
+                "last_message_at": m.created_at,
+                "unread_count": int(unread_counts.get(other_user_id, 0)),
+            })
+
+        items.sort(
+            key=lambda x: (
+                x["last_message_at"].isoformat()
+                if x["last_message_at"] else ""
+            ),
+            reverse=True,
+        )
+
+        return ok({
+            "items": items[:limit],
+            "pagination": {
+                "limit": limit,
+                "total": len(items),
+            },
+        })
+    finally:
+        db.close()
+
+
+
+
+# =========================
+# FRIENDSHIPS / FRIEND REQUESTS
+# =========================
+@app.post("/friends/requests")
+def create_friend_request(
+    payload: FriendRequestCreate,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        if payload.addressee_user_id == current_user.id:
+            raise HTTPException(status_code=422, detail="CANNOT_ADD_SELF")
+
+        target = db.query(User).filter(User.id == payload.addressee_user_id, User.role == "user").first()
+        if not target:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        existing = db.query(Friendship).filter(
+            ((Friendship.requester_user_id == current_user.id) & (Friendship.addressee_user_id == payload.addressee_user_id)) |
+            ((Friendship.requester_user_id == payload.addressee_user_id) & (Friendship.addressee_user_id == current_user.id))
+        ).first()
+
+        if existing:
+            return ok({
+                "id": existing.id,
+                "status": existing.status,
+                "requester_user_id": existing.requester_user_id,
+                "addressee_user_id": existing.addressee_user_id,
+            })
+
+        fr = Friendship(
+            requester_user_id=current_user.id,
+            addressee_user_id=payload.addressee_user_id,
+            status="pending",
+        )
+        db.add(fr)
+        db.commit()
+        db.refresh(fr)
+
+        return ok({
+            "id": fr.id,
+            "status": fr.status,
+            "requester_user_id": fr.requester_user_id,
+            "addressee_user_id": fr.addressee_user_id,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/friends/requests")
+def list_friend_requests(
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        incoming_rows = (
+            db.query(Friendship, UserProfile)
+            .join(UserProfile, UserProfile.user_id == Friendship.requester_user_id, isouter=True)
+            .filter(
+                Friendship.addressee_user_id == current_user.id,
+                Friendship.status == "pending",
+            )
+            .order_by(Friendship.created_at.desc(), Friendship.id.desc())
+            .all()
+        )
+
+        outgoing_rows = (
+            db.query(Friendship, UserProfile)
+            .join(UserProfile, UserProfile.user_id == Friendship.addressee_user_id, isouter=True)
+            .filter(
+                Friendship.requester_user_id == current_user.id,
+                Friendship.status == "pending",
+            )
+            .order_by(Friendship.created_at.desc(), Friendship.id.desc())
+            .all()
+        )
+
+        incoming = [
+            {
+                "id": fr.id,
+                "status": fr.status,
+                "created_at": fr.created_at.isoformat() if fr.created_at else None,
+                "user": {
+                    "id": fr.requester_user_id,
+                    "nick": profile.nick if profile and profile.nick else "Użytkownik",
+                    "city": profile.miasto if profile else "",
+                    "avatar_url": profile.avatar_url if profile else "",
+                },
+            }
+            for fr, profile in incoming_rows
+        ]
+
+        outgoing = [
+            {
+                "id": fr.id,
+                "status": fr.status,
+                "created_at": fr.created_at.isoformat() if fr.created_at else None,
+                "user": {
+                    "id": fr.addressee_user_id,
+                    "nick": profile.nick if profile and profile.nick else "Użytkownik",
+                    "city": profile.miasto if profile else "",
+                    "avatar_url": profile.avatar_url if profile else "",
+                },
+            }
+            for fr, profile in outgoing_rows
+        ]
+
+        return ok({
+            "incoming": incoming,
+            "outgoing": outgoing,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/friends/requests/{request_id}/respond")
+def respond_friend_request(
+    request_id: int,
+    payload: FriendRequestRespond,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        fr = db.query(Friendship).filter(
+            Friendship.id == request_id,
+            Friendship.addressee_user_id == current_user.id,
+            Friendship.status == "pending",
+        ).first()
+
+        if not fr:
+            raise HTTPException(status_code=404, detail="FRIEND_REQUEST_NOT_FOUND")
+
+        fr.status = payload.action
+        fr.responded_at = datetime.utcnow()
+        db.add(fr)
+        db.commit()
+        db.refresh(fr)
+
+        return ok({
+            "id": fr.id,
+            "status": fr.status,
+            "requester_user_id": fr.requester_user_id,
+            "addressee_user_id": fr.addressee_user_id,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/friends")
+def list_friends(
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(Friendship)
+            .filter(
+                Friendship.status == "accepted",
+                (
+                    (Friendship.requester_user_id == current_user.id) |
+                    (Friendship.addressee_user_id == current_user.id)
+                )
+            )
+            .order_by(Friendship.created_at.desc(), Friendship.id.desc())
+            .all()
+        )
+
+        friend_ids = [
+            fr.addressee_user_id if fr.requester_user_id == current_user.id else fr.requester_user_id
+            for fr in rows
+        ]
+
+        profiles = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id.in_(friend_ids))
+            .all()
+            if friend_ids else []
+        )
+        profiles_by_user_id = {p.user_id: p for p in profiles}
+
+        items = []
+        for fid in friend_ids:
+            profile = profiles_by_user_id.get(fid)
+            items.append({
+                "id": fid,
+                "nick": profile.nick if profile and profile.nick else "Użytkownik",
+                "city": profile.miasto if profile else "",
+                "avatar_url": profile.avatar_url if profile else "",
+            })
+
+        return ok({"items": items})
+    finally:
+        db.close()
+
+
+# =========================
+# GROUPS MY
+# =========================
+
+# =========================
+@app.get("/groups/my")
+def list_my_groups(
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        memberships = (
+            db.query(GroupMembership, Group)
+            .join(Group, GroupMembership.group_id == Group.id)
+            .filter(GroupMembership.user_id == current_user.id)
+            .all()
+        )
+
+        items = []
+
+        for m, g in memberships:
+            items.append(
+                {
+                    "id": g.id,
+                    "title": g.title,
+                    "description": g.description,
+                    "interest_tag": g.interest_tag,
+                    "members_count": g.members_count,
+                    "joined_at": m.joined_at,
+                }
+            )
+
+        return ok({"items": items})
+
+    finally:
+        db.close()
+
+
+# =========================
+# GROUP CREATE
+# =========================
+@app.post("/groups")
+def create_group(
+    payload: CreateGroupRequest,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+
+        if not profile:
+            raise HTTPException(status_code=400, detail="PROFILE_NOT_FOUND")
+
+        # limit tworzenia grup wg planu
+        create_limits = {
+            "free": 0,
+            "plus": 1,
+            "premium": 3,
+            "vip": None,
+        }
+
+        limit = create_limits.get(profile.plan, 0)
+
+        if limit is not None:
+            created_count = (
+                db.query(Group)
+                .filter(Group.creator_id == current_user.id)
+                .count()
+            )
+
+            if created_count >= limit:
+                raise HTTPException(status_code=400, detail="GROUP_CREATE_LIMIT_REACHED")
+
+        g = Group(
+            creator_id=current_user.id,
+            title=payload.title,
+            description=payload.description,
+            interest_tag=payload.interest_tag,
+        )
+
+        db.add(g)
+        db.commit()
+        db.refresh(g)
+
+        # creator automatycznie dołącza
+        m = GroupMembership(
+            user_id=current_user.id,
+            group_id=g.id,
+            role="owner",
+        )
+
+        db.add(m)
+        g.members_count = 1
+
+        db.commit()
+
+        return ok({"id": g.id})
+
     finally:
         db.close()
 
@@ -1711,6 +2621,202 @@ def list_groups(
                 },
             }
         )
+    finally:
+        db.close()
+
+
+
+# =========================
+# GROUP JOIN
+# =========================
+@app.post("/groups/{group_id}/join")
+def join_group(
+    group_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        g = db.query(Group).filter(Group.id == group_id).first()
+        if not g:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+
+        if not profile:
+            raise HTTPException(status_code=400, detail="PROFILE_NOT_FOUND")
+
+        # sprawdź czy już jest w grupie
+        existing = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.user_id == current_user.id,
+                GroupMembership.group_id == group_id,
+            )
+            .first()
+        )
+
+        if existing:
+            return ok({"msg": "ALREADY_MEMBER"})
+
+        # limit planu
+        plan_limits = {
+            "free": 1,
+            "plus": 3,
+            "premium": None,
+            "vip": None,
+        }
+
+        limit = plan_limits.get(profile.plan, 1)
+
+        if limit is not None:
+            count = (
+                db.query(GroupMembership)
+                .filter(GroupMembership.user_id == current_user.id)
+                .count()
+            )
+
+            if count >= limit:
+                raise HTTPException(status_code=400, detail="GROUP_LIMIT_REACHED")
+
+        m = GroupMembership(
+            user_id=current_user.id,
+            group_id=group_id,
+        )
+
+        db.add(m)
+
+        g.members_count += 1
+
+        db.commit()
+
+        return ok({"joined": True})
+
+    finally:
+        db.close()
+
+
+
+# =========================
+# GROUP LEAVE
+# =========================
+@app.post("/groups/{group_id}/leave")
+def leave_group(
+    group_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        g = db.query(Group).filter(Group.id == group_id).first()
+        if not g:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.user_id == current_user.id,
+                GroupMembership.group_id == group_id,
+            )
+            .first()
+        )
+
+        if not membership:
+            return ok({"left": False, "msg": "NOT_A_MEMBER"})
+
+        db.delete(membership)
+
+        if g.members_count > 0:
+            g.members_count -= 1
+
+        db.commit()
+
+        return ok({"left": True})
+
+    finally:
+        db.close()
+
+
+
+@app.get("/groups/suggested")
+def list_suggested_groups(
+    current_user: User = Depends(require_role("user")),
+    limit: int = Query(20, ge=1, le=100),
+):
+    db = SessionLocal()
+    try:
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+        if not profile:
+            raise HTTPException(status_code=400, detail="PROFILE_NOT_FOUND")
+
+        raw_interests = []
+        if profile.zainteresowania_json:
+            try:
+                raw_interests = json.loads(profile.zainteresowania_json) or []
+            except Exception:
+                raw_interests = []
+
+        def norm_tag(value: str | None) -> str:
+            if not value:
+                return ""
+            v = value.strip().lower()
+            aliases = {
+                "foto": "fotografia",
+                "photo": "fotografia",
+                "film": "kino",
+                "movies": "kino",
+                "movie": "kino",
+                "tech": "ai",
+                "startup": "biznes",
+                "startups": "biznes",
+            }
+            return aliases.get(v, v)
+
+        user_interest_set = {norm_tag(x) for x in raw_interests if x and str(x).strip()}
+        joined_group_ids = {
+            row[0]
+            for row in db.query(GroupMembership.group_id)
+            .filter(GroupMembership.user_id == current_user.id)
+            .all()
+        }
+
+        groups = db.query(Group).all()
+
+        scored = []
+        for g in groups:
+            if g.id in joined_group_ids:
+                continue
+
+            group_tag = norm_tag(g.interest_tag)
+            score = 1 if group_tag and group_tag in user_interest_set else 0
+
+            scored.append(
+                {
+                    "id": g.id,
+                    "title": g.title,
+                    "description": g.description,
+                    "interest_tag": g.interest_tag,
+                    "members_count": g.members_count,
+                    "created_at": g.created_at,
+                    "updated_at": g.updated_at,
+                    "_score": score,
+                }
+            )
+
+        scored.sort(key=lambda x: (-x["_score"], -x["members_count"], x["id"]))
+
+        items = []
+        for item in scored[:limit]:
+            item.pop("_score", None)
+            items.append(item)
+
+        return ok({"items": items})
     finally:
         db.close()
 

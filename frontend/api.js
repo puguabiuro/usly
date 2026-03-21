@@ -1,8 +1,9 @@
 /**
  * USLY - API helper (plain JS, bez bundlera)
- * Cel: jedno miejsce do fetch + obsługa 401/403 + spójne błędy
+ * Cel: jedno miejsce do fetch + obsługa błędów auth + spójne błędy
  *
- * - Jeśli backend zwróci 401/403 -> czyścimy token i emitujemy event "auth:logout"
+ * - Jeśli backend zwróci 401 -> czyścimy token i emitujemy event "auth:logout"
+ * - Jeśli backend zwróci 403 -> NIE czyścimy tokena (to brak uprawnień, nie wylogowanie)
  * - Jeśli response nie-OK -> rzucamy błąd z .status i .data
  */
 
@@ -60,7 +61,7 @@
       err.userMessage = humanizeError(0, null);
       throw err;
     }
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
       const data = await readJsonSafe(res);
       clearToken();
       emitLogout(res.status, data);
@@ -68,7 +69,17 @@
       const err = new Error("Unauthorized");
       err.status = res.status;
       err.data = data;
-        err.userMessage = humanizeError(res.status, data);
+      err.userMessage = humanizeError(res.status, data);
+      throw err;
+    }
+
+    if (res.status === 403) {
+      const data = await readJsonSafe(res);
+
+      const err = new Error("Forbidden");
+      err.status = res.status;
+      err.data = data;
+      err.userMessage = humanizeError(res.status, data);
       throw err;
     }
 
@@ -98,13 +109,15 @@
     pl: {
     INVALID_TOKEN: "Twoja sesja wygasła. Zaloguj się ponownie.",
     INVALID_CREDENTIALS: "Nieprawidłowy email lub hasło.",
-      UNAUTHORIZED: "Brak dostępu. Zaloguj się ponownie.",
+    INSUFFICIENT_ROLE: "To konto należy do innego typu profilu. Wybierz właściwy typ logowania: Towarzysz lub Organizator.",
+      UNAUTHORIZED: "To konto zostało usunięte albo nie masz już do niego dostępu.",
       NETWORK_ERROR: "Błąd sieci lub backend jest offline.",
       UNKNOWN_ERROR: "Coś poszło nie tak. Spróbuj ponownie.",
     },
     en: {
     INVALID_TOKEN: "Your session has expired. Please log in again.",
     INVALID_CREDENTIALS: "Invalid email or password.",
+    INSUFFICIENT_ROLE: "This account belongs to a different profile type. Log in from the correct screen.",
       UNAUTHORIZED: "Unauthorized. Please log in again.",
       NETWORK_ERROR: "Network error or backend is offline.",
       UNKNOWN_ERROR: "Something went wrong. Please try again.",

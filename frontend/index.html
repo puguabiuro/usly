@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="pl">
-<head>n  <link rel="icon" href="data:,">
+<head>
+  <link rel="icon" href="data:,">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>USLY</title>
@@ -8,7 +9,422 @@
   <!-- Logo lokalnie (masz plik w folderze projektu): -->
   <!-- ./USLY logo.png -->
 
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=20260314-2136">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style id="premiumProfilePlansOverride">
+/* ===== Premium Profile / Plans isolated override ===== */
+.premiumProfileScope{
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.premiumProfileScope > .sectionTitle:first-child{
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.02em !important;
+  margin: 0 8px 6px !important;
+}
+
+.premiumProfileScope > .sectionSub:first-child{
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  color: rgba(241,246,255,.82) !important;
+  margin: 0 8px 14px !important;
+}
+
+.premiumProfileScope .heroCard{
+  padding: 18px !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  background:
+    radial-gradient(120% 150% at 0% 0%, rgba(255,75,212,.20) 0%, rgba(255,75,212,0) 58%),
+    radial-gradient(120% 150% at 100% 0%, rgba(52,230,255,.18) 0%, rgba(52,230,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04)) !important;
+  box-shadow: 0 22px 56px rgba(0,0,0,.24) !important;
+}
+
+.premiumProfileScope .heroCard .sectionTitle{
+  font-size: 16px !important;
+  line-height: 1.08 !important;
+  margin-bottom: 4px !important;
+}
+
+.premiumProfileScope .heroCard .sectionSub{
+  font-size: 12.5px !important;
+  line-height: 1.3 !important;
+  max-width: 24ch !important;
+  color: rgba(241,246,255,.82) !important;
+}
+
+.premiumProfileScope .heroCard .planPill{
+  min-width: 74px !important;
+  min-height: 40px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+}
+
+.premiumProfileScope .profileActionRow{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+
+.premiumProfileScope .profileActionRow .btn{
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  justify-content: center !important;
+  width: 100% !important;
+  padding: 0 14px !important;
+}
+
+.premiumProfileScope .profileHeroBtnPrimary{
+  background: linear-gradient(90deg, rgba(255,75,212,.96), rgba(52,230,255,.96)) !important;
+  color: #07121e !important;
+  border: 0 !important;
+  box-shadow: 0 14px 32px rgba(0,0,0,.18) !important;
+}
+
+.premiumProfileScope .profileHeroBtnSecondary{
+  background: rgba(255,255,255,.10) !important;
+  color: #f4f8ff !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.10) !important;
+}
+
+.premiumProfileScope .profileHeroBtnPlan{
+  grid-column: 1 / -1 !important;
+  min-height: 48px !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05)) !important;
+  color: #f4f8ff !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.10) !important;
+}
+
+.premiumProfileScope .profileSummaryCard{
+  border-radius: 24px !important;
+  padding: 18px !important;
+}
+
+.premiumProfileScope .friendsCard .sectionTitle,
+.premiumProfileScope .invitesCard .sectionTitle{
+  font-size: 18px !important;
+  font-weight: 1100 !important;
+  line-height: 1.08 !important;
+  margin-bottom: 6px !important;
+}
+
+.premiumProfileScope .friendsCard .sectionSub,
+.premiumProfileScope .invitesCard .sectionSub{
+  font-size: 13px !important;
+  line-height: 1.34 !important;
+  color: rgba(241,246,255,.82) !important;
+}
+
+.premiumProfileScope .friendsCard .pill,
+.premiumProfileScope .invitesCard .pill{
+  min-width: 84px !important;
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  font-size: 14px !important;
+  font-weight: 1000 !important;
+}
+
+.premiumPlansScope .content{
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.premiumPlansScope .card{
+  border-radius: 24px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255,75,212,.14) 0%, rgba(255,75,212,0) 58%),
+    radial-gradient(120% 140% at 100% 0%, rgba(52,230,255,.12) 0%, rgba(52,230,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03)) !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.18) !important;
+}
+
+.premiumPlansScope .sectionTitle{
+  font-size: 18px !important;
+  font-weight: 1100 !important;
+  line-height: 1.08 !important;
+  margin-bottom: 6px !important;
+}
+
+.premiumPlansScope .sectionSub{
+  font-size: 13px !important;
+  line-height: 1.38 !important;
+  color: rgba(241,246,255,.82) !important;
+}
+
+.premiumPlansScope .planPill{
+  min-height: 38px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+  border-radius: 999px !important;
+}
+
+.premiumPlansScope .btn.secondary{
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  font-weight: 1000 !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: #f4f8ff !important;
+}
+
+
+/* ===== FINAL PLANS / PROFILE COMPACT FIX ===== */
+.premiumProfileScope .profileHeroBtnSecondary,
+.premiumProfileScope .profileHeroBtnPlan{
+  background: rgba(255,255,255,.14) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  color: #f7fbff !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,.12) !important;
+}
+
+.premiumProfileScope .profileHeroBtnPlan{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06)) !important;
+}
+
+section#S11_PLANS .content{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:14px !important;
+}
+
+section#S11_PLANS > .content > .card:first-child{
+  padding:18px !important;
+  border-radius:24px !important;
+}
+
+section#S11_PLANS .card[data-plan]{
+  padding:18px 18px 16px !important;
+  border-radius:26px !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  background:
+    radial-gradient(110% 130% at 0% 0%, rgba(255,75,212,.12) 0%, rgba(255,75,212,0) 56%),
+    radial-gradient(110% 130% at 100% 0%, rgba(52,230,255,.10) 0%, rgba(52,230,255,0) 56%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.16) !important;
+}
+
+section#S11_PLANS .card[data-plan] > .row:first-child{
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  margin-bottom:12px !important;
+}
+
+section#S11_PLANS .card[data-plan] .sectionTitle{
+  font-size:17px !important;
+  font-weight:1100 !important;
+  line-height:1.08 !important;
+  letter-spacing:-.02em !important;
+  margin:0 !important;
+}
+
+section#S11_PLANS .card[data-plan] .planPill{
+  min-height:36px !important;
+  padding:7px 12px !important;
+  font-size:12.5px !important;
+  font-weight:1000 !important;
+}
+
+section#S11_PLANS .card[data-plan] p{
+  margin:0 0 8px 0 !important;
+  font-size:13px !important;
+  line-height:1.36 !important;
+  font-weight:800 !important;
+  color:rgba(241,246,255,.86) !important;
+}
+
+section#S11_PLANS .card[data-plan] p.mt12{
+  margin-top:0 !important;
+}
+
+section#S11_PLANS .card[data-plan] .btn.secondary{
+  width:100% !important;
+  min-height:46px !important;
+  border-radius:16px !important;
+  margin-top:14px !important;
+  font-size:14px !important;
+  font-weight:1000 !important;
+  background: rgba(255,255,255,.08) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  color:#f4f8ff !important;
+}
+
+section#S11_PLANS .sectionTitle{
+  font-size:18px !important;
+  font-weight:1100 !important;
+  line-height:1.08 !important;
+  margin-bottom:6px !important;
+}
+
+section#S11_PLANS .sectionSub{
+  font-size:13px !important;
+  line-height:1.38 !important;
+  font-weight:850 !important;
+  color:rgba(241,246,255,.82) !important;
+}
+
+
+
+/* ===== FINAL PLANS / PROFILE REAL UPGRADE ===== */
+.premiumProfileScope .profileHeroBtnSecondary,
+.premiumProfileScope .profileHeroBtnPlan{
+  background: rgba(255,255,255,.14) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  color: #f7fbff !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,.12) !important;
+}
+
+section#S11_PLANS .card[data-plan]{
+  padding: 18px 18px 16px !important;
+  border-radius: 26px !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  background:
+    radial-gradient(110% 130% at 0% 0%, rgba(255,75,212,.12) 0%, rgba(255,75,212,0) 56%),
+    radial-gradient(110% 130% at 100% 0%, rgba(52,230,255,.10) 0%, rgba(52,230,255,0) 56%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.16) !important;
+  transition: transform .12s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+section#S11_PLANS .card[data-plan].is-current{
+  border-color: rgba(52,230,255,.34) !important;
+  box-shadow:
+    0 18px 42px rgba(0,0,0,.18),
+    0 0 0 1px rgba(52,230,255,.16) inset !important;
+}
+
+section#S11_PLANS .card[data-plan] > .row:first-child{
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+section#S11_PLANS .card[data-plan] .sectionTitle{
+  font-size: 17px !important;
+  font-weight: 1100 !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.02em !important;
+  margin: 0 !important;
+}
+
+section#S11_PLANS .card[data-plan] .planPill{
+  min-height: 36px !important;
+  padding: 7px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 1000 !important;
+}
+
+section#S11_PLANS .card[data-plan] p{
+  margin: 0 0 8px 0 !important;
+  font-size: 13px !important;
+  line-height: 1.36 !important;
+  font-weight: 800 !important;
+  color: rgba(241,246,255,.86) !important;
+}
+
+section#S11_PLANS .card[data-plan] p.mt12{
+  margin-top: 0 !important;
+}
+
+section#S11_PLANS .card[data-plan] .btn.secondary{
+  width: 100% !important;
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  margin-top: 14px !important;
+  font-size: 14px !important;
+  font-weight: 1000 !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: #f4f8ff !important;
+}
+
+section#S11_PLANS .card[data-plan].is-current .btn.secondary{
+  background: linear-gradient(90deg, rgba(255,75,212,.92), rgba(52,230,255,.92)) !important;
+  color: #07121e !important;
+  border: 0 !important;
+  box-shadow: 0 14px 30px rgba(0,0,0,.18) !important;
+}
+
+
+/* ===== FINAL PLANS CONTENT PREMIUM ===== */
+section#S11_PLANS .card[data-plan]{
+  position: relative;
+  overflow: hidden;
+}
+
+section#S11_PLANS .card[data-plan]::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 24%);
+  opacity: .9;
+}
+
+section#S11_PLANS .card[data-plan] > .row:first-child{
+  position: relative;
+  z-index: 1;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: 14px !important;
+}
+
+section#S11_PLANS .card[data-plan] p{
+  position: relative;
+  z-index: 1;
+  padding-left: 6px;
+  margin: 0 0 10px 0 !important;
+  font-size: 13px !important;
+  line-height: 1.42 !important;
+  font-weight: 780 !important;
+  color: rgba(240,245,255,.88) !important;
+  text-wrap: balance;
+}
+
+section#S11_PLANS .card[data-plan] p:nth-of-type(-n+5){
+  color: rgba(246,250,255,.94) !important;
+}
+
+section#S11_PLANS .card[data-plan] p:nth-of-type(n+6){
+  color: rgba(220,228,242,.78) !important;
+}
+
+section#S11_PLANS .card[data-plan] .btn.secondary{
+  position: relative;
+  z-index: 1;
+  margin-top: 16px !important;
+}
+
+section#S11_PLANS .card[data-plan].is-current{
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255,75,212,.18) 0%, rgba(255,75,212,0) 56%),
+    radial-gradient(120% 140% at 100% 0%, rgba(52,230,255,.16) 0%, rgba(52,230,255,0) 56%),
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)) !important;
+}
+</style>
 
 </head>
 <body>
@@ -87,8 +503,8 @@ pełny kod index.html: <!-- ====================================================
           </button>
           <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
           <button id="tabSettingsUser" type="button" onclick="go('S10_SETTINGS')">
-            <div class="ico" aria-hidden="true">⚙</div>
-            <div>Ustawienia</div>
+            <div class="ico" aria-hidden="true">👤</div>
+            <div>Profil</div>
           </button>
         </nav>
   
@@ -100,9 +516,9 @@ pełny kod index.html: <!-- ====================================================
         <nav class="tabbar" id="tabbarPartner" aria-label="Dolna nawigacja — Organizator">
           <button id="ptabDash" type="button" onclick="go('S9_PARTNER')">
             <div class="ico"><span aria-hidden="true"></span></div>
-            <div>Panel</div>
+            <div>Profil</div>
           </button>
-          <button id="ptabCreate" type="button" onclick="go('S9_PARTNER_CREATE')">
+          <button id="ptabCreate" type="button" onclick="openNewPartnerEventForm()">
             <div class="ico"><span aria-hidden="true"></span></div>
             <div>Nowe</div>
           </button>
@@ -146,8 +562,8 @@ pełny kod index.html: <!-- ====================================================
           <div class="content hero">
             <div class="heroCard">
               <div class="heroHeader">
-                <div class="heroHello">Poznaj kogoś po tym, co lubi</div>
-                <div class="heroSub">Wybierz tryb, a potem wejdź do środka.</div>
+                <div class="heroHello">Twoje miasto. Twoi ludzie.</div>
+                <div class="heroSub">Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.</div>
               </div>
   
               <div class="segLabel">Tryb</div>
@@ -156,25 +572,25 @@ pełny kod index.html: <!-- ====================================================
                 <button class="segBtn" id="rolePartnerBtn" type="button" onclick="selectRole('partner')">Organizator</button>
               </div>
   
-              <div class="heroBadges">
-                <div class="pill">Wejdź i zacznij rozmawiać</div>
-                <div class="pill">#zainteresowania = dopasowania</div>
-                <div class="pill">Wydarzenia i grupy w okolicy</div>
+              <div class="heroBadges" aria-hidden="true" style="display:none;">
+                <div class="pill">Poznawaj po zainteresowaniach</div>
+                <div class="pill">Spotykaj ludzi w swoim klimacie</div>
+                <div class="pill">Wychodź do miejsc, które czujesz</div>
               </div>
   
               <div class="row mt12">
-                <button class="btn" type="button" onclick="go('S1_LOGIN')">Zaloguj się</button>
-                <button class="btn secondary" type="button" onclick="go('S2_REGISTER')">Zarejestruj się</button>
+                <button class="btn" type="button" onclick="go('S2_REGISTER')">Zacznij</button>
+                <button class="btn secondary" type="button" onclick="go('S1_LOGIN')">Mam konto</button>
               </div>
   
               <div class="mt12 center promoLine">
-                Dołącz w 60 sekund — prosto, bez spiny, z kontrolą prywatności.
+                Poznawaj miasto przez ludzi, z którymi naprawdę masz flow.
               </div>
             </div>
   
             <div class="card mt16">
               <div class="sectionTitle">Plany</div>
-              <div class="sectionSub">Podgląd funkcji dla wybranego trybu.</div>
+              <div class="sectionSub">Wybierz tryb, który najlepiej pasuje do Ciebie.</div>
               <button class="btn secondary" type="button" onclick="go('S11_PLANS')">Zobacz plany</button>
             </div>
           </div>
@@ -199,9 +615,9 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Zaloguj się</div>
-              <div class="sectionSub">Demo UI — bez backendu.</div>
+              <div class="sectionSub">Zaloguj się, aby wejść do swojego konta.</div>
   
               <label class="mt12">Tryb</label>
               <div class="seg wide">
@@ -263,215 +679,283 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
-              <div class="sectionTitle">Zarejestruj się</div>
-              <div class="sectionSub" id="regSubLine">Stwórz konto i ustaw profil.</div>
-  
-              <label>Tryb</label>
+            <div class="heroCard profileSummaryCard">
+              <div class="sectionTitle">Załóż konto</div>
+              <div class="sectionSub" id="regSubLine">Dołącz do USLY i zacznij od dobrze ustawionego profilu startowego.</div>
+
+              <label class="mt12">Tryb</label>
               <div class="seg wide">
                 <button class="segBtn on" id="roleUserBtn2" type="button" onclick="selectRole('user')">Towarzysz</button>
                 <button class="segBtn" id="rolePartnerBtn2" type="button" onclick="selectRole('partner')">Organizator</button>
               </div>
-  
-              <!-- ===================== USER (Towarzysz) ===================== -->
+
               <div id="regUserBox">
-                <label class="mt12">Data urodzenia *</label>
-                <input id="regBirthDate" type="date" required />
-                <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
-                 Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.
+                <div class="card mt16">
+                  <div class="sectionTitle">Konto</div>
+                  <div class="sectionSub">Podaj podstawowe dane potrzebne do utworzenia konta.</div>
+
+                  <label class="mt12">Email *</label>
+                  <input id="regEmail" type="email" placeholder="np. ola@email.com" autocomplete="email" />
+
+                  <label class="mt12">Nick / imię (publiczne) *</label>
+                  <input id="regNick" type="text" placeholder="np. Ola / ola_88" />
+
+                  <label class="mt12">Hasło *</label>
+                  <input id="regPass" type="password" placeholder="Minimum 8 znaków" autocomplete="new-password" />
+
+                  <label class="mt12">Powtórz hasło *</label>
+                  <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" autocomplete="new-password" />
                 </div>
 
-                <!-- City + geolokalizacja (bez inline onclick) -->
-                <label class="mt12">Miasto *</label>
-                <div class="row">
-                  <div style="flex:1;">
-                    <!-- UJEDNOLICONE: regCityUser -> regCity -->
-                    <input id="regCity" type="text" placeholder="np. Warszawa" />
-                  </div>
-                  <!-- UJEDNOLICONE: bind przez id, bez inline onclick -->
-                  <button class="btn secondary small" id="btnUseLocation" type="button">
-                    Użyj lokalizacji
-                  </button>
-                </div>
-                <input id="regGeoLat" type="hidden" value="" />
-                <input id="regGeoLng" type="hidden" value="" />
-                <div class="tMuted mt10" style="text-align:left;">
-                  Docelowo: miasto uzupełniane z aktualnej lokalizacji (GPS) po zgodzie użytkownika.
-                </div>
-  
-                <!-- ZAKRES WIEKU — SUWAKI (UJEDNOLICONE: regPrefAgeFrom/regPrefAgeTo) -->
-                <div class="hintCard mt16">
-                  <div class="hintTitle">Zakres wieku sugestii</div>
-                  <div class="hintText">
-                    Ustaw, w jakim wieku mają być osoby, które aplikacja będzie Ci podpowiadać —
-                    dzięki temu dopasowania będą bliższe temu, czego szukasz.
-                  </div>
-  
-                  <div class="row mt12" style="align-items:flex-end;">
-                    <div style="flex:1;">
-                      <label class="tMuted">Od</label>
-                      <input id="regPrefAgeFrom" type="range" min="16" max="99" value="18" />
-                      <div class="tMuted" style="text-align:left;">Wybrano: <span id="regPrefAgeFromVal">18</span></div>
-                    </div>
-                    <div style="flex:1;">
-                      <label class="tMuted">Do</label>
-                      <input id="regPrefAgeTo" type="range" min="16" max="99" value="35" />
-                      <div class="tMuted" style="text-align:left;">Wybrano: <span id="regPrefAgeToVal">35</span></div>
-                    </div>
-                  </div>
-  
-                  <div class="tMuted mt10" style="text-align:left;">
-                    To ustawienie dotyczy tylko rekomendacji. W każdej chwili możesz je zmienić w Ustawieniach.
-                  </div>
-                </div>
-  
-                <label class="mt12">Nick / imię (publiczne) *</label>
-                <input id="regNick" type="text" placeholder="np. Ola / ola_88" />
-  
-                <label class="mt12">Zainteresowania *</label>
-                <div class="hashRow">
-                  <span class="hashPrefix">#</span>
-                  <input id="regInterestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
-                </div>
-                <div class="chips" id="regInterestChips"></div>
-                <div class="typeahead" id="regInterestTypeahead"></div>
-  
-                <!-- Avatar + AI hooks -->
-                <div class="hintCard mt12">
-                  <div class="hintTitle">Awatar</div>
-                  <div class="hintText">Dodaj zdjęcie lub wygeneruj awatar (AI).</div>
-                  <div class="row mt12">
-                    <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
-                    <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
-                  </div>
-                  <div class="tMuted mt10" style="text-align:left;">
-                    Backend hook: generowanie awatara AI (prompt + styl + zapis do profilu).
-                  </div>
-                </div>
-  
-                <!-- PLAN TOWARZYSZA (NOWE: FREE/PLUS/PREMIUM/VIP) + IKONY -->
-                <div class="hintCard mt12" id="regUserPlanBox">
-                  <div class="hintTitle">Plan Towarzysza</div>
-                  <div class="hintText">Wybierz plan i zobacz co zawiera (ceny + funkcje).</div>
-  
+                <div class="card mt16" id="regUserPlanBox">
+                  <div class="sectionTitle">Plan</div>
+                  <div class="sectionSub">Domyślnie aktywny jest FREE. Możesz od razu wybrać inny plan i później go zmienić.</div>
+
                   <div class="seg wide mt12">
-                    <button class="segBtn on" id="uplan_free" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE</button>
-                    <button class="segBtn" id="uplan_plus" type="button" onclick="setUserPlan('plus')" data-plan="plus" data-plan-icon="💙">💙 PLUS</button>
+                    <button class="segBtn on" id="uplan_free" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓">FREE • 0 zł / mies.</button>
+                    <button class="segBtn" id="uplan_plus" type="button" onclick="setUserPlan('plus')" data-plan="plus" data-plan-icon="💙">PLUS • 19 zł / mies.</button>
                   </div>
                   <div class="seg wide mt10">
-                    <button class="segBtn" id="uplan_premium" type="button" onclick="setUserPlan('premium')" data-plan="premium" data-plan-icon="💜">💜 PREMIUM</button>
-                    <button class="segBtn" id="uplan_vip" type="button" onclick="setUserPlan('vip')" data-plan="vip" data-plan-icon="🖤">🖤 VIP</button>
+                    <button class="segBtn" id="uplan_premium" type="button" onclick="setUserPlan('premium')" data-plan="premium" data-plan-icon="💜">PREMIUM • 39 zł / mies.</button>
+                    <button class="segBtn" id="uplan_vip" type="button" onclick="setUserPlan('vip')" data-plan="vip" data-plan-icon="🖤">VIP • 79 zł / mies.</button>
                   </div>
-  
+
                   <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
                 </div>
-              </div>
-  
-              <!-- ===================== ORGANIZER (Organizator) ===================== -->
-              <div id="regPartnerBox" style="display:none;">
-                <div class="hintCard mt12">
-                  <div class="hintTitle">Dane organizatora</div>
-                  <div class="hintText">Te dane będą widoczne w Twoim profilu organizatora i przy wydarzeniach.</div>
-  
-                  <label class="mt12">Nazwa firmy / miejsca *</label>
-                  <input id="regCompany" type="text" placeholder="np. Kawiarnia Aurora" />
-  
-                  <label class="mt12">Kategoria *</label>
-                  <select id="regCategory">
-                    <option value="gastro">Gastro</option>
-                    <option value="fitness">Fitness</option>
-                    <option value="kultura">Kultura</option>
-                    <option value="beauty">Beauty</option>
-                    <option value="inne">Inne</option>
-                  </select>
-  
+
+                <div class="card mt16">
+                  <div class="sectionTitle">Profil startowy</div>
+                  <div class="sectionSub">Te dane pomogą od razu lepiej dopasować ludzi i wydarzenia.</div>
+
+                  <label class="mt12">Data urodzenia *</label>
+                  <input id="regBirthDate" type="date" required />
+                  <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
+                   Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
+                  </div>
+                  <div class="tMuted mt10" style="text-align:left;">Konto w USLY jest dostępne dla osób pełnoletnich.</div>
+
                   <label class="mt12">Miasto *</label>
-                  <!-- Żeby nie kolidować z regCity (użytkownik): regCityPartner -->
-                  <select id="regCityPartner">
-                    <option>Warszawa</option>
-                    <option>Kraków</option>
-                    <option>Gdańsk</option>
-                    <option>Wrocław</option>
-                    <option>Poznań</option>
-                  </select>
-  
-                  <label class="mt12">Opis (opcjonalnie)</label>
-                  <textarea id="regOrgAbout" maxlength="500" placeholder="Krótki opis firmy / miejsca (max 500)"></textarea>
-                  <div class="charHint"><span id="regOrgAboutCount">0</span>/500</div>
-                </div>
-  
-                <!-- Logo upload -->
-                <div class="hintCard mt12">
-                  <div class="hintTitle">Logo organizatora</div>
-                  <div class="hintText">Dodaj logo, żeby użytkownicy łatwiej rozpoznawali Twoje wydarzenia.</div>
-                  <input id="regLogo" type="file" accept="image/*" />
-                  <div class="row mt12" style="align-items:center;">
-                    <div class="avatar big" id="orgLogoPreview"></div>
-                    <div class="tMuted" style="text-align:left;">
-                      Backend hook: upload + CDN URL + zapis do profilu organizatora.
+                  <div class="row">
+                    <div style="flex:1;">
+                      <input id="regCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
                     </div>
+                    <button class="btn secondary small" id="btnUseLocation" type="button">Użyj lokalizacji</button>
                   </div>
+                  <input id="regGeoLat" type="hidden" value="" />
+                  <input id="regGeoLng" type="hidden" value="" />
+                  <div class="tMuted mt10" style="text-align:left;">Docelowo: miasto uzupełniane z aktualnej lokalizacji po zgodzie użytkownika.</div>
+
+                  <label class="mt12">Zainteresowania *</label>
+                  <div class="hashRow">
+                    <span class="hashPrefix">#</span>
+                    <input id="regInterestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
+                  </div>
+                  <div class="chips" id="regInterestChips"></div>
+                  <div class="typeahead" id="regInterestTypeahead"></div>
+
+                    <div class="hintCard mt12">
+                      <div class="hintTitle">Zdjęcie i bio dodasz za chwilę</div>
+                      <div class="hintText">Po utworzeniu konta przejdziesz do ekranu uzupełnienia profilu, gdzie dodasz zdjęcie lub awatar oraz dokończysz profil.</div>
+                    </div>
                 </div>
-  
-                <!-- PLAN ORGANIZATORA (NOWE: wg załącznika) + IKONY -->
-                <div class="hintCard mt12" id="regPartnerPlanBox">
-                  <div class="hintTitle">Plan organizatora</div>
-                  <div class="hintText">W demo wybierasz plan, żeby zobaczyć różnice. Docelowo: płatności + limity funkcji.</div>
-  
-                  <div class="seg wide mt12">
-                    <button class="segBtn on" id="pplan_free" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE PARTNER</button>
-                    <button class="segBtn" id="pplan_pro" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">💼 PRO PARTNER</button>
+
+                <div class="card mt16">
+                  <div class="sectionTitle">Dokumenty i zgody</div>
+                  <div class="sectionSub">Przed utworzeniem konta zaakceptuj wymagane dokumenty.</div>
+
+                  <div class="mt16 legalBox">
+                    <label class="checkRow">
+                      <input id="acceptTerms" type="checkbox" />
+                      <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin</span> *</span>
+                    </label>
+                    <label class="checkRow mt10">
+                      <input id="acceptRodo" type="checkbox" />
+                      <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności</span> *</span>
+                    </label>
                   </div>
-                  <div class="seg wide mt10">
-                    <button class="segBtn" id="pplan_premium" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">💎 PREMIUM PARTNER</button>
-                    <button class="segBtn" id="pplan_enterprise" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">🏆 ENTERPRISE</button>
-                  </div>
-  
-                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
+
+                  <button class="btn mt16" type="button" onclick="registerPrimary()">Zarejestruj</button>
                 </div>
               </div>
-  
-              <label class="mt12">Email *</label>
-              <input id="regEmail" type="email" placeholder="np. ola@email.com" autocomplete="email" />
-  
-              <label class="mt12">Hasło *</label>
-              <input id="regPass" type="password" placeholder="Minimum 8 znaków" autocomplete="new-password" />
-  
-              <div class="mt16 legalBox">
-                <label class="checkRow">
-                  <input id="acceptTerms" type="checkbox" />
-                  <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin</span> *</span>
-                </label>
-                <label class="checkRow mt10">
-                  <input id="acceptRodo" type="checkbox" />
-                  <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności</span> *</span>
-                </label>
-              </div>
-  
-              <button class="btn mt16" type="button" onclick="registerPrimary()">Utwórz konto</button>
-  
-              <div class="divider mt16"><span>albo</span></div>
-              <button class="btn social apple mt12" type="button" onclick="signupSocial('apple')">
-                <span class="sIco"></span> <span>Załóż konto z Apple</span>
-              </button>
-              <button class="btn social google mt10" type="button" onclick="signupSocial('google')">
-                <span class="sIco">G</span> <span>Załóż konto z Google</span>
-              </button>
-              <button class="btn social fb mt10" type="button" onclick="signupSocial('facebook')">
-                <span class="sIco">f</span> <span>Załóż konto z Facebook</span>
-              </button>
-            </div>
-  
-            <div class="card mt16">
-              <div class="sectionTitle">Plany</div>
-              <div class="sectionSub">Podgląd funkcji dla wybranego trybu.</div>
-              <button class="btn secondary" type="button" onclick="go('S11_PLANS')">Zobacz plany</button>
             </div>
           </div>
         </section>
   
+
+        <section class="view" id="S10B_PROFILE_EDIT" aria-label="Edytuj profil">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline">Edytuj profil</div>
+                </div>
+              </div>
+            </div>
+            <div class="ghostBtn" aria-hidden="true">•</div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard">
+              <div class="sectionTitle">Edytuj profil</div>
+              <div class="sectionSub">Zadbaj o dane po zalogowaniu — bez chaosu i bez dublowania rejestracji.</div>
+            </div>
+
+            <div class="card mt16">
+              <label>Nick</label>
+              <input id="setNick" type="text" placeholder="np. Ola_88" />
+
+              <label class="mt12">BIO</label>
+              <textarea id="setBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
+              <div class="charHint"><span id="setBioCount">0</span>/250</div>
+
+
+
+              <label class="mt12">Miasto</label>
+              <input id="setCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+
+              <div class="hintCard mt16">
+                <div class="hintTitle">Preferowany zakres wieku</div>
+                <div class="hintText">Lepszy picker niż suwak — czytelniej i bardziej premium.</div>
+
+                <div class="row mt12">
+                  <div style="flex:1;">
+                    <label class="tMuted">Od</label>
+                    <select id="setPrefAgeFrom">
+                      <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                      <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                      <option value="24">24</option><option value="25">25</option><option value="26">26</option>
+                      <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+                      <option value="30">30</option><option value="31">31</option><option value="32">32</option>
+                      <option value="33">33</option><option value="34">34</option><option value="35">35</option>
+                      <option value="36">36</option><option value="37">37</option><option value="38">38</option>
+                      <option value="39">39</option><option value="40">40</option><option value="45">45</option>
+                      <option value="50">50</option><option value="55">55</option><option value="60">60</option>
+                      <option value="65">65</option><option value="70">70</option><option value="75">75</option>
+                      <option value="80">80</option><option value="85">85</option><option value="90">90</option>
+                      <option value="95">95</option><option value="99">99</option>
+                    </select>
+                  </div>
+                  <div style="flex:1;">
+                    <label class="tMuted">Do</label>
+                    <select id="setPrefAgeTo">
+                      <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                      <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                      <option value="24">24</option><option value="25">25</option><option value="26">26</option>
+                      <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+                      <option value="30">30</option><option value="31">31</option><option value="32">32</option>
+                      <option value="33">33</option><option value="34">34</option><option value="35">35</option>
+                      <option value="36">36</option><option value="37">37</option><option value="38">38</option>
+                      <option value="39">39</option><option value="40">40</option><option value="45">45</option>
+                      <option value="50">50</option><option value="55">55</option><option value="60">60</option>
+                      <option value="65">65</option><option value="70">70</option><option value="75">75</option>
+                      <option value="80">80</option><option value="85">85</option><option value="90">90</option>
+                      <option value="95">95</option><option value="99">99</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hintCard mt16">
+                <div class="hintTitle">Zdjęcie / awatar</div>
+                <div class="hintText">Zdjęcie profilu lub estetyczny awatar.</div>
+                <div class="row mt12">
+                  <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
+                  <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
+                </div>
+              </div>
+
+              <button class="btn mt16" type="button" onclick="saveSettings()">Zapisz zmiany</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="S10C_PROFILE_INTERESTS" aria-label="Zainteresowania">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline">Zainteresowania</div>
+                </div>
+              </div>
+            </div>
+            <div class="ghostBtn" aria-hidden="true">•</div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard">
+              <div class="sectionTitle">Zainteresowania</div>
+              <div class="sectionSub" id="interestLimitHint">—</div>
+              <div class="sectionSub">Jedna wspólna baza tagów dla profilu, grup i wydarzeń.</div>
+            </div>
+
+            <div class="card mt16">
+              <label>Twoje tagi</label>
+              <div class="hashRow">
+                <span class="hashPrefix">#</span>
+                <input id="setInterestInput" type="text" placeholder="np. kawa, joga, koncerty..." list="interestsDatalist" />
+              </div>
+              <div class="typeahead" id="setInterestTypeahead"></div>
+              <div class="chips mt12" id="setInterestChips"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="S10D_PROFILE_FRIENDS" aria-label="Znajomi">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline">Znajomi</div>
+                </div>
+              </div>
+            </div>
+            <div class="ghostBtn" aria-hidden="true">•</div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard">
+              <div class="sectionTitle">Znajomi</div>
+              <div class="sectionSub">Lista kontaktów w stylu produktu, nie technicznej listy.</div>
+            </div>
+            <div class="col mt16" id="profileFriendsList"></div>
+          </div>
+        </section>
+
+        <section class="view" id="S10E_PROFILE_INVITES" aria-label="Zaproszenia">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline">Zaproszenia</div>
+                </div>
+              </div>
+            </div>
+            <div class="ghostBtn" aria-hidden="true">•</div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard">
+              <div class="sectionTitle">Zaproszenia</div>
+              <div class="sectionSub">Przychodzące i wysłane zaproszenia w czytelnym układzie.</div>
+            </div>
+            <div class="col mt16" id="profileFriendRequestsList"></div>
+          </div>
+        </section>
+
         <!-- =========================================================
-        S3 PROFILE SETUP (Towarzysz — po rejestracji / demo)
+        S11 PLANS (ROLE-SCOPED) — DOKŁADNIE WG ZAŁĄCZNIKÓW
         ========================================================== -->
         <section class="view" id="S3_PROFILE_SETUP" aria-label="Ustawienia profilu (start)">
           <header class="topbar">
@@ -489,49 +973,89 @@ pełny kod index.html: <!-- ====================================================
             <button class="topIconBtn" id="notifBtnSetup" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
           </header>
   
-          <div class="content">
-            <div class="card">
-              <div class="sectionTitle">Dokończ profil</div>
-              <div class="sectionSub">Uzupełnij podstawy — pomoże to w dopasowaniach.</div>
-  
-              <div class="row mt16" style="align-items:center;">
-                <div class="avatar big" id="userAvatar"></div>
-                <div style="text-align:left;flex:1;">
-                  <div style="font-weight:950;">Twoja tożsamość</div>
-                  <div style="font-size:13px;color:var(--muted);font-weight:800;">Zdjęcie lub awatar (demo).</div>
+            <div class="content">
+              <div class="heroCard profileSummaryCard">
+                <div class="sectionTitle">Uzupełnij profil</div>
+                <div class="sectionSub">To ostatni krok po rejestracji. Sprawdź dane startowe i dodaj brakujące informacje do dopasowań.</div>
+
+                <div class="row mt16" style="align-items:center;gap:14px;">
+                  <div class="avatar big" id="userAvatar"></div>
+                  <div style="text-align:left;flex:1;">
+                    <div style="font-weight:950;">Twój profil startowy</div>
+                    <div class="sectionSub" id="setupAgeDisplay">Wiek: — lat</div>
+                  </div>
+                  <div class="planPill" id="planPillSetup">FREE</div>
                 </div>
-                <div class="planPill" id="planPillSetup">FREE</div>
+
+                <div class="row mt12">
+                  <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
+                  <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
+                </div>
+
+                <label class="mt16">Nick</label>
+                <input id="setupNick" type="text" placeholder="Twój nick" />
+
+                <label class="mt12">Miasto</label>
+                <input id="setupCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+
+                <label class="mt12">BIO (max 250)</label>
+                <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
+                <div class="charHint"><span id="bioCount">0</span>/250</div>
+
+                <div class="hintCard mt16">
+                  <div class="hintTitle">Preferowany zakres wieku</div>
+                  <div class="hintText">Ustaw, w jakim wieku mają być osoby sugerowane przez aplikację. Możesz to później zmienić w ustawieniach.</div>
+
+                  <div class="row mt12">
+                    <div style="flex:1;">
+                      <label class="tMuted">Od</label>
+                      <select id="setPrefAgeFrom">
+                        <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                        <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                        <option value="24">24</option><option value="25">25</option><option value="26">26</option>
+                        <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+                        <option value="30">30</option><option value="31">31</option><option value="32">32</option>
+                        <option value="33">33</option><option value="34">34</option><option value="35">35</option>
+                        <option value="36">36</option><option value="37">37</option><option value="38">38</option>
+                        <option value="39">39</option><option value="40">40</option><option value="45">45</option>
+                        <option value="50">50</option><option value="55">55</option><option value="60">60</option>
+                        <option value="65">65</option><option value="70">70</option><option value="75">75</option>
+                        <option value="80">80</option><option value="85">85</option><option value="90">90</option>
+                        <option value="95">95</option><option value="99">99</option>
+                      </select>
+                    </div>
+                    <div style="flex:1;">
+                      <label class="tMuted">Do</label>
+                      <select id="setPrefAgeTo">
+                        <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                        <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                        <option value="24">24</option><option value="25">25</option><option value="26">26</option>
+                        <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+                        <option value="30">30</option><option value="31">31</option><option value="32">32</option>
+                        <option value="33">33</option><option value="34">34</option><option value="35">35</option>
+                        <option value="36">36</option><option value="37">37</option><option value="38">38</option>
+                        <option value="39">39</option><option value="40">40</option><option value="45">45</option>
+                        <option value="50">50</option><option value="55">55</option><option value="60">60</option>
+                        <option value="65">65</option><option value="70">70</option><option value="75">75</option>
+                        <option value="80">80</option><option value="85">85</option><option value="90">90</option>
+                        <option value="95">95</option><option value="99">99</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <label class="mt12">Zainteresowania</label>
+                <div class="sectionSub" id="interestLimitHint">—</div>
+                <div class="hashRow">
+                  <span class="hashPrefix">#</span>
+                  <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
+                </div>
+                <div class="typeahead" id="interestTypeahead"></div>
+                <div class="chips" id="interestChips"></div>
+
+                <button class="btn mt16" type="button" onclick="finishProfileSetup()">Zapisz i przejdź dalej</button>
               </div>
-  
-              <div class="row mt12">
-                <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
-                <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
-              </div>
-  
-              <label class="mt12">Miasto</label>
-              <select id="setupCity">
-                <option>Warszawa</option>
-                <option>Kraków</option>
-                <option>Gdańsk</option>
-                <option>Wrocław</option>
-                <option>Poznań</option>
-              </select>
-  
-              <label class="mt12">BIO (max 250)</label>
-              <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
-              <div class="charHint"><span id="bioCount">0</span>/250</div>
-  
-              <label class="mt12">Zainteresowania</label>
-              <div class="hashRow">
-                <span class="hashPrefix">#</span>
-                <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
-              </div>
-              <div class="typeahead" id="interestTypeahead"></div>
-              <div class="chips" id="interestChips"></div>
-  
-              <button class="btn mt16" type="button" onclick="finishProfileSetup()">Zapisz i przejdź dalej</button>
             </div>
-          </div>
         </section>
   
         <!-- =========================================================
@@ -625,23 +1149,34 @@ pełny kod index.html: <!-- ====================================================
             <button class="topIconBtn" id="notifBtnPerson" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
           </header>
   
-          <div class="content">
-            <div class="card">
-              <div class="row" style="align-items:center;">
-                <div class="avatar big" id="personAvatar"></div>
-                <div style="text-align:left;flex:1;">
-                  <div class="sectionTitle" id="personNick">—</div>
-                  <div class="sectionSub" id="personMeta">—</div>
+            <div class="content">
+              <div class="heroCard profileSummaryCard personHeroCard">
+                <div class="row" style="justify-content:flex-end;">
+                  <button class="btn small secondary" type="button" onclick="openPersonMenu()">⋯</button>
                 </div>
-                <button class="btn small secondary" type="button" onclick="openPersonMenu()">⋯</button>
-              </div>
-  
-              <div class="divider mt16"><span>#</span></div>
-              <div class="chips" id="personInterests"></div>
-  
-              <div class="row mt16">
-                <button class="btn" type="button" onclick="startChatFromProfile()">Napisz</button>
-                <button class="btn secondary" type="button" onclick="addFriendFromProfile()">Dodaj do znajomych</button>
+
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:4px;">
+                  <div class="avatar big" id="personAvatar"></div>
+
+                    <div style="text-align:center;width:100%;">
+                    <div class="sectionTitle" id="personNick">—</div>
+                    <div class="sectionSub" id="personMeta">—</div>
+                  </div>
+
+                  <div style="width:100%;">
+                    <div class="chips" id="personInterests"></div>
+                  </div>
+
+                  <div style="width:100%;">
+                    <div class="sectionTitle">O mnie</div>
+                    <div class="sectionSub" id="personBio">Ta osoba nie dodała jeszcze bio.</div>
+                  </div>
+                </div>
+
+                <div class="row mt16">
+                  <button class="btn" id="personChatBtn" type="button" onclick="startChatFromProfile()">Napisz</button>
+                  <button class="btn secondary" id="personFriendBtn" type="button" onclick="addFriendFromProfile()">Dodaj do znajomych</button>
+                </div>
               </div>
             </div>
           </div>
@@ -666,7 +1201,7 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Szukaj czatów</div>
               <div class="sectionSub">Po nazwie rozmowy</div>
               <input id="chatSearch" type="text" placeholder="np. Alex" />
@@ -711,7 +1246,7 @@ pełny kod index.html: <!-- ====================================================
   
           <div class="inputDock">
             <input id="chatInput" type="text" placeholder="Napisz wiadomość." />
-            <button class="btn small" type="button" onclick="sendChat()">Wyślij</button>
+            <button class="btn small" id="chatSendBtn" type="button" onclick="sendChat()" aria-label="Wyślij wiadomość">➜</button>
           </div>
         </section>
   
@@ -734,13 +1269,13 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Wydarzenia</div>
               <div class="sectionSub">Przeglądaj i zapisuj się — płatności są poza aplikacją.</div>
   
               <!-- jeśli w JS są taby: "Okolica" / "Obserwowane" -->
               <div class="seg wide mt12" role="tablist" aria-label="Filtr wydarzeń">
-                <button class="segBtn on" id="eventsTabNearby" type="button" onclick="setEventsTab('nearby')">Okolica</button>
+                <button class="segBtn on" id="eventsTabNearby" type="button" onclick="setEventsTab('for_you')">Dla Ciebie</button>
                 <button class="segBtn" id="eventsTabFollowed" type="button" onclick="setEventsTab('followed')">Obserwowane</button>
               </div>
   
@@ -772,7 +1307,7 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="row" style="align-items:center;justify-content:space-between;">
                 <div>
                   <div class="sectionTitle" id="evTitle">—</div>
@@ -844,13 +1379,24 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Grupy według Twoich zainteresowań</div>
-              <div class="sectionSub">Lista budowana na bazie # ustawionych w profilu (demo / backend hook).</div>
+              <div class="sectionSub">Lista budowana na bazie # ustawionych w profilu.</div>
               <div class="mt12">
                 <input id="groupSearch" type="text" placeholder="Szukaj grupy (np. #kino)" />
               </div>
             </div>
+
+              <div class="card mt16">
+                <div class="row" style="align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                  <div style="text-align:left;flex:1;min-width:220px;">
+                    <div class="sectionTitle" style="margin:0;">Twoje grupy</div>
+                    <div class="sectionSub" id="groupCreateHint">—</div>
+                  </div>
+                  <button class="btn" id="btnCreateGroup" type="button" onclick="openCreateGroupModal()">Utwórz grupę</button>
+                </div>
+              </div>
+
   
             <!-- UJEDNOLICONY HOOK: grupy na bazie zainteresowań -->
             <div class="col mt16" id="groupList" data-scope="byInterests"></div>
@@ -880,29 +1426,19 @@ pełny kod index.html: <!-- ====================================================
   
           <div class="content chatContent">
             <div id="groupBubbles"></div>
-  
-            <!-- NOWE: dodanie znajomego, który ma podobne zainteresowania, do grupy -->
-            <div class="hintCard mt16" id="groupInviteHook">
-              <div class="hintTitle">Dodaj znajomego do tej grupy</div>
-              <div class="hintText">
-                Jeśli Twój znajomy ma podobne zainteresowania, możesz dodać go do grupy, nawet jeśli nie widzi jej na swojej liście.
-                (Docelowo: weryfikacja uprawnień + zaproszenie / dodanie przez backend.)
-              </div>
-              <button class="btn secondary mt12" id="btnInviteFriendToGroup" type="button" onclick="openInviteFriendToGroup()">
-                Dodaj znajomego
-              </button>
-            </div>
           </div>
-  
+
           <div class="inputDock">
             <input id="groupInput" type="text" placeholder="Napisz w grupie." />
-            <button class="btn small" type="button" onclick="sendGroup()">Wyślij</button>
+            <button class="btn small" id="groupSendBtn" type="button" onclick="sendGroup()" aria-label="Wyślij wiadomość do grupy">➜</button>
           </div>
         </section>
   
         <!-- =========================================================
         S9 ORGANIZER DASHBOARD
         ========================================================== -->
+        
+
         <section class="view" id="S9_PARTNER" aria-label="Panel organizatora">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()">◀</button>
@@ -998,7 +1534,7 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Utwórz wydarzenie</div>
               <div class="sectionSub">Demo UI — backend doda walidację, limity planu i publikację.</div>
   
@@ -1077,7 +1613,7 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Twoje wydarzenia</div>
               <div class="sectionSub">Edytuj, podglądaj zainteresowanych, sprawdzaj statystyki (wg planu).</div>
             </div>
@@ -1111,7 +1647,7 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Skrzynka</div>
               <div class="sectionSub">Wiadomości od użytkowników (demo).</div>
               <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." class="mt12" />
@@ -1141,71 +1677,60 @@ pełny kod index.html: <!-- ====================================================
   
           <div class="content">
             <!-- ===================== SETTINGS: Towarzysz ===================== -->
-            <div class="card" id="settingsUserBox">
-              <div class="sectionTitle">Profil Towarzysza</div>
-              <div class="sectionSub">Edytuj dane publiczne i preferencje dopasowań.</div>
-  
-              <label class="mt12">Nick</label>
-              <input id="setNick" type="text" placeholder="np. Ola_88" />
-  
-              <label class="mt12">BIO</label>
-              <textarea id="setBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
-              <div class="charHint"><span id="setBioCount">0</span>/250</div>
-  
-              <label class="mt12">Miasto</label>
-              <input id="setCity" type="text" placeholder="np. Warszawa" />
-  
-              <div class="hintCard mt16">
-                <div class="hintTitle">Zakres wieku sugestii</div>
-                <div class="hintText">
-                  Dzięki temu ustawieniu USLY podpowiada Ci osoby w wybranym przedziale wieku.
-                  To nie jest blokada — tylko filtr rekomendacji, który możesz w każdej chwili zmienić.
-                </div>
-  
-                <div class="row mt12" style="align-items:flex-end;">
-                  <div style="flex:1;">
-                    <label class="tMuted">Od</label>
-                    <input id="setPrefAgeFrom" type="range" min="16" max="99" value="18" />
-                    <div class="tMuted" style="text-align:left;">Wybrano: <span id="setPrefAgeFromVal">18</span></div>
+            <div class="card premiumProfileScope" id="settingsUserBox">
+              <div class="sectionTitle">Profil</div>
+              <div class="sectionSub">Twoje miejsce w USLY — premium hub profilu, relacji i planu.</div>
+
+              <div class="heroCard mt16 profileHubCard">
+                <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
+                  <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
+                    <div class="avatar big" id="settingsUserAvatarPreview"></div>
+                    <div style="text-align:left;min-width:0;flex:1;">
+                      <div class="sectionTitle" id="settingsProfileHeroNick" style="margin:0;">Twój profil</div>
+                      <div class="sectionSub" id="settingsProfileHeroMeta">Uzupełnij profil, aby poprawić dopasowania.</div>
+                    </div>
                   </div>
-                  <div style="flex:1;">
-                    <label class="tMuted">Do</label>
-                    <input id="setPrefAgeTo" type="range" min="16" max="99" value="35" />
-                    <div class="tMuted" style="text-align:left;">Wybrano: <span id="setPrefAgeToVal">35</span></div>
+                  <div class="planPill" id="settingsProfilePlanPill">FREE</div>
+                </div>
+
+                <div class="row mt16 profileActionRow">
+                  <button class="btn small profileHeroBtnPrimary" type="button" onclick="openProfileEdit()">Edytuj profil</button>
+                  <button class="btn secondary small profileHeroBtnSecondary" type="button" onclick="openProfileInterests()">Zainteresowania</button>
+                  <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="go('S11_PLANS')">Twój plan</button>
+                </div>
+              </div>
+
+              <div class="card mt16 profileSummaryCard friendsCard" onclick="go('S10D_PROFILE_FRIENDS')">
+                <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
+                  <div style="text-align:left;flex:1;min-width:0;">
+                    <div class="sectionTitle">Znajomi</div>
+                    <div class="sectionSub">Twoja sieć kontaktów i wejście do prywatnych rozmów.</div>
                   </div>
+                  <div class="pill">Otwórz</div>
                 </div>
               </div>
-  
-              <label class="mt12">Zainteresowania</label>
-              <div class="hashRow">
-                <span class="hashPrefix">#</span>
-                <input id="setInterestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
-              </div>
-              <div class="typeahead" id="setInterestTypeahead"></div>
-              <div class="chips" id="setInterestChips"></div>
-  
-              <div class="sectionTitle mt16">Plan</div>
-              <div class="sectionSub">Zmień plan i zobacz co zawiera (cena + funkcje).</div>
-  
-              <div id="settingsUserPlanBox">
-                <div class="seg wide mt12">
-                  <button class="segBtn on" id="uplan_free_set" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE</button>
-                  <button class="segBtn" id="uplan_plus_set" type="button" onclick="setUserPlan('plus')" data-plan="plus" data-plan-icon="💙">💙 PLUS</button>
-                </div>
-                <div class="seg wide mt10">
-                  <button class="segBtn" id="uplan_premium_set" type="button" onclick="setUserPlan('premium')" data-plan="premium" data-plan-icon="💜">💜 PREMIUM</button>
-                  <button class="segBtn" id="uplan_vip_set" type="button" onclick="setUserPlan('vip')" data-plan="vip" data-plan-icon="🖤">🖤 VIP</button>
+
+              <div class="card mt16 profileSummaryCard invitesCard" onclick="go('S10E_PROFILE_INVITES')">
+                <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
+                  <div style="text-align:left;flex:1;min-width:0;">
+                    <div class="sectionTitle">Zaproszenia</div>
+                    <div class="sectionSub">Przychodzące i wysłane zaproszenia do znajomych.</div>
+                  </div>
+                  <div class="pill">Otwórz</div>
                 </div>
               </div>
-  
-              <button class="btn secondary mt16" type="button" onclick="go('S11_PLANS')">Szczegóły planów</button>
-              <button class="btn mt16" type="button" onclick="saveSettings()">Zapisz zmiany</button>
-  
-              <button class="btn secondary mt12" type="button" onclick="openBugReport()">
-                Zgłoś błąd
-              </button>
+
+              <div class="card mt16 profileSummaryCard">
+                <div class="sectionTitle">Konto i pomoc</div>
+                <div class="sectionSub">Najważniejsze ustawienia techniczne i dokumenty.</div>
+
+                <div class="row mt16">
+                  <button class="btn secondary" type="button" onclick="openBugReport()">Zgłoś błąd</button>
+                </div>
+                    <button class="btn secondary" type="button" onclick="openChangePassword()">Zmień hasło</button>
+                    <button class="btn danger" type="button" onclick="openDeleteAccount()">Usuń konto</button>
+</div>
             </div>
-  
             <!-- ===================== SETTINGS: Organizator ===================== -->
             <div class="card" id="settingsPartnerBox" style="display:none;">
               <div class="sectionTitle">Profil organizatora</div>
@@ -1288,7 +1813,7 @@ pełny kod index.html: <!-- ====================================================
         <!-- =========================================================
         S11 PLANS (ROLE-SCOPED) — DOKŁADNIE WG ZAŁĄCZNIKÓW
         ========================================================== -->
-        <section class="view" id="S11_PLANS" aria-label="Plany">
+        <section class="view premiumPlansScope" id="S11_PLANS" aria-label="Plany">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()">◀</button>
             <div class="brandCenter small">
@@ -1306,130 +1831,138 @@ pełny kod index.html: <!-- ====================================================
           <div class="content">
             <!-- ===================== Towarzysz ===================== -->
             <div id="plansUserOnly">
-              <div class="card">
+              <div class="heroCard profileSummaryCard">
                 <div class="sectionTitle">Plany Towarzysza</div>
-                <div class="sectionSub">Nowa struktura funkcji (Free / Plus / Premium / VIP).</div>
+                <div class="sectionSub">Wybierz poziom dostępu dopasowany do tego, jak chcesz korzystać z USLY.</div>
               </div>
-  
-              <div class="card mt16" data-plan="free" data-plan-icon="🆓">
+
+              <div class="card mt16" data-plan="free" data-plan-icon="FREE">
                 <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">🆓 FREE</div>
+                  <div class="sectionTitle">FREE</div>
                   <div class="planPill">0 zł</div>
                 </div>
-                <p class="mt12">• ✅ Czaty 1:1 (bez limitu liczby rozmów)</p>
-                <p>• ✅ Przeglądanie profili / wydarzeń / partnerów</p>
-                <p>• ✅ Dołączenie do 1 aktywnego wydarzenia / grupy</p>
-                <p>• ✅ Podstawowe filtry (lokalizacja, kategoria)</p>
-                <p>• ✅ Otrzymywanie zaproszeń do czatu</p>
-                <p>• ❌ Brak inicjowania czatu jako pierwszy (lub limit dzienny, np. 3)</p>
-                <p>• ❌ Brak widoczności „kto mnie oglądał”</p>
-                <p>• ❌ Brak wyróżnienia profilu</p>
+                <p class="mt12">Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.</p>
+                <ul class="planList">
+                  <li>Rozmowy 1:1 ze znajomymi</li>
+                  <li>Dołączanie do 1 grupy jednocześnie</li>
+                  <li>Brak możliwości tworzenia własnych grup</li>
+                  <li>Do 5 zainteresowań w profilu</li>
+                </ul>
                 <button class="btn secondary mt16" type="button" onclick="setUserPlan('free')">Wybierz</button>
               </div>
-  
-              <div class="card mt16" data-plan="plus" data-plan-icon="💙">
+
+              <div class="card mt16" data-plan="plus" data-plan-icon="PLUS">
                 <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">💙 PLUS</div>
+                  <div class="sectionTitle">PLUS</div>
                   <div class="planPill">29 zł / miesiąc</div>
                 </div>
-                <p class="mt12">• ✅ Nielimitowane inicjowanie czatów 1:1</p>
-                <p>• ✅ Dołączenie do 3 wydarzeń / grup jednocześnie</p>
-                <p>• ✅ Zapis do ulubionych (profile, wydarzenia)</p>
-                <p>• ✅ Historia czatów bez limitu</p>
-                <p>• ✅ Delikatne oznaczenie profilu („Plus user”)</p>
+                <p class="mt12">Większa swoboda w poznawaniu ludzi i korzystaniu z grup.</p>
+                <ul class="planList">
+                  <li>Tworzenie 1 własnej grupy</li>
+                  <li>Dołączanie do maks. 3 grup</li>
+                  <li>Do 10 zainteresowań w profilu</li>
+                  <li>Lepsza swoboda korzystania z aplikacji na co dzień</li>
+                </ul>
                 <button class="btn secondary mt16" type="button" onclick="setUserPlan('plus')">Wybierz</button>
               </div>
-  
-              <div class="card mt16" data-plan="premium" data-plan-icon="💜">
+
+              <div class="card mt16" data-plan="premium" data-plan-icon="PREMIUM">
                 <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">💜 PREMIUM</div>
+                  <div class="sectionTitle">PREMIUM</div>
                   <div class="planPill">59 zł / miesiąc</div>
                 </div>
-                <p class="mt12">• ✅ Priorytetowe wyświetlanie profilu</p>
-                <p>• ✅ Możliwość tworzenia własnych wydarzeń / grup</p>
-                <p>• ✅ Dołączenie do nielimitowanej liczby wydarzeń</p>
-                <p>• ✅ Informacja: kto odwiedził mój profil</p>
-                <p>• ✅ Zaawansowane filtry (zainteresowania, aktywność, typ relacji)</p>
-                <p>• ✅ Status „Premium” widoczny w czatach</p>
+                <p class="mt12">Pełniejsze korzystanie z USLY i rozwijanie swojej sieci znajomości.</p>
+                <ul class="planList">
+                  <li>Tworzenie do 3 własnych grup</li>
+                  <li>Brak limitu dołączania do grup</li>
+                  <li>Dodawanie znajomych do grup</li>
+                  <li>Do 20 zainteresowań w profilu</li>
+                </ul>
                 <button class="btn secondary mt16" type="button" onclick="setUserPlan('premium')">Wybierz</button>
               </div>
-  
-              <div class="card mt16" data-plan="vip" data-plan-icon="🖤">
+
+              <div class="card mt16" data-plan="vip" data-plan-icon="VIP">
                 <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">🖤 VIP</div>
+                  <div class="sectionTitle">VIP</div>
                   <div class="planPill">99 zł / miesiąc</div>
                 </div>
-                <p class="mt12">• 🚀 Boost profilu (np. 1× dziennie / 3× tygodniowo)</p>
-                <p>• 🚀 Wyróżnienie wizualne w listach i czatach</p>
-                <p>• 🚀 Priorytetowe zaproszenia / rekomendacje</p>
-                <p>• 🚀 Wcześniejszy dostęp do nowych funkcji</p>
-                <p>• 🚀 Badge „VIP” (silny efekt psychologiczny)</p>
+                <p class="mt12">Maksymalne możliwości i pełna swoboda w USLY.</p>
+                <ul class="planList">
+                  <li>Tworzenie grup bez limitu</li>
+                  <li>Brak limitów w grupach i kontaktach</li>
+                  <li>Dodawanie znajomych do grup</li>
+                  <li>Nieograniczona liczba zainteresowań</li>
+                </ul>
                 <button class="btn secondary mt16" type="button" onclick="setUserPlan('vip')">Wybierz</button>
+                </div>
+              </div>
+              <div id="plansPartnerOnly">
+                <div class="card mt24">
+                  <div class="sectionTitle">Plany Organizatora</div>
+                  <div class="sectionSub">Wybierz poziom widoczności, raportów i narzędzi dla swojego miejsca lub marki.</div>
+                </div>
+
+                <div class="card mt16" data-plan="free" data-plan-icon="FREE">
+                  <div class="row" style="align-items:center;justify-content:space-between;">
+                    <div class="sectionTitle">FREE</div>
+                    <div class="planPill">0 zł</div>
+                  </div>
+                  <p class="mt12">Dobry start, jeśli chcesz pokazać miejsce w USLY i sprawdzić pierwsze efekty obecności.</p>
+                  <ul class="planList">
+                    <li>Widoczność marki w podstawowym zakresie</li>
+                    <li>Publikacja wydarzeń i wejście do panelu organizatora</li>
+                    <li>Najważniejsze ustawienia oraz podstawowy profil miejsca</li>
+                    <li>Plan na start i pierwsze testy obecności w aplikacji</li>
+                  </ul>
+                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('free')">Wybierz</button>
+                </div>
+
+                <div class="card mt16" data-plan="pro" data-plan-icon="PRO">
+                  <div class="row" style="align-items:center;justify-content:space-between;">
+                    <div class="sectionTitle">PRO</div>
+                    <div class="planPill">99 zł / miesiąc</div>
+                  </div>
+                  <p class="mt12">Dla miejsc, które chcą regularnie przyciągać ludzi i budować mocniejszą widoczność w USLY.</p>
+                  <ul class="planList">
+                    <li>Mocniejsza ekspozycja profilu i wydarzeń</li>
+                    <li>Lepsza widoczność oferty dla odpowiednich użytkowników</li>
+                    <li>Wygodniejsze zarządzanie aktywnością organizatora</li>
+                    <li>Plan do regularnego wzrostu obecności marki</li>
+                  </ul>
+                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('pro')">Wybierz</button>
+                </div>
+
+                <div class="card mt16" data-plan="premium" data-plan-icon="PREMIUM">
+                  <div class="row" style="align-items:center;justify-content:space-between;">
+                    <div class="sectionTitle">PREMIUM</div>
+                    <div class="planPill">199 zł / miesiąc</div>
+                  </div>
+                  <p class="mt12">Dla marek, które chcą działać szerzej, lepiej mierzyć efekty i mocniej budować społeczność wokół miejsca.</p>
+                  <ul class="planList">
+                    <li>Szersza widoczność marki i wydarzeń w aplikacji</li>
+                    <li>Lepszy wgląd w aktywność i bieżące wyniki</li>
+                    <li>Większa skala działań promocyjnych i eventowych</li>
+                    <li>Plan do świadomego rozwijania społeczności wokół miejsca</li>
+                  </ul>
+                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('premium')">Wybierz</button>
+                </div>
+
+                <div class="card mt16" data-plan="enterprise" data-plan-icon="ENTERPRISE">
+                  <div class="row" style="align-items:center;justify-content:space-between;">
+                    <div class="sectionTitle">ENTERPRISE</div>
+                    <div class="planPill">Indywidualnie</div>
+                  </div>
+                  <p class="mt12">Dla większych partnerów i sieci, które chcą traktować USLY jako realny kanał wzrostu marki i sprzedaży.</p>
+                  <ul class="planList">
+                    <li>Najszerszy poziom widoczności, wsparcia i narzędzi</li>
+                    <li>Największa skala działań i kampanii dla wielu lokalizacji</li>
+                    <li>Najpełniejszy zakres raportowania i obsługi partnera</li>
+                    <li>Plan dla organizacji rozwijających USLY jako ważny kanał marki</li>
+                  </ul>
+                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('enterprise')">Wybierz</button>
+                </div>
               </div>
             </div>
-  
-            <!-- ===================== Organizator ===================== -->
-            <div id="plansPartnerOnly" style="display:none;">
-              <div class="card">
-                <div class="sectionTitle">Plany Organizatora</div>
-                <div class="sectionSub">Nowa struktura planów (Free Partner / Pro Partner / Premium Partner / Enterprise).</div>
-              </div>
-  
-              <div class="card mt16" data-plan="free" data-plan-icon="🆓">
-                <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">🆓 FREE PARTNER — „Bądź w ekosystemie”</div>
-                  <div class="planPill">0 zł</div>
-                </div>
-                <p class="mt12">• ✅ Profil firmy (logo, opis, lokalizacja)</p>
-                <p>• ✅ Widoczność w katalogu partnerów</p>
-                <p>• ✅ Otrzymywanie wiadomości od użytkowników</p>
-                <p>• ✅ Udział w wydarzeniach tworzonych przez innych</p>
-                <p>• ❌ Brak inicjowania czatu z użytkownikiem</p>
-                <p>• ❌ Brak statystyk</p>
-                <p>• ❌ Brak wyróżnień</p>
-                <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('free')">Wybierz</button>
-              </div>
-  
-              <div class="card mt16" data-plan="pro" data-plan-icon="💼">
-                <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">💼 PRO PARTNER — „Pozyskuj klientów”</div>
-                  <div class="planPill">149 zł / miesiąc</div>
-                </div>
-                <p class="mt12">• ✅ Inicjowanie czatów z użytkownikami</p>
-                <p>• ✅ Tworzenie wydarzeń / ofert firmowych</p>
-                <p>• ✅ Do 3 aktywnych wydarzeń jednocześnie</p>
-                <p>• ✅ Podstawowe statystyki: wyświetlenia profilu, kliknięcia, liczba czatów</p>
-                <p>• ✅ Oznaczenie „Pro Partner”</p>
-                <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('pro')">Wybierz</button>
-              </div>
-  
-              <div class="card mt16" data-plan="premium" data-plan-icon="💎">
-                <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">💎 PREMIUM PARTNER — „Bądź wybierany”</div>
-                  <div class="planPill">299 zł / miesiąc</div>
-                </div>
-                <p class="mt12">• 🚀 Priorytetowe wyświetlanie profilu</p>
-                <p>• 🚀 Do 10 aktywnych wydarzeń / ofert</p>
-                <p>• 🚀 Zaawansowane statystyki: źródła leadów, konwersje czat → kontakt</p>
-                <p>• 🚀 Wyróżnienie wizualne (kolor / badge)</p>
-                <p>• 🚀 Możliwość przypięcia oferty na górze listy</p>
-                <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('premium')">Wybierz</button>
-              </div>
-  
-              <div class="card mt16" data-plan="enterprise" data-plan-icon="🏆">
-                <div class="row" style="align-items:center;justify-content:space-between;">
-                  <div class="sectionTitle">🏆 ENTERPRISE — „Zdominuj kategorię”</div>
-                  <div class="planPill">599 zł+ / miesiąc</div>
-                </div>
-                <p class="mt12">• 🧠 Nielimitowane wydarzenia / oferty</p>
-                <p>• 🧠 Dedykowane pozycje promowane</p>
-                <p>• 🧠 Wczesny dostęp do nowych funkcji</p>
-                <p>• 🧠 Dedykowany onboarding</p>
-                <p>• 🧠 Możliwość integracji (API / eksport leadów)</p>
-                <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('enterprise')">Wybierz</button>
-              </div>
-            </div>
-          </div>
         </section>
   
         <!-- =========================================================
@@ -1451,16 +1984,13 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="card">
+            <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Powiadomienia</div>
-              <div class="sectionSub">Dzwonek na górze — bez dodatkowych ikon.</div>
+                <div class="sectionSub">Tu zobaczysz nowe aktywności i ważne informacje.</div>
             </div>
   
             <div class="col mt16" id="notifList"></div>
   
-            <div class="card mt16">
-              <div class="sectionSub">Brak nowych powiadomień (demo).</div>
-            </div>
           </div>
         </section>
   
@@ -1530,50 +2060,57 @@ pełny kod index.html: <!-- ====================================================
       </div>
     </div>
   </div>
-  <div id="ageCheckWrapper" style="margin-top:12px;">
-    <label for="regBirthDate"><strong>Data urodzenia</strong></label>
-    <input 
-      type="date" 
-      id="regBirthDate" 
-      required
-    />
-    <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
-      Nie możesz się zarejestrować – wymagane jest ukończone 16 lat.
-    </div>
-  </div>
-  
-</script> -->
 
 
-      <!-- === AUTH PANEL (MVP) === -->
-  <section id="auth-panel" style="margin-top: 24px; padding: 16px; border: 1px solid #ddd; border-radius: 12px;">
-    <h2>Auth (MVP)</h2>
 
-    <div style="display: grid; gap: 8px; max-width: 420px;">
-      <label>
-        Email
-        <input id="login-email" type="email" placeholder="email@example.com" autocomplete="email" style="width: 100%; padding: 8px;">
-      </label>
+  <script src="api.js?v=20260314-2136"></script>
+  <script src="app.js?v=20260315-1626"></script>
 
-      <label>
-        Hasło
-        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" style="width: 100%; padding: 8px;">
-      </label>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button id="btn-login" type="button">Zaloguj</button>
-        <button id="btn-me" type="button">Pobierz /auth/me</button>
-        <button id="btn-logout" type="button">Wyloguj</button>
-      </div>
+  <datalist id="citiesDatalist">
+    <option value="Warszawa"></option>
+    <option value="Ząbki"></option>
+    <option value="Kobyłka"></option>
+    <option value="Wołomin"></option>
+    <option value="Marki"></option>
+    <option value="Legionowo"></option>
+    <option value="Piaseczno"></option>
+    <option value="Pruszków"></option>
+    <option value="Otwock"></option>
+    <option value="Mińsk Mazowiecki"></option>
+    <option value="Kraków"></option>
+    <option value="Wieliczka"></option>
+    <option value="Skawina"></option>
+    <option value="Niepołomice"></option>
+    <option value="Gdańsk"></option>
+    <option value="Gdynia"></option>
+    <option value="Sopot"></option>
+    <option value="Rumia"></option>
+    <option value="Reda"></option>
+    <option value="Wrocław"></option>
+    <option value="Siechnice"></option>
+    <option value="Oleśnica"></option>
+    <option value="Poznań"></option>
+    <option value="Swarzędz"></option>
+    <option value="Luboń"></option>
+    <option value="Puszczykowo"></option>
+    <option value="Łódź"></option>
+    <option value="Katowice"></option>
+    <option value="Lublin"></option>
+    <option value="Białystok"></option>
+    <option value="Szczecin"></option>
+    <option value="Bydgoszcz"></option>
+    <option value="Toruń"></option>
+    <option value="Rzeszów"></option>
+    <option value="Olsztyn"></option>
+    <option value="Opole"></option>
+    <option value="Kielce"></option>
+    <option value="Częstochowa"></option>
+    <option value="Radom"></option>
+    <option value="Płock"></option>
+  </datalist>
 
-      <pre id="auth-status" style="margin: 0; padding: 12px; background: #f7f7f7; border-radius: 8px; overflow:auto;">status: (brak)</pre>
-    </div>
-  </section>
-  <!-- === /AUTH PANEL (MVP) === -->
-
-  <script src="api.js"></script>
-  <script src="app.js"></script>
-
-    </body>
+</body>
     </html>
     
