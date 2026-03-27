@@ -1,0 +1,3375 @@
+/* =========================================================
+USLY — JS FINAL (v11) — SPÓJNY Z HTML v11 (PL ONLY)
+CEL: UI demo + przygotowanie pod backend (spójne ID, stan, hooki)
+========================================================= */
+
+/* ------------------------- API Config -------------------------- */
+// Prod: ustawimy na URL backendu z Render (osobna domena)
+// Local: http://127.0.0.1:8001 (jak dziś uruchamiasz uvicorn)
+const API_BASE_URL =
+  window.USLY_API_BASE_URL ||
+  (location.hostname.includes("onrender.com")
+    ? "https://usly-backend-v2.onrender.com"
+    : "http://127.0.0.1:8000");
+
+// expose for api.js (plain scripts)
+window.API_BASE_URL = API_BASE_URL;
+
+
+/* ------------------------- App State -------------------------- */
+const App = {
+  lang: "pl", // PL only (zgodnie z wymaganiem "brak wersji angielskiej")
+  role: "user", // 'user' | 'partner'
+  isLoggedIn: false,
+  history: ["S0_WELCOME"],
+  currentView: "S0_WELCOME",
+
+  // Sub-states / filters
+  eventsTab: "for_you", // 'for_you' | 'followed'
+
+  // Profile (demo)
+  user: {
+    plan: "free", // free | plus | premium | vip
+    nick: "Ola_88",
+    city: "Warszawa",
+    age: 24,
+    bio: "",
+    interests: [],
+    prefAgeFrom: 18,
+    prefAgeTo: 35,
+    geo: { lat: "", lng: "" },
+    avatarEmoji: "🙂",
+    avatarUrl: "",
+  },
+
+  partner: {
+    plan: "free", // free | pro | premium | enterprise
+    company: "Kawiarnia Aurora",
+    category: "gastro",
+    city: "Warszawa",
+    about: "",
+    logoEmoji: "🏷️",
+  },
+
+  // Demo data
+  people: [],
+
+  events: [
+    {
+      id: "e1",
+      title: "Koncert na żywo",
+      city: "Warszawa",
+      when: "Sobota 18:00",
+      where: "Centrum",
+      interest: "muzyka",
+      desc: "Wieczór z muzyką na żywo i luźną atmosferą.",
+      paidMode: "paid_fixed",
+      price: 49,
+      priceFrom: null,
+      priceTo: null,
+      ticketLink: "https://example.com",
+      saved: false,
+      interested: false,
+      organizer: { id: "p1", name: "Klub Aurora" },
+    },
+    {
+      id: "e2",
+      title: "Poranna joga",
+      city: "Warszawa",
+      when: "Niedziela 09:00",
+      where: "Park",
+      interest: "joga",
+      desc: "Spokojna joga na świeżym powietrzu. Weź matę.",
+      paidMode: "free",
+      price: 0,
+      priceFrom: null,
+      priceTo: null,
+      ticketLink: "https://example.com",
+      saved: false,
+      interested: false,
+      organizer: { id: "p2", name: "Studio Balance" },
+    },
+    {
+      id: "e3",
+      title: "Wieczór planszówek",
+      city: "Warszawa",
+      when: "Piątek 19:00",
+      where: "Kawiarnia",
+      interest: "planszówki",
+      desc: "Poznaj ludzi przy grach — bez spiny, z uśmiechem.",
+      paidMode: "paid_range",
+      price: null,
+      priceFrom: 15,
+      priceTo: 30,
+      ticketLink: "https://example.com",
+      saved: false,
+      interested: false,
+      organizer: { id: "p1", name: "Kawiarnia Aurora" },
+    },
+  ],
+
+  // Group model: interestTag used for filtering by profile interests
+  groups: [
+    { id: "g1", title: "Kawosze Warszawa", interestTag: "kawa", members: 128, desc: "Nowe kawiarnie, spotkania, degustacje." },
+    { id: "g2", title: "Kino i seriale", interestTag: "kino", members: 214, desc: "Polecajki, seanse, dyskusje." },
+    { id: "g3", title: "Spacery i miasta", interestTag: "spacer", members: 92, desc: "Trasy, parki, małe odkrycia." },
+    { id: "g4", title: "AI & Tech", interestTag: "AI", members: 301, desc: "Nowinki, projekty, dyskusje." },
+    { id: "g5", title: "Fotografia", interestTag: "fotografia", members: 175, desc: "Kadry, sprzęt, sesje." },
+  ],
+
+  myGroups: [],
+  partnerEvents: [],
+
+  chats: [],
+
+  // Working selection
+  selectedPersonId: null,
+  selectedEventId: null,
+  selectedPartnerEventId: null,
+  selectedChatId: null,
+  selectedChatUserId: null,
+  currentUserId: null,
+  selectedGroupId: null,
+};
+
+/* ------------------------- DOM Helpers -------------------------- */
+const $ = (id) => document.getElementById(id);
+
+const USLY_STORAGE_KEYS = {
+  token: "usly_token",
+  userPlan: "usly_user_plan",
+  partnerPlan: "usly_partner_plan",
+  savedEvents: "usly_saved_events",
+};
+
+try {
+  const hasToken =
+    !!localStorage.getItem(USLY_STORAGE_KEYS.token) ||
+    !!localStorage.getItem("usly_token");
+
+  if (hasToken) {
+    const savedUserPlan = localStorage.getItem(USLY_STORAGE_KEYS.userPlan);
+    if (savedUserPlan && ["free", "plus", "premium", "vip"].includes(savedUserPlan)) {
+      App.user.plan = savedUserPlan;
+    }
+
+    const savedPartnerPlan = localStorage.getItem(USLY_STORAGE_KEYS.partnerPlan);
+    if (savedPartnerPlan && ["free", "pro", "premium", "enterprise"].includes(savedPartnerPlan)) {
+      App.partner.plan = savedPartnerPlan;
+    }
+  } else {
+    App.user.plan = "free";
+    App.partner.plan = "free";
+  }
+} catch (_) {
+  App.user.plan = "free";
+  App.partner.plan = "free";
+}
+
+function safeSetText(id, text) {
+  const el = $(id);
+  if (el) el.textContent = text;
+}
+
+function show(el) { if (el) el.style.display = ""; }
+function hide(el) { if (el) el.style.display = "none"; }
+
+function getSavedEventIds() {
+  try {
+    const raw = localStorage.getItem(USLY_STORAGE_KEYS.savedEvents);
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function persistSavedEventIds() {
+  try {
+    const ids = App.events.filter(e => e.saved).map(e => String(e.id));
+    localStorage.setItem(USLY_STORAGE_KEYS.savedEvents, JSON.stringify(ids));
+  } catch (_) {}
+}
+
+function syncEventDetailButtons() {
+  const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
+  if (!ev) return;
+
+  const saveBtn = document.querySelector('#S7B_EVENT_DETAIL button[onclick="toggleSaveEvent()"]');
+  const interestedBtn = document.querySelector('#S7B_EVENT_DETAIL button[onclick="toggleInterestedEvent()"]');
+
+  if (saveBtn) {
+    saveBtn.textContent = ev.saved ? "Obserwowane" : "Obserwuj";
+  }
+
+  if (interestedBtn) {
+    interestedBtn.textContent = ev.interested ? "Zrezygnuj z udziału" : "Wezmę udział";
+  }
+}
+
+/* ------------------------- Navigation -------------------------- */
+function go(viewId) {
+  if (!viewId) return;
+  const current = App.currentView;
+  if (current === viewId) return;
+
+  // Hide all
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+
+  const next = $(viewId);
+  if (!next) {
+    toast(`Brak widoku: ${viewId}`);
+    return;
+  }
+  next.classList.add("active");
+
+  App.currentView = viewId;
+  App.history.push(viewId);
+
+  if (viewId === "S10E_PROFILE_INVITES" || viewId === "S12_NOTIFICATIONS") {
+    updateNotifBadges(0);
+  }
+
+  if (viewId === "S10_SETTINGS") {
+    if ($("setNick")) $("setNick").value = App.user.nick || "";
+    if ($("setBio")) $("setBio").value = App.user.bio || "";
+    if ($("setCity")) $("setCity").value = App.user.city || "";
+
+    safeSetText("settingsProfileHeroNick", App.user.nick || "Twój profil");
+    safeSetText(
+      "settingsProfileHeroMeta",
+      [App.user.city, App.user.bio].filter(Boolean).join(" • ") || "Uzupełnij profil, aby poprawić dopasowania."
+    );
+    safeSetText("settingsProfilePlanPill", String(App.user.plan || "FREE").toUpperCase());
+    safeSetText("settingsProfilePlanPillSecondary", String(App.user.plan || "FREE").toUpperCase());
+    if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+    if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
+    safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+    safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom));
+    safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo));
+    refreshProfileRelations().catch(() => {});
+  }
+
+  // Render after navigation
+  renderAll();
+}
+
+function back() {
+  if (App.history.length <= 1) return go("S0_WELCOME");
+  // Remove current
+  App.history.pop();
+  const prev = App.history[App.history.length - 1] || "S0_WELCOME";
+
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  const prevEl = $(prev);
+  if (prevEl) prevEl.classList.add("active");
+  App.currentView = prev;
+
+  renderAll();
+}
+
+/* ------------------------- Toast -------------------------- */
+let toastTimer = null;
+function toast(message) {
+  const el = $("toast");
+  if (!el) return;
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+/* ------------------------- Modal -------------------------- */
+function openModal(title, html) {
+  const overlay = $("modalOverlay");
+  const body = $("modalBody");
+  const ttl = $("modalTitle");
+  if (!overlay || !body || !ttl) return;
+
+  ttl.textContent = title || "USLY";
+  body.innerHTML = html || "";
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden", "false");
+}
+
+function closeModal() {
+  const overlay = $("modalOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("show");
+  overlay.setAttribute("aria-hidden", "true");
+}
+
+/* ------------------------- Bug Report (UI -> backend hook) -------------------------- */
+// Minimal UI for "Zgłoś błąd" button added in S10_SETTINGS.
+// Does not remove/alter any existing behavior.
+function openBugReport() {
+  openModal("Zgłoś błąd", `
+    <div class="tStrong">Zgłoszenie błędu</div>
+    <div class="sectionSub mt10">Opisz krótko problem. To trafia do zespołu (na testach).</div>
+    <label class="mt12">Co nie działa?</label>
+    <textarea id="bugReportText" maxlength="1000" placeholder="Np. Po kliknięciu Zapisz zmiany nic się nie dzieje..."></textarea>
+    <div class="charHint"><span id="bugReportCount">0</span>/1000</div>
+    <button class="btn mt16" type="button" onclick="submitBugReport()">Wyślij</button>
+  `);
+
+  const ta = $("bugReportText");
+  const cnt = $("bugReportCount");
+  if (ta && cnt) {
+    const upd = () => (cnt.textContent = String(ta.value.length));
+    ta.addEventListener("input", upd);
+    upd();
+    // autofocus
+    setTimeout(() => ta.focus(), 0);
+  }
+}
+
+function submitBugReport() {
+  const ta = $("bugReportText");
+  const message = (ta?.value || "").trim();
+  if (!message) {
+    toast("Opisz proszę problem");
+    return;
+  }
+
+  // Backend hook (optional): set window.USLY_API_BASE to enable sending.
+  // Example: window.USLY_API_BASE = "https://api.example.com";
+  const base = window.USLY_API_BASE;
+  if (base) {
+    fetch(String(base).replace(/\/$/, "") + "/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "bug",
+        message,
+        // Minimal context to help diagnose (safe for MVP tests)
+        view: App.currentView,
+        role: App.role,
+      }),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        toast("Dzięki! Zgłoszenie wysłane.");
+        closeModal();
+      })
+      .catch(() => {
+        toast("Nie udało się wysłać (demo)");
+        closeModal();
+      });
+    return;
+  }
+
+  // Demo fallback
+  toast("Dzięki! Zgłoszenie zapisane (demo)");
+  closeModal();
+}
+
+/* ------------------------- Role Selection -------------------------- */
+function selectRole(role) {
+  if (role !== "user" && role !== "partner") return;
+  App.role = role;
+
+  // Toggle segmented buttons (where present)
+  const pairs = [
+    ["roleUserBtn", "rolePartnerBtn"],
+    ["roleUserBtnLogin", "rolePartnerBtnLogin"],
+    ["roleUserBtn2", "rolePartnerBtn2"],
+  ];
+  pairs.forEach(([u, p]) => {
+    const uEl = $(u), pEl = $(p);
+    if (!uEl || !pEl) return;
+    if (role === "user") {
+      uEl.classList.add("on"); pEl.classList.remove("on");
+    } else {
+      pEl.classList.add("on"); uEl.classList.remove("on");
+    }
+  });
+
+  // Labels
+  safeSetText("roleLabelLogin", role === "user" ? "Towarzysz" : "Organizator");
+  safeSetText("roleLabelRegister", role === "user" ? "Towarzysz" : "Organizator");
+  safeSetText("regSubLine", role === "user"
+    ? "Stwórz konto Towarzysza i ustaw profil."
+    : "Stwórz konto Organizatora i ustaw profil.");
+
+  // Show/Hide registration blocks
+  const userBox = $("regUserBox");
+  const partnerBox = $("regPartnerBox");
+  if (userBox && partnerBox) {
+    if (role === "user") { show(userBox); hide(partnerBox); }
+    else { hide(userBox); show(partnerBox); }
+  }
+
+  const userAccountFields = $("regUserAccountFields");
+  const partnerAccountFields = $("regPartnerAccountFields");
+  if (userAccountFields && partnerAccountFields) {
+    if (role === "user") { show(userAccountFields); hide(partnerAccountFields); }
+    else { hide(userAccountFields); show(partnerAccountFields); }
+  }
+
+  // Settings sections
+  const settingsUser = $("settingsUserBox");
+  const settingsPartner = $("settingsPartnerBox");
+  if (settingsUser && settingsPartner) {
+    if (role === "user") { show(settingsUser); hide(settingsPartner); }
+    else { hide(settingsUser); show(settingsPartner); }
+  }
+
+  // Plans sections
+  const plansUserOnly = $("plansUserOnly");
+  const plansPartnerOnly = $("plansPartnerOnly");
+  if (plansUserOnly && plansPartnerOnly) {
+    if (role === "user") { show(plansUserOnly); hide(plansPartnerOnly); }
+    else { hide(plansUserOnly); show(plansPartnerOnly); }
+  }
+
+  // Update tabbars visibility (still controlled by login class + role)
+  updateTabbars();
+
+  // Re-render pills etc.
+  renderAll();
+}
+
+/* ------------------------- Login / Signup (Demo) -------------------------- */
+async function loginPrimary() {
+  const email = $("loginId")?.value?.trim();
+  const password = $("loginPass")?.value?.trim();
+
+  if (!email || !password) {
+    toast("Podaj email i hasło");
+    return;
+  }
+
+  try {
+    const data = await apiFetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, expected_role: App.role === "partner" ? "partner" : "user" }),
+    });
+
+    if (!data?.success || !data?.data?.access_token) {
+      toast(data?.error?.message || "Błąd logowania");
+      return;
+    }
+
+    localStorage.setItem("usly_token", data.data.access_token);
+
+    const me = await apiFetch("/auth/me");
+    App.currentUserId = me?.id ?? me?.data?.id ?? null;
+    App.role = me?.role === "partner" ? "partner" : "user";
+    App.isLoggedIn = true;
+
+    if (App.role === "user") {
+      const profile = await apiFetch("/users/me");
+      if (profile?.success && profile?.data) {
+        App.user.nick = profile.data.nick || App.user.nick;
+        App.user.city = profile.data.miasto || App.user.city;
+        App.user.bio = profile.data.bio || "";
+          const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
+          const setupInterests = backendInterests.length > 0 ? backendInterests : (Array.isArray(App.user.interests) ? App.user.interests : []);
+
+          App.user.interests = setupInterests;
+          try { localStorage.setItem("usly_user_interests", JSON.stringify(setupInterests)); } catch(_) {}
+        App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
+        App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
+        App.user.plan = profile.data.plan || App.user.plan;
+        App.user.avatarUrl = profile.data.avatar_url ?? "";
+        try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
+      }
+    } else {
+      await loadPartnerProfile();
+      await loadPartnerEvents();
+    }
+
+    $("appRoot")?.classList.add("isLoggedIn");
+updateTabbars();
+
+if (App.role === "user") {
+  await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
+}
+
+renderAll();
+bindMessageInputs();
+
+toast("Zalogowano");
+if (App.role === "user") go("S4_NEARBY");
+else go("S9_PARTNER");
+  } catch (err) {
+    console.error("loginPrimary failed:", err);
+    toast(err?.message || err?.userMessage || "Błąd logowania");
+  }
+}
+
+async function loadPartnerProfile() {
+  try {
+    const profile = await apiFetch("/partners/me");
+    if (profile?.success && profile?.data) {
+      App.partner.company = profile.data.nazwa || App.partner.company;
+      App.partner.city = profile.data.miasto || App.partner.city;
+      App.partner.category = profile.data.kategoria || App.partner.category || "inne";
+      App.partner.about = profile.data.bio || "";
+      App.partner.logoUrl = profile.data.logo_url || "";
+    }
+  } catch (err) {
+    console.error("loadPartnerProfile failed", err);
+  }
+}
+
+function loginSocial(provider) {
+  toast("Logowanie społecznościowe będzie dostępne wkrótce");
+}
+
+function signupSocial(provider) {
+  toast("Rejestracja społecznościowa będzie dostępna wkrótce");
+}
+
+function logout() {
+  App.isLoggedIn = false;
+  try { localStorage.removeItem("usly_token"); } catch (_) {}
+  try { localStorage.removeItem(USLY_STORAGE_KEYS.userPlan); } catch (_) {}
+  try { localStorage.removeItem("usly_user_interests"); } catch (_) {}
+
+  App.currentUserId = null;
+  App.selectedPersonId = null;
+  App.selectedChatId = null;
+  App.selectedChatUserId = null;
+  App.selectedEventId = null;
+  App.selectedGroupId = null;
+
+  App.user.plan = "free";
+  App.user.nick = "";
+  App.user.city = "";
+  App.user.age = 24;
+  App.user.bio = "";
+  App.user.interests = [];
+  App.user.prefAgeFrom = 18;
+  App.user.prefAgeTo = 35;
+  App.user.avatarUrl = "";
+
+  App.people = [];
+  App.chats = [];
+  App.myGroups = [];
+
+  // RESET PARTNER STATE (VERY IMPORTANT)
+  App.partner.company = "";
+  App.partner.city = "";
+  App.partner.category = "";
+  App.partner.about = "";
+  App.partner.logoUrl = "";
+  App.partner.plan = "free";
+
+  $("appRoot")?.classList.remove("isLoggedIn");
+
+  hide($("tabbarUser"));
+  hide($("tabbarPartner"));
+
+  toast("Wylogowano");
+  App.history = ["S0_WELCOME"];
+  go("S0_WELCOME");
+}
+function openForgot() {
+  openModal("Odzyskiwanie hasła", `
+    <div class="tStrong">Reset hasła</div>
+    <div class="sectionSub">W wersji demo nie wysyłamy maili. W backendzie: token resetu + email.</div>
+    <label class="mt12">Email</label>
+    <input type="email" placeholder="np. ola@email.com" />
+    <button class="btn mt16" type="button" onclick="toast('Wysłano link (demo)')">Wyślij link</button>
+  `);
+}
+
+/* ------------------------- Registration -------------------------- */
+async function registerPrimary() {
+  const terms = $("acceptTerms")?.checked;
+  const rodo = $("acceptRodo")?.checked;
+  if (!terms || !rodo) {
+    toast("Zaznacz wymagane zgody (*)");
+    return;
+  }
+
+  const email = $("regEmail")?.value?.trim();
+  const pass = $("regPass")?.value?.trim();
+  const passRepeat = $("regPassRepeat")?.value?.trim();
+
+  if (!email || !pass || !passRepeat || pass.length < 8) {
+    toast("Uzupełnij email, hasło i powtórzenie hasła (min. 8 znaków)");
+    return;
+  }
+
+  if (pass !== passRepeat) {
+    toast("Hasła nie są takie same");
+    return;
+  }
+
+  let dob = "";
+
+  if (App.role === "user") {
+    const city = normalizeCity($("regCity")?.value);
+    const nick = $("regNick")?.value?.trim();
+
+    const dobEl = $("regBirthDate");
+    const errEl = $("ageError");
+    dob = (dobEl?.value || "").trim();
+
+    function showAgeError(msg) {
+      if (errEl) {
+        errEl.style.display = "block";
+        errEl.textContent = msg;
+      }
+      toast(msg);
+    }
+
+    function hideAgeError() {
+      if (errEl) errEl.style.display = "none";
+    }
+
+    if (!dob) {
+      showAgeError("Podaj datę urodzenia.");
+      return;
+    }
+
+    const birth = new Date(dob);
+    if (Number.isNaN(birth.getTime())) {
+      showAgeError("Nieprawidłowa data urodzenia.");
+      return;
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+
+    if (age < 18) {
+      showAgeError("Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.");
+      return;
+    }
+
+    hideAgeError();
+
+    if (!city || !nick) {
+      toast("Uzupełnij datę urodzenia, miasto i nick");
+      return;
+    }
+
+    App.user.city = city;
+    App.user.age = age;
+    App.user.dob = dob;
+    App.user.nick = nick;
+  } else {
+    const company = $("regCompany")?.value?.trim();
+    const city = normalizeCity($("regCityPartner")?.value);
+
+    if (!company || !city) {
+      toast("Uzupełnij oficjalną nazwę i miasto organizatora");
+      return;
+    }
+
+    dob = null;
+    App.partner.company = company;
+    App.partner.city = city || "Warszawa";
+    App.partner.category = "inne";
+    App.partner.about = "";
+    App.partner.logoUrl = "";
+  }
+
+  try {
+    const data = await apiFetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password: pass,
+        dob,
+        role: App.role === "partner" ? "partner" : "user",
+        accept_terms: true,
+      }),
+    });
+
+    if (!data?.success || !data?.data?.id) {
+      toast(data?.error?.message || "Nie udało się utworzyć konta");
+      return;
+    }
+
+    const loginData = await apiFetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pass, expected_role: App.role === "partner" ? "partner" : "user" }),
+    });
+
+    if (!loginData?.success || !loginData?.data?.access_token) {
+      toast("Konto utworzone, ale nie udało się zalogować automatycznie");
+      go("S1_LOGIN");
+      return;
+    }
+
+    localStorage.setItem("usly_token", loginData.data.access_token);
+
+    const me = await apiFetch("/auth/me");
+    App.currentUserId = me?.id ?? me?.data?.id ?? null;
+    App.role = me?.role === "partner" ? "partner" : "user";
+    App.isLoggedIn = true;
+
+    if (App.role === "user") {
+      const profile = await apiFetch("/users/me");
+      if (profile?.success && profile?.data) {
+        App.user.nick = profile.data.nick || App.user.nick;
+        App.user.city = profile.data.miasto || App.user.city;
+        App.user.bio = profile.data.bio || "";
+          const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
+          const setupInterests = backendInterests.length > 0 ? backendInterests : (Array.isArray(App.user.interests) ? App.user.interests : []);
+          App.user.interests = setupInterests;
+          try { localStorage.setItem("usly_user_interests", JSON.stringify(setupInterests)); } catch(_) {}
+        App.user.plan = profile.data.plan || App.user.plan;
+        App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
+        try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
+      }
+    } else {
+      await loadPartnerProfile();
+      await loadPartnerEvents();
+    }
+
+    $("appRoot")?.classList.add("isLoggedIn");
+    updateTabbars();
+
+    renderAll();
+    bindMessageInputs();
+
+    toast("Konto utworzone i zalogowano");
+      if (App.role === "user") {
+        if ($("setupNick")) $("setupNick").value = App.user.nick || "";
+        if ($("setupCity")) $("setupCity").value = App.user.city || "Warszawa";
+        if ($("setupBio")) $("setupBio").value = App.user.bio || "";
+        if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+        if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
+        safeSetText("bioCount", String(($("setupBio")?.value || "").length));
+        safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+        safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+        renderInterestChips("interestChips");
+        refreshInterestUi();
+        go("S3_PROFILE_SETUP");
+      } else {
+        go("S3B_PARTNER_SETUP");
+      }
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się utworzyć konta");
+  }
+}
+
+/* ------------------------- Plans -------------------------- */
+
+function refreshUserPlanCardsUi() {
+  const current = String(App.user?.plan || "free").toLowerCase();
+
+  document.querySelectorAll('#S11_PLANS .card[data-plan]').forEach(card => {
+    const plan = String(card.dataset.plan || "").toLowerCase();
+    const btn = card.querySelector('button.btn.secondary');
+
+    card.classList.toggle("is-current", plan === current);
+
+    if (btn) {
+      btn.textContent = plan === current ? "Aktualny plan" : "Wybierz";
+    }
+  });
+
+  safeSetText("settingsProfilePlanPill", current.toUpperCase());
+  safeSetText("settingsProfilePlanPillSecondary", current.toUpperCase());
+}
+
+
+async function setUserPlan(plan, silent = false) {
+  const allowed = ["free", "plus", "premium", "vip"];
+  if (!allowed.includes(plan)) return;
+
+  const prevPlan = App.user.plan;
+  App.user.plan = plan;
+  try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, plan); } catch(_) {}
+
+  const btnIds = [
+    "uplan_free", "uplan_plus", "uplan_premium", "uplan_vip",
+    "uplan_free_set", "uplan_plus_set", "uplan_premium_set", "uplan_vip_set",
+  ];
+  btnIds.forEach(id => {
+    const b = $(id);
+    if (!b) return;
+    const isOn = b.dataset.plan === plan;
+    b.classList.toggle("on", isOn);
+    b.classList.toggle("active", isOn);
+  });
+
+  safeSetText("planPillSetup", plan.toUpperCase());
+  refreshUserPlanCardsUi();
+  renderAll();
+
+  if (App.isLoggedIn && App.role === "user") {
+    try {
+      const data = await apiFetch("/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nick: App.user.nick || "",
+          miasto: App.user.city || "",
+          bio: App.user.bio || "",
+          zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+          age_min: App.user.prefAgeFrom,
+          age_max: App.user.prefAgeTo,
+          plan: plan,
+        }),
+      });
+
+      if (!data?.success || !data?.data) {
+        throw new Error(data?.error?.message || "Nie udało się zapisać planu");
+      }
+
+      App.user.plan = data.data.plan || plan;
+      try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch(_) {}
+      safeSetText("planPillSetup", App.user.plan.toUpperCase());
+      refreshUserPlanCardsUi();
+      renderAll();
+      if (!silent) toast(`Wybrano plan: ${App.user.plan.toUpperCase()}`);
+      return;
+    } catch (err) {
+      App.user.plan = prevPlan;
+      try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, prevPlan); } catch(_) {}
+      btnIds.forEach(id => {
+        const b = $(id);
+        if (!b) return;
+        const isOn = b.dataset.plan === prevPlan;
+        b.classList.toggle("on", isOn);
+        b.classList.toggle("active", isOn);
+      });
+      safeSetText("planPillSetup", prevPlan.toUpperCase());
+      refreshUserPlanCardsUi();
+      renderAll();
+      toast(err?.userMessage || err?.message || "Nie udało się zapisać planu");
+      return;
+    }
+  }
+
+  if (!silent) toast(`Wybrano plan: ${plan.toUpperCase()}`);
+}
+
+function setPartnerPlan(plan, silent = false) {
+  const allowed = ["free", "pro", "premium", "enterprise"];
+  if (!allowed.includes(plan)) return;
+
+  App.partner.plan = plan;
+  try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, plan); } catch(_) {}
+
+  const btnIds = [
+    "pplan_free", "pplan_pro", "pplan_premium", "pplan_enterprise",
+    "pplan_free_set", "pplan_pro_set", "pplan_premium_set", "pplan_enterprise_set",
+  ];
+  btnIds.forEach(id => {
+    const b = $(id);
+    if (!b) return;
+    const isOn = b.dataset.plan === plan;
+    b.classList.toggle("on", isOn);
+    b.classList.toggle("active", isOn);
+  });
+
+  document.querySelectorAll('#S11_PLANS #plansPartnerOnly .card[data-plan]').forEach(card => {
+    const isCurrent = String(card.dataset.plan || "").toLowerCase() === plan;
+    card.classList.toggle("is-current", isCurrent);
+    const btn = card.querySelector(".btn");
+    if (btn) btn.textContent = isCurrent ? "Aktualny plan" : "Wybierz";
+  });
+
+  safeSetText("partnerPlanPill", plan.toUpperCase());
+  if (!silent) toast(`Wybrano plan: ${plan.toUpperCase()}`);
+  renderAll();
+}
+
+
+function getUserInterestLimit() {
+  const plan = App.user.plan || "free";
+
+  if (plan === "vip") return null;
+  if (plan === "premium") return 20;
+  if (plan === "plus") return 10;
+  return 5;
+}
+
+function canAddMoreInterests(currentCount) {
+  const limit = getUserInterestLimit();
+  if (limit === null) return true;
+  return currentCount < limit;
+}
+
+function getUserGroupPlanRules() {
+  const plan = App.user.plan || "free";
+
+  if (plan === "vip") {
+    return {
+      plan,
+      canBrowseGroups: true,
+      canOpenGroup: true,
+      canInviteFriendsToGroup: true,
+      maxActiveGroups: null,
+    };
+  }
+
+  if (plan === "premium") {
+    return {
+      plan,
+      canBrowseGroups: true,
+      canOpenGroup: true,
+      canInviteFriendsToGroup: true,
+      maxActiveGroups: null,
+    };
+  }
+
+  if (plan === "plus") {
+    return {
+      plan,
+      canBrowseGroups: true,
+      canOpenGroup: true,
+      canInviteFriendsToGroup: false,
+      maxActiveGroups: 3,
+    };
+  }
+
+  return {
+    plan: "free",
+    canBrowseGroups: true,
+    canOpenGroup: true,
+    canInviteFriendsToGroup: false,
+    maxActiveGroups: 1,
+  };
+}
+
+function getUserGroupCreateRules() {
+  const plan = App.user.plan || "free";
+
+  if (plan === "vip") {
+    return { plan, canCreate: true, createLimit: null };
+  }
+
+  if (plan === "premium") {
+    return { plan, canCreate: true, createLimit: 3 };
+  }
+
+  if (plan === "plus") {
+    return { plan, canCreate: true, createLimit: 1 };
+  }
+
+  return { plan: "free", canCreate: false, createLimit: 0 };
+}
+
+function refreshCreateGroupUi() {
+  const btn = $("btnCreateGroup");
+  const hint = $("groupCreateHint");
+  const rules = getUserGroupCreateRules();
+
+  const createdCount = Array.isArray(App.myGroups) ? App.myGroups.length : 0;
+  const limitReached =
+    rules.canCreate &&
+    rules.createLimit != null &&
+    createdCount >= rules.createLimit;
+
+  if (btn) {
+    const enabled = rules.canCreate && !limitReached;
+    btn.disabled = !enabled;
+    btn.style.opacity = enabled ? "1" : "0.65";
+    btn.style.cursor = enabled ? "pointer" : "not-allowed";
+
+    if (!rules.canCreate) {
+      btn.textContent = "Dostępne od PLUS";
+    } else if (limitReached) {
+      btn.textContent = "Limit wykorzystany";
+    } else {
+      btn.textContent = "Utwórz grupę";
+    }
+  }
+
+  if (hint) {
+    if (!rules.canCreate) {
+      hint.textContent = "Tworzenie własnych grup jest dostępne od planu PLUS.";
+    } else if (rules.createLimit == null) {
+      hint.textContent = `Utworzone grupy: ${createdCount} • Na planie VIP możesz tworzyć grupy bez limitu.`;
+    } else if (limitReached) {
+      hint.textContent = `Utworzone grupy: ${createdCount} / ${rules.createLimit} • Wykorzystałaś cały limit dla tego planu.`;
+    } else {
+      hint.textContent = `Utworzone grupy: ${createdCount} / ${rules.createLimit} • Możesz utworzyć jeszcze ${rules.createLimit - createdCount}.`;
+    }
+  }
+}
+
+function openCreateGroupModal() {
+  const rules = getUserGroupCreateRules();
+
+  if (!rules.canCreate) {
+    toast("Tworzenie grup jest dostępne od planu PLUS");
+    return;
+  }
+
+  openModal("Utwórz grupę", `
+    <label>Tytuł grupy *</label>
+    <input id="createGroupTitle" type="text" placeholder="np. Kawosze Warszawa" />
+
+    <label class="mt12">Hashtag / zainteresowanie *</label>
+    <div class="hashRow">
+      <span class="hashPrefix">#</span>
+      <input id="createGroupInterest" type="text" placeholder="np. kawa" />
+    </div>
+
+    <label class="mt12">Opis</label>
+    <textarea id="createGroupDesc" maxlength="600" placeholder="Krótki opis grupy (opcjonalnie)"></textarea>
+
+    <div class="sectionSub mt12">
+      ${rules.createLimit == null
+        ? "Tworzysz grupy bez limitu."
+        : `Ten plan pozwala tworzyć do ${rules.createLimit} własnych grup.`}
+    </div>
+
+    <div class="row mt16">
+      <button class="btn" type="button" onclick="submitCreateGroup()">Utwórz</button>
+      <button class="btn secondary" type="button" onclick="closeModal()">Anuluj</button>
+    </div>
+  `);
+}
+
+async function submitCreateGroup() {
+  const title = $("createGroupTitle")?.value?.trim();
+  const interest = normalizeTag($("createGroupInterest")?.value?.trim());
+  const description = $("createGroupDesc")?.value?.trim() || "";
+
+  if (!title || title.length < 3) {
+    toast("Podaj nazwę grupy (min. 3 znaki)");
+    return;
+  }
+
+  if (!interest || interest.length < 2) {
+    toast("Podaj hashtag grupy");
+    return;
+  }
+
+  try {
+    const data = await apiFetch("/groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        description,
+        interest_tag: interest,
+      }),
+    });
+
+    if (!data?.success) {
+      toast(data?.error?.message || "Nie udało się utworzyć grupy");
+      return;
+    }
+
+    closeModal();
+    await Promise.all([loadMyGroups(), loadGroups()]);
+    renderGroups();
+    toast("Grupa została utworzona");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się utworzyć grupy");
+  }
+}
+
+
+/* ------------------------- Groups helpers -------------------------- */
+function isUserInGroup(groupId) {
+  return App.myGroups.some(g => String(g.id) === String(groupId));
+}
+
+function userGroupsCount() {
+  return App.myGroups.length;
+}
+
+function canJoinMoreGroups() {
+  const plan = App.user.plan || "free";
+
+  const limits = {
+    free: 1,
+    plus: 3,
+    premium: null,
+    vip: null,
+  };
+
+  const limit = limits[plan] ?? 1;
+
+  if (limit === null) return true;
+
+  return userGroupsCount() < limit;
+}
+
+function canInviteFriendsToGroup() {
+  return getUserGroupPlanRules().canInviteFriendsToGroup;
+}
+
+/* ------------------------- Settings -------------------------- */
+async function saveSettings() {
+  const nick = $("setNick")?.value?.trim() || App.user.nick;
+  const bio = $("setBio")?.value?.trim() || "";
+  const city = normalizeCity($("setCity")?.value) || App.user.city;
+
+  const f = Number($("setPrefAgeFrom")?.value || App.user.prefAgeFrom);
+  const t = Number($("setPrefAgeTo")?.value || App.user.prefAgeTo);
+  const ageMin = Math.min(f, t);
+  const ageMax = Math.max(f, t);
+
+  try {
+    const data = await apiFetch("/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nick: nick,
+        miasto: city,
+        bio: bio,
+        zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+        age_min: ageMin,
+        age_max: ageMax,
+      }),
+    });
+
+    if (!data?.success || !data?.data) {
+      toast(data?.error?.message || "Nie udało się zapisać ustawień");
+      return;
+    }
+
+    App.user.nick = data.data.nick || nick;
+    App.user.bio = data.data.bio || bio;
+    App.user.city = data.data.miasto || city;
+    App.user.prefAgeFrom = data.data.age_min ?? ageMin;
+    App.user.prefAgeTo = data.data.age_max ?? ageMax;
+
+    toast("Zapisano ustawienia");
+    renderAll();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się zapisać ustawień");
+  }
+}
+
+async function savePartnerSettings() {
+  const company = $("setOrgCompany")?.value?.trim() || App.partner.company;
+  const category = $("setOrgCategory")?.value || App.partner.category;
+  const city = normalizeCity($("setOrgCity")?.value) || App.partner.city;
+  const about = $("setOrgAbout")?.value?.trim() || "";
+
+  try {
+    const data = await apiFetch("/partners/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nazwa: company,
+        miasto: city,
+        kategoria: category,
+        bio: about,
+      }),
+    });
+
+    if (!data?.success || !data?.data) {
+      toast(data?.error?.message || "Nie udało się zapisać ustawień organizatora");
+      return;
+    }
+
+    App.partner.company = data.data.nazwa || company;
+    App.partner.category = data.data.kategoria || category;
+    App.partner.city = data.data.miasto || city;
+    App.partner.about = data.data.bio || about;
+
+    toast("Zapisano ustawienia organizatora");
+    renderAll();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się zapisać ustawień organizatora");
+  }
+}
+
+
+async function finishPartnerSetup() {
+  const category = $("setupOrgCategory")?.value?.trim() || App.partner.category || "inne";
+  const city = normalizeCity($("setupOrgCity")?.value) || App.partner.city || "";
+  const about = $("setupOrgAbout")?.value?.trim() || "";
+
+  if (!city) {
+    toast("Uzupełnij miasto organizatora");
+    return;
+  }
+
+  App.partner.category = category;
+  App.partner.city = city;
+  App.partner.about = about;
+
+  try {
+    const data = await apiFetch("/partners/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nazwa: App.partner.company || "",
+        miasto: city,
+        kategoria: category,
+        bio: about,
+      }),
+    });
+
+    if (!data?.success || !data?.data) {
+      toast(data?.error?.message || "Nie udało się zapisać profilu organizatora");
+      return;
+    }
+
+    App.partner.company = data.data.nazwa || App.partner.company;
+    App.partner.city = data.data.miasto || city;
+    App.partner.category = data.data.kategoria || category;
+    App.partner.about = data.data.bio || about;
+
+    toast("Profil organizatora uzupełniony");
+    renderAll();
+    go("S9_PARTNER");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się zapisać profilu organizatora");
+  }
+}
+
+/* ------------------------- Terms / Privacy -------------------------- */
+function openTerms() {
+  window.open("legal/terms_pl.docx", "_blank");
+}
+
+function openRodo() {
+  window.open("legal/privacy_pl.docx", "_blank");
+}
+
+async function uploadPartnerLogo(file) {
+  if (!file) return;
+
+  const form = new FormData();
+  form.append("file", file);
+
+  try {
+    const data = await apiFetch("/uploads/logo", {
+      method: "POST",
+      body: form,
+    });
+
+    if (!data?.success || !data?.data?.logo_url) {
+      toast(data?.error?.message || "Nie udało się wgrać logo");
+      return;
+    }
+
+    App.partner.logoUrl = data.data.logo_url;
+    toast("Logo zapisane");
+    renderAll();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wgrać logo");
+  }
+}
+
+function initPartnerLogoUpload() {
+  const ids = ["setOrgLogo", "setupOrgLogo"];
+
+  ids.forEach((id) => {
+    const input = $(id);
+    if (!input || input.dataset.bound === "1") return;
+
+    input.addEventListener("change", async (e) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+      await uploadPartnerLogo(file);
+      input.value = "";
+    });
+
+    input.dataset.bound = "1";
+  });
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/* ------------------------- Age sliders -------------------------- */
+function initAgeSliders() {
+  // Registration
+  const regFrom = $("regPrefAgeFrom");
+  const regTo = $("regPrefAgeTo");
+  const regFromVal = $("regPrefAgeFromVal");
+  const regToVal = $("regPrefAgeToVal");
+
+  if (regFrom && regTo) {
+    const upd = () => {
+      const f = Number(regFrom.value || 16);
+      const t = Number(regTo.value || 99);
+      if (regFromVal) regFromVal.textContent = String(f);
+      if (regToVal) regToVal.textContent = String(t);
+    };
+    regFrom.addEventListener("input", upd);
+    regTo.addEventListener("input", upd);
+    upd();
+  }
+
+  // Settings
+  const setFrom = $("setPrefAgeFrom");
+  const setTo = $("setPrefAgeTo");
+  const setFromVal = $("setPrefAgeFromVal");
+  const setToVal = $("setPrefAgeToVal");
+
+  if (setFrom && setTo) {
+    const upd2 = () => {
+      const f = Number(setFrom.value || 16);
+      const t = Number(setTo.value || 99);
+      if (setFromVal) setFromVal.textContent = String(f);
+      if (setToVal) setToVal.textContent = String(t);
+    };
+    setFrom.addEventListener("input", upd2);
+    setTo.addEventListener("input", upd2);
+    upd2();
+  }
+}
+
+/* ------------------------- Char counters -------------------------- */
+function initCharCounters() {
+  // Setup bio
+  const setupBio = $("setupBio");
+  if (setupBio) {
+    setupBio.addEventListener("input", () => safeSetText("bioCount", String(setupBio.value.length)));
+    safeSetText("bioCount", String(setupBio.value.length));
+  }
+
+  // Settings bio
+  const setBio = $("setBio");
+  if (setBio) {
+    setBio.addEventListener("input", () => safeSetText("setBioCount", String(setBio.value.length)));
+    safeSetText("setBioCount", String(setBio.value.length));
+  }
+
+  // Partner about
+  const regOrgAbout = $("regOrgAbout");
+  if (regOrgAbout) {
+    regOrgAbout.addEventListener("input", () => safeSetText("regOrgAboutCount", String(regOrgAbout.value.length)));
+    safeSetText("regOrgAboutCount", String(regOrgAbout.value.length));
+  }
+  const setOrgAbout = $("setOrgAbout");
+  if (setOrgAbout) {
+    setOrgAbout.addEventListener("input", () => safeSetText("setOrgAboutCount", String(setOrgAbout.value.length)));
+    safeSetText("setOrgAboutCount", String(setOrgAbout.value.length));
+  }
+
+  const setupOrgAbout = $("setupOrgAbout");
+  if (setupOrgAbout) {
+    setupOrgAbout.addEventListener("input", () => safeSetText("setupOrgAboutCount", String(setupOrgAbout.value.length)));
+    safeSetText("setupOrgAboutCount", String(setupOrgAbout.value.length));
+  }
+}
+
+/* ------------------------- Geolocation (punkt 12) -------------------------- */
+function initGeolocation() {
+  // REQUIRED: bind by id="btnUseLocation" without inline onclick
+  const btn = $("btnUseLocation");
+  if (!btn) return;
+
+  btn.addEventListener("click", useCurrentLocationForCity);
+}
+
+// Global function name as requested (punkt 12)
+function useCurrentLocationForCity() {
+  if (!navigator.geolocation) {
+    toast("Geolokalizacja niedostępna w tej przeglądarce");
+    return;
+  }
+
+  toast("Pobieram lokalizację…");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      // Save to hidden fields (backend-ready)
+      const latEl = $("regGeoLat");
+      const lngEl = $("regGeoLng");
+      if (latEl) latEl.value = String(lat);
+      if (lngEl) lngEl.value = String(lng);
+
+      App.user.geo.lat = String(lat);
+      App.user.geo.lng = String(lng);
+
+      // Demo: we won't reverse-geocode (backend/API later)
+      // For now: set city to placeholder if empty
+      const city = $("regCity");
+      if (city && !city.value.trim() && App.role === "user") {
+        city.value = "Warszawa";
+      }
+
+      toast("Lokalizacja zapisana (demo)");
+    },
+    () => toast("Nie udało się pobrać lokalizacji (brak zgody?)"),
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
+  );
+}
+
+/* ------------------------- Tabbar + Active states -------------------------- */
+function updateTabbars() {
+  const userBar = $("tabbarUser");
+  const partnerBar = $("tabbarPartner");
+
+  const publicViews = ["S0_WELCOME", "S1_LOGIN", "S2_REGISTER"];
+  if (!App.isLoggedIn || publicViews.includes(App.currentView)) {
+    hide(userBar);
+    hide(partnerBar);
+    return;
+  }
+
+  // Show only relevant bar
+  if (App.role === "user") {
+    show(userBar);
+    hide(partnerBar);
+  } else {
+    hide(userBar);
+    show(partnerBar);
+  }
+
+  // Active tab highlight based on current view
+  setActiveTabs();
+}
+
+function setActiveTabs() {
+  // clear
+  document.querySelectorAll(".tabbar button").forEach(b => b.classList.remove("active", "on"));
+
+  const v = App.currentView;
+
+  // User tabs
+  if (App.role === "user") {
+    if (v.startsWith("S4")) $("tabNearby")?.classList.add("active");
+    else if (v.startsWith("S6")) $("tabChats")?.classList.add("active");
+    else if (v.startsWith("S7")) $("tabEvents")?.classList.add("active");
+    else if (v.startsWith("S8")) $("tabGroups")?.classList.add("active");
+    else if (v.startsWith("S10")) $("tabSettingsUser")?.classList.add("active");
+  } else {
+    // Partner tabs
+    if (v === "S9_PARTNER") $("ptabDash")?.classList.add("active");
+    else if (v === "S9_PARTNER_CREATE") $("ptabCreate")?.classList.add("active");
+    else if (v === "S9_PARTNER_EVENTS") $("ptabMyEvents")?.classList.add("active");
+    else if (v === "S9_PARTNER_MESSAGES") $("ptabMsgs")?.classList.add("active");
+    else if (v.startsWith("S10")) $("ptabSettings")?.classList.add("active");
+  }
+}
+
+/* ------------------------- Helpers: matching interests -------------------------- */
+function commonInterests(person) {
+  const a = (App.user.interests || []).map(x => x.toLowerCase());
+  const b = (person.interests || []).map(x => x.toLowerCase());
+  return a.filter(x => b.includes(x));
+}
+
+function sharedScore(person) {
+  const common = commonInterests(person).length;
+  const base = Math.max(1, App.user.interests.length);
+  return Math.min(99, Math.round((common / base) * 100));
+}
+
+function suggestPeopleByInterest(tag) {
+  const t = tag.toLowerCase();
+  return App.people.filter(p => (p.interests || []).map(x => x.toLowerCase()).includes(t));
+}
+
+function matchesUserEventInterest(ev) {
+  const mine = (App.user.interests || []).map(x => String(x).toLowerCase());
+  const tag = String(ev?.interest || "").toLowerCase();
+  return !!tag && mine.includes(tag);
+}
+
+function isEventInMyCity(ev) {
+  return String(ev?.city || "").trim().toLowerCase() === String(App.user.city || "").trim().toLowerCase();
+}
+
+function priceLabel(ev) {
+  if (ev.paidMode === "paid_fixed") return `${ev.price} zł`;
+  if (ev.paidMode === "paid_range") return `${ev.priceFrom}–${ev.priceTo} zł`;
+  return "0 zł";
+}
+
+function mapApiPersonToViewModel(p) {
+  return {
+    id: String(p.user_id),
+    nick: p.nick || "Uzytkownik",
+    city: p.miasto || "",
+    age: Number.isFinite(Number(p.age)) ? Number(p.age) : 0,
+    emoji: "🙂",
+    interests: Array.isArray(p.zainteresowania) ? p.zainteresowania : [],
+    bio: p.bio || "",
+    avatarUrl: p.avatar_url || "",
+  };
+}
+
+function mapApiGroupToViewModel(g) {
+  return {
+    id: String(g.id),
+    title: g.title || "Grupa",
+    interestTag: g.interest_tag || "",
+    members: Number(g.members_count || 0),
+    desc: g.description || "",
+  };
+}
+
+function mapApiEventToViewModel(e) {
+  const start = e?.start_at ? new Date(e.start_at) : null;
+  const when =
+    start && !Number.isNaN(start.getTime())
+      ? start.toLocaleString("pl-PL", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Termin wkrótce";
+
+  return {
+    id: String(e.id),
+    title: e.title || "Wydarzenie",
+    city: e.city || "",
+    when: when,
+    where: e.where || e.location || "",
+    interest: normalizeTag(
+      e.interest_tag ||
+      e.interest ||
+      e.category ||
+      e.tag ||
+      "wydarzenie"
+    ),
+    desc: e.description || "",
+    paidMode: e.pricing_type || "free",
+    price: typeof e.price_fixed === "number" ? Math.round(e.price_fixed / 100) : null,
+    priceFrom: typeof e.price_min === "number" ? Math.round(e.price_min / 100) : null,
+    priceTo: typeof e.price_max === "number" ? Math.round(e.price_max / 100) : null,
+    ticketLink: e.payment_link || "#",
+    saved: false,
+    interested: false,
+    capacity: e.capacity ?? null,
+    signupsCount: Number(e.signups_count || 0),
+    spotsLeft: e.spots_left ?? null,
+    organizer: { id: String(e.partner_user_id || ""), name: "Organizator" },
+  };
+}
+
+
+async function loadNearbyPeople() {
+  try {
+    const data = await apiFetch("/users/nearby?limit=20");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.people = items.map(mapApiPersonToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadNearbyPeople failed", err);
+    return false;
+  }
+}
+
+async function loadEvents() {
+  try {
+    const data = await apiFetch("/events?limit=20");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+
+    let joinedIds = new Set();
+    try {
+      const mine = await apiFetch("/users/me/events?limit=100");
+      const myItems = Array.isArray(mine?.data?.items) ? mine.data.items : [];
+      joinedIds = new Set(
+        myItems
+          .map(x => x?.signup?.event_id ?? x?.event?.id)
+          .filter(v => v != null)
+          .map(v => String(v))
+      );
+    } catch (err) {
+      console.error("loadEvents joined state failed", err);
+    }
+
+    const savedIds = getSavedEventIds();
+
+    App.events = items.map(raw => {
+      const ev = mapApiEventToViewModel(raw);
+      ev.interested = joinedIds.has(String(ev.id));
+      ev.saved = savedIds.has(String(ev.id));
+      return ev;
+    });
+
+    return true;
+  } catch (err) {
+    console.error("loadEvents failed", err);
+    return false;
+  }
+}
+
+
+async function loadMyGroups() {
+  try {
+    const data = await apiFetch("/groups/my");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.myGroups = items.map(mapApiGroupToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadMyGroups failed", err);
+    App.myGroups = [];
+    return false;
+  }
+}
+
+async function loadGroups() {
+  try {
+    const data = await apiFetch("/groups/suggested");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.groups = items.map(mapApiGroupToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadGroups failed", err);
+    App.groups = [];
+    return false;
+  }
+}
+
+async function loadPartnerEvents() {
+  try {
+    const data = await apiFetch("/partners/events");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+
+    const enriched = await Promise.all(
+      items.map(async (ev) => {
+        try {
+          const stats = await apiFetch(`/partners/events/${ev.id}/stats`);
+          return {
+            ...ev,
+            signups_count: Number(stats?.data?.signups_count || 0),
+            spots_left: stats?.data?.spots_left ?? null,
+            capacity: stats?.data?.capacity ?? null,
+          };
+        } catch (err) {
+          console.error(`loadPartnerEvents stats failed for event ${ev.id}`, err);
+          return {
+            ...ev,
+            signups_count: 0,
+            spots_left: null,
+            capacity: null,
+          };
+        }
+      })
+    );
+
+    App.partnerEvents = enriched;
+    return true;
+  } catch (err) {
+    console.error("loadPartnerEvents failed", err);
+    App.partnerEvents = [];
+    return false;
+  }
+}
+
+/* ------------------------- Render All -------------------------- */
+function renderAll() {
+  // Keep role labels consistent
+  safeSetText("roleLabelLogin", App.role === "user" ? "Towarzysz" : "Organizator");
+  safeSetText("roleLabelRegister", App.role === "user" ? "Towarzysz" : "Organizator");
+
+  // Plan pills
+  safeSetText("planPillSetup", App.user.plan.toUpperCase());
+  safeSetText("partnerPlanPill", App.partner.plan.toUpperCase());
+
+  if (App.currentView === "S3_PROFILE_SETUP") {
+    if ($("setupNick")) $("setupNick").value = App.user.nick || "";
+    if ($("setupCity")) $("setupCity").value = App.user.city || "";
+    if ($("setupBio")) $("setupBio").value = App.user.bio || "";
+    if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+    if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
+    safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+    safeSetText("bioCount", String(($("setupBio")?.value || "").length));
+  }
+
+  // Partner plan line in dashboard
+  const partnerHubName = $("partnerHubName");
+  if (partnerHubName) {
+    partnerHubName.textContent = App.partner.company || "Twoje miejsce";
+  }
+
+  const partnerCategoryLabels = {
+    gastro: "Gastro / restauracja / kawiarnia",
+    bar_nocne: "Bar / klub / nightlife",
+    kultura: "Kultura / koncerty / sztuka",
+    fitness: "Fitness / sport / wellness",
+    beauty: "Beauty / uroda",
+    hotel_event: "Hotel / event / konferencje",
+    rozrywka: "Rozrywka / atrakcje / gaming",
+    zakupy: "Sklep / showroom / zakupy",
+    edukacja: "Edukacja / warsztaty",
+    cowork: "Cowork / biznes / networking",
+    plener: "Plener / turystyka / rekreacja",
+    inne: "Inne"
+  };
+  const categoryLabel = partnerCategoryLabels[App.partner.category] || App.partner.category || "";
+  const meta = [categoryLabel, App.partner.city].filter(Boolean).join(" • ");
+
+  const partnerHubMeta = $("partnerHubMeta");
+  if (partnerHubMeta) {
+    partnerHubMeta.textContent = meta || "Uzupełnij profil organizatora.";
+  }
+
+  const settingsPartnerHubName = $("settingsPartnerHubName");
+  if (settingsPartnerHubName) {
+    settingsPartnerHubName.textContent = App.partner.company || "Twoje miejsce";
+  }
+
+  const settingsPartnerHubMeta = $("settingsPartnerHubMeta");
+  if (settingsPartnerHubMeta) {
+    settingsPartnerHubMeta.textContent = meta || "Uzupełnij profil organizatora.";
+  }
+
+  const renderPartnerLogoBox = (el) => {
+    if (!el) return;
+    if (App.partner.logoUrl) {
+      const src = String(App.partner.logoUrl).startsWith("http")
+        ? App.partner.logoUrl
+        : `${API_BASE_URL}${App.partner.logoUrl}`;
+      el.innerHTML = `<img src="${src}" alt="Logo organizatora" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    } else {
+      el.innerHTML = "";
+      el.textContent = "🏷️";
+    }
+  };
+
+  renderPartnerLogoBox($("partnerHubLogoPreview"));
+  renderPartnerLogoBox($("setOrgLogoPreview"));
+  renderPartnerLogoBox($("setupOrgLogoPreview"));
+
+  const setupPartnerCompanyName = $("setupPartnerCompanyName");
+  if (setupPartnerCompanyName) {
+    setupPartnerCompanyName.textContent = App.partner.company || "Twoje miejsce";
+  }
+
+  const setupOrgCity = $("setupOrgCity");
+  if (setupOrgCity && !setupOrgCity.value) {
+    setupOrgCity.value = App.partner.city || "";
+  }
+
+  const setupOrgCategory = $("setupOrgCategory");
+  if (setupOrgCategory && !setupOrgCategory.value) {
+    setupOrgCategory.value = App.partner.category || "inne";
+  }
+
+  const setupOrgAbout = $("setupOrgAbout");
+  if (setupOrgAbout && !setupOrgAbout.value) {
+    setupOrgAbout.value = App.partner.about || "";
+  }
+  safeSetText("setupOrgAboutCount", String(($("setupOrgAbout")?.value || "").length));
+
+  const planLine = $("partnerPlanLine");
+  if (planLine) {
+    planLine.textContent = `Plan ${String(App.partner.plan || "free").toUpperCase()} jest teraz aktywny.`;
+  }
+
+  // Partner analytics in profile hub
+  const partnerStatsGrid = $("partnerStatsGrid");
+  if (partnerStatsGrid) {
+    const metricCards = partnerStatsGrid.querySelectorAll(".metricCard");
+
+    if (metricCards[0]) {
+      const label = metricCards[0].querySelector(".metricLabel");
+      const sub = metricCards[0].querySelector(".metricSub");
+      if (label) label.textContent = "Aktywne";
+      if (sub) sub.textContent = "Opublikowane teraz";
+    }
+
+    if (metricCards[1]) {
+      const label = metricCards[1].querySelector(".metricLabel");
+      const sub = metricCards[1].querySelector(".metricSub");
+      if (label) label.textContent = "Szkice";
+      if (sub) sub.textContent = "Robocze";
+    }
+
+    if (metricCards[2]) {
+      const label = metricCards[2].querySelector(".metricLabel");
+      const sub = metricCards[2].querySelector(".metricSub");
+      if (label) label.textContent = "Zapisy";
+      if (sub) sub.textContent = "Do aktywnych";
+    }
+
+    if (metricCards[3]) {
+      const label = metricCards[3].querySelector(".metricLabel");
+      const sub = metricCards[3].querySelector(".metricSub");
+      if (label) label.textContent = "Wolne miejsca";
+      if (sub) sub.textContent = "W aktywnych";
+    }
+
+    safeSetText("m_events_val", "—");
+    safeSetText("m_views_val", "—");
+    safeSetText("m_clicks_val", "—");
+    safeSetText("m_conv_val", "—");
+
+    (App.role === "partner" ? apiFetch("/partners/dashboard/stats") : Promise.resolve(null))
+      .then((res) => {
+        if (!res?.success || !res?.data) return;
+
+        safeSetText("m_events_val", String(res.data.total_events ?? 0));
+        safeSetText("m_views_val", String(res.data.draft_events ?? 0));
+        safeSetText("m_clicks_val", String(res.data.total_signups ?? 0));
+        safeSetText("m_conv_val", String(res.data.free_spots ?? 0));
+      })
+      .catch(() => {
+        safeSetText("m_events_val", "—");
+        safeSetText("m_views_val", "—");
+        safeSetText("m_clicks_val", "—");
+        safeSetText("m_conv_val", "—");
+      });
+  }
+
+  // Setup avatar
+  const renderAvatarBox = (el) => {
+    if (!el) return;
+    if (App.user.avatarUrl) {
+      const src = String(App.user.avatarUrl).startsWith("http")
+        ? App.user.avatarUrl
+        : `${API_BASE_URL}${App.user.avatarUrl}`;
+      el.innerHTML = `<img src="${src}" alt="Awatar użytkownika" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    } else {
+      el.innerHTML = "";
+      el.textContent = "👤";
+    }
+  };
+
+  renderAvatarBox($("userAvatar"));
+  renderAvatarBox($("settingsUserAvatarPreview"));
+
+  // Fill settings inputs moved out of renderAll to avoid overwriting unsaved form edits
+
+  // Settings range values
+  if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+  if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
+  safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom));
+  safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo));
+
+  // Partner settings
+  if ($("setOrgCompany")) $("setOrgCompany").value = App.partner.company || "";
+  if ($("setOrgCategory")) $("setOrgCategory").value = App.partner.category || "inne";
+  if ($("setOrgCity")) $("setOrgCity").value = App.partner.city || "Warszawa";
+  if ($("setOrgAbout")) $("setOrgAbout").value = App.partner.about || "";
+
+  const renderPartnerSettingsLogo = (el) => {
+    if (!el) return;
+    if (App.partner.logoUrl) {
+      const src = String(App.partner.logoUrl).startsWith("http")
+        ? App.partner.logoUrl
+        : `${API_BASE_URL}${App.partner.logoUrl}`;
+      el.innerHTML = `<img src="${src}" alt="Logo organizatora" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    } else {
+      el.innerHTML = "";
+      el.textContent = "🏷️";
+    }
+  };
+
+  renderPartnerSettingsLogo($("setOrgLogoPreview"));
+  renderPartnerSettingsLogo($("setOrgLogoPreviewCard"));
+
+  // Interest chips in visible sections
+  renderInterestChips("interestChips");
+  refreshInterestUi();
+  renderInterestChips("setInterestChips");
+  renderInterestChips("regInterestChips");
+
+  // Lists
+  if (App.currentView === "S4_NEARBY") renderNearby();
+  if (App.currentView === "S7_EVENTS") renderEventsList();
+  if (App.currentView === "S8_GROUPS") renderGroups();
+  if (App.currentView === "S6_CHATS_LIST") renderChatList();
+  if (App.currentView === "S6B_CHAT_THREAD") renderChatThread();
+  if (App.currentView === "S9_PARTNER_EVENTS") renderPartnerEvents();
+  if (App.currentView === "S9_PARTNER_MESSAGES") renderPartnerMsgList();
+  if (App.role === "user" && !["S2_REGISTER","S3_PROFILE_SETUP"].includes(App.currentView)) refreshNotifBadgeCount();
+  if (App.currentView === "S12_NOTIFICATIONS") renderNotifications();
+
+  // tabbar active
+  updateTabbars();
+}
+
+/* ------------------------- Search bindings -------------------------- */
+function initSearchBindings() {
+  $("nearbyPeopleSearch")?.addEventListener("input", renderNearby);
+  $("eventsSearch")?.addEventListener("input", renderEventsList);
+  $("groupSearch")?.addEventListener("input", renderGroups);
+  $("chatSearch")?.addEventListener("input", renderChatList);
+  $("partnerMsgSearch")?.addEventListener("input", renderPartnerMsgList);
+}
+
+/* ------------------------- App Init -------------------------- */
+async function init() {
+  // Start view
+  go("S0_WELCOME");
+
+  // init hooks
+  initGeolocation();
+  initAgeSliders();
+  initCharCounters();
+  initInterestInputs();
+  initSearchBindings();
+  initPartnerLogoUpload();
+  initPartnerPricingFields();
+  syncPartnerEventSubmitBtn();
+
+  // Default role toggle UI
+  selectRole(App.role);
+
+  // Default plan selections (sync)
+  setUserPlan(App.user.plan, true);
+  setPartnerPlan(App.partner.plan, true);
+
+  const regBirthDate = $("regBirthDate");
+  const ageError = $("ageError");
+  if (regBirthDate && ageError && regBirthDate.dataset.bound !== "1") {
+    regBirthDate.addEventListener("input", () => {
+      ageError.style.display = "none";
+      ageError.textContent = "Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.";
+    });
+    regBirthDate.dataset.bound = "1";
+  }
+
+  // Default events tab
+  setEventsTab(App.eventsTab);
+  refreshUserPlanCardsUi();
+
+  // Default: logged out
+  $("appRoot")?.classList.toggle("isLoggedIn", App.isLoggedIn);
+  updateTabbars();
+  // initAuthMvp(); // martwy debug auth flow
+
+  const token = localStorage.getItem("usly_token");
+
+  if (token) {
+    try {
+      const me = await apiFetch("/auth/me");
+      App.currentUserId = me?.id ?? me?.data?.id ?? null;
+      App.role = me?.role === "partner" ? "partner" : "user";
+      App.isLoggedIn = true;
+      $("appRoot")?.classList.add("isLoggedIn");
+      updateTabbars();
+
+      if (App.role === "user") {
+        const profile = await apiFetch("/users/me");
+        if (profile?.success && profile?.data) {
+          App.user.nick = profile.data.nick || App.user.nick;
+          App.user.city = profile.data.miasto || App.user.city;
+          App.user.bio = profile.data.bio || "";
+          App.user.interests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
+          App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
+          App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
+          App.user.plan = profile.data.plan || App.user.plan;
+          App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
+          }
+        await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
+        renderAll();
+        bindMessageInputs();
+        go("S4_NEARBY");
+        return;
+      } else {
+        await loadPartnerProfile();
+        await loadPartnerEvents();
+        renderAll();
+        bindMessageInputs();
+        go("S9_PARTNER");
+        return;
+      }
+    } catch (err) {
+      console.error("init session restore failed", err);
+      try { localStorage.removeItem("usly_token"); } catch (_) {}
+      App.isLoggedIn = false;
+    }
+  }
+
+  Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]).finally(() => {
+    renderAll();
+    bindMessageInputs();
+  });
+}
+
+
+function initAuthMvp() {
+
+  console.log("AUTH MVP INIT");
+  const elEmail = document.getElementById("login-email");
+  const elPassword = document.getElementById("login-password");
+
+  const btnLogin = document.getElementById("btn-login");
+  const btnMe = document.getElementById("btn-me");
+  const btnLogout = document.getElementById("btn-logout");
+
+  const elStatus = document.getElementById("auth-status");
+
+  function setStatus(msg, obj = null) {
+    if (!elStatus) return;
+
+    if (obj) {
+      elStatus.textContent = msg + "\n" + JSON.stringify(obj, null, 2);
+    } else {
+      elStatus.textContent = msg;
+    }
+  }
+
+  function getToken() {
+    return localStorage.getItem("usly_token");
+  }
+
+  function setToken(token) {
+    localStorage.setItem("usly_token", token);
+  }
+
+  function clearToken() {
+    localStorage.removeItem("usly_token");
+  }
+
+  // Globalny auto-logout tylko po 401 z apiFetch()
+    window.addEventListener("auth:logout", (e) => {
+      try { clearToken(); } catch (_) {}
+      try { localStorage.removeItem(USLY_STORAGE_KEYS.userPlan); } catch (_) {}
+      try { localStorage.removeItem("usly_user_interests"); } catch (_) {}
+
+      App.isLoggedIn = false;
+      App.currentUserId = null;
+      App.selectedPersonId = null;
+      App.selectedChatId = null;
+      App.selectedChatUserId = null;
+      App.selectedEventId = null;
+      App.selectedGroupId = null;
+
+      App.user.plan = "free";
+      App.user.nick = "";
+      App.user.city = "";
+      App.user.age = 24;
+      App.user.bio = "";
+      App.user.interests = [];
+      App.user.prefAgeFrom = 18;
+      App.user.prefAgeTo = 35;
+      App.user.avatarUrl = "";
+
+      App.people = [];
+      App.chats = [];
+      App.myGroups = [];
+
+      $("appRoot")?.classList.remove("isLoggedIn");
+      hide($("tabbarUser"));
+      hide($("tabbarPartner"));
+
+      const st = e && e.detail && e.detail.status ? e.detail.status : "?";
+      if (Number(st) !== 401) return;
+      setStatus("⛔ Wylogowano automatycznie (HTTP " + st + ") — zaloguj się ponownie");
+      App.history = ["S0_WELCOME"];
+      go("S0_WELCOME");
+    });
+
+  // --- LOGIN ---
+
+  if (btnLogin) {
+    btnLogin.addEventListener("click", async () => {
+
+      const email = elEmail?.value.trim();
+      const password = elPassword?.value.trim();
+
+      if (!email || !password) {
+        setStatus("❌ Podaj email i hasło");
+        return;
+      }
+
+      setStatus("⏳ Logowanie...");
+      try {
+        const data = await apiFetch("/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password, expected_role: App.role === "partner" ? "partner" : "user" }),
+        });
+        
+        if (!data?.success) {
+          setStatus("❌ " + (data?.message || "Login error"), data);
+          return;
+        }
+        const token = data.data.access_token;
+        
+        setToken(token);
+
+        setStatus("✅ Zalogowano. Token zapisany.");
+
+      } catch (err) {
+        console.error(err);
+        setStatus("❌ " + (err.userMessage || "Błąd logowania"));
+      }
+
+    });
+  }
+
+  // --- ME ---
+
+  if (btnMe) {
+      btnMe.addEventListener("click", async () => {
+
+        const token = getToken();
+
+        if (!token) {
+          setStatus("❌ Brak tokena — zaloguj się");
+          return;
+        }
+
+        setStatus("⏳ Pobieranie /auth/me...");
+
+        try {
+          const data = await apiFetch("/auth/me");
+          setStatus("✅ /auth/me OK", data);
+
+        } catch (err) {
+          console.error(err);
+
+          // 401/403 obsługuje apiFetch() -> emituje auth:logout i ustawia globalny komunikat
+          if (err && (err.status === 401 || err.status === 403)) {
+            return;
+          }
+
+          setStatus("❌ " + (err.userMessage || "Błąd"), err.data || err.message);
+        }
+
+      });
+    }
+
+    // --- LOGOUT ---
+
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => {
+      clearToken();
+      setStatus("👋 Wylogowano (token usunięty)");
+    });
+  }
+
+}
+
+// Run when DOM ready
+document.addEventListener("DOMContentLoaded", init);
+
+// ===============================
+// AUTH MVP
+// ===============================
+
+
+
+/* ------------------------- Leaflet Map -------------------------- */
+
+let nearbyMap = null;
+let nearbyMarkers = [];
+
+function initNearbyMap() {
+  const el = document.getElementById("nearbyMap");
+  if (!el || nearbyMap) return;
+
+  nearbyMap = L.map("nearbyMap").setView([52.2297, 21.0122], 12);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(nearbyMap);
+}
+
+function renderNearbyMapMarkers() {
+  if (!nearbyMap) return;
+
+  nearbyMarkers.forEach(m => nearbyMap.removeLayer(m));
+  nearbyMarkers = [];
+
+  const baseLat = 52.2297;
+  const baseLng = 21.0122;
+
+  const personIcon = L.divIcon({
+    className: "nearby-person-marker",
+    html: `<div style="position:relative;width:28px;height:34px;display:flex;align-items:flex-start;justify-content:center;"><div style="width:26px;height:26px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:linear-gradient(135deg,#ff4bd4,#7b61ff);border:2px solid rgba(255,255,255,.96);box-shadow:0 10px 22px rgba(0,0,0,.30);position:absolute;top:0;left:1px;"></div><div style="position:absolute;top:3px;left:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:12px;transform:rotate(0deg);">👤</div></div>`,
+    iconSize: [28, 34],
+    iconAnchor: [14, 30],
+  });
+
+  const eventIcon = L.divIcon({
+    className: "nearby-event-marker",
+    html: `<div style="width:24px;height:24px;border-radius:999px;background:linear-gradient(135deg,#34e6ff,#00c48c);border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 22px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#052b2f;font-size:12px;font-weight:900;">🎫</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+
+  getNearbyPeopleForView().forEach((person, index) => {
+    const lat = baseLat + (Math.random() - 0.5) * 0.06;
+    const lng = baseLng + (Math.random() - 0.5) * 0.06;
+
+    const marker = L.marker([lat, lng], { icon: personIcon })
+      .addTo(nearbyMap);
+
+    marker.on("click", () => openMapMarker("person", index));
+    nearbyMarkers.push(marker);
+  });
+
+  App.events
+    .filter(ev => matchesUserEventInterest(ev) && isEventInMyCity(ev))
+    .slice(0, 12)
+    .forEach((ev, index) => {
+    const lat = baseLat + (Math.random() - 0.5) * 0.05;
+    const lng = baseLng + (Math.random() - 0.5) * 0.05;
+
+    const marker = L.marker([lat, lng], { icon: eventIcon })
+      .addTo(nearbyMap)
+      .bindPopup("<b>" + ev.title + "</b><br>" + (ev.city || ""));
+
+    marker.on("click", () => openMapMarker("event", index));
+    nearbyMarkers.push(marker);
+  });
+}
+
+
+
+function openProfileEdit(){
+  if (App.role === "partner") {
+    go("S10_SETTINGS");
+    return;
+  }
+  go("S10B_PROFILE_EDIT");
+}
+
+
+function refreshInterestUi() {
+  const count = Array.isArray(App.user.interests) ? App.user.interests.length : 0;
+  const limit = getUserInterestLimit();
+
+  const ensureHint = (preferredId, anchorId) => {
+    let el = $(preferredId);
+    if (el) return el;
+
+    const anchor = $(anchorId);
+    if (!anchor || !anchor.parentNode) return null;
+
+    el = document.createElement("div");
+    el.id = preferredId;
+    el.className = "sectionSub";
+    el.style.marginTop = "8px";
+    anchor.parentNode.insertBefore(el, anchor.nextSibling);
+    return el;
+  };
+
+  const hintTargets = [
+    ensureHint("regInterestLimitHint", "regInterestChips"),
+    $("interestLimitHint"),
+    $("setInterestLimitHint")
+  ].filter(Boolean);
+
+  const hintText = limit === null
+    ? `Zainteresowania: ${count} • Bez limitu w planie VIP`
+    : `Zainteresowania: ${count} / ${limit}`;
+
+  hintTargets.forEach((hint) => {
+    hint.textContent = hintText;
+  });
+
+  const inputs = [
+    $("regInterestInput"),
+    $("interestInput"),
+    $("setInterestInput")
+  ].filter(Boolean);
+
+  const canAdd = canAddMoreInterests(count);
+
+  inputs.forEach((input) => {
+    input.disabled = !canAdd;
+    input.style.opacity = canAdd ? "1" : "0.6";
+
+    if (!canAdd) {
+      input.placeholder = "Limit osiągnięty • Odblokuj więcej w PLUS";
+      input.onclick = () => toast("Odblokuj więcej zainteresowań w planie PLUS");
+    } else {
+      input.onclick = null;
+    }
+  });
+}
+
+function renderInterestChips(chipsId) {
+  const box = $(chipsId);
+  if (!box) return;
+
+  box.innerHTML = "";
+  App.user.interests.forEach(t => {
+    const chip = makeChip(`#${t}`, () => removeUserInterest(t, chipsId));
+    box.appendChild(chip);
+  });
+}
+
+function makeChip(text, onRemove) {
+  const span = document.createElement("div");
+  span.className = "chip";
+  span.textContent = text;
+  if (onRemove) {
+    span.title = "Kliknij, aby usunąć";
+    span.addEventListener("click", onRemove);
+  }
+  return span;
+}
+
+function renderTypeahead(taId, items, onPick) {
+  const box = $(taId);
+  if (!box) return;
+  if (!items.length) { hideTypeahead(taId); return; }
+
+  box.classList.add("open");
+  box.innerHTML = items.map(x => `<div class="taItem" data-val="${escapeHtml(x)}">#${escapeHtml(x)}</div>`).join("");
+
+  Array.from(box.querySelectorAll(".taItem")).forEach(item => {
+    item.addEventListener("click", () => {
+      const val = item.getAttribute("data-val") || "";
+      onPick?.(val);
+    });
+  });
+}
+
+function hideTypeahead(taId) {
+  const box = $(taId);
+  if (!box) return;
+  box.classList.remove("open");
+  box.innerHTML = "";
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/* ------------------------- Age sliders -------------------------- */
+function initAgeSliders() {
+  // Registration
+  const regFrom = $("regPrefAgeFrom");
+  const regTo = $("regPrefAgeTo");
+  const regFromVal = $("regPrefAgeFromVal");
+  const regToVal = $("regPrefAgeToVal");
+
+  if (regFrom && regTo) {
+    const upd = () => {
+      const f = Number(regFrom.value || 16);
+      const t = Number(regTo.value || 99);
+      if (regFromVal) regFromVal.textContent = String(f);
+      if (regToVal) regToVal.textContent = String(t);
+    };
+    regFrom.addEventListener("input", upd);
+    regTo.addEventListener("input", upd);
+    upd();
+  }
+
+  // Settings
+  const setFrom = $("setPrefAgeFrom");
+  const setTo = $("setPrefAgeTo");
+  const setFromVal = $("setPrefAgeFromVal");
+  const setToVal = $("setPrefAgeToVal");
+
+  if (setFrom && setTo) {
+    const upd2 = () => {
+      const f = Number(setFrom.value || 16);
+      const t = Number(setTo.value || 99);
+      if (setFromVal) setFromVal.textContent = String(f);
+      if (setToVal) setToVal.textContent = String(t);
+    };
+    setFrom.addEventListener("input", upd2);
+    setTo.addEventListener("input", upd2);
+    upd2();
+  }
+}
+
+/* ------------------------- Char counters -------------------------- */
+function initCharCounters() {
+  // Setup bio
+  const setupBio = $("setupBio");
+  if (setupBio) {
+    setupBio.addEventListener("input", () => safeSetText("bioCount", String(setupBio.value.length)));
+    safeSetText("bioCount", String(setupBio.value.length));
+  }
+
+  // Settings bio
+  const setBio = $("setBio");
+  if (setBio) {
+    setBio.addEventListener("input", () => safeSetText("setBioCount", String(setBio.value.length)));
+    safeSetText("setBioCount", String(setBio.value.length));
+  }
+
+  // Partner about
+  const regOrgAbout = $("regOrgAbout");
+  if (regOrgAbout) {
+    regOrgAbout.addEventListener("input", () => safeSetText("regOrgAboutCount", String(regOrgAbout.value.length)));
+    safeSetText("regOrgAboutCount", String(regOrgAbout.value.length));
+  }
+  const setOrgAbout = $("setOrgAbout");
+  if (setOrgAbout) {
+    setOrgAbout.addEventListener("input", () => safeSetText("setOrgAboutCount", String(setOrgAbout.value.length)));
+    safeSetText("setOrgAboutCount", String(setOrgAbout.value.length));
+  }
+}
+
+/* ------------------------- Geolocation (punkt 12) -------------------------- */
+function initGeolocation() {
+  // REQUIRED: bind by id="btnUseLocation" without inline onclick
+  const btn = $("btnUseLocation");
+  if (!btn) return;
+
+  btn.addEventListener("click", useCurrentLocationForCity);
+}
+
+// Global function name as requested (punkt 12)
+function useCurrentLocationForCity() {
+  if (!navigator.geolocation) {
+    toast("Geolokalizacja niedostępna w tej przeglądarce");
+    return;
+  }
+
+  toast("Pobieram lokalizację…");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      // Save to hidden fields (backend-ready)
+      const latEl = $("regGeoLat");
+      const lngEl = $("regGeoLng");
+      if (latEl) latEl.value = String(lat);
+      if (lngEl) lngEl.value = String(lng);
+
+      App.user.geo.lat = String(lat);
+      App.user.geo.lng = String(lng);
+
+      // Demo: we won't reverse-geocode (backend/API later)
+      // For now: set city to placeholder if empty
+      const city = $("regCity");
+      if (city && !city.value.trim() && App.role === "user") {
+        city.value = "Warszawa";
+      }
+
+      toast("Lokalizacja zapisana (demo)");
+    },
+    () => toast("Nie udało się pobrać lokalizacji (brak zgody?)"),
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
+  );
+}
+
+/* ------------------------- Tabbar + Active states -------------------------- */
+function updateTabbars() {
+  const userBar = $("tabbarUser");
+  const partnerBar = $("tabbarPartner");
+
+  const publicViews = ["S0_WELCOME", "S1_LOGIN", "S2_REGISTER"];
+  if (!App.isLoggedIn || publicViews.includes(App.currentView)) {
+    hide(userBar);
+    hide(partnerBar);
+    return;
+  }
+
+  // Show only relevant bar
+  if (App.role === "user") {
+    show(userBar);
+    hide(partnerBar);
+  } else {
+    hide(userBar);
+    show(partnerBar);
+  }
+
+  // Active tab highlight based on current view
+  setActiveTabs();
+}
+
+function setActiveTabs() {
+  // clear
+  document.querySelectorAll(".tabbar button").forEach(b => b.classList.remove("active", "on"));
+
+  const v = App.currentView;
+
+  // User tabs
+  if (App.role === "user") {
+    if (v.startsWith("S4")) $("tabNearby")?.classList.add("active");
+    else if (v.startsWith("S6")) $("tabChats")?.classList.add("active");
+    else if (v.startsWith("S7")) $("tabEvents")?.classList.add("active");
+    else if (v.startsWith("S8")) $("tabGroups")?.classList.add("active");
+    else if (v.startsWith("S10")) $("tabSettingsUser")?.classList.add("active");
+  } else {
+    // Partner tabs
+    if (v === "S9_PARTNER") $("ptabDash")?.classList.add("active");
+    else if (v === "S9_PARTNER_CREATE") $("ptabCreate")?.classList.add("active");
+    else if (v === "S9_PARTNER_EVENTS") $("ptabMyEvents")?.classList.add("active");
+    else if (v === "S9_PARTNER_MESSAGES") $("ptabMsgs")?.classList.add("active");
+    else if (v.startsWith("S10")) $("ptabSettings")?.classList.add("active");
+  }
+}
+
+/* ------------------------- Helpers: matching interests -------------------------- */
+function commonInterests(person) {
+  const a = (App.user.interests || []).map(x => x.toLowerCase());
+  const b = (person.interests || []).map(x => x.toLowerCase());
+  return a.filter(x => b.includes(x));
+}
+
+function sharedScore(person) {
+  const common = commonInterests(person).length;
+  const base = Math.max(1, App.user.interests.length);
+  return Math.min(99, Math.round((common / base) * 100));
+}
+
+function suggestPeopleByInterest(tag) {
+  const t = tag.toLowerCase();
+  return App.people.filter(p => (p.interests || []).map(x => x.toLowerCase()).includes(t));
+}
+
+function matchesUserEventInterest(ev) {
+  const mine = (App.user.interests || []).map(x => String(x).toLowerCase());
+  const tag = String(ev?.interest || "").toLowerCase();
+  return !!tag && mine.includes(tag);
+}
+
+function isEventInMyCity(ev) {
+  return String(ev?.city || "").trim().toLowerCase() === String(App.user.city || "").trim().toLowerCase();
+}
+
+function priceLabel(ev) {
+  if (ev.paidMode === "paid_fixed") return `${ev.price} zł`;
+  if (ev.paidMode === "paid_range") return `${ev.priceFrom}–${ev.priceTo} zł`;
+  return "0 zł";
+}
+
+function mapApiPersonToViewModel(p) {
+  return {
+    id: String(p.user_id),
+    nick: p.nick || "Uzytkownik",
+    city: p.miasto || "",
+    age: Number.isFinite(Number(p.age)) ? Number(p.age) : 0,
+    emoji: "🙂",
+    interests: Array.isArray(p.zainteresowania) ? p.zainteresowania : [],
+    bio: p.bio || "",
+    avatarUrl: p.avatar_url || "",
+  };
+}
+
+function mapApiGroupToViewModel(g) {
+  return {
+    id: String(g.id),
+    title: g.title || "Grupa",
+    interestTag: g.interest_tag || "",
+    members: Number(g.members_count || 0),
+    desc: g.description || "",
+  };
+}
+
+function mapApiEventToViewModel(e) {
+  const start = e?.start_at ? new Date(e.start_at) : null;
+  const when =
+    start && !Number.isNaN(start.getTime())
+      ? start.toLocaleString("pl-PL", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Termin wkrótce";
+
+  return {
+    id: String(e.id),
+    title: e.title || "Wydarzenie",
+    city: e.city || "",
+    when: when,
+    where: e.where || e.location || "",
+    interest: normalizeTag(
+      e.interest_tag ||
+      e.interest ||
+      e.category ||
+      e.tag ||
+      "wydarzenie"
+    ),
+    desc: e.description || "",
+    paidMode: e.pricing_type || "free",
+    price: typeof e.price_fixed === "number" ? Math.round(e.price_fixed / 100) : null,
+    priceFrom: typeof e.price_min === "number" ? Math.round(e.price_min / 100) : null,
+    priceTo: typeof e.price_max === "number" ? Math.round(e.price_max / 100) : null,
+    ticketLink: e.payment_link || "#",
+    saved: false,
+    interested: false,
+    capacity: e.capacity ?? null,
+    signupsCount: Number(e.signups_count || 0),
+    spotsLeft: e.spots_left ?? null,
+    organizer: { id: String(e.partner_user_id || ""), name: "Organizator" },
+  };
+}
+
+
+async function loadNearbyPeople() {
+  try {
+    const data = await apiFetch("/users/nearby?limit=20");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.people = items.map(mapApiPersonToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadNearbyPeople failed", err);
+    return false;
+  }
+}
+
+async function loadEvents() {
+  try {
+    const data = await apiFetch("/events?limit=20");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+
+    let joinedIds = new Set();
+    try {
+      const mine = await apiFetch("/users/me/events?limit=100");
+      const myItems = Array.isArray(mine?.data?.items) ? mine.data.items : [];
+      joinedIds = new Set(
+        myItems
+          .map(x => x?.signup?.event_id ?? x?.event?.id)
+          .filter(v => v != null)
+          .map(v => String(v))
+      );
+    } catch (err) {
+      console.error("loadEvents joined state failed", err);
+    }
+
+    const savedIds = getSavedEventIds();
+
+    App.events = items.map(raw => {
+      const ev = mapApiEventToViewModel(raw);
+      ev.interested = joinedIds.has(String(ev.id));
+      ev.saved = savedIds.has(String(ev.id));
+      return ev;
+    });
+
+    return true;
+  } catch (err) {
+    console.error("loadEvents failed", err);
+    return false;
+  }
+}
+
+
+async function loadMyGroups() {
+  try {
+    const data = await apiFetch("/groups/my");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.myGroups = items.map(mapApiGroupToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadMyGroups failed", err);
+    App.myGroups = [];
+    return false;
+  }
+}
+
+async function loadGroups() {
+  try {
+    const data = await apiFetch("/groups/suggested");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.groups = items.map(mapApiGroupToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadGroups failed", err);
+    App.groups = [];
+    return false;
+  }
+}
+
+async function loadPartnerEvents() {
+  try {
+    const data = await apiFetch("/partners/events");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+
+    const enriched = await Promise.all(
+      items.map(async (ev) => {
+        try {
+          const stats = await apiFetch(`/partners/events/${ev.id}/stats`);
+          return {
+            ...ev,
+            signups_count: Number(stats?.data?.signups_count || 0),
+            spots_left: stats?.data?.spots_left ?? null,
+            capacity: stats?.data?.capacity ?? null,
+          };
+        } catch (err) {
+          console.error(`loadPartnerEvents stats failed for event ${ev.id}`, err);
+          return {
+            ...ev,
+            signups_count: 0,
+            spots_left: null,
+            capacity: null,
+          };
+        }
+      })
+    );
+
+    App.partnerEvents = enriched;
+    return true;
+  } catch (err) {
+    console.error("loadPartnerEvents failed", err);
+    App.partnerEvents = [];
+    return false;
+  }
+}
+
+/* ------------------------- Render All -------------------------- */
+function renderAll() {
+  // Keep role labels consistent
+  safeSetText("roleLabelLogin", App.role === "user" ? "Towarzysz" : "Organizator");
+  safeSetText("roleLabelRegister", App.role === "user" ? "Towarzysz" : "Organizator");
+
+  // Plan pills
+  safeSetText("planPillSetup", App.user.plan.toUpperCase());
+  safeSetText("partnerPlanPill", App.partner.plan.toUpperCase());
+
+  if (App.currentView === "S3_PROFILE_SETUP") {
+    if ($("setupNick")) $("setupNick").value = App.user.nick || "";
+    if ($("setupCity")) $("setupCity").value = App.user.city || "";
+    if ($("setupBio")) $("setupBio").value = App.user.bio || "";
+    if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+    if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
+    safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+    safeSetText("bioCount", String(($("setupBio")?.value || "").length));
+  }
+
+  // Partner plan line in dashboard
+  const partnerHubName = $("partnerHubName");
+  if (partnerHubName) {
+    partnerHubName.textContent = App.partner.company || "Twoje miejsce";
+  }
+
+  const partnerHubMeta = $("partnerHubMeta");
+  if (partnerHubMeta) {
+    const meta = [App.partner.category, App.partner.city].filter(Boolean).join(" • ");
+    partnerHubMeta.textContent = meta || "Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.";
+  }
+
+  const partnerHubLogoPreview = $("partnerHubLogoPreview");
+  if (partnerHubLogoPreview) {
+    if (App.partner.logoUrl) {
+      const src = String(App.partner.logoUrl).startsWith("http")
+        ? App.partner.logoUrl
+        : `${API_BASE_URL}${App.partner.logoUrl}`;
+      partnerHubLogoPreview.innerHTML = `<img src="${src}" alt="Logo organizatora" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    } else {
+      partnerHubLogoPreview.innerHTML = "";
+      partnerHubLogoPreview.textContent = "🏷️";
+    }
+  }
+
+  const planLine = $("partnerPlanLine");
+  if (planLine) {
+    planLine.textContent = `Plan ${String(App.partner.plan || "free").toUpperCase()} jest teraz aktywny.`;
+  }
+
+  // Partner analytics in profile hub
+  const partnerStatsGrid = $("partnerStatsGrid");
+  if (partnerStatsGrid) {
+    const metricCards = partnerStatsGrid.querySelectorAll(".metricCard");
+
+    if (metricCards[0]) {
+      const label = metricCards[0].querySelector(".metricLabel");
+      const sub = metricCards[0].querySelector(".metricSub");
+      if (label) label.textContent = "Aktywne";
+      if (sub) sub.textContent = "Opublikowane teraz";
+    }
+
+    if (metricCards[1]) {
+      const label = metricCards[1].querySelector(".metricLabel");
+      const sub = metricCards[1].querySelector(".metricSub");
+      if (label) label.textContent = "Szkice";
+      if (sub) sub.textContent = "Robocze";
+    }
+
+    if (metricCards[2]) {
+      const label = metricCards[2].querySelector(".metricLabel");
+      const sub = metricCards[2].querySelector(".metricSub");
+      if (label) label.textContent = "Zapisy";
+      if (sub) sub.textContent = "Do aktywnych";
+    }
+
+    if (metricCards[3]) {
+      const label = metricCards[3].querySelector(".metricLabel");
+      const sub = metricCards[3].querySelector(".metricSub");
+      if (label) label.textContent = "Wolne miejsca";
+      if (sub) sub.textContent = "W aktywnych";
+    }
+
+    safeSetText("m_events_val", "—");
+    safeSetText("m_views_val", "—");
+    safeSetText("m_clicks_val", "—");
+    safeSetText("m_conv_val", "—");
+
+    (App.role === "partner" ? apiFetch("/partners/dashboard/stats") : Promise.resolve(null))
+      .then((res) => {
+        if (!res?.success || !res?.data) return;
+
+        safeSetText("m_events_val", String(res.data.total_events ?? 0));
+        safeSetText("m_views_val", String(res.data.draft_events ?? 0));
+        safeSetText("m_clicks_val", String(res.data.total_signups ?? 0));
+        safeSetText("m_conv_val", String(res.data.free_spots ?? 0));
+      })
+      .catch(() => {
+        safeSetText("m_events_val", "—");
+        safeSetText("m_views_val", "—");
+        safeSetText("m_clicks_val", "—");
+        safeSetText("m_conv_val", "—");
+      });
+  }
+
+  // Setup avatar
+  const renderAvatarBox = (el) => {
+    if (!el) return;
+    if (App.user.avatarUrl) {
+      const src = String(App.user.avatarUrl).startsWith("http")
+        ? App.user.avatarUrl
+        : `${API_BASE_URL}${App.user.avatarUrl}`;
+      el.innerHTML = `<img src="${src}" alt="Awatar użytkownika" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    } else {
+      el.innerHTML = "";
+      el.textContent = "👤";
+    }
+  };
+
+  renderAvatarBox($("userAvatar"));
+  renderAvatarBox($("settingsUserAvatarPreview"));
+
+  // Fill settings inputs moved out of renderAll to avoid overwriting unsaved form edits
+
+  // Settings range values
+  if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+  if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
+  safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom));
+  safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo));
+
+  // Partner settings
+  if ($("setOrgCompany")) $("setOrgCompany").value = App.partner.company || "";
+  if ($("setOrgCategory")) $("setOrgCategory").value = App.partner.category || "inne";
+  if ($("setOrgCity")) $("setOrgCity").value = App.partner.city || "Warszawa";
+  if ($("setOrgAbout")) $("setOrgAbout").value = App.partner.about || "";
+
+  const orgLogoPreview = $("setOrgLogoPreview");
+  if (orgLogoPreview) {
+    if (App.partner.logoUrl) {
+      const src = String(App.partner.logoUrl).startsWith("http")
+        ? App.partner.logoUrl
+        : `${API_BASE_URL}${App.partner.logoUrl}`;
+      orgLogoPreview.innerHTML = `<img src="${src}" alt="Logo organizatora" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    } else {
+      orgLogoPreview.textContent = App.partner.logoEmoji || "🏷️";
+    }
+  }
+
+  // Interest chips in visible sections
+  renderInterestChips("interestChips");
+  refreshInterestUi();
+  renderInterestChips("setInterestChips");
+  renderInterestChips("regInterestChips");
+
+  // Lists
+  if (App.currentView === "S4_NEARBY") renderNearby();
+  if (App.currentView === "S7_EVENTS") renderEventsList();
+  if (App.currentView === "S8_GROUPS") renderGroups();
+  if (App.currentView === "S6_CHATS_LIST") renderChatList();
+  if (App.currentView === "S6B_CHAT_THREAD") renderChatThread();
+  if (App.currentView === "S9_PARTNER_EVENTS") renderPartnerEvents();
+  if (App.currentView === "S9_PARTNER_MESSAGES") renderPartnerMsgList();
+  if (App.role === "user" && !["S2_REGISTER","S3_PROFILE_SETUP"].includes(App.currentView)) refreshNotifBadgeCount();
+  if (App.currentView === "S12_NOTIFICATIONS") renderNotifications();
+
+  // tabbar active
+  updateTabbars();
+}
+
+/* ------------------------- Search bindings -------------------------- */
+function initSearchBindings() {
+  $("nearbyPeopleSearch")?.addEventListener("input", renderNearby);
+  $("eventsSearch")?.addEventListener("input", renderEventsList);
+  $("groupSearch")?.addEventListener("input", renderGroups);
+  $("chatSearch")?.addEventListener("input", renderChatList);
+  $("partnerMsgSearch")?.addEventListener("input", renderPartnerMsgList);
+}
+
+/* ------------------------- App Init -------------------------- */
+async function init() {
+  // Start view
+  go("S0_WELCOME");
+
+  // init hooks
+  initGeolocation();
+  initAgeSliders();
+  initCharCounters();
+  initInterestInputs();
+  initSearchBindings();
+  initPartnerLogoUpload();
+  initPartnerPricingFields();
+  syncPartnerEventSubmitBtn();
+
+  // Default role toggle UI
+  selectRole(App.role);
+
+  // Default plan selections (sync)
+  setUserPlan(App.user.plan, true);
+  setPartnerPlan(App.partner.plan, true);
+
+  const regBirthDate = $("regBirthDate");
+  const ageError = $("ageError");
+  if (regBirthDate && ageError && regBirthDate.dataset.bound !== "1") {
+    regBirthDate.addEventListener("input", () => {
+      ageError.style.display = "none";
+      ageError.textContent = "Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.";
+    });
+    regBirthDate.dataset.bound = "1";
+  }
+
+  // Default events tab
+  setEventsTab(App.eventsTab);
+  refreshUserPlanCardsUi();
+
+  // Default: logged out
+  $("appRoot")?.classList.toggle("isLoggedIn", App.isLoggedIn);
+  updateTabbars();
+  // initAuthMvp(); // martwy debug auth flow
+
+  const token = localStorage.getItem("usly_token");
+
+  if (token) {
+    try {
+      const me = await apiFetch("/auth/me");
+      App.currentUserId = me?.id ?? me?.data?.id ?? null;
+      App.role = me?.role === "partner" ? "partner" : "user";
+      App.isLoggedIn = true;
+      $("appRoot")?.classList.add("isLoggedIn");
+      updateTabbars();
+
+      if (App.role === "user") {
+        const profile = await apiFetch("/users/me");
+        if (profile?.success && profile?.data) {
+          App.user.nick = profile.data.nick || App.user.nick;
+          App.user.city = profile.data.miasto || App.user.city;
+          App.user.bio = profile.data.bio || "";
+          App.user.interests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
+          App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
+          App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
+          App.user.plan = profile.data.plan || App.user.plan;
+          App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
+          }
+        await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
+        renderAll();
+        bindMessageInputs();
+        go("S4_NEARBY");
+        return;
+      } else {
+        await loadPartnerProfile();
+        await loadPartnerEvents();
+        renderAll();
+        bindMessageInputs();
+        go("S9_PARTNER");
+        return;
+      }
+    } catch (err) {
+      console.error("init session restore failed", err);
+      try { localStorage.removeItem("usly_token"); } catch (_) {}
+      App.isLoggedIn = false;
+    }
+  }
+
+  Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]).finally(() => {
+    renderAll();
+    bindMessageInputs();
+  });
+}
+
+
+function initAuthMvp() {
+
+  console.log("AUTH MVP INIT");
+  const elEmail = document.getElementById("login-email");
+  const elPassword = document.getElementById("login-password");
+
+  const btnLogin = document.getElementById("btn-login");
+  const btnMe = document.getElementById("btn-me");
+  const btnLogout = document.getElementById("btn-logout");
+
+  const elStatus = document.getElementById("auth-status");
+
+  function setStatus(msg, obj = null) {
+    if (!elStatus) return;
+
+    if (obj) {
+      elStatus.textContent = msg + "\n" + JSON.stringify(obj, null, 2);
+    } else {
+      elStatus.textContent = msg;
+    }
+  }
+
+  function getToken() {
+    return localStorage.getItem("usly_token");
+  }
+
+  function setToken(token) {
+    localStorage.setItem("usly_token", token);
+  }
+
+  function clearToken() {
+    localStorage.removeItem("usly_token");
+  }
+
+  // Globalny auto-logout tylko po 401 z apiFetch()
+    window.addEventListener("auth:logout", (e) => {
+      try { clearToken(); } catch (_) {}
+      try { localStorage.removeItem(USLY_STORAGE_KEYS.userPlan); } catch (_) {}
+      try { localStorage.removeItem("usly_user_interests"); } catch (_) {}
+
+      App.isLoggedIn = false;
+      App.currentUserId = null;
+      App.selectedPersonId = null;
+      App.selectedChatId = null;
+      App.selectedChatUserId = null;
+      App.selectedEventId = null;
+      App.selectedGroupId = null;
+
+      App.user.plan = "free";
+      App.user.nick = "";
+      App.user.city = "";
+      App.user.age = 24;
+      App.user.bio = "";
+      App.user.interests = [];
+      App.user.prefAgeFrom = 18;
+      App.user.prefAgeTo = 35;
+      App.user.avatarUrl = "";
+
+      App.people = [];
+      App.chats = [];
+      App.myGroups = [];
+
+      $("appRoot")?.classList.remove("isLoggedIn");
+      hide($("tabbarUser"));
+      hide($("tabbarPartner"));
+
+      const st = e && e.detail && e.detail.status ? e.detail.status : "?";
+      if (Number(st) !== 401) return;
+      setStatus("⛔ Wylogowano automatycznie (HTTP " + st + ") — zaloguj się ponownie");
+      App.history = ["S0_WELCOME"];
+      go("S0_WELCOME");
+    });
+
+  // --- LOGIN ---
+
+  if (btnLogin) {
+    btnLogin.addEventListener("click", async () => {
+
+      const email = elEmail?.value.trim();
+      const password = elPassword?.value.trim();
+
+      if (!email || !password) {
+        setStatus("❌ Podaj email i hasło");
+        return;
+      }
+
+      setStatus("⏳ Logowanie...");
+      try {
+        const data = await apiFetch("/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password, expected_role: App.role === "partner" ? "partner" : "user" }),
+        });
+        
+        if (!data?.success) {
+          setStatus("❌ " + (data?.message || "Login error"), data);
+          return;
+        }
+        const token = data.data.access_token;
+        
+        setToken(token);
+
+        setStatus("✅ Zalogowano. Token zapisany.");
+
+      } catch (err) {
+        console.error(err);
+        setStatus("❌ " + (err.userMessage || "Błąd logowania"));
+      }
+
+    });
+  }
+
+  // --- ME ---
+
+  if (btnMe) {
+      btnMe.addEventListener("click", async () => {
+
+        const token = getToken();
+
+        if (!token) {
+          setStatus("❌ Brak tokena — zaloguj się");
+          return;
+        }
+
+        setStatus("⏳ Pobieranie /auth/me...");
+
+        try {
+          const data = await apiFetch("/auth/me");
+          setStatus("✅ /auth/me OK", data);
+
+        } catch (err) {
+          console.error(err);
+
+          // 401/403 obsługuje apiFetch() -> emituje auth:logout i ustawia globalny komunikat
+          if (err && (err.status === 401 || err.status === 403)) {
+            return;
+          }
+
+          setStatus("❌ " + (err.userMessage || "Błąd"), err.data || err.message);
+        }
+
+      });
+    }
+
+    // --- LOGOUT ---
+
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => {
+      clearToken();
+      setStatus("👋 Wylogowano (token usunięty)");
+    });
+  }
+
+}
+
+// Run when DOM ready
+document.addEventListener("DOMContentLoaded", init);
+
+// ===============================
+// AUTH MVP
+// ===============================
+
+
+
+/* ------------------------- Leaflet Map -------------------------- */
+
+let nearbyMap = null;
+let nearbyMarkers = [];
+
+function initNearbyMap() {
+  const el = document.getElementById("nearbyMap");
+  if (!el || nearbyMap) return;
+
+  nearbyMap = L.map("nearbyMap").setView([52.2297, 21.0122], 12);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(nearbyMap);
+}
+
+function renderNearbyMapMarkers() {
+  if (!nearbyMap) return;
+
+  nearbyMarkers.forEach(m => nearbyMap.removeLayer(m));
+  nearbyMarkers = [];
+
+  const baseLat = 52.2297;
+  const baseLng = 21.0122;
+
+  const personIcon = L.divIcon({
+    className: "nearby-person-marker",
+    html: `<div style="position:relative;width:28px;height:34px;display:flex;align-items:flex-start;justify-content:center;"><div style="width:26px;height:26px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:linear-gradient(135deg,#ff4bd4,#7b61ff);border:2px solid rgba(255,255,255,.96);box-shadow:0 10px 22px rgba(0,0,0,.30);position:absolute;top:0;left:1px;"></div><div style="position:absolute;top:3px;left:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:12px;transform:rotate(0deg);">👤</div></div>`,
+    iconSize: [28, 34],
+    iconAnchor: [14, 30],
+  });
+
+  const eventIcon = L.divIcon({
+    className: "nearby-event-marker",
+    html: `<div style="width:24px;height:24px;border-radius:999px;background:linear-gradient(135deg,#34e6ff,#00c48c);border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 22px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#052b2f;font-size:12px;font-weight:900;">🎫</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+
+  getNearbyPeopleForView().forEach((person, index) => {
+    const lat = baseLat + (Math.random() - 0.5) * 0.06;
+    const lng = baseLng + (Math.random() - 0.5) * 0.06;
+
+    const marker = L.marker([lat, lng], { icon: personIcon })
+      .addTo(nearbyMap);
+
+    marker.on("click", () => openMapMarker("person", index));
+    nearbyMarkers.push(marker);
+  });
+
+  App.events
+    .filter(ev => matchesUserEventInterest(ev) && isEventInMyCity(ev))
+    .slice(0, 12)
+    .forEach((ev, index) => {
+    const lat = baseLat + (Math.random() - 0.5) * 0.05;
+    const lng = baseLng + (Math.random() - 0.5) * 0.05;
+
+    const marker = L.marker([lat, lng], { icon: eventIcon })
+      .addTo(nearbyMap)
+      .bindPopup("<b>" + ev.title + "</b><br>" + (ev.city || ""));
+
+    marker.on("click", () => openMapMarker("event", index));
+    nearbyMarkers.push(marker);
+  });
+}
+
+
+
+function openProfileEdit(){
+  go("S10B_PROFILE_EDIT");
+}
+
+
+function refreshInterestUi() {
+  const count = Array.isArray(App.user.interests) ? App.user.interests.length : 0;
+  const limit = getUserInterestLimit();
+
+  const ensureHint = (preferredId, anchorId) => {
+    let el = $(preferredId);
+    if (el) return el;
+
+    const anchor = $(anchorId);
+    if (!anchor || !anchor.parentNode) return null;
+
+    el = document.createElement("div");
+    el.id = preferredId;
+    el.className = "sectionSub";
+    el.style.marginTop = "8px";
+    anchor.parentNode.insertBefore(el, anchor.nextSibling);
+    return el;
+  };
+
+  const hintTargets = [
+    ensureHint("regInterestLimitHint", "regInterestChips"),
+    $("interestLimitHint"),
+    $("setInterestLimitHint")
+  ].filter(Boolean);
+
+  const hintText = limit === null
+    ? `Zainteresowania: ${count} • Bez limitu w planie VIP`
+    : `Zainteresowania: ${count} / ${limit}`;
+
+  hintTargets.forEach((hint) => {
+    hint.textContent = hintText;
+  });
+
+  const inputs = [
+    $("regInterestInput"),
+    $("interestInput"),
+    $("setInterestInput")
+  ].filter(Boolean);
+
+  const canAdd = canAddMoreInterests(count);
+
+  inputs.forEach((input) => {
+    input.disabled = !canAdd;
+    input.style.opacity = canAdd ? "1" : "0.6";
+
+    if (!canAdd) {
+      input.placeholder = "Limit osiągnięty • Odblokuj więcej w PLUS";
+      input.onclick = () => toast("Odblokuj więcej zainteresowań w planie PLUS");
+    } else {
+      input.onclick = null;
+    }
+  });
+}
+
+function openProfileInterests(){
+  go("S10C_PROFILE_INTERESTS");
+}
+
+function openChangePassword() {
+  openModal("Zmień hasło", `
+    <div class="tStrong">Zmiana hasła</div>
+    <div class="sectionSub mt10">Wpisz obecne hasło i ustaw nowe hasło do konta.</div>
+    <label class="mt12">Obecne hasło</label>
+    <input id="changePasswordCurrent" type="password" placeholder="Wpisz obecne hasło" />
+    <label class="mt12">Nowe hasło</label>
+    <input id="changePasswordNew" type="password" placeholder="Wpisz nowe hasło" />
+    <label class="mt12">Powtórz nowe hasło</label>
+    <input id="changePasswordRepeat" type="password" placeholder="Powtórz nowe hasło" />
+    <button class="btn mt16" type="button" onclick="submitChangePassword()">Zapisz nowe hasło</button>
+  `);
+}
+
+async function submitChangePassword() {
+  const currentPassword = $("changePasswordCurrent")?.value?.trim() || "";
+  const newPassword = $("changePasswordNew")?.value?.trim() || "";
+  const repeatPassword = $("changePasswordRepeat")?.value?.trim() || "";
+
+  if (!currentPassword || !newPassword || !repeatPassword) {
+    toast("Uzupełnij wszystkie pola hasła");
+    return;
+  }
+
+  if (newPassword !== repeatPassword) {
+    toast("Nowe hasła nie są takie same");
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    toast("Nowe hasło musi mieć co najmniej 8 znaków");
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    });
+
+    if (res?.success) {
+      toast("Hasło zostało zmienione");
+      closeModal();
+      return;
+    }
+
+    toast(res?.error?.message || "Nie udało się zmienić hasła");
+  } catch (err) {
+    const msg =
+      err?.data?.detail === "CURRENT_PASSWORD_INVALID"
+        ? "Obecne hasło jest nieprawidłowe"
+        : err?.data?.detail === "NEW_PASSWORD_SAME_AS_CURRENT"
+        ? "Nowe hasło musi być inne niż obecne"
+        : err?.userMessage || "Nie udało się zmienić hasła";
+    toast(msg);
+  }
+}
+
+function openDeleteAccount() {
+  openModal("Usuń konto", `
+    <div class="tStrong">Usuń konto</div>
+    <div class="sectionSub mt10">Ta akcja jest nieodwracalna. Wpisz hasło, aby potwierdzić usunięcie konta.</div>
+    <label class="mt12">Hasło</label>
+    <input id="deleteAccountPassword" type="password" placeholder="Wpisz hasło, aby potwierdzić" />
+    <button class="btn danger mt16" type="button" onclick="submitDeleteAccount()">Usuń konto</button>
+  `);
+}
+
+async function submitDeleteAccount() {
+  const password = $("deleteAccountPassword")?.value?.trim() || "";
+
+  if (!password) {
+    toast("Wpisz hasło, aby potwierdzić usunięcie konta");
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/auth/delete-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+
+    if (res?.success) {
+      try { localStorage.removeItem("usly_token"); } catch (_) {}
+      App.isLoggedIn = false;
+      App.currentUserId = null;
+      closeModal();
+      toast("Konto zostało usunięte");
+      go("S0_WELCOME");
+      renderAll();
+      return;
+    }
+
+    toast(res?.error?.message || "Nie udało się usunąć konta");
+  } catch (err) {
+    const msg =
+      err?.data?.detail === "PASSWORD_INVALID"
+        ? "Hasło jest nieprawidłowe"
+        : err?.userMessage || "Nie udało się usunąć konta";
+    toast(msg);
+  }
+}

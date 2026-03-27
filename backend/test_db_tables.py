@@ -1,4 +1,4 @@
-from backend.db.database import SessionLocal
+from db.database import SessionLocal
 from models import AuditLog
 
 db = SessionLocal()

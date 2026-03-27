@@ -2,7 +2,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from backend.request_id_middleware import RequestIdMiddleware
+from request_id_middleware import RequestIdMiddleware
 # -*- coding: utf-8 -*-
 
 import os
@@ -33,6 +33,10 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
+import os
+import aiosmtplib
+from email.message import EmailMessage
+
 from fastapi import (
     FastAPI,
     Depends,
@@ -48,10 +52,10 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
-from backend.api_response import ok, fail
-from backend.error_codes import ErrorCode
-from backend.db.database import SessionLocal
-from backend.models import (
+from api_response import ok, fail
+from error_codes import ErrorCode
+from db.database import SessionLocal
+from models import (
     User,
     UserProfile,
     PartnerProfile,
@@ -64,8 +68,8 @@ from backend.models import (
     Message,
     Friendship,
 )
-from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, MessageOut
-from backend.security import (
+from schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, MessageOut
+from security import (
     hash_password,
 require_role,
 create_access_token,
@@ -124,7 +128,7 @@ def healthz():
 def join_event(
     event_id: int,
     request: Request,
-    current_user: User = Depends(require_role("user")),
+    current_user: User = Depends(require_role("user", "partner")),
 ):
     db = SessionLocal()
     try:
@@ -246,7 +250,7 @@ app.mount("/uploads/static", StaticFiles(directory=str(UPLOADS_DIR)), name="uplo
 # =========================
 # Exceptions
 # =========================
-from backend.exceptions import ApiException
+from exceptions import ApiException
 
 
 
@@ -347,7 +351,7 @@ def _is_at_least_18(dob: date) -> bool:
 # =========================
 # UWAGA: RegisterRequest/RegisterResponse musz istnie w Twoim projekcie.
 # Jeli masz je w innym pliku, zmie import tutaj.
-from backend.schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
+from schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
 
 
 @app.post("/auth/register")
@@ -355,9 +359,14 @@ from backend.schemas import RegisterRequest, RegisterResponse  # <- jeli masz gd
 def register(request: Request, payload: RegisterRequest):
     db = SessionLocal()
     try:
-        # 18+
-        if not _is_at_least_18(payload.dob):
-            raise ApiException(status_code=403, code=ErrorCode.AGE_TOO_LOW)
+        role_value = "partner" if payload.role == "partner" else "user"
+
+        # 18+ tylko dla Towarzysza
+        if role_value == "user":
+            if not payload.dob:
+                raise ApiException(status_code=422, code=ErrorCode.INVALID_INPUT, message="Data urodzenia jest wymagana.")
+            if not _is_at_least_18(payload.dob):
+                raise ApiException(status_code=403, code=ErrorCode.AGE_TOO_LOW)
 
         # LEGAL — wymagane zgody
         if not payload.accept_terms:
@@ -368,8 +377,6 @@ def register(request: Request, payload: RegisterRequest):
             raise ApiException(status_code=409, code=ErrorCode.EMAIL_ALREADY_EXISTS)
 
         # UWAGA: UserRole i UserStatus muszą istnieć w Twoim projekcie.
-        role_value = "partner" if payload.role == "partner" else "user"
-
         user = User(
             email=str(payload.email),
             password_hash=hash_password(payload.password),
@@ -805,7 +812,7 @@ def users_nearby(
 @app.get("/users/{user_id}")
 def users_profile_by_id(
     user_id: int,
-    current_user: User = Depends(require_role("user")),
+    current_user: User = Depends(require_role("user", "partner")),
 ):
     db = SessionLocal()
     try:
@@ -1010,6 +1017,8 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
                 "user_id": current_user.id,
                 "nazwa": profile.nazwa,
                 "miasto": profile.miasto,
+                "kategoria": profile.kategoria,
+                "plan": profile.plan,
                 "bio": profile.bio,
                 "logo_url": profile.logo_url,
             }
@@ -1024,6 +1033,8 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
 class PartnerMePatch(BaseModel):
     nazwa: Optional[str] = Field(default=None, max_length=120)
     miasto: Optional[str] = Field(default=None, max_length=80)
+    kategoria: Optional[str] = Field(default=None, max_length=80)
+    plan: Optional[str] = Field(default=None, max_length=20)
     bio: Optional[str] = Field(default=None, max_length=500)
     logo_url: Optional[str] = Field(default=None)
 
@@ -1053,6 +1064,12 @@ def partners_me_patch(
         if payload.miasto is not None:
             profile.miasto = _trim(payload.miasto)
 
+        if payload.kategoria is not None:
+            profile.kategoria = _trim(payload.kategoria)
+
+        if payload.plan is not None:
+            profile.plan = _trim(payload.plan).lower()
+
         if payload.bio is not None:
             profile.bio = _trim(payload.bio)
 
@@ -1070,6 +1087,8 @@ def partners_me_patch(
                 "user_id": current_user.id,
                 "nazwa": profile.nazwa,
                 "miasto": profile.miasto,
+                "kategoria": profile.kategoria,
+                "plan": profile.plan,
                 "bio": profile.bio,
                 "logo_url": profile.logo_url,
             }
@@ -1427,6 +1446,31 @@ def partner_publish_event(
         if event.status != "draft":
             raise HTTPException(status_code=409, detail="INVALID_STATUS_TRANSITION")
 
+        profile = (
+            db.query(PartnerProfile)
+            .filter(PartnerProfile.user_id == current_user.id)
+            .first()
+        )
+        current_plan = ((profile.plan if profile else "free") or "free").lower()
+
+        active_limit = None
+        if current_plan == "free":
+            active_limit = 2
+        elif current_plan == "pro":
+            active_limit = 5
+
+        if active_limit is not None:
+            now_utc = datetime.utcnow()
+            active_events_count = (
+                db.query(Event)
+                .filter(Event.partner_user_id == current_user.id)
+                .filter(Event.status == "published")
+                .filter(Event.end_at >= now_utc)
+                .count()
+            )
+            if active_events_count >= active_limit:
+                raise HTTPException(status_code=409, detail="PLAN_ACTIVE_EVENT_LIMIT_REACHED")
+
         event.status = "published"
         event.updated_at = datetime.utcnow()
 
@@ -1542,6 +1586,12 @@ def list_events(
 
         items = []
         for score, e in paged:
+            partner_profile = (
+                db.query(PartnerProfile)
+                .filter(PartnerProfile.user_id == e.partner_user_id)
+                .first()
+            )
+
             signups_count = (
                 db.query(EventSignup)
                 .filter(EventSignup.event_id == e.id)
@@ -1555,6 +1605,10 @@ def list_events(
                 {
                     "id": e.id,
                     "partner_user_id": e.partner_user_id,
+                    "partner_name": getattr(partner_profile, "nazwa", None) or "",
+                    "partner_category": getattr(partner_profile, "kategoria", None) or "",
+                    "partner_bio": getattr(partner_profile, "bio", None) or "",
+                    "partner_logo_url": getattr(partner_profile, "logo_url", None) or "",
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
@@ -1731,6 +1785,7 @@ def partner_list_events(
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
+                    "where": e.where,
                     "interest_tag": e.interest_tag,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
@@ -1784,6 +1839,7 @@ def partner_get_event_details(
                 "partner_user_id": event.partner_user_id,
                 "title": event.title,
                 "description": event.description,
+                "where": event.where,
                 "city": event.city,
                 "interest_tag": event.interest_tag,
                 "start_at": event.start_at,
@@ -1917,11 +1973,17 @@ def partner_event_participants(
 
         items = []
         for signup, user in rows:
+            user_profile = (
+                db.query(UserProfile)
+                .filter(UserProfile.user_id == user.id)
+                .first()
+            )
             items.append(
                 {
                     "user": {
                         "id": user.id,
                         "email": user.email,
+                        "nick": user_profile.nick if user_profile else None,
                     },
                     "signup": {
                         "created_at": signup.created_at,
@@ -2246,12 +2308,36 @@ def list_private_conversations(
                     or getattr(partner_profile, "nazwa", None)
                 )
 
+            fallback_name = (
+                "Organizator"
+                if role == "partner"
+                else f"Użytkownik #{other_user_id}"
+            )
+
             items.append({
                 "other_user_id": other_user_id,
+                "other_user_role": role,
                 "other_user_name": (
                     display_name
-                    or getattr(other, "email", None)
-                    or f"Użytkownik #{other_user_id}"
+                    or fallback_name
+                ),
+                "other_user_avatar_url": (
+                    getattr(user_profile, "avatar_url", None)
+                    or getattr(partner_profile, "logo_url", None)
+                    or ""
+                ),
+                "other_user_bio": (
+                    getattr(user_profile, "bio", None)
+                    or getattr(partner_profile, "bio", None)
+                    or ""
+                ),
+                "other_user_company": (
+                    getattr(partner_profile, "nazwa", None)
+                    or ""
+                ),
+                "other_user_category": (
+                    getattr(partner_profile, "kategoria", None)
+                    or ""
                 ),
                 "last_message": m.content,
                 "last_message_at": m.created_at,
@@ -2864,3 +2950,145 @@ def get_terms_pl():
 @app.get("/api/legal/terms_en")
 def get_terms_en():
     return FileResponse("legal/terms_en.md")
+
+
+# =========================
+
+async def send_bug_email(subject: str, body: str):
+    try:
+        msg = EmailMessage()
+        msg["From"] = os.getenv("BUG_EMAIL_FROM")
+        msg["To"] = "kontakt@uslyapp.pl"
+        msg["Subject"] = subject
+        msg.set_content(body)
+
+        await aiosmtplib.send(
+            msg,
+            hostname=os.getenv("SMTP_HOST"),
+            port=int(os.getenv("SMTP_PORT", 587)),
+            start_tls=True,
+            username=os.getenv("SMTP_USER"),
+            password=os.getenv("SMTP_PASS"),
+        )
+    except Exception as e:
+        print("MAIL ERROR:", e)
+
+# FEEDBACK / BUG REPORTS
+# =========================
+@app.post("/feedback")
+async def submit_feedback(payload: dict):
+    import os
+    import json
+    import smtplib
+    import ssl
+    from pathlib import Path
+    from datetime import datetime
+    from email.message import EmailMessage
+
+    bug_email_to = "kontakt@uslyapp.pl"
+
+    message = str((payload or {}).get("message") or "").strip()
+    role = str((payload or {}).get("role") or "unknown").strip() or "unknown"
+    user_id = (payload or {}).get("user_id")
+    email = str((payload or {}).get("email") or "—").strip() or "—"
+    current_view = str((payload or {}).get("current_view") or "—").strip() or "—"
+
+    if not message:
+        return ok({
+            "saved": False,
+            "emailed": False,
+            "ticket": None,
+            "error": "EMPTY_MESSAGE",
+        })
+
+    data_dir = Path(__file__).resolve().parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    bug_file = data_dir / "bug_reports.jsonl"
+
+    existing_count = 0
+    if bug_file.exists():
+        with bug_file.open("r", encoding="utf-8") as f:
+            existing_count = sum(1 for _ in f if _.strip())
+
+    ticket_no = existing_count + 1
+    ticket = f"{ticket_no:04d}"
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    record = {
+        "ticket": ticket,
+        "role": role,
+        "user_id": user_id,
+        "email": email,
+        "current_view": current_view,
+        "message": message,
+        "created_at": now,
+    }
+
+    with bug_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    subject = f"[USLY BUG #{ticket}] {role.capitalize()}"
+    body = (
+        f"Numer: #{ticket}\n"
+        f"Rola: {role.capitalize()}\n"
+        f"User ID: {user_id if user_id is not None else '—'}\n"
+        f"Email: {email}\n"
+        f"Czas: {now}\n"
+        f"Treść:\n"
+        f"{message}"
+    )
+
+    smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+    smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+    smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+    smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+    smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+    emailed = False
+    email_error = None
+
+    if smtp_host and smtp_from:
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = smtp_from
+            msg["To"] = bug_email_to
+            msg.set_content(body)
+
+            context = ssl.create_default_context()
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls(context=context)
+                if smtp_user and smtp_pass:
+                    server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+
+            emailed = True
+        except Exception as e:
+            email_error = str(e)
+
+    return ok({
+        "saved": True,
+        "emailed": emailed,
+        "ticket": ticket,
+        "email_error": email_error,
+    })
+
+
+@app.get("/admin/bug-reports")
+def get_bug_reports():
+    import json
+    from pathlib import Path
+
+    f = Path("data/bug_reports.jsonl")
+    if not f.exists():
+        return {"success": True, "data": []}
+
+    items = []
+    with f.open() as fh:
+        for line in fh:
+            try:
+                items.append(json.loads(line))
+            except:
+                pass
+
+    return {"success": True, "count": len(items), "data": items[::-1]}

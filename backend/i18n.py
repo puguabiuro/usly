@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from backend.error_codes import ErrorCode
+from error_codes import ErrorCode
 
 DEFAULT_LANG = "pl"
 SUPPORTED_LANGS = {"pl", "en"}
@@ -27,6 +27,10 @@ MESSAGES: Dict[str, Dict[ErrorCode, str]] = {
         # GENERIC
         ErrorCode.INTERNAL_ERROR: "Wystąpił błąd serwera. Spróbuj ponownie.",
         ErrorCode.EVENT_NOT_PUBLISHED: "Wydarzenie nie jest opublikowane.",
+        ErrorCode.PROFILE_NOT_FOUND: "Nie znaleziono profilu użytkownika.",
+        ErrorCode.GROUP_NOT_FOUND: "Nie znaleziono grupy.",
+        ErrorCode.GROUP_LIMIT_REACHED: "Osiągnięto limit grup dla Twojego planu.",
+        ErrorCode.GROUP_CREATE_LIMIT_REACHED: "Twój plan nie pozwala utworzyć kolejnej grupy.",
         ErrorCode.ALREADY_JOINED: "Już dołączyłeś/aś do tego wydarzenia.",
         ErrorCode.NOT_JOINED: "Nie jesteś zapisany/a na to wydarzenie.",
         ErrorCode.FORBIDDEN_NOT_OWNER: "Brak uprawnień (nie jesteś właścicielem).",
@@ -43,7 +47,7 @@ MESSAGES: Dict[str, Dict[ErrorCode, str]] = {
 
         # LOGIN
         ErrorCode.INVALID_CREDENTIALS: "Nieprawidłowy e-mail lub hasło.",
-        ErrorCode.ACCOUNT_INACTIVE: "Konto jest nieaktywne.",
+        ErrorCode.ACCOUNT_INACTIVE: "To konto zostało usunięte lub jest nieaktywne.",
     },
     "en": {
         # AUTH
@@ -63,6 +67,10 @@ MESSAGES: Dict[str, Dict[ErrorCode, str]] = {
         # GENERIC
         ErrorCode.INTERNAL_ERROR: "Server error. Please try again.",
         ErrorCode.EVENT_NOT_PUBLISHED: "This event is not published.",
+        ErrorCode.PROFILE_NOT_FOUND: "User profile not found.",
+        ErrorCode.GROUP_NOT_FOUND: "Group not found.",
+        ErrorCode.GROUP_LIMIT_REACHED: "You have reached the group limit for your plan.",
+        ErrorCode.GROUP_CREATE_LIMIT_REACHED: "Your plan does not allow creating another group.",
         ErrorCode.ALREADY_JOINED: "You have already joined this event.",
         ErrorCode.NOT_JOINED: "You are not signed up for this event.",
         ErrorCode.FORBIDDEN_NOT_OWNER: "You do not have permission (not the owner).",

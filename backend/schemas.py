@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-    dob: date  # yyyy-mm-dd
+    dob: date | None = None  # yyyy-mm-dd; wymagane dla user, opcjonalne dla partner
     role: Literal["user", "partner"]
 
     # LEGAL
@@ -62,6 +62,7 @@ class EventCreate(BaseModel):
     title: str = Field(min_length=3, max_length=120)
     description: Optional[str] = Field(default=None, max_length=10_000)
     city: str = Field(min_length=2, max_length=80)
+    interest_tag: str = Field(min_length=2, max_length=40)
 
     start_at: datetime
     end_at: datetime
@@ -83,6 +84,7 @@ class EventUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=3, max_length=120)
     description: Optional[str] = Field(default=None, max_length=10_000)
     city: Optional[str] = Field(default=None, min_length=2, max_length=80)
+    interest_tag: Optional[str] = Field(default=None, min_length=2, max_length=40)
 
     start_at: Optional[datetime] = None
     end_at: Optional[datetime] = None
@@ -110,6 +112,7 @@ class EventOut(BaseModel):
     title: str
     description: Optional[str] = None
     city: str
+    interest_tag: str
 
     start_at: datetime
     end_at: datetime
@@ -130,7 +133,7 @@ class EventOut(BaseModel):
 from datetime import datetime, timezone
 from typing import Optional, Literal
 
-from pydantic import BaseModel, Field, model_validator, HttpUrl
+from pydantic import BaseModel, Field, model_validator, HttpUrl, ConfigDict
 
 
 EventPricingType = Literal["free", "paid_fixed", "paid_range"]
@@ -153,6 +156,8 @@ class EventCreate(BaseModel):
     title: str = Field(min_length=3, max_length=120)
     description: Optional[str] = Field(default=None, max_length=2000)
     city: str = Field(min_length=2, max_length=80)
+    where: str = Field(min_length=2, max_length=120)
+    interest_tag: str = Field(min_length=2, max_length=40)
 
     start_at: datetime
     end_at: datetime
@@ -209,6 +214,8 @@ class EventUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=3, max_length=120)
     description: Optional[str] = Field(default=None, max_length=2000)
     city: Optional[str] = Field(default=None, min_length=2, max_length=80)
+    where: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    interest_tag: Optional[str] = Field(default=None, min_length=2, max_length=40)
 
     start_at: Optional[datetime] = None
     end_at: Optional[datetime] = None
@@ -282,6 +289,8 @@ class EventOut(BaseModel):
     title: str
     description: Optional[str]
     city: str
+    where: str
+    interest_tag: str
 
     start_at: datetime
     end_at: datetime
@@ -300,3 +309,42 @@ class EventOut(BaseModel):
     price_min: Optional[int]
     price_max: Optional[int]
     payment_link: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+# =========================
+# MESSAGES — SCHEMAS (MVP TESTERSKI)
+# =========================
+
+class PrivateMessageCreate(BaseModel):
+    recipient_user_id: int = Field(ge=1)
+    content: str = Field(min_length=1, max_length=5000)
+
+    @model_validator(mode="after")
+    def _normalize(self):
+        self.content = self.content.strip()
+        if not self.content:
+            raise ValueError("MESSAGE_CONTENT_EMPTY")
+        return self
+
+
+class GroupMessageCreate(BaseModel):
+    group_id: int = Field(ge=1)
+    content: str = Field(min_length=1, max_length=5000)
+
+    @model_validator(mode="after")
+    def _normalize(self):
+        self.content = self.content.strip()
+        if not self.content:
+            raise ValueError("MESSAGE_CONTENT_EMPTY")
+        return self
+
+
+class MessageOut(BaseModel):
+    id: int
+    sender_user_id: int
+    recipient_user_id: Optional[int] = None
+    group_id: Optional[int] = None
+    content: str
+    created_at: datetime
+

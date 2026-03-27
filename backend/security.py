@@ -11,10 +11,10 @@ from jose.exceptions import ExpiredSignatureError
 from passlib.context import CryptContext
 from passlib.exc import UnknownHashError
 
-from backend.db.database import SessionLocal
-from backend.models import User, UserStatus, AuditLog
-from backend.error_codes import ErrorCode
-from backend.exceptions import ApiException
+from db.database import SessionLocal
+from models import User, UserStatus, AuditLog
+from error_codes import ErrorCode
+from exceptions import ApiException
 
 
 # =========================

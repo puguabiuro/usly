@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime, date
 from enum import StrEnum
 
-from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint
+from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.db.database import Base
+from db.database import Base
 
 
 # =====================
@@ -153,6 +153,30 @@ class UserProfile(Base):
         default=None,
     )
 
+    plan: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="free",
+    )
+
+    plan_source: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        default=None,
+    )
+
+    plan_status: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        default=None,
+    )
+
+    plan_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -187,6 +211,18 @@ class PartnerProfile(Base):
         String(80),
         nullable=True,
         default=None,
+    )
+
+    kategoria: Mapped[str | None] = mapped_column(
+        String(80),
+        nullable=True,
+        default=None,
+    )
+
+    plan: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="free",
     )
 
     bio: Mapped[str | None] = mapped_column(
@@ -284,6 +320,18 @@ class Event(Base):
     city: Mapped[str] = mapped_column(
         String(80),
         nullable=False,
+    )
+
+    where: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+        default="",
+    )
+
+    interest_tag: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+        index=True,
     )
 
     # trzymamy UTC, frontend wysyła ISO
@@ -417,6 +465,13 @@ class Group(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
+    creator_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+        default=None,
+    )
+
     title: Mapped[str] = mapped_column(
         String(120),
         nullable=False,
@@ -455,3 +510,153 @@ class Group(Base):
     __table_args__ = (
         CheckConstraint("members_count >= 0", name="ck_groups_members_count_non_negative"),
     )
+
+
+# =====================
+# GROUP MEMBERSHIPS
+# =====================
+
+class GroupMembership(Base):
+    __tablename__ = "group_memberships"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    role: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="member",
+    )
+
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "group_id", name="uq_group_memberships_user_group"),
+    )
+
+
+# =====================
+# MESSAGES (PRIV + GROUP) — MVP TESTERSKI
+# =====================
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    sender_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # prywatna wiadomość: sender -> recipient
+    recipient_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+        default=None,
+    )
+
+    # grupowa wiadomość do grupy
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+        default=None,
+    )
+
+    content: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    is_read: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        CheckConstraint("length(content) >= 1", name="ck_messages_content_non_empty"),
+        CheckConstraint(
+            "(recipient_user_id IS NOT NULL AND group_id IS NULL) OR "
+            "(recipient_user_id IS NULL AND group_id IS NOT NULL)",
+            name="ck_messages_private_xor_group"
+        ),
+        Index("ix_messages_private_thread", "sender_user_id", "recipient_user_id", "created_at"),
+        Index("ix_messages_group_thread", "group_id", "created_at"),
+    )
+
+# =====================
+# FRIENDSHIPS / FRIEND REQUESTS
+# =====================
+
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    requester_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    addressee_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="pending",
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    responded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    __table_args__ = (
+        CheckConstraint("requester_user_id <> addressee_user_id", name="ck_friendships_no_self"),
+        CheckConstraint("status IN ('pending','accepted','rejected')", name="ck_friendships_status"),
+        UniqueConstraint("requester_user_id", "addressee_user_id", name="uq_friendships_requester_addressee"),
+        Index("ix_friendships_addressee_status", "addressee_user_id", "status"),
+        Index("ix_friendships_requester_status", "requester_user_id", "status"),
+    )
+

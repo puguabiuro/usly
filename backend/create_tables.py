@@ -1,4 +1,4 @@
-from backend.db.database import engine, Base
+from db.database import engine, Base
 import models  # noqa: F401  (ważne: rejestruje modele)
 
 def main() -> None:

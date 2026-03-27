@@ -1,6 +1,6 @@
 /* =========================================================
 USLY — JS FINAL (v11) — SPÓJNY Z HTML v11 (PL ONLY)
-CEL: UI demo + przygotowanie pod backend (spójne ID, stan, hooki)
+CEL: UI + przygotowanie pod backend (spójne ID, stan, hooki)
 ========================================================= */
 
 /* ------------------------- API Config -------------------------- */
@@ -10,7 +10,7 @@ const API_BASE_URL =
   window.USLY_API_BASE_URL ||
   (location.hostname.includes("onrender.com")
     ? "https://usly-backend-v2.onrender.com"
-    : "http://127.0.0.1:8000");
+    : "https://API_URL_PLACEHOLDER");
 
 // expose for api.js (plain scripts)
 window.API_BASE_URL = API_BASE_URL;
@@ -27,7 +27,7 @@ const App = {
   // Sub-states / filters
   eventsTab: "for_you", // 'for_you' | 'followed'
 
-  // Profile (demo)
+  // Profile 
   user: {
     plan: "free", // free | plus | premium | vip
     nick: "Ola_88",
@@ -51,7 +51,7 @@ const App = {
     logoEmoji: "🏷️",
   },
 
-  // Demo data
+  // data
   people: [],
 
   events: [
@@ -299,7 +299,7 @@ function closeModal() {
   overlay.setAttribute("aria-hidden", "true");
 }
 
-/* ------------------------- Bug Report (UI -> backend hook) -------------------------- */
+/* ------------------------- Bug Report -------------------------- */
 // Minimal UI for "Zgłoś błąd" button added in S10_SETTINGS.
 // Does not remove/alter any existing behavior.
 function openBugReport() {
@@ -331,7 +331,7 @@ function submitBugReport() {
     return;
   }
 
-  // Backend hook (optional): set window.USLY_API_BASE to enable sending.
+  // Optional API base override via window.USLY_API_BASE.
   // Example: window.USLY_API_BASE = "https://api.example.com";
   const base = window.USLY_API_BASE;
   if (base) {
@@ -352,14 +352,14 @@ function submitBugReport() {
         closeModal();
       })
       .catch(() => {
-        toast("Nie udało się wysłać (demo)");
+        toast("Nie udało się wysłać ");
         closeModal();
       });
     return;
   }
 
-  // Demo fallback
-  toast("Dzięki! Zgłoszenie zapisane (demo)");
+  // fallback
+  toast("Dzięki! Zgłoszenie zapisane ");
   closeModal();
 }
 
@@ -422,7 +422,7 @@ function selectRole(role) {
   renderAll();
 }
 
-/* ------------------------- Login / Signup (Demo) -------------------------- */
+/* ------------------------- Login / Signup -------------------------- */
 async function loginPrimary() {
   const email = $("loginId")?.value?.trim();
   const password = $("loginPass")?.value?.trim();
@@ -497,6 +497,8 @@ async function loadPartnerProfile() {
     if (profile?.success && profile?.data) {
       App.partner.company = profile.data.nazwa || App.partner.company;
       App.partner.city = profile.data.miasto || App.partner.city;
+      App.partner.category = profile.data.kategoria || App.partner.category || "inne";
+      App.partner.plan = profile.data.plan || App.partner.plan || "free";
       App.partner.about = profile.data.bio || "";
       App.partner.logoUrl = profile.data.logo_url || "";
     }
@@ -552,10 +554,10 @@ function logout() {
 function openForgot() {
   openModal("Odzyskiwanie hasła", `
     <div class="tStrong">Reset hasła</div>
-    <div class="sectionSub">W wersji demo nie wysyłamy maili. W backendzie: token resetu + email.</div>
+    <div class="sectionSub">W wersji nie wysyłamy maili. W backendzie: token resetu + email.</div>
     <label class="mt12">Email</label>
     <input type="email" placeholder="np. ola@email.com" />
-    <button class="btn mt16" type="button" onclick="toast('Wysłano link (demo)')">Wyślij link</button>
+    <button class="btn mt16" type="button" onclick="toast('Wysłano link ')">Wyślij link</button>
   `);
 }
 
@@ -835,10 +837,11 @@ async function setUserPlan(plan, silent = false) {
   if (!silent) toast(`Wybrano plan: ${plan.toUpperCase()}`);
 }
 
-function setPartnerPlan(plan, silent = false) {
+async function setPartnerPlan(plan, silent = false) {
   const allowed = ["free", "pro", "premium", "enterprise"];
   if (!allowed.includes(plan)) return;
 
+  const prevPlan = App.partner.plan || "free";
   App.partner.plan = plan;
   try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, plan); } catch(_) {}
 
@@ -861,9 +864,97 @@ function setPartnerPlan(plan, silent = false) {
     if (btn) btn.textContent = isCurrent ? "Aktualny plan" : "Wybierz";
   });
 
-  safeSetText("partnerPlanPill", plan.toUpperCase());
-  if (!silent) toast(`Wybrano plan: ${plan.toUpperCase()}`);
+  document.querySelectorAll("#partnerPlanPill").forEach((el) => {
+    el.textContent = plan.toUpperCase();
+  });
+
+  const isAuthSetupFlow = ["S1_LOGIN", "S2_REGISTER", "S3_PROFILE_SETUP", "S3B_PARTNER_SETUP"].includes(App.currentView);
+
+  if (!silent && App.isLoggedIn && App.role === "partner" && !isAuthSetupFlow) {
+    try {
+      const res = await apiFetch("/partners/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+
+      if (!res?.success || !res?.data) {
+        App.partner.plan = prevPlan;
+        try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, prevPlan); } catch(_) {}
+        renderAll();
+        toast(res?.error?.message || "Nie udało się zapisać planu organizatora");
+        return;
+      }
+
+      App.partner.plan = res.data.plan || plan;
+      try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, App.partner.plan); } catch(_) {}
+      document.querySelectorAll("#partnerPlanPill").forEach((el) => {
+        el.textContent = String(App.partner.plan).toUpperCase();
+      });
+      toast(`Wybrano plan: ${String(App.partner.plan).toUpperCase()}`);
+    } catch (err) {
+      App.partner.plan = prevPlan;
+      try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, prevPlan); } catch(_) {}
+      renderAll();
+      toast(err?.userMessage || "Nie udało się zapisać planu organizatora");
+      return;
+    }
+  } else if (!silent) {
+    toast(`Wybrano plan: ${String(plan).toUpperCase()}`);
+  }
+
   renderAll();
+}
+
+
+function getPartnerPlanRules() {
+  const plan = String(App.partner?.plan || "free").toLowerCase();
+
+  if (plan === "enterprise") {
+    return {
+      plan,
+      maxActiveEvents: null,
+      reportsScope: "full",
+      canMessageParticipants: true,
+      canBroadcastParticipants: true,
+      canFeatureEvents: true,
+      isCustom: true,
+    };
+  }
+
+  if (plan === "premium") {
+    return {
+      plan,
+      maxActiveEvents: null,
+      reportsScope: "full",
+      canMessageParticipants: true,
+      canBroadcastParticipants: true,
+      canFeatureEvents: true,
+      isCustom: false,
+    };
+  }
+
+  if (plan === "pro") {
+    return {
+      plan,
+      maxActiveEvents: 5,
+      reportsScope: "basic",
+      canMessageParticipants: true,
+      canBroadcastParticipants: false,
+      canFeatureEvents: false,
+      isCustom: false,
+    };
+  }
+
+  return {
+    plan: "free",
+    maxActiveEvents: 2,
+    reportsScope: "basic",
+    canMessageParticipants: false,
+    canBroadcastParticipants: false,
+    canFeatureEvents: false,
+    isCustom: false,
+  };
 }
 
 
@@ -1142,6 +1233,7 @@ async function savePartnerSettings() {
       body: JSON.stringify({
         nazwa: company,
         miasto: city,
+        kategoria: category,
         bio: about,
       }),
     });
@@ -1152,7 +1244,7 @@ async function savePartnerSettings() {
     }
 
     App.partner.company = data.data.nazwa || company;
-    App.partner.category = category;
+    App.partner.category = data.data.kategoria || category;
     App.partner.city = data.data.miasto || city;
     App.partner.about = data.data.bio || about;
 
@@ -1267,10 +1359,10 @@ function openAddPhoto() {
 function openAvatarAI() {
   openModal("Stwórz awatar", `
     <div class="tStrong">Awatar AI</div>
-    <div class="sectionSub mt10">Demo UI. Backend: prompt → generator → zapis awatara.</div>
+    <div class="sectionSub mt10">UI. Backend: prompt → generator → zapis awatara.</div>
     <label class="mt12">Opis awatara</label>
     <input id="aiAvatarPrompt" type="text" placeholder="np. neonowy, minimalistyczny, uśmiechnięty" />
-    <button class="btn mt16" type="button" onclick="toast('Awatar utworzony (demo)'); closeModal();">Generuj</button>
+    <button class="btn mt16" type="button" onclick="toast('Awatar utworzony '); closeModal();">Generuj</button>
   `);
 }
 
@@ -1362,12 +1454,16 @@ function resolvePersonById(userId) {
     return {
       id: String(fromChats.with.id),
       nick: fromChats.with.nick || `Użytkownik #${pid}`,
+      role: fromChats.with.role || "user",
+      company: fromChats.with.company || "",
       city: fromChats.with.city || "",
+      category: fromChats.with.category || "",
       age: fromChats.with.age || 0,
-      emoji: fromChats.with.emoji || "💬",
+      emoji: fromChats.with.emoji || "🙂",
       interests: Array.isArray(fromChats.with.interests) ? fromChats.with.interests : [],
       bio: fromChats.with.bio || "",
       avatarUrl: fromChats.with.avatarUrl || "",
+      logoUrl: fromChats.with.logoUrl || fromChats.with.avatarUrl || "",
     };
   }
 
@@ -1405,17 +1501,74 @@ function openPerson(personId) {
   setPersonFriendButtonState(initialProfileState);
   setPersonChatButtonState(initialProfileState);
 
+  const isPartnerProfile = String(p.role || "").toLowerCase() === "partner";
+  const friendBtn = $("personFriendBtn");
+  const chatBtn = $("personChatBtn");
+  const chips = $("personInterests");
+  const avatar = $("personAvatar");
+
+  if (isPartnerProfile) {
+    if (friendBtn) friendBtn.style.display = "none";
+    if (chatBtn) {
+      chatBtn.disabled = false;
+      chatBtn.style.opacity = "";
+      chatBtn.classList.remove("secondary");
+      chatBtn.dataset.state = "friend";
+      chatBtn.textContent = "Napisz";
+    }
+
+    const displayName = p.company || p.nick || "Organizator";
+    safeSetText("personTitle", displayName);
+    safeSetText("personNick", displayName);
+    safeSetText("personMeta", p.city || "Organizator");
+    safeSetText("personBio", p.bio || "To miejsce nie dodało jeszcze opisu.");
+
+    if (avatar) {
+      const src = p.logoUrl || p.avatarUrl || "";
+      avatar.innerHTML = src
+        ? `<img src="${String(src).startsWith("http") ? src : `${API_BASE_URL}${src}`}" alt="${displayName}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
+        : (p.emoji || "🏷️");
+    }
+
+    if (chips) {
+      chips.dataset.label = "Branża";
+      chips.innerHTML = "";
+      const categoryLabel = getPartnerCategoryLabel(p.category);
+      if (categoryLabel) chips.appendChild(makeChip(categoryLabel, null));
+    }
+    go("S5_PERSON_PROFILE");
+    return;
+  }
+
+  if (App.role === "partner") {
+    if (friendBtn) friendBtn.style.display = "none";
+    if (chatBtn) {
+      const rules = getPartnerPlanRules();
+      chatBtn.disabled = !rules.canMessageParticipants;
+      chatBtn.style.opacity = rules.canMessageParticipants ? "" : "0.7";
+      chatBtn.classList.toggle("secondary", !rules.canMessageParticipants);
+      chatBtn.dataset.state = rules.canMessageParticipants ? "friend" : "partner_locked";
+      chatBtn.textContent = rules.canMessageParticipants ? "Napisz" : "Wiadomości od planu PRO";
+    }
+  } else {
+    if (friendBtn) friendBtn.style.display = "";
+  }
+
   safeSetText("personTitle", p.nick);
   safeSetText("personNick", p.nick);
   safeSetText("personMeta", [p.city, Number.isFinite(p.age) && p.age > 0 ? `${p.age} lat` : ""].filter(Boolean).join(" • ") || "Profil użytkownika");
-    safeSetText("personBio", p.bio || "Ta osoba nie dodała jeszcze bio.");
-  const avatar = $("personAvatar");
-    if (avatar) avatar.innerHTML = p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : (p.emoji || "🙂");
+  safeSetText("personBio", p.bio || "Ta osoba nie dodała jeszcze bio.");
 
-  const chips = $("personInterests");
+  if (avatar) {
+    avatar.innerHTML = p.avatarUrl
+      ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
+      : (p.emoji || "🙂");
+  }
+
   if (chips) {
+    chips.dataset.label = "Zainteresowania";
     chips.innerHTML = "";
-    p.interests.forEach(tag => chips.appendChild(makeChip(`#${tag}`, null)));
+    (p.interests || []).forEach(tag => chips.appendChild(makeChip(`#${tag}`, null)));
   }
 
   go("S5_PERSON_PROFILE");
@@ -1432,28 +1585,36 @@ function openPerson(personId) {
       safeSetText("personTitle", full.nick);
       safeSetText("personNick", full.nick);
       safeSetText("personMeta", [full.city, Number.isFinite(full.age) && full.age > 0 ? `${full.age} lat` : ""].filter(Boolean).join(" • ") || "Profil użytkownika");
-        safeSetText("personBio", full.bio || "Ta osoba nie dodała jeszcze bio.");
+      safeSetText("personBio", full.bio || "Ta osoba nie dodała jeszcze bio.");
 
       const avatarEl = $("personAvatar");
-        if (avatarEl) avatarEl.innerHTML = full.avatarUrl ? `<img src="${String(full.avatarUrl).startsWith("http") ? full.avatarUrl : `${API_BASE_URL}${full.avatarUrl}`}" alt="${full.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : (full.emoji || "🙂");
+      if (avatarEl) {
+        avatarEl.innerHTML = full.avatarUrl
+          ? `<img src="${String(full.avatarUrl).startsWith("http") ? full.avatarUrl : `${API_BASE_URL}${full.avatarUrl}`}" alt="${full.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
+          : (full.emoji || "🙂");
+      }
 
       const fullChips = $("personInterests");
       if (fullChips) {
+        fullChips.dataset.label = "Zainteresowania";
         fullChips.innerHTML = "";
         (full.interests || []).forEach(tag => fullChips.appendChild(makeChip(`#${tag}`, null)));
       }
 
       const idx = (App.people || []).findIndex(x => String(x.id) === String(full.id));
-      if (idx >= 0) App.people[idx] = { ...App.people[idx], ...full };
-      else App.people.push(full);
+      if (idx >= 0) {
+        App.people[idx] = { ...App.people[idx], ...full };
+      } else {
+        App.people.push(full);
+      }
     })
     .catch(() => {});
 }
 
 function openPersonMenu() {
   openModal("Opcje", `
-    <button class="btn secondary" type="button" onclick="toast('Zgłoszono (demo)'); closeModal();">Zgłoś</button>
-    <button class="btn danger mt12" type="button" onclick="toast('Zablokowano (demo)'); closeModal();">Zablokuj</button>
+    <button class="btn secondary" type="button" onclick="toast('Zgłaszanie treści będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zgłoś</button>
+    <button class="btn danger mt12" type="button" onclick="toast('Blokowanie użytkowników będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zablokuj</button>
   `);
 }
 
@@ -1498,6 +1659,13 @@ function setPersonFriendButtonState(state) {
   const btn = $("personFriendBtn");
   if (!btn) return;
 
+  if (App.role === "partner") {
+    btn.style.display = "none";
+    btn.dataset.state = "partner_hidden";
+    return;
+  }
+
+  btn.style.display = "";
   btn.dataset.state = state || "default";
   btn.disabled = false;
   btn.style.opacity = "";
@@ -1532,6 +1700,16 @@ function setPersonFriendButtonState(state) {
 function setPersonChatButtonState(state) {
   const btn = $("personChatBtn");
   if (!btn) return;
+
+  if (App.role === "partner") {
+    const rules = getPartnerPlanRules();
+    btn.dataset.state = rules.canMessageParticipants ? "friend" : "partner_locked";
+    btn.disabled = !rules.canMessageParticipants;
+    btn.style.opacity = rules.canMessageParticipants ? "" : "0.7";
+    btn.classList.toggle("secondary", !rules.canMessageParticipants);
+    btn.textContent = rules.canMessageParticipants ? "Napisz" : "Wiadomości od planu PRO";
+    return;
+  }
 
   btn.dataset.state = state || "default";
   btn.disabled = false;
@@ -1902,10 +2080,27 @@ async function renderChatThread() {
 
     const bubble = document.createElement("div");
     bubble.className = `bubble ${from === "me" ? "me" : "them"}`;
-    bubble.textContent = text || "";
     bubble.style.maxWidth = "78%";
     bubble.style.wordBreak = "break-word";
     bubble.style.boxShadow = "0 4px 14px rgba(16,24,40,0.06)";
+
+    const rawText = String(text || "");
+    if (rawText.startsWith("📣 ")) {
+      const lines = rawText.split("\n").map(x => x.trim()).filter(Boolean);
+      const titleLine = lines[0] || "📣 Wydarzenie";
+      const bodyLines = lines.filter(line => line !== "— wiadomość od organizatora —" && line !== titleLine);
+      const bodyText = bodyLines.join("\n\n");
+
+      bubble.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-weight:1000;line-height:1.15;">${escapeHtml(titleLine)}</div>
+          <div style="font-size:12px;font-weight:900;letter-spacing:.01em;opacity:.72;text-transform:uppercase;">Wiadomość od organizatora</div>
+          <div style="line-height:1.45;">${escapeHtml(bodyText)}</div>
+        </div>
+      `;
+    } else {
+      bubble.textContent = rawText;
+    }
 
     if (from === "me") {
       row.appendChild(bubble);
@@ -1990,8 +2185,8 @@ async function sendChat() {
 
 function openChatMenu() {
   openModal("Menu czatu", `
-    <button class="btn secondary" type="button" onclick="toast('Wyciszono (demo)'); closeModal();">Wycisz</button>
-    <button class="btn danger mt12" type="button" onclick="toast('Zablokowano (demo)'); closeModal();">Zablokuj</button>
+    <button class="btn secondary" type="button" onclick="toast('Wyciszanie rozmów będzie dostępne w kolejnej aktualizacji.'); closeModal();">Wycisz</button>
+    <button class="btn danger mt12" type="button" onclick="toast('Blokowanie użytkowników będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zablokuj</button>
   `);
 }
 
@@ -2025,6 +2220,23 @@ function openEvent(eventId) {
 
   safeSetText("evDesc", ev.desc);
 
+  const organizerName = ev.organizer?.name || "Organizator";
+  const organizerMeta = [
+    getPartnerCategoryLabel(ev.organizer?.category || ""),
+    ev.city || ""
+  ].filter(Boolean).join(" • ") || "Organizator wydarzenia";
+
+  safeSetText("evOrganizerName", organizerName);
+  safeSetText("evOrganizerMeta", organizerMeta);
+
+  const organizerLogo = $("evOrganizerLogo");
+  if (organizerLogo) {
+    const src = ev.organizer?.logoUrl || "";
+    organizerLogo.innerHTML = src
+      ? `<img src="${String(src).startsWith("http") ? src : `${API_BASE_URL}${src}`}" alt="${organizerName}" style="width:100%;height:100%;object-fit:cover;" />`
+      : "🏢";
+  }
+
   const capacityLine = $("evCapacityLine");
   const capacityAlert = $("evCapacityAlert");
   const capacityCopy = getEventCapacityCopy(ev);
@@ -2046,23 +2258,38 @@ function openEvent(eventId) {
   const lineEl = $("evTicketPriceLine");
   const linkEl = $("evTicketLink");
 
+  const legalBoxEl = $("evTicketLegalBox");
+
   if (ev.paidMode === "free") {
     if (typeEl) typeEl.textContent = "Bezpłatne";
     if (pricePill) pricePill.textContent = "0 zł";
-    if (lineEl) lineEl.textContent = "Wejście bezpłatne — sprawdź szczegóły u organizatora.";
+    if (lineEl) lineEl.textContent = "";
+    if (linkEl) {
+      linkEl.href = "#";
+      linkEl.style.display = "none";
+    }
+    if (legalBoxEl) legalBoxEl.style.display = "none";
   } else if (ev.paidMode === "paid_fixed") {
     if (typeEl) typeEl.textContent = "Płatne — cena stała";
     if (pricePill) pricePill.textContent = `${ev.price} zł`;
     if (lineEl) lineEl.textContent = `Cena: ${ev.price} zł (zakup / rezerwacja poza aplikacją).`;
+    if (linkEl) {
+      linkEl.href = ev.ticketLink || "#";
+      linkEl.style.display = "";
+    }
+    if (legalBoxEl) legalBoxEl.style.display = "";
   } else {
     if (typeEl) typeEl.textContent = "Płatne — przedział";
     if (pricePill) pricePill.textContent = `${ev.priceFrom}–${ev.priceTo} zł`;
     if (lineEl) lineEl.textContent = `Cena: ${ev.priceFrom}–${ev.priceTo} zł (zakup / rezerwacja poza aplikacją).`;
+    if (linkEl) {
+      linkEl.href = ev.ticketLink || "#";
+      linkEl.style.display = "";
+    }
+    if (legalBoxEl) legalBoxEl.style.display = "";
   }
 
-  if (linkEl) linkEl.href = ev.ticketLink || "#";
-
-  // Badge (plan) - demo: show user's plan
+  // Badge (plan)
   safeSetText("evBadge", App.user.plan.toUpperCase());
 
   go("S7B_EVENT_DETAIL");
@@ -2124,15 +2351,62 @@ function openShare() {
   openModal("Udostępnij", `
     <div class="tStrong">Udostępnianie</div>
     <div class="sectionSub mt10">W wersji produkcyjnej: deep link / share sheet.</div>
-    <button class="btn mt16" type="button" onclick="toast('Skopiowano link (demo)'); closeModal();">Skopiuj link</button>
+    <button class="btn mt16" type="button" onclick="toast('Skopiowano link '); closeModal();">Skopiuj link</button>
   `);
 }
 
 function openEventMenu() {
   openModal("Opcje wydarzenia", `
-    <button class="btn secondary" type="button" onclick="toast('Zgłoszono (demo)'); closeModal();">Zgłoś</button>
-    <button class="btn danger mt12" type="button" onclick="toast('Ukryto (demo)'); closeModal();">Ukryj</button>
+    <button class="btn secondary" type="button" onclick="toast('Zgłaszanie treści będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zgłoś</button>
+    <button class="btn danger mt12" type="button" onclick="toast('Ukrywanie wydarzeń będzie dostępne w kolejnej aktualizacji.'); closeModal();">Ukryj</button>
   `);
+}
+
+function openEventOrganizerProfile() {
+  const ev = App.events.find(e => e.id === App.selectedEventId);
+  if (!ev || !ev.organizer?.id) return;
+
+  const organizerId = String(ev.organizer.id);
+  const organizerName = ev.organizer.name || "Organizator";
+
+  let chat = App.chats.find(c => String(c.with?.id) === organizerId);
+  if (!chat) {
+    chat = {
+      id: `c_org_${organizerId}`,
+      with: {
+        id: organizerId,
+        nick: organizerName,
+        role: "partner",
+        company: organizerName,
+        city: ev.city || "",
+        category: ev.organizer?.category || ev.category || "",
+        bio: ev.organizer?.bio || "",
+        avatarUrl: ev.organizer?.logoUrl || "",
+        logoUrl: ev.organizer?.logoUrl || "",
+        emoji: "🏢",
+      },
+      last: "",
+      unread: 0,
+      messages: [],
+    };
+    App.chats.unshift(chat);
+  } else {
+    chat.with = {
+      ...(chat.with || {}),
+      id: organizerId,
+      nick: chat.with?.nick || organizerName,
+      role: "partner",
+      company: chat.with?.company || organizerName,
+      city: chat.with?.city || ev.city || "",
+      category: chat.with?.category || ev.organizer?.category || ev.category || "",
+      bio: chat.with?.bio || ev.organizer?.bio || "",
+      avatarUrl: chat.with?.avatarUrl || ev.organizer?.logoUrl || "",
+      logoUrl: chat.with?.logoUrl || ev.organizer?.logoUrl || chat.with?.avatarUrl || "",
+      emoji: chat.with?.emoji || "🏢",
+    };
+  }
+
+  openPerson(organizerId);
 }
 
 function openChatWithOrganizer() {
@@ -2142,16 +2416,41 @@ function openChatWithOrganizer() {
   const organizerId = String(ev.organizer.id);
   const organizerName = ev.organizer.name || "Organizator";
 
-  let chat = App.chats.find(c => String(c.with.id) === organizerId);
+  let chat = App.chats.find(c => String(c.with?.id) === organizerId);
   if (!chat) {
     chat = {
       id: `c_org_${organizerId}`,
-      with: { id: organizerId, nick: organizerName, emoji: "🏷️" },
+      with: {
+        id: organizerId,
+        nick: organizerName,
+        role: "partner",
+        company: organizerName,
+        city: ev.city || "",
+        category: ev.organizer?.category || ev.category || "",
+        bio: ev.organizer?.bio || "",
+        avatarUrl: ev.organizer?.logoUrl || "",
+        logoUrl: ev.organizer?.logoUrl || "",
+        emoji: "🏢",
+      },
       last: "",
       unread: 0,
       messages: [],
     };
     App.chats.unshift(chat);
+  } else {
+    chat.with = {
+      ...(chat.with || {}),
+      id: organizerId,
+      nick: chat.with?.nick || organizerName,
+      role: "partner",
+      company: chat.with?.company || organizerName,
+      city: chat.with?.city || ev.city || "",
+      category: chat.with?.category || ev.organizer?.category || ev.category || "",
+      bio: chat.with?.bio || ev.organizer?.bio || "",
+      avatarUrl: chat.with?.avatarUrl || ev.organizer?.logoUrl || "",
+      logoUrl: chat.with?.logoUrl || ev.organizer?.logoUrl || chat.with?.avatarUrl || "",
+      emoji: chat.with?.emoji || "🏢",
+    };
   }
 
   App.selectedChatId = chat.id;
@@ -2195,7 +2494,7 @@ function openGroup(groupId) {
     sendBtn.style.cursor = inGroup ? "pointer" : "not-allowed";
   }
 
-  // Demo messages
+  // messages
   const box = $("groupBubbles");
   if (box) {
     box.innerHTML = "";
@@ -2335,7 +2634,7 @@ function openGroupMenu() {
   const canInvite = canInviteFriendsToGroup();
 
   openModal("Menu grupy", `
-    <button class="btn secondary" type="button" onclick="toast('Wyciszono (demo)'); closeModal();">Wycisz</button>
+    <button class="btn secondary" type="button" onclick="toast('Wyciszanie rozmów będzie dostępne w kolejnej aktualizacji.'); closeModal();">Wycisz</button>
 
     ${
       canInvite
@@ -2363,7 +2662,7 @@ function openGroupMenu() {
   `);
 }
 
-// Punkt 9: dodanie znajomego do grupy, nawet jeśli jej nie widzi (hook)
+// Punkt 9: dodanie znajomego do grupy, nawet jeśli jej nie widzi
 function openInviteFriendToGroup() {
   const allGroups = [...(App.myGroups || []), ...(App.groups || [])];
   const g = allGroups.find(x => String(x.id) === String(App.selectedGroupId));
@@ -2393,7 +2692,7 @@ function openInviteFriendToGroup() {
               </div>
             </div>
             <div class="listRight">
-              <button class="btn small" type="button" onclick="toast('Dodano (demo)'); closeModal();">Dodaj</button>
+              <button class="btn small" type="button" onclick="toast('Dodano '); closeModal();">Dodaj</button>
             </div>
           </div>
         </div>
@@ -2536,7 +2835,13 @@ function openNewPartnerEventForm() {
 async function renderPartnerEventParticipants() {
   const card = $("partnerEventParticipantsCard");
   const list = $("partnerEventParticipantsList");
+  const broadcastBox = $("partnerEventBroadcastBox");
   if (!card || !list) return;
+
+  const rules = getPartnerPlanRules();
+  if (broadcastBox) {
+    broadcastBox.style.display = rules.canBroadcastParticipants ? "block" : "none";
+  }
 
   if (!App.selectedPartnerEventId) {
     card.style.display = "none";
@@ -2562,6 +2867,8 @@ async function renderPartnerEventParticipants() {
         ? new Date(item.signup.created_at).toLocaleString("pl-PL")
         : "—";
 
+      const canMessageParticipants = getPartnerPlanRules().canMessageParticipants;
+
       return `
         <div class="listItem">
           <div class="listTop">
@@ -2572,6 +2879,11 @@ async function renderPartnerEventParticipants() {
                 <div class="listMeta">Zapis: ${when}</div>
               </div>
             </div>
+            ${canMessageParticipants ? `
+              <div class="listRight">
+                <button class="btn secondary small" type="button" onclick="openPartnerParticipantMessageModal('${user.id}', '${(user.nick || user.email || '').replace(/'/g, "&apos;")}')">Napisz</button>
+              </div>
+            ` : ``}
           </div>
         </div>
       `;
@@ -2581,6 +2893,119 @@ async function renderPartnerEventParticipants() {
     list.innerHTML = '<div class="tMuted">Nie udało się załadować zapisanych.</div>';
   }
 }
+
+function openPartnerParticipantMessageModal(userId, userName) {
+  const rules = getPartnerPlanRules();
+  if (!rules.canMessageParticipants) {
+    toast("Wiadomości do uczestników są dostępne od planu PRO");
+    return;
+  }
+
+  openModal("Napisz do uczestnika", `
+    <div class="sectionSub">Rozmowa z: <strong>${userName || "Uczestnik"}</strong></div>
+    <textarea id="partnerParticipantMessageInput" class="mt12" maxlength="1000" placeholder="Napisz wiadomość..."></textarea>
+    <div class="row mt16">
+      <button class="btn" type="button" onclick="sendPartnerParticipantMessage('${userId}')">Wyślij</button>
+      <button class="btn secondary" type="button" onclick="closeModal()">Anuluj</button>
+    </div>
+  `);
+}
+
+async function sendPartnerParticipantMessage(userId) {
+  const input = $("partnerParticipantMessageInput");
+  const text = input?.value?.trim();
+  if (!text || !userId) return;
+
+  try {
+    await apiFetch("/messages/private", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipient_user_id: Number(userId),
+        content: text,
+      }),
+    });
+
+    closeModal();
+    toast("Wiadomość została wysłana");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+  }
+}
+
+async function sendPartnerBroadcastMessage() {
+  const rules = getPartnerPlanRules();
+  if (!rules.canBroadcastParticipants) {
+    toast("Ta funkcja jest dostępna od planu PREMIUM");
+    return;
+  }
+
+  const input = $("partnerEventBroadcastInput");
+  const btn = $("partnerEventBroadcastSendBtn");
+  const text = input?.value?.trim();
+  if (!text || !App.selectedPartnerEventId) return;
+
+  const ev = (App.partnerEvents || []).find(x => String(x.id) === String(App.selectedPartnerEventId));
+  const eventLabel = ev
+    ? `${ev.title || "Wydarzenie"}${ev.city ? `, ${ev.city}` : ""}`
+    : "Wydarzenie";
+
+  try {
+    if (btn) btn.disabled = true;
+
+    const data = await apiFetch(`/partners/events/${App.selectedPartnerEventId}/participants?limit=100`);
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+
+    if (!items.length) {
+      toast("Brak zapisanych uczestników");
+      return;
+    }
+
+    const content = `📣 ${ev?.title || "Wydarzenie"}${ev?.city ? ` (${ev.city})` : ""}
+— wiadomość od organizatora —
+
+${text}`;
+    let sent = 0;
+
+    for (const item of items) {
+      const userId = Number(item?.user?.id);
+      if (!userId) continue;
+
+      await apiFetch("/messages/private", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient_user_id: userId,
+          content,
+        }),
+      });
+      sent += 1;
+    }
+
+    if (input) input.value = "";
+    toast(sent > 0 ? `Wysłano do ${sent} uczestników` : "Brak zapisanych uczestników");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wysłać wiadomości do uczestników");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function openPartnerEventParticipantsView(eventId) {
+  const ev = (App.partnerEvents || []).find(x => String(x.id) === String(eventId));
+  if (!ev) return;
+
+  App.selectedPartnerEventId = ev.id;
+  go("S9_PARTNER_EVENT_PARTICIPANTS");
+  renderPartnerEventParticipants();
+
+  const btn = $("partnerEventBroadcastSendBtn");
+  if (btn && btn.dataset.bound !== "1") {
+    btn.addEventListener("click", sendPartnerBroadcastMessage);
+    btn.dataset.bound = "1";
+  }
+}
+
 
 function openPartnerEventEditor(eventId) {
   const ev = (App.partnerEvents || []).find(x => String(x.id) === String(eventId));
@@ -2764,6 +3189,26 @@ async function savePartnerEventDraft() {
 }
 
 
+function getPartnerActivePublishedEventsCount() {
+  const now = new Date();
+  return (Array.isArray(App.partnerEvents) ? App.partnerEvents : []).filter((ev) => {
+    const status = String(ev?.status || "").toLowerCase();
+    const endAt = ev?.end_at ? new Date(ev.end_at) : null;
+    return status === "published" && endAt && !Number.isNaN(endAt.getTime()) && endAt >= now;
+  }).length;
+}
+
+function getPartnerPublishLimitBlockMessage() {
+  const rules = getPartnerPlanRules();
+  if (rules.maxActiveEvents == null) return null;
+
+  const activeCount = getPartnerActivePublishedEventsCount();
+  if (activeCount < rules.maxActiveEvents) return null;
+
+  return `Plan ${String(rules.plan || "free").toUpperCase()} pozwala na maksymalnie ${rules.maxActiveEvents} aktywne wydarzenia. Zapisz kolejne jako szkic albo przejdź na wyższy plan.`;
+}
+
+
 async function publishPartnerEvent() {
   if (App.role !== "partner") {
     toast("To jest dostępne tylko dla organizatora");
@@ -2898,6 +3343,13 @@ async function publishPartnerEvent() {
         return;
       }
 
+      const publishBlockMessage = getPartnerPublishLimitBlockMessage();
+      if (publishBlockMessage) {
+        toast(publishBlockMessage);
+        await loadPartnerEvents();
+        return;
+      }
+
       const publishData = await apiFetch(`/partners/events/${createdEventId}/publish`, {
         method: "POST",
       });
@@ -2933,18 +3385,51 @@ async function renderNotifications() {
   updateNotifBadges(0);
 
   try {
-    // 🔔 zaproszenia do znajomych
-    const reqRes = await apiFetch("/friends/requests");
-    const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
+    if (App.role === "partner") {
+      const evRes = await apiFetch("/partners/events");
+      const events = Array.isArray(evRes?.data?.items) ? evRes.data.items : [];
 
-    incoming.forEach(() => {
-      items.push({
-        title: "Nowe zaproszenie",
-        body: "Ktoś chce dodać Cię do znajomych.",
+      const signupBatches = await Promise.all(events.map(async (ev) => {
+        try {
+          const res = await apiFetch(`/partners/events/${ev.id}/participants?limit=20`);
+          const rows = Array.isArray(res?.data?.items) ? res.data.items : [];
+          return rows.map((row) => ({
+            eventId: ev.id,
+            eventTitle: ev.title || "Wydarzenie",
+            userNick: row?.user?.nick || row?.user?.email || `Użytkownik #${row?.user?.id || "?"}`,
+            createdAt: row?.signup?.created_at || null,
+          }));
+        } catch (err) {
+          console.error(`partner notifications participants failed for event ${ev.id}`, err);
+          return [];
+        }
+      }));
+
+      items = signupBatches
+        .flat()
+        .sort((a, b) => {
+          const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return bd - ad;
+        })
+        .slice(0, 20)
+        .map((item) => ({
+          title: "Nowy zapis na wydarzenie",
+          body: `${item.userNick} zapisał(a) się na: ${item.eventTitle}`,
+          targetView: "S9_PARTNER_EVENTS",
+        }));
+    } else {
+      const reqRes = await apiFetch("/friends/requests");
+      const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
+
+      incoming.forEach(() => {
+        items.push({
+          title: "Nowe zaproszenie",
+          body: "Ktoś chce dodać Cię do znajomych.",
           targetView: "S10E_PROFILE_INVITES",
+        });
       });
-    });
-
+    }
 
   } catch (e) {
     console.error("notifications error", e);
@@ -2967,7 +3452,12 @@ async function renderNotifications() {
     </div>
   `).join("");
 
-  updateNotifBadges(items.length);
+  if (App.role === "partner") {
+    localStorage.setItem("usly_partner_notifications_seen_at", new Date().toISOString());
+    updateNotifBadges(0);
+  } else {
+    updateNotifBadges(items.length);
+  }
 }
 
 
@@ -3003,6 +3493,76 @@ async function refreshNotifBadgeCount() {
     updateNotifBadges(incoming.length);
   } catch (e) {
     console.error("notif badge refresh error", e);
+  }
+}
+
+async function refreshPartnerMsgBadgeCount() {
+  const badge = $("badgePartnerMsgs");
+  if (!badge) return;
+
+  if (!App.isLoggedIn || App.role !== "partner") {
+    badge.style.display = "none";
+    return;
+  }
+
+  if (App.currentView === "S9_PARTNER_MESSAGES" || App.currentView === "S6B_CHAT_THREAD") {
+    badge.style.display = "none";
+    return;
+  }
+
+  try {
+    const data = await apiFetch("/messages/private");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    const totalUnread = items.reduce((sum, item) => sum + Number(item?.unread_count || 0), 0);
+
+    badge.textContent = String(totalUnread);
+    badge.style.display = totalUnread > 0 ? "inline-flex" : "none";
+  } catch (e) {
+    console.error("partner msg badge refresh error", e);
+    badge.style.display = "none";
+  }
+}
+
+async function refreshPartnerNotifBadgeCount() {
+  if (!App.isLoggedIn || App.role !== "partner") {
+    updateNotifBadges(0);
+    return;
+  }
+
+  if (App.currentView === "S12_NOTIFICATIONS") {
+    updateNotifBadges(0);
+    return;
+  }
+
+  try {
+    const seenAtRaw = localStorage.getItem("usly_partner_notifications_seen_at");
+    const seenAt = seenAtRaw ? new Date(seenAtRaw).getTime() : 0;
+
+    const evRes = await apiFetch("/partners/events");
+    const events = Array.isArray(evRes?.data?.items) ? evRes.data.items : [];
+
+    const signupBatches = await Promise.all(events.map(async (ev) => {
+      try {
+        const res = await apiFetch(`/partners/events/${ev.id}/participants?limit=20`);
+        return Array.isArray(res?.data?.items) ? res.data.items : [];
+      } catch (err) {
+        console.error(`partner notif badge participants failed for event ${ev.id}`, err);
+        return [];
+      }
+    }));
+
+    const totalUnread = signupBatches
+      .flat()
+      .filter((row) => {
+        const createdAt = row?.signup?.created_at ? new Date(row.signup.created_at).getTime() : 0;
+        return createdAt > seenAt;
+      })
+      .length;
+
+    updateNotifBadges(totalUnread);
+  } catch (e) {
+    console.error("partner notif badge refresh error", e);
+    updateNotifBadges(0);
   }
 }
 
@@ -3279,35 +3839,62 @@ async function renderChatList() {
       .map(c => {
         const existing = App.chats.find(x => String(x.with?.id) === String(c.other_user_id));
         const chatId = existing?.id || `pm_${c.other_user_id}`;
+        const isPartner = String(c.other_user_role || existing?.with?.role || "").toLowerCase() === "partner";
+        const displayName = isPartner
+          ? (c.other_user_company || existing?.with?.company || c.other_user_name || `Organizator #${c.other_user_id}`)
+          : (c.other_user_name || existing?.with?.nick || `Użytkownik #${c.other_user_id}`);
 
         if (!existing) {
           App.chats.unshift({
             id: chatId,
             with: {
               id: c.other_user_id,
-              nick: c.other_user_name || `Użytkownik #${c.other_user_id}`,
-              emoji: "💬",
+              nick: displayName,
+              role: isPartner ? "partner" : "user",
+              company: c.other_user_company || "",
+              city: c.other_user_city || "",
+              category: c.other_user_category || "",
+              bio: c.other_user_bio || "",
+              avatarUrl: c.other_user_avatar_url || "",
+              logoUrl: c.other_user_logo_url || c.other_user_avatar_url || "",
+              emoji: isPartner ? "🏢" : "💬",
             },
             last: c.last_message || "",
-            unread: 0,
+            unread: Number(c.unread_count || 0),
             messages: [],
           });
         } else {
           existing.with = {
             ...(existing.with || {}),
             id: c.other_user_id,
-            nick: c.other_user_name || existing.with?.nick || `Użytkownik #${c.other_user_id}`,
-            emoji: existing.with?.emoji || "💬",
+            nick: displayName,
+            role: isPartner ? "partner" : (existing.with?.role || "user"),
+            company: c.other_user_company || existing.with?.company || "",
+            city: c.other_user_city || existing.with?.city || "",
+            category: c.other_user_category || existing.with?.category || "",
+            bio: c.other_user_bio || existing.with?.bio || "",
+            avatarUrl: c.other_user_avatar_url || existing.with?.avatarUrl || "",
+            logoUrl: c.other_user_logo_url || existing.with?.logoUrl || c.other_user_avatar_url || existing.with?.avatarUrl || "",
+            emoji: isPartner ? "🏢" : (existing.with?.emoji || "💬"),
           };
           existing.last = c.last_message || existing.last || "";
+          existing.unread = Number(c.unread_count || existing.unread || 0);
         }
 
         return {
           id: chatId,
           with: {
+            ...(existing?.with || {}),
             id: c.other_user_id,
-            nick: c.other_user_name || `Użytkownik #${c.other_user_id}`,
-            emoji: "💬",
+            nick: displayName,
+            role: isPartner ? "partner" : (existing?.with?.role || "user"),
+            company: c.other_user_company || existing?.with?.company || "",
+            city: c.other_user_city || existing?.with?.city || "",
+            category: c.other_user_category || existing?.with?.category || "",
+            bio: c.other_user_bio || existing?.with?.bio || "",
+            avatarUrl: c.other_user_avatar_url || existing?.with?.avatarUrl || "",
+            logoUrl: c.other_user_logo_url || existing?.with?.logoUrl || c.other_user_avatar_url || existing?.with?.avatarUrl || "",
+            emoji: isPartner ? "🏢" : (existing?.with?.emoji || "💬"),
           },
           last: c.last_message || "",
           unread: Number(c.unread_count || 0),
@@ -3381,10 +3968,14 @@ function renderPartnerEvents() {
   };
 
   const priceText = (ev) => {
-    if (ev.pricing_type === "free") return "0 zł";
-    if (ev.pricing_type === "fixed") return ev.price_fixed != null ? `${ev.price_fixed} zł` : "Płatne";
-    if (ev.pricing_type === "range") {
-      if (ev.price_min != null && ev.price_max != null) return `${ev.price_min}–${ev.price_max} zł`;
+    if (ev.pricing_type === "free") return "Bezpłatne";
+    if (ev.pricing_type === "paid_fixed") {
+      return ev.price_fixed != null ? `${Math.round(Number(ev.price_fixed) / 100)} zł` : "Płatne";
+    }
+    if (ev.pricing_type === "paid_range") {
+      if (ev.price_min != null && ev.price_max != null) {
+        return `${Math.round(Number(ev.price_min) / 100)}-${Math.round(Number(ev.price_max) / 100)} zł`;
+      }
       return "Płatne";
     }
     return "—";
@@ -3401,14 +3992,17 @@ function renderPartnerEvents() {
     return status;
   };
 
-    const renderEventCard = (ev) => `
-      <div class="listItem" onclick="openPartnerEventEditor('${ev.id}')">
+    const renderEventCard = (ev) => {
+      const isFeatured = getPartnerPlanRules().canFeatureEvents;
+      return `
+      <div class="listItem ${isFeatured ? "isFeatured" : ""}" onclick="openPartnerEventEditor('${ev.id}')">
         <div class="listTop">
           <div class="listLeft">
             <div class="listAvatar">🗓️</div>
             <div style="min-width:0;">
               <div class="listTitle">${ev.title || "Bez nazwy"}</div>
               <div class="listMeta">${ev.city || "—"} • ${ev.where || "—"} • ${formatWhen(ev.start_at)}</div>
+              ${isFeatured ? `<div class="mt12"><span class="listTag featured">Wyróżnione</span></div>` : ""}
             </div>
           </div>
           <div class="listRight">
@@ -3416,9 +4010,14 @@ function renderPartnerEvents() {
           </div>
         </div>
         <div class="listBody">
-          Status: ${getLifecycleLabel(ev)} • Zapisy: ${Number(ev.signups_count || 0)}
+          <span class="eventStatusBadge">${getLifecycleLabel(ev)}</span> • Zapisy: ${Number(ev.signups_count || 0)}
           ${ev.capacity != null ? ` • Wolne miejsca: ${ev.spots_left != null ? ev.spots_left : "—"}` : ""}
         </div>
+        ${String(ev.status || "").toLowerCase() !== "draft" ? `
+          <div class="row mt12">
+            <button class="btn secondary" type="button" onclick="event.stopPropagation(); openPartnerEventParticipantsView('${ev.id}')">Uczestnicy</button>
+          </div>
+        ` : ""}
         ${String(ev.status || "").toLowerCase() === "draft" ? `
           <div class="row mt12">
             <button class="btn" type="button" onclick="event.stopPropagation(); quickPublishPartnerEvent('${ev.id}')">Opublikuj</button>
@@ -3434,6 +4033,7 @@ function renderPartnerEvents() {
         ` : ""}
       </div>
     `;
+    };
 
   const drafts = [];
   const active = [];
@@ -3456,13 +4056,16 @@ function renderPartnerEvents() {
   });
 
   const renderSection = (title, sub, items) => {
-    if (!items.length) return "";
+    const count = items.length;
+    const titleWithCount = `${title} (${count})`;
     return `
       <div class="card mt16">
-        <div class="sectionTitle">${title}</div>
+        <div class="sectionTitle">${titleWithCount}</div>
         <div class="sectionSub">${sub}</div>
         <div class="col mt12">
-          ${items.map(renderEventCard).join("")}
+          ${items.length
+            ? items.map(renderEventCard).join("")
+            : '<div class="tMuted">Brak wydarzeń w tej sekcji</div>'}
         </div>
       </div>
     `;
@@ -3480,6 +4083,12 @@ async function quickPublishPartnerEvent(eventId) {
   if (!eventId) return;
 
   try {
+    const publishBlockMessage = getPartnerPublishLimitBlockMessage();
+    if (publishBlockMessage) {
+      toast(publishBlockMessage);
+      return;
+    }
+
     const data = await apiFetch(`/partners/events/${eventId}/publish`, {
       method: "POST",
     });
@@ -3533,6 +4142,7 @@ async function renderPartnerMsgList() {
     const chats = items
       .filter(c => !q || String(c.other_user_name || "").toLowerCase().includes(q))
       .map(c => {
+        const unread = Number(c.unread_count || 0);
         const existing = App.chats.find(x => String(x.with?.id) === String(c.other_user_id));
         const chatId = existing?.id || `pm_${c.other_user_id}`;
 
@@ -3542,10 +4152,14 @@ async function renderPartnerMsgList() {
             with: {
               id: c.other_user_id,
               nick: c.other_user_name || `Użytkownik #${c.other_user_id}`,
-              emoji: "✉️",
+              role: c.other_user_role || "user",
+              company: c.other_user_company || "",
+              bio: c.other_user_bio || "",
+              avatarUrl: c.other_user_avatar_url || "",
+              emoji: c.other_user_role === "partner" ? "🏷️" : "✉️",
             },
             last: c.last_message || "",
-            unread: 0,
+            unread,
             messages: [],
           });
         } else {
@@ -3553,9 +4167,14 @@ async function renderPartnerMsgList() {
             ...(existing.with || {}),
             id: c.other_user_id,
             nick: c.other_user_name || existing.with?.nick || `Użytkownik #${c.other_user_id}`,
-            emoji: existing.with?.emoji || "✉️",
+            role: c.other_user_role || existing.with?.role || "user",
+            company: c.other_user_company || existing.with?.company || "",
+            bio: c.other_user_bio || existing.with?.bio || "",
+            avatarUrl: c.other_user_avatar_url || existing.with?.avatarUrl || "",
+            emoji: existing.with?.emoji || (c.other_user_role === "partner" ? "🏷️" : "✉️"),
           };
           existing.last = c.last_message || existing.last || "";
+          existing.unread = unread;
         }
 
         return {
@@ -3563,9 +4182,14 @@ async function renderPartnerMsgList() {
           with: {
             id: c.other_user_id,
             nick: c.other_user_name || `Użytkownik #${c.other_user_id}`,
-            emoji: "✉️",
+            role: c.other_user_role || "user",
+            company: c.other_user_company || "",
+            bio: c.other_user_bio || "",
+            avatarUrl: c.other_user_avatar_url || "",
+            emoji: c.other_user_role === "partner" ? "🏷️" : "✉️",
           },
           last: c.last_message || "",
+          unread,
         };
       });
 
@@ -3573,7 +4197,7 @@ async function renderPartnerMsgList() {
       list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
     } else {
       list.innerHTML = chats.map(c => `
-        <div class="listItem" onclick="openChat('${c.id}')">
+        <div class="listItem ${c.unread > 0 ? 'unread' : ''}" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
               <div class="listAvatar">${c.with.emoji || "✉️"}</div>
@@ -3582,6 +4206,7 @@ async function renderPartnerMsgList() {
                 <div class="listMeta">${c.last || "—"}</div>
               </div>
             </div>
+            ${c.unread > 0 ? `<div class="listRight"><div class="badgeMini">${c.unread}</div></div>` : ``}
           </div>
         </div>
       `).join("");
@@ -3589,7 +4214,9 @@ async function renderPartnerMsgList() {
 
     const badge = $("badgePartnerMsgs");
     if (badge) {
-      badge.style.display = "none";
+      const totalUnread = chats.reduce((sum, c) => sum + Number(c.unread || 0), 0);
+      badge.textContent = String(totalUnread);
+      badge.style.display = totalUnread > 0 ? "inline-flex" : "none";
     }
   } catch (err) {
     console.error("renderPartnerMsgList failed", err);
@@ -3874,6 +4501,25 @@ function makeChip(text, onRemove) {
   return span;
 }
 
+function getPartnerCategoryLabel(value) {
+  const key = String(value || "").trim().toLowerCase();
+  const map = {
+    gastro: "Gastro / restauracja / kawiarnia",
+    bar_nocne: "Bar / klub / nightlife",
+    kultura: "Kultura / koncerty / sztuka",
+    fitness: "Fitness / sport / wellness",
+    beauty: "Beauty / uroda",
+    hotel_event: "Hotel / event / konferencje",
+    rozrywka: "Rozrywka / atrakcje / gaming",
+    zakupy: "Sklep / showroom / zakupy",
+    edukacja: "Edukacja / warsztaty",
+    cowork: "Cowork / biznes / networking",
+    plener: "Plener / turystyka / rekreacja",
+    inne: "Inne / trudno powiedzieć",
+  };
+  return map[key] || String(value || "").trim();
+}
+
 function renderTypeahead(taId, items, onPick) {
   const box = $(taId);
   if (!box) return;
@@ -4005,14 +4651,14 @@ function useCurrentLocationForCity() {
       App.user.geo.lat = String(lat);
       App.user.geo.lng = String(lng);
 
-      // Demo: we won't reverse-geocode (backend/API later)
+      // Reverse geocoding can be added later if needed.
       // For now: set city to placeholder if empty
       const city = $("regCity");
       if (city && !city.value.trim() && App.role === "user") {
         city.value = "Warszawa";
       }
 
-      toast("Lokalizacja zapisana (demo)");
+      toast("Lokalizacja zapisana ");
     },
     () => toast("Nie udało się pobrać lokalizacji (brak zgody?)"),
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
@@ -4160,7 +4806,28 @@ function mapApiEventToViewModel(e) {
     capacity: e.capacity ?? null,
     signupsCount: Number(e.signups_count || 0),
     spotsLeft: e.spots_left ?? null,
-    organizer: { id: String(e.partner_user_id || ""), name: "Organizator" },
+    organizer: {
+      id: String(e.partner_user_id || e.organizer_id || ""),
+      name:
+        e.partner_name ||
+        e.organizer_name ||
+        e.partner_company ||
+        e.company ||
+        "Organizator",
+      category:
+        e.partner_category ||
+        e.organizer_category ||
+        e.kategoria_organizatora ||
+        "",
+      bio:
+        e.partner_bio ||
+        e.organizer_bio ||
+        "",
+      logoUrl:
+        e.partner_logo_url ||
+        e.organizer_logo_url ||
+        "",
+    },
   };
 }
 
@@ -4283,7 +4950,17 @@ function renderAll() {
 
   // Plan pills
   safeSetText("planPillSetup", App.user.plan.toUpperCase());
-  safeSetText("partnerPlanPill", App.partner.plan.toUpperCase());
+  document.querySelectorAll("#partnerPlanPill").forEach((el) => {
+    el.textContent = String(App.partner.plan || "free").toUpperCase();
+  });
+
+  document.querySelectorAll('#S11_PLANS #plansPartnerOnly .card[data-plan]').forEach((card) => {
+    const currentPlan = String(App.partner.plan || "free").toLowerCase();
+    const isCurrent = String(card.dataset.plan || "").toLowerCase() === currentPlan;
+    card.classList.toggle("is-current", isCurrent);
+    const btn = card.querySelector(".btn");
+    if (btn) btn.textContent = isCurrent ? "Aktualny plan" : "Wybierz";
+  });
 
   if (App.currentView === "S3_PROFILE_SETUP") {
     if ($("setupNick")) $("setupNick").value = App.user.nick || "";
@@ -4303,7 +4980,22 @@ function renderAll() {
 
   const partnerHubMeta = $("partnerHubMeta");
   if (partnerHubMeta) {
-    const meta = [App.partner.category, App.partner.city].filter(Boolean).join(" • ");
+    const partnerCategoryLabels = {
+      gastro: "Gastro / restauracja / kawiarnia",
+      bar_nocne: "Bar / klub / nightlife",
+      kultura: "Kultura / koncerty / sztuka",
+      fitness: "Fitness / sport / wellness",
+      beauty: "Beauty / uroda",
+      hotel_event: "Hotel / event / konferencje",
+      rozrywka: "Rozrywka / atrakcje / gaming",
+      zakupy: "Sklep / showroom / zakupy",
+      edukacja: "Edukacja / warsztaty i szkolenia",
+      cowork: "Cowork / biznes / networking",
+      plener: "Plener / turystyka / rekreacja",
+      inne: "Inne / trudno powiedzieć"
+    };
+    const categoryLabel = partnerCategoryLabels[App.partner.category] || App.partner.category || "";
+    const meta = [categoryLabel, App.partner.city].filter(Boolean).join(" • ");
     partnerHubMeta.textContent = meta || "Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.";
   }
 
@@ -4329,6 +5021,15 @@ function renderAll() {
   const partnerStatsGrid = $("partnerStatsGrid");
   if (partnerStatsGrid) {
     const metricCards = partnerStatsGrid.querySelectorAll(".metricCard");
+    const partnerPlanOrder = ["free", "pro", "premium", "enterprise"];
+    const currentPartnerPlan = String(App.partner?.plan || "free").toLowerCase();
+    const currentPartnerPlanIndex = Math.max(0, partnerPlanOrder.indexOf(currentPartnerPlan));
+
+    metricCards.forEach((card) => {
+      const minPlan = String(card.dataset.minPlan || "free").toLowerCase();
+      const minPlanIndex = Math.max(0, partnerPlanOrder.indexOf(minPlan));
+      card.style.display = currentPartnerPlanIndex >= minPlanIndex ? "" : "none";
+    });
 
     if (metricCards[0]) {
       const label = metricCards[0].querySelector(".metricLabel");
@@ -4347,14 +5048,14 @@ function renderAll() {
     if (metricCards[2]) {
       const label = metricCards[2].querySelector(".metricLabel");
       const sub = metricCards[2].querySelector(".metricSub");
-      if (label) label.textContent = "Zapisy";
+      if (label) label.textContent = "Zapisy (łącznie)";
       if (sub) sub.textContent = "Do aktywnych";
     }
 
     if (metricCards[3]) {
       const label = metricCards[3].querySelector(".metricLabel");
       const sub = metricCards[3].querySelector(".metricSub");
-      if (label) label.textContent = "Wolne miejsca";
+      if (label) label.textContent = "Frekwencja";
       if (sub) sub.textContent = "W aktywnych";
     }
 
@@ -4370,7 +5071,10 @@ function renderAll() {
         safeSetText("m_events_val", String(res.data.total_events ?? 0));
         safeSetText("m_views_val", String(res.data.draft_events ?? 0));
         safeSetText("m_clicks_val", String(res.data.total_signups ?? 0));
-        safeSetText("m_conv_val", String(res.data.free_spots ?? 0));
+        const signups = Number(res.data.total_signups ?? 0);
+        const capacity = Number(res.data.total_capacity ?? 0);
+        const freq = capacity > 0 ? Math.round((signups / capacity) * 100) : 0;
+        safeSetText("m_conv_val", capacity > 0 ? `${freq}%` : "—");
       })
       .catch(() => {
         safeSetText("m_events_val", "—");
@@ -4438,6 +5142,8 @@ function renderAll() {
   if (App.currentView === "S9_PARTNER_EVENTS") renderPartnerEvents();
   if (App.currentView === "S9_PARTNER_MESSAGES") renderPartnerMsgList();
   if (App.role === "user" && !["S2_REGISTER","S3_PROFILE_SETUP"].includes(App.currentView)) refreshNotifBadgeCount();
+  if (App.role === "partner") refreshPartnerNotifBadgeCount();
+  if (App.role === "partner") refreshPartnerMsgBadgeCount();
   if (App.currentView === "S12_NOTIFICATIONS") renderNotifications();
 
   // tabbar active
@@ -4946,5 +5652,50 @@ async function submitDeleteAccount() {
         ? "Hasło jest nieprawidłowe"
         : err?.userMessage || "Nie udało się usunąć konta";
     toast(msg);
+  }
+}
+
+
+/* ------------------------- LIVE BUG REPORT OVERRIDE -------------------------- */
+async function submitBugReport() {
+  const ta = $("bugReportText");
+  const message = (ta?.value || "").trim();
+  if (!message) {
+    toast("Opisz proszę problem");
+    return;
+  }
+
+  const role = App.role === "partner" ? "Organizator" : "Towarzysz";
+  const userId = App.currentUserId ?? null;
+  const email =
+    (App.role === "partner" ? App.partner?.email : App.user?.email) ||
+    null;
+
+  try {
+    const res = await apiFetch("/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        role,
+        user_id: userId,
+        email,
+        current_view: App.currentView || null,
+      }),
+    });
+
+    if (!res?.success || !res?.data?.ticket) {
+      toast(res?.error?.message || "Nie udało się wysłać zgłoszenia");
+      return;
+    }
+
+    closeModal();
+    if (res.data.emailed) {
+      toast(`Zgłoszenie wysłane • #${res.data.ticket}`);
+    } else {
+      toast(`Zgłoszenie zapisane • #${res.data.ticket}`);
+    }
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wysłać zgłoszenia");
   }
 }

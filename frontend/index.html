@@ -424,6 +424,49 @@ section#S11_PLANS .card[data-plan].is-current{
     radial-gradient(120% 140% at 100% 0%, rgba(52,230,255,.16) 0%, rgba(52,230,255,0) 56%),
     linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)) !important;
 }
+
+/* === PREMIUM: bottom nav glow (spójność z topbar) === */
+.tabbar button {
+  position: relative;
+  overflow: visible;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tabbar button::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 18px;
+  background: radial-gradient(
+    circle at center,
+    rgba(255,255,255,0.22) 0%,
+    rgba(255,255,255,0.12) 35%,
+    rgba(255,255,255,0.05) 55%,
+    transparent 75%
+  );
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+
+.tabbar button:hover::before {
+  opacity: 1;
+}
+
+.tabbar button:active::before {
+  opacity: 0.65;
+}
+
+
+/* === PREMIUM: active tab subtle gradient ring === */
+.tabbar button.active {
+  border-radius: 18px;
+  background:
+    linear-gradient(#0b0f1a, #0b0f1a) padding-box,
+    linear-gradient(135deg, rgba(255,75,212,0.6), rgba(52,230,255,0.6)) border-box;
+  border: 1px solid transparent;
+}
+
 </style>
 
 </head>
@@ -440,7 +483,7 @@ pełny kod index.html: <!-- ====================================================
   6) Zainteresowania: podpowiedzi po # (HTML-only: datalist + duża lista)
   7) Towarzysz: W okolicy = mapa + osoby + wydarzenia (lista wydarzeń ma osobną zakładkę i zostaje)
   8) Towarzysz: Grupy = widoczne wg zainteresowań z profilu
-  9) Towarzysz: dodanie znajomego do grupy (UI hook)
+  9) Towarzysz: dodanie znajomego do grupy
   10) Brak wersji EN: całość po polsku (bez przełącznika języka)
   11) Ikonki do planów (data-plan-icon) dla łatwego rozróżniania w backendzie
   12) Ujednolicenia ID pod backend:
@@ -483,22 +526,22 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <nav class="tabbar" id="tabbarUser" aria-label="Dolna nawigacja — Towarzysz">
           <button id="tabNearby" type="button" onclick="go('S4_NEARBY')">
-            <div class="ico"><span aria-hidden="true"></span></div>
+            <div class="ico" aria-hidden="true">📍</div>
             <div>W okolicy</div>
           </button>
           <button id="tabChats" type="button" onclick="go('S6_CHATS_LIST')">
-            <div class="ico" style="position:relative;">
-              <span aria-hidden="true"></span>
+            <div class="ico" style="position:relative;" aria-hidden="true">
+              💬
               <span class="pill" id="badgeChats" style="position:absolute;right:-6px;top:-6px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
             <div>Czaty</div>
           </button>
           <button id="tabEvents" type="button" onclick="go('S7_EVENTS')">
-            <div class="ico"><span aria-hidden="true"></span></div>
+            <div class="ico" aria-hidden="true">📅</div>
             <div>Wydarzenia</div>
           </button>
           <button id="tabGroups" type="button" onclick="go('S8_GROUPS')">
-            <div class="ico"><span aria-hidden="true"></span></div>
+            <div class="ico" aria-hidden="true">👥</div>
             <div>Grupy</div>
           </button>
           <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
@@ -515,27 +558,27 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <nav class="tabbar" id="tabbarPartner" aria-label="Dolna nawigacja — Organizator">
           <button id="ptabDash" type="button" onclick="go('S9_PARTNER')">
-            <div class="ico"><span aria-hidden="true"></span></div>
+            <div class="ico" aria-hidden="true">📊</div>
             <div>Profil</div>
           </button>
           <button id="ptabCreate" type="button" onclick="openNewPartnerEventForm()">
-            <div class="ico"><span aria-hidden="true"></span></div>
-            <div>Nowe</div>
+            <div class="ico" aria-hidden="true">🎟️</div>
+            <div>Dodaj</div>
           </button>
           <button id="ptabMyEvents" type="button" onclick="go('S9_PARTNER_EVENTS')">
-            <div class="ico"><span aria-hidden="true"></span></div>
+            <div class="ico" aria-hidden="true">📅</div>
             <div>Wydarzenia</div>
           </button>
           <button id="ptabMsgs" type="button" onclick="go('S9_PARTNER_MESSAGES')">
-            <div class="ico" style="position:relative;">
-              <span aria-hidden="true"></span>
+            <div class="ico" style="position:relative;" aria-hidden="true">
+              ✉️
               <span class="pill" id="badgePartnerMsgs" style="position:absolute;right:-6px;top:-6px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
             <div>Wiadomości</div>
           </button>
           <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
           <button id="ptabSettings" type="button" onclick="go('S10_SETTINGS')">
-            <div class="ico" aria-hidden="true">⚙</div>
+            <div class="ico" aria-hidden="true">⚙️</div>
             <div>Ustawienia</div>
           </button>
         </nav>
@@ -601,7 +644,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S1_LOGIN" aria-label="Logowanie">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -663,9 +706,9 @@ pełny kod index.html: <!-- ====================================================
         <!-- =========================================================
         S2 REGISTER (PL ONLY) + UJEDNOLICONE ID
         ========================================================== -->
-        <section class="view" id="S2_REGISTER" aria-label="Rejestracja">
+                <section class="view" id="S2_REGISTER" aria-label="Rejestracja">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -689,24 +732,31 @@ pełny kod index.html: <!-- ====================================================
                 <button class="segBtn" id="rolePartnerBtn2" type="button" onclick="selectRole('partner')">Organizator</button>
               </div>
 
-              <div id="regUserBox">
-                <div class="card mt16">
-                  <div class="sectionTitle">Konto</div>
-                  <div class="sectionSub">Podaj podstawowe dane potrzebne do utworzenia konta.</div>
+              <div class="card mt16">
+                <div class="sectionTitle">Konto</div>
+                <div class="sectionSub">Podaj podstawowe dane potrzebne do utworzenia konta.</div>
 
-                  <label class="mt12">Email *</label>
-                  <input id="regEmail" type="email" placeholder="np. ola@email.com" autocomplete="email" />
+                <label class="mt12">Email *</label>
+                <input id="regEmail" type="email" placeholder="np. ola@email.com" autocomplete="email" />
 
+                <div id="regUserAccountFields">
                   <label class="mt12">Nick / imię (publiczne) *</label>
                   <input id="regNick" type="text" placeholder="np. Ola / ola_88" />
-
-                  <label class="mt12">Hasło *</label>
-                  <input id="regPass" type="password" placeholder="Minimum 8 znaków" autocomplete="new-password" />
-
-                  <label class="mt12">Powtórz hasło *</label>
-                  <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" autocomplete="new-password" />
                 </div>
 
+                <div id="regPartnerAccountFields" style="display:none;">
+                  <label class="mt12">Oficjalna nazwa miejsca / firmy *</label>
+                  <input id="regCompany" type="text" placeholder="np. Kawiarnia Aurora" />
+                </div>
+
+                <label class="mt12">Hasło *</label>
+                <input id="regPass" type="password" placeholder="Minimum 8 znaków" autocomplete="new-password" />
+
+                <label class="mt12">Powtórz hasło *</label>
+                <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" autocomplete="new-password" />
+              </div>
+
+              <div id="regUserBox">
                 <div class="card mt16" id="regUserPlanBox">
                   <div class="sectionTitle">Plan</div>
                   <div class="sectionSub">Domyślnie aktywny jest FREE. Możesz od razu wybrać inny plan i później go zmienić.</div>
@@ -725,14 +775,14 @@ pełny kod index.html: <!-- ====================================================
 
                 <div class="card mt16">
                   <div class="sectionTitle">Profil startowy</div>
-                  <div class="sectionSub">Te dane pomogą od razu lepiej dopasować ludzi i wydarzenia.</div>
+                  <div class="sectionSub">Uzupełnij podstawowe dane na start.</div>
 
                   <label class="mt12">Data urodzenia *</label>
                   <input id="regBirthDate" type="date" required />
                   <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
                    Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
                   </div>
-                  <div class="tMuted mt10" style="text-align:left;">Konto w USLY jest dostępne dla osób pełnoletnich.</div>
+                  <div class="tMuted mt10" style="text-align:left;">Konto jest dostępne dla osób pełnoletnich.</div>
 
                   <label class="mt12">Miasto *</label>
                   <div class="row">
@@ -743,7 +793,7 @@ pełny kod index.html: <!-- ====================================================
                   </div>
                   <input id="regGeoLat" type="hidden" value="" />
                   <input id="regGeoLng" type="hidden" value="" />
-                  <div class="tMuted mt10" style="text-align:left;">Docelowo: miasto uzupełniane z aktualnej lokalizacji po zgodzie użytkownika.</div>
+                  <div class="tMuted mt10" style="text-align:left;">Możesz użyć lokalizacji, aby szybciej uzupełnić miasto.</div>
 
                   <label class="mt12">Zainteresowania *</label>
                   <div class="hashRow">
@@ -753,38 +803,62 @@ pełny kod index.html: <!-- ====================================================
                   <div class="chips" id="regInterestChips"></div>
                   <div class="typeahead" id="regInterestTypeahead"></div>
 
-                    <div class="hintCard mt12">
-                      <div class="hintTitle">Zdjęcie i bio dodasz za chwilę</div>
-                      <div class="hintText">Po utworzeniu konta przejdziesz do ekranu uzupełnienia profilu, gdzie dodasz zdjęcie lub awatar oraz dokończysz profil.</div>
-                    </div>
+                  <div class="tMuted mt12" style="text-align:left;">Zdjęcie i bio uzupełnisz w następnym kroku.</div>
+                </div>
+              </div>
+
+              <div id="regPartnerBox" style="display:none;">
+                <div class="card mt16">
+                  <div class="sectionTitle">Plan</div>
+                  <div class="sectionSub">Domyślnie aktywny jest FREE. Możesz od razu wybrać inny plan i później go zmienić.</div>
+
+                  <div class="seg wide mt12">
+                    <button class="segBtn on" id="pplan_free" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">FREE • 0 zł / mies.</button>
+                    <button class="segBtn" id="pplan_pro" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">PRO • 99 zł / mies.</button>
+                  </div>
+                  <div class="seg wide mt10">
+                    <button class="segBtn" id="pplan_premium" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">PREMIUM • 199 zł / mies.</button>
+                    <button class="segBtn" id="pplan_enterprise" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">ENTERPRISE • indywidualnie</button>
+                  </div>
+
+                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
                 </div>
 
                 <div class="card mt16">
-                  <div class="sectionTitle">Dokumenty i zgody</div>
-                  <div class="sectionSub">Przed utworzeniem konta zaakceptuj wymagane dokumenty.</div>
+                  <div class="sectionTitle">Lokalizacja miejsca</div>
+                  <div class="sectionSub">Podaj miasto, a pozostałe dane uzupełnisz w następnym kroku.</div>
 
-                  <div class="mt16 legalBox">
-                    <label class="checkRow">
-                      <input id="acceptTerms" type="checkbox" />
-                      <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin</span> *</span>
-                    </label>
-                    <label class="checkRow mt10">
-                      <input id="acceptRodo" type="checkbox" />
-                      <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności</span> *</span>
-                    </label>
-                  </div>
+                  <label class="mt12">Miasto *</label>
+                  <input id="regCityPartner" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
 
-                  <button class="btn mt16" type="button" onclick="registerPrimary()">Zarejestruj</button>
+                  <div class="tMuted mt12" style="text-align:left;">Branżę, logo i opis uzupełnisz w następnym kroku.</div>
                 </div>
+              </div>
+
+              <div class="card mt16">
+                <div class="sectionTitle">Dokumenty i zgody</div>
+                <div class="sectionSub">Przed utworzeniem konta zaakceptuj wymagane dokumenty.</div>
+
+                <div class="mt16 legalBox">
+                  <label class="checkRow">
+                    <input id="acceptTerms" type="checkbox" />
+                    <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin</span> *</span>
+                  </label>
+                  <label class="checkRow mt10">
+                    <input id="acceptRodo" type="checkbox" />
+                    <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności</span> *</span>
+                  </label>
+                </div>
+
+                <button class="btn mt16" type="button" onclick="registerPrimary()">Zarejestruj</button>
               </div>
             </div>
           </div>
         </section>
   
-
-        <section class="view" id="S10B_PROFILE_EDIT" aria-label="Edytuj profil">
+<section class="view" id="S10B_PROFILE_EDIT" aria-label="Edytuj profil">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -874,7 +948,7 @@ pełny kod index.html: <!-- ====================================================
 
         <section class="view" id="S10C_PROFILE_INTERESTS" aria-label="Zainteresowania">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -908,7 +982,7 @@ pełny kod index.html: <!-- ====================================================
 
         <section class="view" id="S10D_PROFILE_FRIENDS" aria-label="Znajomi">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -932,7 +1006,7 @@ pełny kod index.html: <!-- ====================================================
 
         <section class="view" id="S10E_PROFILE_INVITES" aria-label="Zaproszenia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -959,7 +1033,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S3_PROFILE_SETUP" aria-label="Ustawienia profilu (start)">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src= "./USLY logo.png" alt="USLY logo" />
@@ -1057,13 +1131,82 @@ pełny kod index.html: <!-- ====================================================
               </div>
             </div>
         </section>
+
+        <section class="view" id="S3B_PARTNER_SETUP" aria-label="Ustawienia profilu organizatora">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline">Profil organizatora</div>
+                </div>
+              </div>
+            </div>
+            <div class="ghostBtn">•</div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard profileHubCard">
+              <div class="sectionSub" style="margin-bottom:6px;">Dokończ profil miejsca</div>
+              <div class="sectionTitle" id="setupPartnerCompanyName" style="margin:0;">Twoje miejsce</div>
+              <div class="sectionSub mt10">Uzupełnij profil i przejdź dalej.</div>
+            </div>
+
+            <div class="card mt16">
+              <div class="sectionTitle">Logo i lokalizacja</div>
+
+              <div class="row mt12" style="align-items:center;gap:14px;">
+                <div class="avatar big" id="setupOrgLogoPreview">🏷️</div>
+                <div style="flex:1;text-align:left;">
+                  <input id="setupOrgLogo" type="file" accept="image/*" />
+                  <div class="tMuted mt10">Dodaj logo teraz albo później.</div>
+                </div>
+              </div>
+
+              <label class="mt16">Miasto</label>
+              <input id="setupOrgCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+              <div class="tMuted mt10" style="text-align:left;">Możesz je poprawić teraz.</div>
+            </div>
+
+            <div class="card mt16">
+              <div class="sectionTitle">Dane marki</div>
+
+              <label class="mt12">Branża</label>
+              <select id="setupOrgCategory">
+                <option value="gastro">Gastro / restauracja / kawiarnia</option>
+                <option value="bar_nocne">Bar / klub / nightlife</option>
+                <option value="kultura">Kultura / koncerty / sztuka</option>
+                <option value="fitness">Fitness / sport / wellness</option>
+                <option value="beauty">Beauty / uroda</option>
+                <option value="hotel_event">Hotel / hotel / event / konferencje</option>
+                <option value="rozrywka">Rozrywka / atrakcje / gaming</option>
+                <option value="zakupy">Sklep / showroom / zakupy</option>
+                <option value="edukacja">Edukacja / warsztaty</option>
+                <option value="cowork">Cowork / biznes / networking</option>
+                <option value="plener">Plener / turystyka / rekreacja</option>
+                <option value="inne">Inne / trudno powiedzieć</option>
+              </select>
+              <div class="tMuted mt10" style="text-align:left;">Wybierz główną kategorię miejsca.</div>
+
+              <label class="mt12">Opis</label>
+              <textarea id="setupOrgAbout" maxlength="500" placeholder="Krótko opisz miejsce: czym jest, jaki ma klimat i dla kogo jest oferta."></textarea>
+              <div class="charHint"><span id="setupOrgAboutCount">0</span>/500</div>
+            </div>
+
+            <button class="btn mt16" type="button" onclick="finishPartnerSetup()">Zapisz i przejdź dalej</button>
+          </div>
+        </section>
+
+
   
         <!-- =========================================================
         S4 NEARBY (Towarzysz) — MAPA + LUDZIE + WYDARZENIA
         ========================================================== -->
         <section class="view" id="S4_NEARBY" aria-label="W okolicy">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1079,7 +1222,7 @@ pełny kod index.html: <!-- ====================================================
   
           <div class="content">
             <div class="mapCard">
-              <!-- “Mapa” demo; JS/Backend: realna mapa + markery -->
+              <!-- Mapa -->
               <div class="mapReal" id="nearbyMap" aria-label="Mapa okolicy">
                 <div class="mapTiles"></div>
                 <div class="mapRoads"></div>
@@ -1087,7 +1230,7 @@ pełny kod index.html: <!-- ====================================================
                 <div class="mapDistricts" aria-hidden="true"></div>
                 <div class="mapLabels" aria-hidden="true"></div>
   
-                <!-- Demo markery (osoby / wydarzenia) -->
+                <!-- markery (osoby / wydarzenia) -->
                 <button class="marker person" style="left:46%;top:36%;" type="button" aria-label="Osoba 1" onclick="openMapMarker('person', 0)">
                   <div class="mk"></div><div class="pulse"></div>
                 </button>
@@ -1116,7 +1259,7 @@ pełny kod index.html: <!-- ====================================================
   
             <div class="card mt16">
               <div class="sectionTitle">Ludzie w okolicy</div>
-              <div class="sectionSub">Lista na podstawie lokalizacji (demo).</div>
+              <div class="sectionSub">Lista na podstawie lokalizacji .</div>
               <div class="mt12">
                 <input id="nearbyPeopleSearch" type="text" placeholder="np. Alex / Maja" />
               </div>
@@ -1136,7 +1279,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S5_PERSON_PROFILE" aria-label="Profil osoby">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1187,7 +1330,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S6_CHATS_LIST" aria-label="Czaty">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1209,14 +1352,13 @@ pełny kod index.html: <!-- ====================================================
   
             <div class="col mt16" id="chatList"></div>
   
-            <!-- AI moderation hook -->
             <div class="card mt16">
-              <div class="sectionTitle">Moderacja AI</div>
+              <div class="sectionTitle">Moderacja treści</div>
               <div class="sectionSub">
-                Backend hook: wykrywanie treści obraźliwych i seksualnych w czatach (flagowanie + blokada + raport).
+                USLY rozwija system automatycznego wykrywania nieodpowiednich treści, aby zapewnić bezpieczne rozmowy.
               </div>
               <div class="tMuted mt10" style="text-align:left;">
-                UI hook: oznacz wiadomość jako „w trakcie weryfikacji” lub „ukryta” oraz pokaż opcję odwołania.
+                Funkcja będzie dostępna w kolejnych aktualizacjach.
               </div>
             </div>
           </div>
@@ -1227,7 +1369,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S6B_CHAT_THREAD" aria-label="Wątek czatu">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1246,7 +1388,7 @@ pełny kod index.html: <!-- ====================================================
   
           <div class="inputDock">
             <input id="chatInput" type="text" placeholder="Napisz wiadomość." />
-            <button class="btn small" id="chatSendBtn" type="button" onclick="sendChat()" aria-label="Wyślij wiadomość">➜</button>
+            <button class="btn small" id="chatSendBtn" type="button" aria-label="Wyślij wiadomość">➜</button>
           </div>
         </section>
   
@@ -1255,7 +1397,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S7_EVENTS" aria-label="Wydarzenia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1293,7 +1435,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S7B_EVENT_DETAIL" aria-label="Szczegóły wydarzenia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1320,6 +1462,17 @@ pełny kod index.html: <!-- ====================================================
               <div class="chips" id="evInterestChips"></div>
   
               <p class="mt16" id="evDesc">—</p>
+
+              <div class="hintCard mt16" id="evOrganizerBox" onclick="openEventOrganizerProfile()" style="cursor:pointer;">
+                <div class="hintTitle">Organizator</div>
+                <div class="row mt12" style="align-items:center;gap:14px;">
+                  <div id="evOrganizerLogo" style="width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;flex:0 0 64px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 24px rgba(6,10,24,.18);overflow:hidden;">🏢</div>
+                  <div style="min-width:0;flex:1;">
+                    <div class="tStrong" id="evOrganizerName" style="font-size:18px;line-height:1.2;">—</div>
+                    <div class="sectionSub mt6" id="evOrganizerMeta">—</div>
+                  </div>
+                </div>
+              </div>
   
               <!-- Ticketing -->
               <div class="hintCard mt16" id="evTicketBox">
@@ -1329,10 +1482,10 @@ pełny kod index.html: <!-- ====================================================
                   <div class="planPill" id="evTicketPricePill">0 zł</div>
                 </div>
                 <div class="sectionSub mt10" id="evTicketPriceLine">—</div>
-                <a class="btn mt12" id="evTicketLink" href="#" target="_blank" rel="noopener noreferrer">
+                <a class="btn mt12" id="evTicketLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
                   Przejdź do zakupu / rezerwacji
                 </a>
-                <div class="legalBox mt16">
+                <div class="legalBox mt16" id="evTicketLegalBox" style="display:none;">
                   <div class="sectionSub">
                     USLY nie sprzedaje biletów i nie jest organizatorem tego wydarzenia. Link przenosi do zewnętrznej strony,
                     na której organizator prowadzi sprzedaż lub rezerwacje.
@@ -1365,7 +1518,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S8_GROUPS" aria-label="Grupy">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1398,7 +1551,7 @@ pełny kod index.html: <!-- ====================================================
               </div>
 
   
-            <!-- UJEDNOLICONY HOOK: grupy na bazie zainteresowań -->
+            <!-- Grupy na bazie zainteresowań -->
             <div class="col mt16" id="groupList" data-scope="byInterests"></div>
   
             <div class="card mt16">
@@ -1411,7 +1564,7 @@ pełny kod index.html: <!-- ====================================================
   
         <section class="view" id="S8B_GROUP_THREAD" aria-label="Wątek grupy">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1441,7 +1594,7 @@ pełny kod index.html: <!-- ====================================================
 
         <section class="view" id="S9_PARTNER" aria-label="Panel organizatora">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1456,17 +1609,26 @@ pełny kod index.html: <!-- ====================================================
           </header>
   
           <div class="content">
-            <div class="heroCard">
-              <div class="row" style="align-items:center;justify-content:space-between;">
-                <div style="text-align:left;">
-                  <div class="sectionTitle" style="margin:0;">Plan organizatora</div>
-                  <div class="sectionSub" id="partnerPlanLine">—</div>
+            <div class="heroCard profileHubCard">
+              <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
+                <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
+                  <div class="avatar big" id="partnerHubLogoPreview">🏷️</div>
+                  <div style="text-align:left;min-width:0;flex:1;">
+                    <div class="sectionTitle" id="partnerHubName" style="margin:0;">Twoje miejsce</div>
+                    <div class="sectionSub" id="partnerHubMeta">Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.</div>
+                  </div>
                 </div>
                 <div class="planPill" id="partnerPlanPill">FREE</div>
               </div>
-  
+
+              <div class="row mt16 profileActionRow">
+                <button class="btn small profileHeroBtnPrimary" type="button" onclick="go('S10_SETTINGS')">Edytuj profil</button>
+                <button class="btn secondary small profileHeroBtnSecondary" type="button" onclick="go('S9_PARTNER_CREATE')">Dodaj wydarzenie</button>
+                <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="go('S11_PLANS')">Twój plan</button>
+              </div>
+
               <div class="tMuted mt10" style="text-align:left;">
-                Backend hook: statystyki zależne od planu (limity, raporty, widoczność, eksport).
+                Statystyki, limity i widoczność zależą od aktywnego planu Organizatora.
               </div>
             </div>
   
@@ -1506,7 +1668,7 @@ pełny kod index.html: <!-- ====================================================
   
             <div class="card mt16">
               <div class="sectionTitle">Skróty</div>
-              <div class="sectionSub">Najczęstsze akcje (demo UI).</div>
+              <div class="sectionSub">Najczęstsze akcje  UI).</div>
               <div class="row mt16">
                 <button class="btn" type="button" onclick="go('S9_PARTNER_CREATE')">Dodaj wydarzenie</button>
                 <button class="btn secondary" type="button" onclick="go('S9_PARTNER_EVENTS')">Moje wydarzenia</button>
@@ -1520,7 +1682,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S9_PARTNER_CREATE" aria-label="Nowe wydarzenie">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1536,7 +1698,7 @@ pełny kod index.html: <!-- ====================================================
           <div class="content">
             <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Utwórz wydarzenie</div>
-              <div class="sectionSub">Demo UI — backend doda walidację, limity planu i publikację.</div>
+              <div class="sectionSub">UI — backend doda walidację, limity planu i publikację.</div>
   
               <label class="mt12">Nazwa *</label>
               <input id="peTitle" type="text" placeholder="np. Koncert na żywo" />
@@ -1545,7 +1707,7 @@ pełny kod index.html: <!-- ====================================================
               <input id="peCity" type="text" placeholder="np. Warszawa" />
   
               <label class="mt12">Kiedy *</label>
-              <input id="peWhen" type="text" placeholder="np. Sobota 18:00" />
+              <input id="peWhen" type="datetime-local" />
   
               <label class="mt12">Gdzie *</label>
               <input id="peWhere" type="text" placeholder="np. Centrum" />
@@ -1558,6 +1720,23 @@ pełny kod index.html: <!-- ====================================================
   
               <label class="mt12">Opis</label>
               <textarea id="peDesc" maxlength="600" placeholder="Krótki opis wydarzenia (max 600)"></textarea>
+
+              <div class="hintCard mt16">
+                <div class="hintTitle">Liczba miejsc</div>
+                <div class="hintText">Możesz zostawić wydarzenie bez limitu albo podać maksymalną liczbę uczestników.</div>
+
+                <div class="partnerCapacityToggle mt12">
+                  <label class="partnerCapacityToggleRow" for="peUnlimitedCapacity">
+                    <span class="tStrong">Bez limitu miejsc</span>
+                    <input id="peUnlimitedCapacity" type="checkbox" checked />
+                  </label>
+                </div>
+
+                <div id="peCapacityBox" class="mt12 partnerCapacityBox">
+                  <label>Maksymalna liczba miejsc</label>
+                  <input id="peCapacity" type="number" min="1" inputmode="numeric" placeholder="np. 20" />
+                </div>
+              </div>
   
               <!-- ticketing -->
               <div class="hintCard mt16">
@@ -1589,17 +1768,20 @@ pełny kod index.html: <!-- ====================================================
                 <input id="peTicketLink" type="url" placeholder="https://..." />
               </div>
   
-              <button class="btn mt16" type="button" onclick="publishPartnerEvent()">Opublikuj (demo)</button>
+              <div class="row mt16">
+                <button class="btn secondary" type="button" onclick="savePartnerEventDraft()">Zapisz szkic</button>
+                <button class="btn" type="button" onclick="publishPartnerEvent()">Utwórz wydarzenie</button>
+              </div>
             </div>
           </div>
         </section>
   
         <!-- =========================================================
-        S9_PARTNER_EVENTS — lista wydarzeń organizatora + moderator view hook
+        S9_PARTNER_EVENTS — lista wydarzeń organizatora
         ========================================================== -->
         <section class="view" id="S9_PARTNER_EVENTS" aria-label="Wydarzenia organizatora">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1619,21 +1801,53 @@ pełny kod index.html: <!-- ====================================================
             </div>
             <div class="col mt16" id="partnerEventsList"></div>
   
-            <div class="card mt16">
-              <div class="sectionTitle">Moderator (hook)</div>
-              <div class="sectionSub">
-                Backend hook: lista zgłoszeń / moderacja treści wydarzeń oraz czatów organizatora.
-              </div>
-            </div>
+
           </div>
         </section>
   
+        <!-- =========================================================
+        S9_PARTNER_EVENT_PARTICIPANTS — uczestnicy wydarzenia
+        ========================================================== -->
+        <section class="view" id="S9_PARTNER_EVENT_PARTICIPANTS" aria-label="Uczestnicy wydarzenia">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline">Uczestnicy wydarzenia</div>
+                </div>
+              </div>
+            </div>
+            <button class="topIconBtn" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+          </header>
+
+          <div class="content">
+            <div class="heroCard profileSummaryCard" id="partnerEventParticipantsCard">
+              <div id="partnerEventBroadcastBox" class="hintCard" style="display:none;">
+                <div class="hintTitle">Powiadom wszystkich uczestników</div>
+                <div class="hintText">Wyślij jedną wiadomość do wszystkich zapisanych osób. Idealne na przypomnienia i ważne informacje.</div>
+                <textarea id="partnerEventBroadcastInput" class="mt12" maxlength="1000" placeholder="Napisz wiadomość do uczestników..."></textarea>
+                <div class="row mt16">
+                  <button class="btn" type="button" id="partnerEventBroadcastSendBtn">Wyślij do uczestników</button>
+                </div>
+              </div>
+
+              <div class="sectionTitle mt16">Zapisani uczestnicy</div>
+              <div class="sectionSub">Osoby, które kliknęły „wezmę udział” dla tego wydarzenia.</div>
+              <div class="col mt16" id="partnerEventParticipantsList"></div>
+            </div>
+          </div>
+        </section>
+
+
         <!-- =========================================================
         S9_PARTNER_MESSAGES — inbox
         ========================================================== -->
         <section class="view" id="S9_PARTNER_MESSAGES" aria-label="Wiadomości organizatora">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1649,7 +1863,7 @@ pełny kod index.html: <!-- ====================================================
           <div class="content">
             <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Skrzynka</div>
-              <div class="sectionSub">Wiadomości od użytkowników (demo).</div>
+              <div class="sectionSub">Wiadomości od użytkowników .</div>
               <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." class="mt12" />
             </div>
   
@@ -1662,7 +1876,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S10_SETTINGS" aria-label="Ustawienia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1724,79 +1938,93 @@ pełny kod index.html: <!-- ====================================================
                 <div class="sectionTitle">Konto i pomoc</div>
                 <div class="sectionSub">Najważniejsze ustawienia techniczne i dokumenty.</div>
 
-                <div class="row mt16">
+                <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
                   <button class="btn secondary" type="button" onclick="openBugReport()">Zgłoś błąd</button>
+                  <button class="btn secondary" type="button" onclick="openChangePassword()">Zmień hasło</button>
+                  <button class="btn danger" type="button" onclick="openDeleteAccount()">Usuń konto</button>
                 </div>
-                    <button class="btn secondary" type="button" onclick="openChangePassword()">Zmień hasło</button>
-                    <button class="btn danger" type="button" onclick="openDeleteAccount()">Usuń konto</button>
-</div>
+              </div>
             </div>
             <!-- ===================== SETTINGS: Organizator ===================== -->
-            <div class="card" id="settingsPartnerBox" style="display:none;">
+            <div class="card premiumProfileScope" id="settingsPartnerBox" style="display:none;">
               <div class="sectionTitle">Profil organizatora</div>
-              <div class="sectionSub">
-                Te ustawienia są inne niż u Towarzysza — odpowiadają danym z rejestracji organizatora.
-              </div>
-  
-              <label class="mt12">Nazwa firmy / miejsca</label>
-              <input id="setOrgCompany" type="text" placeholder="np. Kawiarnia Aurora" />
-  
-              <label class="mt12">Kategoria</label>
-              <select id="setOrgCategory">
-                <option value="gastro">Gastro</option>
-                <option value="fitness">Fitness</option>
-                <option value="kultura">Kultura</option>
-                <option value="beauty">Beauty</option>
-                <option value="inne">Inne</option>
-              </select>
-  
-              <label class="mt12">Miasto</label>
-              <select id="setOrgCity">
-                <option>Warszawa</option>
-                <option>Kraków</option>
-                <option>Gdańsk</option>
-                <option>Wrocław</option>
-                <option>Poznań</option>
-              </select>
-  
-              <label class="mt12">Opis</label>
-              <textarea id="setOrgAbout" maxlength="500" placeholder="Krótki opis firmy / miejsca (max 500)"></textarea>
-              <div class="charHint"><span id="setOrgAboutCount">0</span>/500</div>
-  
-              <div class="hintCard mt16">
-                <div class="hintTitle">Logo</div>
-                <div class="hintText">Docelowo: upload + CDN URL + zapis w profilu.</div>
-                <input id="setOrgLogo" type="file" accept="image/*" />
-                <div class="row mt12" style="align-items:center;">
-                  <div class="avatar big" id="setOrgLogoPreview"></div>
-                  <div class="tMuted" style="text-align:left;">
-                    Backend hook: walidacja pliku + storage + aktualizacja profilu.
+              <div class="sectionSub">Zadbaj o markę, dane miejsca i ustawienia konta.</div>
+
+              <div class="heroCard mt16 profileHubCard">
+                <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
+                  <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
+                    <div class="avatar big" id="setOrgLogoPreview">🏷️</div>
+                    <div style="text-align:left;min-width:0;flex:1;">
+                      <div class="sectionTitle" id="settingsPartnerHubName" style="margin:0;">Twoje miejsce</div>
+                      <div class="sectionSub" id="settingsPartnerHubMeta">Uzupełnij profil organizatora.</div>
+                    </div>
+                  </div>
+                  <div class="planPill" id="partnerPlanPill">FREE</div>
+                </div>
+
+                <div class="card mt16" style="padding:14px 16px !important;border-radius:22px !important;background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)) !important;border:1px solid rgba(255,255,255,.10) !important;box-shadow:none !important;">
+                  <input id="setOrgLogo" type="file" accept="image/*" style="display:none;" />
+                  <div class="row" style="align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div style="text-align:left;flex:1;min-width:0;">
+                      <div style="font-size:15px;font-weight:1000;line-height:1.15;color:#f4f8ff;">Logo miejsca</div>
+                      <div class="tMuted" style="margin-top:4px;text-align:left;">Dodaj lub podmień logo organizatora.</div>
+                    </div>
+                    <button class="btn secondary small" type="button" style="min-width:128px;" onclick="document.getElementById('setOrgLogo').click()">
+                      Dodaj logo
+                    </button>
                   </div>
                 </div>
-              </div>
-  
-              <div class="sectionTitle mt16">Plan</div>
-              <div class="sectionSub">Zmień plan i zobacz co zawiera (cena + funkcje).</div>
-  
-              <div id="settingsPartnerPlanBox">
-                <div class="seg wide mt12">
-                  <button class="segBtn on" id="pplan_free_set" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">🆓 FREE PARTNER</button>
-                  <button class="segBtn" id="pplan_pro_set" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">💼 PRO PARTNER</button>
-                </div>
-                <div class="seg wide mt10">
-                  <button class="segBtn" id="pplan_premium_set" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">💎 PREMIUM PARTNER</button>
-                  <button class="segBtn" id="pplan_enterprise_set" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">🏆 ENTERPRISE</button>
+
+                <div class="row mt16 profileActionRow">
+                  <button class="btn secondary small" type="button" onclick="go('S11_PLANS')">Twój plan</button>
+                  <button class="btn secondary small" type="button" onclick="go('S9_PARTNER')">Panel</button>
                 </div>
               </div>
-  
-              <button class="btn secondary mt16" type="button" onclick="go('S11_PLANS')">Szczegóły planów</button>
+
+              <div class="card mt16">
+                <div class="sectionTitle">Dane miejsca</div>
+
+                <label class="mt12">Oficjalna nazwa miejsca / firmy</label>
+                <input id="setOrgCompany" type="text" placeholder="np. Kawiarnia Aurora" />
+
+                <label class="mt12">Miasto</label>
+                <input id="setOrgCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+
+                <label class="mt12">Branża</label>
+                <select id="setOrgCategory">
+                  <option value="gastro">Gastro / restauracja / kawiarnia</option>
+                  <option value="bar_nocne">Bar / klub / nightlife</option>
+                  <option value="kultura">Kultura / koncerty / sztuka</option>
+                  <option value="fitness">Fitness / sport / wellness</option>
+                  <option value="beauty">Beauty / uroda</option>
+                  <option value="hotel_event">Hotel / event / konferencje</option>
+                  <option value="rozrywka">Rozrywka / atrakcje / gaming</option>
+                  <option value="zakupy">Sklep / showroom / zakupy</option>
+                  <option value="edukacja">Edukacja / warsztaty</option>
+                  <option value="cowork">Cowork / biznes / networking</option>
+                  <option value="plener">Plener / turystyka / rekreacja</option>
+                  <option value="inne">Inne / trudno powiedzieć</option>
+                </select>
+
+                <label class="mt12">Opis</label>
+                <textarea id="setOrgAbout" maxlength="500" placeholder="Krótko opisz miejsce, klimat i ofertę."></textarea>
+                <div class="charHint"><span id="setOrgAboutCount">0</span>/500</div>
+              </div>
+
               <button class="btn mt16" type="button" onclick="savePartnerSettings()">Zapisz zmiany</button>
-  
-              <button class="btn secondary mt12" type="button" onclick="openBugReport()">
-                Zgłoś błąd
-              </button>
+
+              <div class="card mt16 profileSummaryCard">
+                <div class="sectionTitle">Konto i pomoc</div>
+                <div class="sectionSub">Najważniejsze akcje konta Organizatora.</div>
+
+                <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
+                  <button class="btn secondary" type="button" onclick="openBugReport()">Zgłoś błąd</button>
+                  <button class="btn secondary" type="button" onclick="openChangePassword()">Zmień hasło</button>
+                  <button class="btn danger" type="button" onclick="openDeleteAccount()">Usuń konto</button>
+                </div>
+              </div>
             </div>
-  
+
             <div class="card mt16">
               <div class="sectionTitle">Dokumenty</div>
               <div class="sectionSub">Regulamin i Polityka prywatności.</div>
@@ -1805,17 +2033,13 @@ pełny kod index.html: <!-- ====================================================
                 <button class="btn secondary" type="button" onclick="openRodo()">Polityka prywatności</button>
               </div>
             </div>
-  
-            <button class="btn danger mt16" type="button" onclick="logout()">Wyloguj</button>
+
+            <button class="btn danger mt16 logoutBtn" type="button" onclick="logout()">Wyloguj</button>
           </div>
         </section>
-  
-        <!-- =========================================================
-        S11 PLANS (ROLE-SCOPED) — DOKŁADNIE WG ZAŁĄCZNIKÓW
-        ========================================================== -->
-        <section class="view premiumPlansScope" id="S11_PLANS" aria-label="Plany">
+          <section class="view premiumPlansScope" id="S11_PLANS" aria-label="Plany">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -1907,12 +2131,12 @@ pełny kod index.html: <!-- ====================================================
                     <div class="sectionTitle">FREE</div>
                     <div class="planPill">0 zł</div>
                   </div>
-                  <p class="mt12">Dobry start, jeśli chcesz pokazać miejsce w USLY i sprawdzić pierwsze efekty obecności.</p>
+                  <p class="mt12">Plan na start dla organizatorów, którzy chcą sprawdzić USLY i uruchomić pierwsze działania bez kosztu stałego.</p>
                   <ul class="planList">
-                    <li>Widoczność marki w podstawowym zakresie</li>
-                    <li>Publikacja wydarzeń i wejście do panelu organizatora</li>
-                    <li>Najważniejsze ustawienia oraz podstawowy profil miejsca</li>
-                    <li>Plan na start i pierwsze testy obecności w aplikacji</li>
+                    <li>Maksymalnie 2 aktywne wydarzenia jednocześnie</li>
+                    <li>Podstawowe raporty wydarzeń: zapisy i wolne miejsca</li>
+                    <li>Brak wiadomości do uczestników</li>
+                    <li>Brak broadcastu i brak wyróżnienia wydarzeń</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('free')">Wybierz</button>
                 </div>
@@ -1922,12 +2146,12 @@ pełny kod index.html: <!-- ====================================================
                     <div class="sectionTitle">PRO</div>
                     <div class="planPill">99 zł / miesiąc</div>
                   </div>
-                  <p class="mt12">Dla miejsc, które chcą regularnie przyciągać ludzi i budować mocniejszą widoczność w USLY.</p>
+                  <p class="mt12">Dla organizatorów, którzy prowadzą wydarzenia regularnie i chcą sprawniej zarządzać relacją z uczestnikami.</p>
                   <ul class="planList">
-                    <li>Mocniejsza ekspozycja profilu i wydarzeń</li>
-                    <li>Lepsza widoczność oferty dla odpowiednich użytkowników</li>
-                    <li>Wygodniejsze zarządzanie aktywnością organizatora</li>
-                    <li>Plan do regularnego wzrostu obecności marki</li>
+                    <li>Maksymalnie 5 aktywnych wydarzeń jednocześnie</li>
+                    <li>Podstawowe raporty wydarzeń: zapisy i wolne miejsca</li>
+                    <li>Możliwość pisania do uczestników</li>
+                    <li>Bez broadcastu i bez wyróżnienia wydarzeń</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('pro')">Wybierz</button>
                 </div>
@@ -1937,12 +2161,12 @@ pełny kod index.html: <!-- ====================================================
                     <div class="sectionTitle">PREMIUM</div>
                     <div class="planPill">199 zł / miesiąc</div>
                   </div>
-                  <p class="mt12">Dla marek, które chcą działać szerzej, lepiej mierzyć efekty i mocniej budować społeczność wokół miejsca.</p>
+                  <p class="mt12">Dla organizatorów, którzy chcą skalować działania, pracować na pełnych danych i mocniej promować swoje wydarzenia.</p>
                   <ul class="planList">
-                    <li>Szersza widoczność marki i wydarzeń w aplikacji</li>
-                    <li>Lepszy wgląd w aktywność i bieżące wyniki</li>
-                    <li>Większa skala działań promocyjnych i eventowych</li>
-                    <li>Plan do świadomego rozwijania społeczności wokół miejsca</li>
+                    <li>Nielimitowana liczba aktywnych wydarzeń</li>
+                    <li>Pełne raporty i szerszy wgląd w wyniki wydarzeń</li>
+                    <li>Możliwość wysyłki broadcastu do uczestników</li>
+                    <li>Wyróżnienie wydarzeń w aplikacji</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('premium')">Wybierz</button>
                 </div>
@@ -1952,12 +2176,12 @@ pełny kod index.html: <!-- ====================================================
                     <div class="sectionTitle">ENTERPRISE</div>
                     <div class="planPill">Indywidualnie</div>
                   </div>
-                  <p class="mt12">Dla większych partnerów i sieci, które chcą traktować USLY jako realny kanał wzrostu marki i sprzedaży.</p>
+                  <p class="mt12">Dla większych partnerów i sieci, które potrzebują pełnego pakietu możliwości oraz ustaleń dopasowanych do modelu działania.</p>
                   <ul class="planList">
-                    <li>Najszerszy poziom widoczności, wsparcia i narzędzi</li>
-                    <li>Największa skala działań i kampanii dla wielu lokalizacji</li>
-                    <li>Najpełniejszy zakres raportowania i obsługi partnera</li>
-                    <li>Plan dla organizacji rozwijających USLY jako ważny kanał marki</li>
+                    <li>Wszystko z planu PREMIUM</li>
+                    <li>Obsługa wielu scenariuszy i działań niestandardowych</li>
+                    <li>Najpełniejszy zakres raportowania i komunikacji</li>
+                    <li>Zakres wdrożenia ustalany indywidualnie</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('enterprise')">Wybierz</button>
                 </div>
@@ -1970,7 +2194,7 @@ pełny kod index.html: <!-- ====================================================
         ========================================================== -->
         <section class="view" id="S12_NOTIFICATIONS" aria-label="Powiadomienia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()">◀</button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />

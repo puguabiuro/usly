@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, UTC
 
-from backend.db.database import SessionLocal
-from backend.models import User, UserRole, UserStatus, UserProfile, Event, EventStatus, Group
-from backend.security import hash_password
+from db.database import SessionLocal
+from models import User, UserRole, UserStatus, UserProfile, Event, EventStatus, Group
+from security import hash_password
 
 
 def _looks_like_bcrypt(hash_value: str | None) -> bool:
@@ -208,7 +208,8 @@ def run_seed() -> None:
 
         db.flush()
 
-        _seed_events(db)
+        # TODO(post-user-fix): organizer events seed skipped temporarily due to event schema drift
+        # _seed_events(db)
         _seed_user_profiles(db)
         _seed_groups(db)
 
