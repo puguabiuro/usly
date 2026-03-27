@@ -24,7 +24,7 @@ def upgrade() -> None:
 
     op.execute(
         sa.text(
-            "UPDATE messages SET is_read = 1 WHERE sender_user_id IS NOT NULL"
+            "UPDATE messages SET is_read = TRUE WHERE sender_user_id IS NOT NULL"
         )
     )
 
