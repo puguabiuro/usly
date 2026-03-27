@@ -747,8 +747,6 @@ def users_nearby(
 
             other_tags = norm_tags(profile.zainteresowania_json)
             shared_tags = sorted(my_tags & other_tags)
-            if not shared_tags:
-                continue
 
             other_age = calc_age(user.dob)
             other_pref_min = profile.age_min
@@ -788,6 +786,7 @@ def users_nearby(
         matched_items.sort(
             key=lambda x: (
                 -int(x.get("shared_count") or 0),
+                x.get("miasto") or "",
                 x.get("nick") or "",
             )
         )
