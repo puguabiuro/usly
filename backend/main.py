@@ -2267,7 +2267,6 @@ def list_private_conversations(
             db.query(
                 PartnerProfile.user_id,
                 PartnerProfile.nazwa,
-                PartnerProfile.kategoria,
                 PartnerProfile.bio,
                 PartnerProfile.logo_url,
             )
@@ -2281,7 +2280,6 @@ def list_private_conversations(
         partner_profiles_by_user_id = {
             row.user_id: {
                 "nazwa": row.nazwa,
-                "kategoria": row.kategoria,
                 "bio": row.bio,
                 "logo_url": row.logo_url,
             }
