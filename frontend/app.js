@@ -3932,13 +3932,13 @@ async function renderChatList() {
       unread: Number(c.unread || 0),
     }));
 
-    chats.push(...localOnlyChats);
+    const finalChats = [...localOnlyChats, ...chats];
 
     if (list) {
-      if (!chats.length) {
+      if (!(finalChats || []).length) {
         list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
       } else {
-        list.innerHTML = chats.map(c => `
+        list.innerHTML = (finalChats || []).map(c => `
         <div class="listItem ${c.unread > 0 ? 'unread' : ''}" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
@@ -3957,7 +3957,7 @@ async function renderChatList() {
 
     const badge = $("badgeChats");
     if (badge) {
-      const unreadTotal = chats.reduce((sum, c) => sum + Number(c.unread || 0), 0);
+      const unreadTotal = (finalChats || []).reduce((sum, c) => sum + Number(c.unread || 0), 0);
       if (unreadTotal > 0) {
         badge.textContent = String(unreadTotal);
         badge.style.display = "inline-flex";
@@ -4226,10 +4226,10 @@ async function renderPartnerMsgList() {
         };
       });
 
-    if (!chats.length) {
+    if (!(finalChats || []).length) {
       list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
     } else {
-      list.innerHTML = chats.map(c => `
+      list.innerHTML = (finalChats || []).map(c => `
         <div class="listItem ${c.unread > 0 ? 'unread' : ''}" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
@@ -4247,7 +4247,7 @@ async function renderPartnerMsgList() {
 
     const badge = $("badgePartnerMsgs");
     if (badge) {
-      const totalUnread = chats.reduce((sum, c) => sum + Number(c.unread || 0), 0);
+      const totalUnread = (finalChats || []).reduce((sum, c) => sum + Number(c.unread || 0), 0);
       badge.textContent = String(totalUnread);
       badge.style.display = totalUnread > 0 ? "inline-flex" : "none";
     }
