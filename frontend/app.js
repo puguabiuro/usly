@@ -3968,8 +3968,30 @@ async function renderChatList() {
     }
   } catch (err) {
     console.error("renderChatList failed", err);
+
+    const fallbackChats = (App.chats || []).filter(c =>
+      c?.with?.id != null &&
+      (!q || String(c.with?.nick || "").toLowerCase().includes(q))
+    );
+
     if (list) {
-      list.innerHTML = '<div class="tMuted">Nie udało się załadować rozmów</div>';
+      if (!fallbackChats.length) {
+        list.innerHTML = '<div class="tMuted">Nie udało się załadować rozmów</div>';
+      } else {
+        list.innerHTML = fallbackChats.map(c => `
+        <div class="listItem" onclick="openChat('${c.id}')">
+          <div class="listTop">
+            <div class="listLeft">
+              <div class="listAvatar">${c.with?.emoji || "💬"}</div>
+              <div style="min-width:0;">
+                <div class="listTitle">${c.with?.nick || "Czat"}</div>
+                <div class="listMeta">${c.last || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+      }
     }
   }
 }
