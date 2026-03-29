@@ -5211,6 +5211,29 @@ function initSearchBindings() {
   $("eventsSearch")?.addEventListener("input", renderEventsList);
   $("groupSearch")?.addEventListener("input", renderGroups);
   $("chatSearch")?.addEventListener("input", renderChatList);
+
+  // === polling wiadomości ===
+  let inboxPollStarted = false;
+  function startInboxPolling() {
+    if (inboxPollStarted) return;
+    inboxPollStarted = true;
+
+    setInterval(async () => {
+      if (!App.isLoggedIn) return;
+      if (App.role === "partner") return;
+
+      try {
+        await renderChatList();
+        if (App.currentView === "S6B_CHAT_THREAD" && App.selectedChatUserId) {
+          await renderChatThread();
+        }
+      } catch (err) {
+        console.error("inbox polling failed", err);
+      }
+    }, 15000);
+  }
+
+  startInboxPolling();
   $("partnerMsgSearch")?.addEventListener("input", renderPartnerMsgList);
 }
 
