@@ -2755,6 +2755,7 @@ section#S11_PLANS .card[data-plan].is-current .btn{
   margin-bottom: 6px !important;
   position: relative;
   z-index: 2;
+  overflow: hidden !important;
   box-shadow:
     0 30px 70px rgba(0,0,0,.34),
     0 0 0 1px rgba(255,255,255,.18),

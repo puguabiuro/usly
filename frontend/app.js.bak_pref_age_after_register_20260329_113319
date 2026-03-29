@@ -10,7 +10,7 @@ const API_BASE_URL =
   window.USLY_API_BASE_URL ||
   (location.hostname.includes("onrender.com")
     ? "https://usly-backend-v2.onrender.com"
-    : "http://127.0.0.1:8000");
+    : "https://API_URL_PLACEHOLDER");
 
 // expose for api.js (plain scripts)
 window.API_BASE_URL = API_BASE_URL;
@@ -30,7 +30,6 @@ const App = {
   // Profile 
   user: {
     plan: "free", // free | plus | premium | vip
-    email: "",
     nick: "Ola_88",
     city: "Warszawa",
     age: 24,
@@ -45,7 +44,6 @@ const App = {
 
   partner: {
     plan: "free", // free | pro | premium | enterprise
-    email: "",
     company: "Kawiarnia Aurora",
     category: "gastro",
     city: "Warszawa",
@@ -244,8 +242,8 @@ function go(viewId) {
     );
     safeSetText("settingsProfilePlanPill", String(App.user.plan || "FREE").toUpperCase());
     safeSetText("settingsProfilePlanPillSecondary", String(App.user.plan || "FREE").toUpperCase());
-    if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
-    if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
+    if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+    if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
     safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
     safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom));
     safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo));
@@ -449,21 +447,9 @@ async function loginPrimary() {
     localStorage.setItem("usly_token", data.data.access_token);
 
     const me = await apiFetch("/auth/me");
-    const meData = me?.data || me || {};
-    App.currentUserId = meData.id ?? null;
-    App.role = meData.role === "partner" ? "partner" : "user";
+    App.currentUserId = me?.id ?? me?.data?.id ?? null;
+    App.role = me?.role === "partner" ? "partner" : "user";
     App.isLoggedIn = true;
-
-    const accountEmail = meData.email || "";
-    if (App.role === "user") {
-      App.user.email = accountEmail;
-      const el = $("setEmail");
-      if (el) el.value = accountEmail;
-    } else {
-      App.partner.email = accountEmail;
-      const el = $("setOrgEmail");
-      if (el) el.value = accountEmail;
-    }
 
     if (App.role === "user") {
       const profile = await apiFetch("/users/me");
@@ -471,13 +457,13 @@ async function loginPrimary() {
         App.user.nick = profile.data.nick || App.user.nick;
         App.user.city = profile.data.miasto || App.user.city;
         App.user.bio = profile.data.bio || "";
+          const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
+          const setupInterests = backendInterests.length > 0 ? backendInterests : (Array.isArray(App.user.interests) ? App.user.interests : []);
+
+          App.user.interests = setupInterests;
+          try { localStorage.setItem("usly_user_interests", JSON.stringify(setupInterests)); } catch(_) {}
         App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
         App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
-        const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
-        const setupInterests = backendInterests.length > 0 ? backendInterests : (Array.isArray(App.user.interests) ? App.user.interests : []);
-
-        App.user.interests = setupInterests;
-        try { localStorage.setItem("usly_user_interests", JSON.stringify(setupInterests)); } catch(_) {}
         App.user.plan = profile.data.plan || App.user.plan;
         App.user.avatarUrl = profile.data.avatar_url ?? "";
         try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
@@ -742,8 +728,8 @@ async function registerPrimary() {
         if ($("setupNick")) $("setupNick").value = App.user.nick || "";
         if ($("setupCity")) $("setupCity").value = App.user.city || "Warszawa";
         if ($("setupBio")) $("setupBio").value = App.user.bio || "";
-        if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
-        if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
+        if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
+        if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
         safeSetText("bioCount", String(($("setupBio")?.value || "").length));
         safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
         safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
@@ -1226,9 +1212,6 @@ async function saveSettings() {
     App.user.city = data.data.miasto || city;
     App.user.prefAgeFrom = data.data.age_min ?? ageMin;
     App.user.prefAgeTo = data.data.age_max ?? ageMax;
-    App.user.interests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : (Array.isArray(App.user.interests) ? App.user.interests : []);
-
-    await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
 
     toast("Zapisano ustawienia");
     renderAll();
@@ -1389,8 +1372,8 @@ async function finishProfileSetup() {
   const city = normalizeCity($("setupCity")?.value) || App.user.city;
   const bio = $("setupBio")?.value?.trim() || "";
 
-  const f = Number($("setupPrefAgeFrom")?.value || App.user.prefAgeFrom);
-  const t = Number($("setupPrefAgeTo")?.value || App.user.prefAgeTo);
+  const f = Number($("setPrefAgeFrom")?.value || App.user.prefAgeFrom);
+  const t = Number($("setPrefAgeTo")?.value || App.user.prefAgeTo);
   const ageMin = Math.min(f, t);
   const ageMax = Math.max(f, t);
 
@@ -1656,22 +1639,14 @@ function startChatFromProfile() {
   }
 
   // Create or open existing chat
-  let chat = App.chats.find(c => String(c.with?.id) === String(pid));
+  let chat = App.chats.find(c => c.with.id === pid);
   if (!chat) {
     chat = {
-      id: `pm_${pid}`,
-      with: {
-        id: pid,
-        nick: p.nick,
-        role: "user",
-        city: p.city || "",
-        bio: p.bio || "",
-        avatarUrl: p.avatarUrl || "",
-        emoji: p.emoji || "💬",
-      },
+      id: `c${Date.now()}`,
+      with: { id: pid, nick: p.nick, emoji: p.emoji },
       last: "",
       unread: 0,
-      messages: [],
+      messages: [{ from: "them", text: "Hej! 🙂" }],
     };
     App.chats.unshift(chat);
   }
@@ -1727,7 +1702,6 @@ function setPersonChatButtonState(state) {
   if (!btn) return;
 
   if (App.role === "partner") {
-    btn.style.display = "";
     const rules = getPartnerPlanRules();
     btn.dataset.state = rules.canMessageParticipants ? "friend" : "partner_locked";
     btn.disabled = !rules.canMessageParticipants;
@@ -1742,14 +1716,30 @@ function setPersonChatButtonState(state) {
   btn.style.opacity = "";
   btn.classList.add("secondary");
   btn.textContent = "Napisz";
-  btn.style.display = "none";
+
+  if (state === "self") {
+    btn.textContent = "To Twoje konto";
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+    return;
+  }
 
   if (state === "friend") {
-    btn.style.display = "";
     btn.textContent = "Napisz";
     btn.classList.remove("secondary");
     return;
   }
+
+  if (state === "pending") {
+    btn.textContent = "Czeka na akceptację";
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+    return;
+  }
+
+  btn.textContent = "Najpierw znajomość";
+  btn.disabled = true;
+  btn.style.opacity = "0.7";
 }
 
 function syncPersonFriendButton(incoming, outgoing, friends) {
@@ -3753,16 +3743,6 @@ function renderGroups() {
   let myGroups = Array.isArray(App.myGroups) ? [...App.myGroups] : [];
   let suggestedGroups = Array.isArray(App.groups) ? [...App.groups] : [];
 
-  const myInterestTags = (Array.isArray(App.user?.interests) ? App.user.interests : [])
-    .map(x => normalizeTag(String(x)))
-    .filter(Boolean);
-
-  if (myInterestTags.length) {
-    suggestedGroups = suggestedGroups.filter(g =>
-      myInterestTags.includes(normalizeTag(String(g.interestTag || "")))
-    );
-  }
-
   if (q) {
     myGroups = myGroups.filter(g =>
       (g.title || "").toLowerCase().includes(q) ||
@@ -3920,19 +3900,6 @@ async function renderChatList() {
           unread: Number(c.unread_count || 0),
         };
       });
-
-    const localOnlyChats = App.chats.filter(c =>
-      c?.with?.id != null &&
-      !items.some(x => String(x.other_user_id) === String(c.with.id)) &&
-      (!q || String(c.with?.nick || c.with?.company || "").toLowerCase().includes(q))
-    ).map(c => ({
-      id: c.id || `pm_${c.with.id}`,
-      with: c.with || {},
-      last: c.last || "",
-      unread: Number(c.unread || 0),
-    }));
-
-    chats.push(...localOnlyChats);
 
     if (list) {
       if (!chats.length) {

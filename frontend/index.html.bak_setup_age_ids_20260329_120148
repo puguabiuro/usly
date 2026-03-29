@@ -472,7 +472,7 @@ section#S11_PLANS .card[data-plan].is-current{
 </head>
 <body>
 
-<!-- =========================================================
+pełny kod index.html: <!-- =========================================================
   USLY — HTML v11 (PL ONLY) — POD BACKEND
   BAZA: HTML v9/v10 + WPROWADZONE ZMIANY:
   1) Organizator: osobne ustawienia profilu vs Towarzysz
@@ -878,10 +878,7 @@ section#S11_PLANS .card[data-plan].is-current{
             </div>
 
             <div class="card mt16">
-              <label>Email</label>
-              <input id="setEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
-
-              <label class="mt12">Nick</label>
+              <label>Nick</label>
               <input id="setNick" type="text" placeholder="np. Ola_88" />
 
               <label class="mt12">BIO</label>
@@ -1086,7 +1083,7 @@ section#S11_PLANS .card[data-plan].is-current{
                   <div class="row mt12">
                     <div style="flex:1;">
                       <label class="tMuted">Od</label>
-                      <select id="setupPrefAgeFrom">
+                      <select id="setPrefAgeFrom">
                         <option value="18">18</option><option value="19">19</option><option value="20">20</option>
                         <option value="21">21</option><option value="22">22</option><option value="23">23</option>
                         <option value="24">24</option><option value="25">25</option><option value="26">26</option>
@@ -1103,7 +1100,7 @@ section#S11_PLANS .card[data-plan].is-current{
                     </div>
                     <div style="flex:1;">
                       <label class="tMuted">Do</label>
-                      <select id="setupPrefAgeTo">
+                      <select id="setPrefAgeTo">
                         <option value="18">18</option><option value="19">19</option><option value="20">20</option>
                         <option value="21">21</option><option value="22">22</option><option value="23">23</option>
                         <option value="24">24</option><option value="25">25</option><option value="26">26</option>
@@ -1987,9 +1984,6 @@ section#S11_PLANS .card[data-plan].is-current{
               <div class="card mt16">
                 <div class="sectionTitle">Dane miejsca</div>
 
-                <label class="mt12">Email</label>
-                <input id="setOrgEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
-
                 <label class="mt12">Oficjalna nazwa miejsca / firmy</label>
                 <input id="setOrgCompany" type="text" placeholder="np. Kawiarnia Aurora" />
 
@@ -2084,7 +2078,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <div class="card mt16" data-plan="plus" data-plan-icon="PLUS">
                 <div class="row" style="align-items:center;justify-content:space-between;">
                   <div class="sectionTitle">PLUS</div>
-                  <div class="planPill">19 zł / miesiąc</div>
+                  <div class="planPill">29 zł / miesiąc</div>
                 </div>
                 <p class="mt12">Większa swoboda w poznawaniu ludzi i korzystaniu z grup.</p>
                 <ul class="planList">
@@ -2099,7 +2093,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <div class="card mt16" data-plan="premium" data-plan-icon="PREMIUM">
                 <div class="row" style="align-items:center;justify-content:space-between;">
                   <div class="sectionTitle">PREMIUM</div>
-                  <div class="planPill">39 zł / miesiąc</div>
+                  <div class="planPill">59 zł / miesiąc</div>
                 </div>
                 <p class="mt12">Pełniejsze korzystanie z USLY i rozwijanie swojej sieci znajomości.</p>
                 <ul class="planList">
@@ -2114,7 +2108,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <div class="card mt16" data-plan="vip" data-plan-icon="VIP">
                 <div class="row" style="align-items:center;justify-content:space-between;">
                   <div class="sectionTitle">VIP</div>
-                  <div class="planPill">79 zł / miesiąc</div>
+                  <div class="planPill">99 zł / miesiąc</div>
                 </div>
                 <p class="mt12">Maksymalne możliwości i pełna swoboda w USLY.</p>
                 <ul class="planList">
