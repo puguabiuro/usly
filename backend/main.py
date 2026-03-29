@@ -2344,7 +2344,7 @@ def list_private_conversations(
             })
 
         items.sort(
-            key=lambda x: x["last_message_at"] or datetime.min,
+            key=lambda x: x["last_message_at"] or datetime.min.replace(tzinfo=timezone.utc),
             reverse=True,
         )
 
