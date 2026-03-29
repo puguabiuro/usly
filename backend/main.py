@@ -2344,10 +2344,7 @@ def list_private_conversations(
             })
 
         items.sort(
-            key=lambda x: (
-                x["last_message_at"].isoformat()
-                if x["last_message_at"] else ""
-            ),
+            key=lambda x: x["last_message_at"] or datetime.min,
             reverse=True,
         )
 

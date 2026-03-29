@@ -732,6 +732,14 @@ input[type="range"]::-moz-range-thumb{
   font-size: 26px;
 }
 
+#userAvatar,
+#settingsUserAvatarPreview,
+#setupOrgLogoPreview,
+#setOrgLogoPreview,
+#partnerHubLogoPreview{
+  overflow: hidden;
+}
+
 /* Organizer logo preview container */
 #orgLogoPreview, #setOrgLogoPreview{
   width: 56px;
