@@ -4503,6 +4503,31 @@ function normalizeCity(raw) {
     .replace(/(^|[\s-])([\p{L}])/gu, (_, sep, ch) => sep + ch.toLocaleUpperCase("pl-PL"));
 }
 
+async function syncUserInterests() {
+  if (!App.isLoggedIn || App.role !== "user") return;
+
+  try {
+    const data = await apiFetch("/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+      }),
+    });
+
+    if (data?.success && data?.data) {
+      const backendInterests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : [];
+      App.user.interests = backendInterests;
+      try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
+      renderInterestChips("setInterestChips");
+      renderInterestChips("interestChips");
+      renderInterestChips("regInterestChips");
+    }
+  } catch (err) {
+    console.error("syncUserInterests failed", err);
+  }
+}
+
 function addUserInterest(tag, chipsId) {
   const t = normalizeTag(tag);
   if (!t) return;
@@ -4520,6 +4545,7 @@ function addUserInterest(tag, chipsId) {
   App.user.interests.push(t);
   try { localStorage.setItem("usly_user_interests", JSON.stringify(App.user.interests)); } catch(_) {}
   renderInterestChips(chipsId);
+  syncUserInterests();
   toast(`Dodano #${t}`);
 }
 
@@ -4529,6 +4555,7 @@ function removeUserInterest(tag, chipsId) {
   try { localStorage.setItem("usly_user_interests", JSON.stringify(App.user.interests)); } catch(_) {}
   refreshInterestUi();
   renderInterestChips(chipsId);
+  syncUserInterests();
   toast(`Usunięto #${t}`);
 }
 
