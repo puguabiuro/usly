@@ -1604,10 +1604,10 @@ def list_events(
                 {
                     "id": e.id,
                     "partner_user_id": e.partner_user_id,
-                    "partner_name": getattr(partner_profile, "nazwa", None) or "",
-                    "partner_category": getattr(partner_profile, "kategoria", None) or "",
-                    "partner_bio": getattr(partner_profile, "bio", None) or "",
-                    "partner_logo_url": getattr(partner_profile, "logo_url", None) or "",
+                    "partner_name": ((partner_profile or {}).get("nazwa")) or "",
+                    "partner_category": ((partner_profile or {}).get("kategoria")) or "",
+                    "partner_bio": ((partner_profile or {}).get("bio")) or "",
+                    "partner_logo_url": ((partner_profile or {}).get("logo_url")) or "",
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
@@ -2264,7 +2264,13 @@ def list_private_conversations(
             if other_user_ids else []
         )
         partner_profiles = (
-            db.query(PartnerProfile)
+            db.query(
+                PartnerProfile.user_id,
+                PartnerProfile.nazwa,
+                PartnerProfile.kategoria,
+                PartnerProfile.bio,
+                PartnerProfile.logo_url,
+            )
             .filter(PartnerProfile.user_id.in_(other_user_ids))
             .all()
             if other_user_ids else []
@@ -2272,7 +2278,15 @@ def list_private_conversations(
 
         users_by_id = {u.id: u for u in users}
         user_profiles_by_user_id = {p.user_id: p for p in user_profiles}
-        partner_profiles_by_user_id = {p.user_id: p for p in partner_profiles}
+        partner_profiles_by_user_id = {
+            row.user_id: {
+                "nazwa": row.nazwa,
+                "kategoria": row.kategoria,
+                "bio": row.bio,
+                "logo_url": row.logo_url,
+            }
+            for row in partner_profiles
+        }
 
         unread_counts = {}
         unread_rows = (
@@ -2298,13 +2312,13 @@ def list_private_conversations(
             role = getattr(other, "role", None)
             if role == "partner":
                 display_name = (
-                    getattr(partner_profile, "nazwa", None)
+                    ((partner_profile or {}).get("nazwa"))
                     or getattr(user_profile, "nick", None)
                 )
             else:
                 display_name = (
                     getattr(user_profile, "nick", None)
-                    or getattr(partner_profile, "nazwa", None)
+                    or ((partner_profile or {}).get("nazwa"))
                 )
 
             fallback_name = (
@@ -2322,20 +2336,20 @@ def list_private_conversations(
                 ),
                 "other_user_avatar_url": (
                     getattr(user_profile, "avatar_url", None)
-                    or getattr(partner_profile, "logo_url", None)
+                    or ((partner_profile or {}).get("logo_url"))
                     or ""
                 ),
                 "other_user_bio": (
                     getattr(user_profile, "bio", None)
-                    or getattr(partner_profile, "bio", None)
+                    or ((partner_profile or {}).get("bio"))
                     or ""
                 ),
                 "other_user_company": (
-                    getattr(partner_profile, "nazwa", None)
+                    ((partner_profile or {}).get("nazwa"))
                     or ""
                 ),
                 "other_user_category": (
-                    getattr(partner_profile, "kategoria", None)
+                    ((partner_profile or {}).get("kategoria"))
                     or ""
                 ),
                 "last_message": m.content,
