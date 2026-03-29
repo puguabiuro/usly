@@ -474,10 +474,9 @@ async function loginPrimary() {
         App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
         App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
         const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
-        const setupInterests = backendInterests.length > 0 ? backendInterests : (Array.isArray(App.user.interests) ? App.user.interests : []);
 
-        App.user.interests = setupInterests;
-        try { localStorage.setItem("usly_user_interests", JSON.stringify(setupInterests)); } catch(_) {}
+        App.user.interests = backendInterests;
+        try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
         App.user.plan = profile.data.plan || App.user.plan;
         App.user.avatarUrl = profile.data.avatar_url ?? "";
         try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
@@ -719,9 +718,8 @@ async function registerPrimary() {
         App.user.city = profile.data.miasto || App.user.city;
         App.user.bio = profile.data.bio || "";
           const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
-          const setupInterests = backendInterests.length > 0 ? backendInterests : (Array.isArray(App.user.interests) ? App.user.interests : []);
-          App.user.interests = setupInterests;
-          try { localStorage.setItem("usly_user_interests", JSON.stringify(setupInterests)); } catch(_) {}
+          App.user.interests = backendInterests;
+          try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
         App.user.plan = profile.data.plan || App.user.plan;
         App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
         try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
