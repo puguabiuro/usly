@@ -471,8 +471,8 @@ async function loginPrimary() {
         App.user.nick = profile.data.nick || App.user.nick;
         App.user.city = profile.data.miasto || App.user.city;
         App.user.bio = profile.data.bio || "";
-        App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
-        App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
+        App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(profile.data, "age_min") ? profile.data.age_min : App.user.prefAgeFrom;
+        App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(profile.data, "age_max") ? profile.data.age_max : App.user.prefAgeTo;
         const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
 
         App.user.interests = backendInterests;
@@ -1195,10 +1195,11 @@ async function saveSettings() {
   const bio = $("setBio")?.value?.trim() || "";
   const city = normalizeCity($("setCity")?.value) || App.user.city;
 
+  const ageAny = !!$("setAgeAny")?.checked;
   const f = Number($("setPrefAgeFrom")?.value || App.user.prefAgeFrom);
   const t = Number($("setPrefAgeTo")?.value || App.user.prefAgeTo);
-  const ageMin = Math.min(f, t);
-  const ageMax = Math.max(f, t);
+  const ageMin = ageAny ? null : Math.min(f, t);
+  const ageMax = ageAny ? null : Math.max(f, t);
 
   try {
     const data = await apiFetch("/users/me", {
@@ -1222,8 +1223,8 @@ async function saveSettings() {
     App.user.nick = data.data.nick || nick;
     App.user.bio = data.data.bio || bio;
     App.user.city = data.data.miasto || city;
-    App.user.prefAgeFrom = data.data.age_min ?? ageMin;
-    App.user.prefAgeTo = data.data.age_max ?? ageMax;
+    App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(data.data, "age_min") ? data.data.age_min : ageMin;
+    App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(data.data, "age_max") ? data.data.age_max : ageMax;
     App.user.interests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : (Array.isArray(App.user.interests) ? App.user.interests : []);
 
     await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
@@ -1387,10 +1388,11 @@ async function finishProfileSetup() {
   const city = normalizeCity($("setupCity")?.value) || App.user.city;
   const bio = $("setupBio")?.value?.trim() || "";
 
+  const ageAny = !!$("setupAgeAny")?.checked;
   const f = Number($("setupPrefAgeFrom")?.value || App.user.prefAgeFrom);
   const t = Number($("setupPrefAgeTo")?.value || App.user.prefAgeTo);
-  const ageMin = Math.min(f, t);
-  const ageMax = Math.max(f, t);
+  const ageMin = ageAny ? null : Math.min(f, t);
+  const ageMax = ageAny ? null : Math.max(f, t);
 
   try {
     const data = await apiFetch("/users/me", {
@@ -1414,8 +1416,8 @@ async function finishProfileSetup() {
     App.user.nick = data.data.nick || nick;
     App.user.city = data.data.miasto || city;
     App.user.bio = data.data.bio || bio;
-    App.user.prefAgeFrom = data.data.age_min ?? ageMin;
-    App.user.prefAgeTo = data.data.age_max ?? ageMax;
+    App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(data.data, "age_min") ? data.data.age_min : ageMin;
+    App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(data.data, "age_max") ? data.data.age_max : ageMax;
     App.user.interests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : (Array.isArray(App.user.interests) ? App.user.interests : []);
 
     await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
@@ -1825,8 +1827,10 @@ async function addFriendFromProfile() {
       return;
     }
 
-    toast("Zaproszenie wysłane");
+    toast("Zaproszenie do znajomych zostało wysłane");
     await refreshProfileRelations();
+    await refreshNotifBadgeCount();
+    if (App.currentView === "S12_NOTIFICATIONS") await renderNotifications();
   } catch (err) {
     toast(err?.userMessage || err?.message || "Nie udało się wysłać zaproszenia");
   }
@@ -3430,10 +3434,11 @@ async function renderNotifications() {
       const reqRes = await apiFetch("/friends/requests");
       const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
 
-      incoming.forEach(() => {
+      incoming.forEach((req) => {
+        const nick = req?.requester?.nick || req?.requester?.email || "Nowa osoba";
         items.push({
-          title: "Nowe zaproszenie",
-          body: "Ktoś chce dodać Cię do znajomych.",
+          title: "Zaproszenie do znajomych",
+          body: `${nick} chce dodać Cię do znajomych`,
           targetView: "S10E_PROFILE_INVITES",
         });
       });
@@ -3829,14 +3834,14 @@ function renderGroups() {
       <div class="listItem" onclick="openPerson('${x.p.id}')">
         <div class="listTop">
           <div class="listLeft">
-            <div class="listAvatar">${x.p.emoji}</div>
+            <div class="listAvatar">${x.p.avatarUrl ? `<img src="${String(x.p.avatarUrl).startsWith("http") ? x.p.avatarUrl : `${API_BASE_URL}${x.p.avatarUrl}`}" alt="${x.p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : x.p.emoji}</div>
             <div style="min-width:0;">
               <div class="listTitle">${x.p.nick}</div>
               <div class="listMeta">Wspólne: ${commonInterests(x.p).slice(0,3).map(t => `#${t}`).join(" ")}</div>
             </div>
           </div>
           <div class="listRight">
-            <div class="listTag">${Math.min(99, x.score * 25)}%</div>
+            <div class="listTag">${sharedScore(x.p)}%</div>
           </div>
         </div>
       </div>
@@ -4302,6 +4307,26 @@ function initInterestInputs() {
   configs.forEach(cfg => {
     const input = $(cfg.inputId);
     if (!input) return;
+    const addBtn = cfg.inputId === "regInterestInput" ? $("regInterestAddBtn") : (cfg.inputId === "interestInput" ? $("interestAddBtn") : null);
+    if (addBtn && !addBtn.dataset.bound) {
+      addBtn.addEventListener("click", () => {
+        const val = input.value.trim();
+        if (!val) return;
+
+        const parts = val
+          .split(/[;,\n]+/)
+          .map(x => normalizeTag(x))
+          .filter(Boolean);
+
+        if (!parts.length) return;
+
+        parts.forEach(tag => addUserInterest(tag, cfg.chipsId));
+        input.value = "";
+        hideTypeahead(cfg.taId);
+        renderAll();
+      });
+      addBtn.dataset.bound = "1";
+    }
 
     // Key handlers
     input.addEventListener("keydown", (e) => {
@@ -4659,15 +4684,48 @@ function initAgeSliders() {
   const setToVal = $("setPrefAgeToVal");
 
   if (setFrom && setTo) {
+    const setAgeAny = $("setAgeAny");
+    const syncAgeAnyUi = () => {
+      const disabled = !!setAgeAny?.checked;
+      setFrom.disabled = disabled;
+      setTo.disabled = disabled;
+      setFrom.style.opacity = disabled ? ".55" : "";
+      setTo.style.opacity = disabled ? ".55" : "";
+      setFrom.style.cursor = disabled ? "not-allowed" : "";
+      setTo.style.cursor = disabled ? "not-allowed" : "";
+    };
+
     const upd2 = () => {
       const f = Number(setFrom.value || 16);
       const t = Number(setTo.value || 99);
       if (setFromVal) setFromVal.textContent = String(f);
       if (setToVal) setToVal.textContent = String(t);
+      syncAgeAnyUi();
     };
     setFrom.addEventListener("input", upd2);
     setTo.addEventListener("input", upd2);
+    setAgeAny?.addEventListener("change", syncAgeAnyUi);
     upd2();
+  }
+
+  // Setup ageAny toggle
+  const setupAgeAny = $("setupAgeAny");
+  const setupFrom = $("setupPrefAgeFrom");
+  const setupTo = $("setupPrefAgeTo");
+
+  if (setupAgeAny && setupFrom && setupTo) {
+    const updateSetupAgeState = () => {
+      const disabled = !!setupAgeAny.checked;
+      setupFrom.disabled = disabled;
+      setupTo.disabled = disabled;
+      setupFrom.style.opacity = disabled ? "0.5" : "1";
+      setupTo.style.opacity = disabled ? "0.5" : "1";
+      setupFrom.style.cursor = disabled ? "not-allowed" : "";
+      setupTo.style.cursor = disabled ? "not-allowed" : "";
+    };
+
+    setupAgeAny.addEventListener("change", updateSetupAgeState);
+    updateSetupAgeState();
   }
 }
 
@@ -5184,10 +5242,12 @@ function renderAll() {
   // Fill settings inputs moved out of renderAll to avoid overwriting unsaved form edits
 
   // Settings range values
-  if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
-  if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
-  safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom));
-  safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo));
+  if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom ?? 18);
+  if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo ?? 99);
+  if ($("setAgeAny")) $("setAgeAny").checked = App.user.prefAgeFrom == null && App.user.prefAgeTo == null;
+  safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom ?? 18));
+  safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo ?? 99));
+  $("setAgeAny")?.dispatchEvent(new Event("change"));
 
   // Partner settings
   if ($("setOrgCompany")) $("setOrgCompany").value = App.partner.company || "";
@@ -5321,8 +5381,8 @@ async function init() {
           App.user.city = profile.data.miasto || App.user.city;
           App.user.bio = profile.data.bio || "";
           App.user.interests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
-          App.user.prefAgeFrom = profile.data.age_min ?? App.user.prefAgeFrom;
-          App.user.prefAgeTo = profile.data.age_max ?? App.user.prefAgeTo;
+          App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(profile.data, "age_min") ? profile.data.age_min : App.user.prefAgeFrom;
+          App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(profile.data, "age_max") ? profile.data.age_max : App.user.prefAgeTo;
           App.user.plan = profile.data.plan || App.user.plan;
           App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
           }
@@ -5614,6 +5674,7 @@ function refreshInterestUi() {
   const hintTargets = [
     ensureHint("regInterestLimitHint", "regInterestChips"),
     $("interestLimitHint"),
+    $("setupInterestLimitHint"),
     $("setInterestLimitHint")
   ].filter(Boolean);
 

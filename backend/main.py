@@ -908,14 +908,16 @@ def users_me_patch(
         if payload.bio is not None:
             profile.bio = _trim(payload.bio)
 
-        new_min = payload.age_min if payload.age_min is not None else profile.age_min
-        new_max = payload.age_max if payload.age_max is not None else profile.age_max
+        fields_set = payload.model_fields_set if hasattr(payload, "model_fields_set") else set()
+
+        new_min = payload.age_min if "age_min" in fields_set else profile.age_min
+        new_max = payload.age_max if "age_max" in fields_set else profile.age_max
         if new_min is not None and new_max is not None and new_min > new_max:
             raise HTTPException(status_code=422, detail="age_min_must_be_lte_age_max")
 
-        if payload.age_min is not None:
+        if "age_min" in fields_set:
             profile.age_min = payload.age_min
-        if payload.age_max is not None:
+        if "age_max" in fields_set:
             profile.age_max = payload.age_max
 
         if payload.zainteresowania is not None:

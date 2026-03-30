@@ -609,10 +609,10 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="heroSub">Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.</div>
               </div>
   
-              <div class="segLabel">Tryb</div>
+              <div class="segLabel">Wybierz konto</div>
               <div class="seg wide" role="tablist" aria-label="Tryb konta">
-                <button class="segBtn on" id="roleUserBtn" type="button" onclick="selectRole('user')">Towarzysz</button>
-                <button class="segBtn" id="rolePartnerBtn" type="button" onclick="selectRole('partner')">Organizator</button>
+                <button class="segBtn on" id="roleUserBtn" type="button" onclick="selectRole('user')">Poznaj ludzi</button>
+                <button class="segBtn" id="rolePartnerBtn" type="button" onclick="selectRole('partner')">Twórz wydarzenia</button>
               </div>
   
               <div class="heroBadges" aria-hidden="true" style="display:none;">
@@ -795,14 +795,6 @@ section#S11_PLANS .card[data-plan].is-current{
                   <input id="regGeoLng" type="hidden" value="" />
                   <div class="tMuted mt10" style="text-align:left;">Możesz użyć lokalizacji, aby szybciej uzupełnić miasto.</div>
 
-                  <label class="mt12">Zainteresowania *</label>
-                  <div class="hashRow">
-                    <span class="hashPrefix">#</span>
-                    <input id="regInterestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
-                  </div>
-                  <div class="chips" id="regInterestChips"></div>
-                  <div class="typeahead" id="regInterestTypeahead"></div>
-
                   <div class="tMuted mt12" style="text-align:left;">Zdjęcie i bio uzupełnisz w następnym kroku.</div>
                 </div>
               </div>
@@ -895,7 +887,7 @@ section#S11_PLANS .card[data-plan].is-current{
 
               <div class="hintCard mt16">
                 <div class="hintTitle">Preferowany zakres wieku</div>
-                <div class="hintText">Lepszy picker niż suwak — czytelniej i bardziej premium.</div>
+                <div class="hintText">Dopasuj preferowany wiek osób, które chcesz widzieć.</div>
 
                 <div class="row mt12">
                   <div style="flex:1;">
@@ -932,6 +924,12 @@ section#S11_PLANS .card[data-plan].is-current{
                       <option value="95">95</option><option value="99">99</option>
                     </select>
                   </div>
+                </div>
+                <div class="partnerCapacityToggle mt12">
+                  <label class="partnerCapacityToggleRow" for="setAgeAny">
+                    <span class="tStrong">Wiek bez znaczenia</span>
+                    <input id="setAgeAny" type="checkbox" />
+                  </label>
                 </div>
               </div>
 
@@ -1119,16 +1117,23 @@ section#S11_PLANS .card[data-plan].is-current{
                       </select>
                     </div>
                   </div>
+                  <div class="partnerCapacityToggle mt12">
+                    <label class="partnerCapacityToggleRow" for="setupAgeAny">
+                      <span class="tStrong">Wiek bez znaczenia</span>
+                      <input id="setupAgeAny" type="checkbox" />
+                    </label>
+                  </div>
                 </div>
 
-                <label class="mt12">Zainteresowania</label>
-                <div class="sectionSub" id="interestLimitHint">—</div>
+                <label class="mt12">Zainteresowania *</label>
+                <div class="sectionSub" id="setupInterestLimitHint">—</div>
                 <div class="hashRow">
                   <span class="hashPrefix">#</span>
                   <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
+                  <button class="btn secondary small hashAddBtn" id="interestAddBtn" type="button" aria-label="Dodaj zainteresowanie">Dodaj</button>
                 </div>
-                <div class="typeahead" id="interestTypeahead"></div>
                 <div class="chips" id="interestChips"></div>
+                <div class="typeahead" id="interestTypeahead"></div>
 
                 <button class="btn mt16" type="button" onclick="finishProfileSetup()">Zapisz i przejdź dalej</button>
               </div>
