@@ -347,6 +347,8 @@ button[id^="notifBtn"].hasBadge::after{
   color:#07121e;
   background: linear-gradient(90deg, var(--pink), var(--blue));
   border: 1px solid rgba(255,255,255,.18);
+  opacity: 1;
+  z-index: 2;
 }
 
 /* ------------------------- Spacing helpers -------------------------- */
@@ -3081,3 +3083,16 @@ button[id^="notifBtn"]:hover::after{
   cursor: pointer;
 }
 
+
+
+.listItem.notifNew{
+  border-color: rgba(52,230,255,.45);
+  box-shadow:
+    0 0 0 1px rgba(52,230,255,.18) inset,
+    0 10px 24px rgba(52,230,255,.10);
+  background: linear-gradient(180deg, rgba(52,230,255,.10), rgba(255,255,255,.03));
+}
+
+.listItem.notifNew .listTitle{
+  font-weight: 900;
+}

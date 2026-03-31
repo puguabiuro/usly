@@ -232,6 +232,10 @@ function go(viewId) {
     updateNotifBadges(0);
   }
 
+  if (viewId === "S10E_PROFILE_INVITES") {
+    refreshProfileRelations().catch(() => {});
+  }
+
   if (viewId === "S10_SETTINGS") {
     if ($("setNick")) $("setNick").value = App.user.nick || "";
     if ($("setBio")) $("setBio").value = App.user.bio || "";
@@ -3429,17 +3433,19 @@ async function renderNotifications() {
           title: "Nowy zapis na wydarzenie",
           body: `${item.userNick} zapisał(a) się na: ${item.eventTitle}`,
           targetView: "S9_PARTNER_EVENTS",
+          createdAt: item.createdAt || null,
         }));
     } else {
       const reqRes = await apiFetch("/friends/requests");
       const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
 
       incoming.forEach((req) => {
-        const nick = req?.requester?.nick || req?.requester?.email || "Nowa osoba";
+        const nick = req?.user?.nick || req?.user?.email || "Nowa osoba";
         items.push({
           title: "Zaproszenie do znajomych",
           body: `${nick} chce dodać Cię do znajomych`,
           targetView: "S10E_PROFILE_INVITES",
+          createdAt: req?.created_at || null,
         });
       });
     }
@@ -3447,6 +3453,11 @@ async function renderNotifications() {
   } catch (e) {
     console.error("notifications error", e);
   }
+
+  const seenAtRaw = localStorage.getItem(
+    App.role === "partner" ? "usly_partner_notifications_seen_at" : "usly_user_notifications_seen_at"
+  );
+  const seenAt = parseUslyTimestamp(seenAtRaw);
 
   if (items.length === 0) {
     list.innerHTML = `
@@ -3458,18 +3469,22 @@ async function renderNotifications() {
     return;
   }
 
-  list.innerHTML = items.map(n => `
-    <div class="listItem" style="cursor:pointer;" onclick="go('${n.targetView}')">
+  list.innerHTML = items.map(n => {
+    const isNew = parseUslyTimestamp(n?.createdAt) > seenAt;
+    return `
+    <div class="listItem ${isNew ? 'notifNew' : ''}" style="cursor:pointer;" onclick="go('${n.targetView}')">
       <div class="listTitle">${n.title}</div>
       <div class="listBody">${n.body}</div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 
   if (App.role === "partner") {
     localStorage.setItem("usly_partner_notifications_seen_at", new Date().toISOString());
     updateNotifBadges(0);
   } else {
-    updateNotifBadges(items.length);
+    localStorage.setItem("usly_user_notifications_seen_at", new Date().toISOString());
+    updateNotifBadges(0);
   }
 }
 
@@ -3489,6 +3504,15 @@ function updateNotifBadges(count) {
   });
 }
 
+function parseUslyTimestamp(value) {
+  if (!value) return 0;
+  const normalized = typeof value === "string" && !/[zZ]|[+-]\d\d:\d\d$/.test(value)
+    ? `${value}Z`
+    : value;
+  const ts = new Date(normalized).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
 async function refreshNotifBadgeCount() {
   if (!App.isLoggedIn || App.role !== "user") {
     updateNotifBadges(0);
@@ -3501,9 +3525,18 @@ async function refreshNotifBadgeCount() {
   }
 
   try {
+    const seenAtRaw = localStorage.getItem("usly_user_notifications_seen_at");
+    const seenAt = parseUslyTimestamp(seenAtRaw);
+
     const reqRes = await apiFetch("/friends/requests");
     const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
-    updateNotifBadges(incoming.length);
+
+    const totalUnread = incoming.filter((req) => {
+      const createdAt = parseUslyTimestamp(req?.created_at);
+      return createdAt > seenAt;
+    }).length;
+
+    updateNotifBadges(totalUnread);
   } catch (e) {
     console.error("notif badge refresh error", e);
   }
@@ -5308,6 +5341,16 @@ function initSearchBindings() {
       if (App.role === "partner") return;
 
       try {
+        await refreshNotifBadgeCount();
+
+        if (App.currentView === "S10E_PROFILE_INVITES") {
+          await refreshProfileRelations();
+        }
+
+        if (App.currentView === "S12_NOTIFICATIONS") {
+          await renderNotifications();
+        }
+
         await renderChatList();
         if (App.currentView === "S6B_CHAT_THREAD" && App.selectedChatUserId) {
           await renderChatThread();
@@ -5315,7 +5358,7 @@ function initSearchBindings() {
       } catch (err) {
         console.error("inbox polling failed", err);
       }
-    }, 15000);
+    }, 10000);
   }
 
   startInboxPolling();
