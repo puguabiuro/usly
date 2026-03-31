@@ -1513,7 +1513,7 @@ def partner_publish_event(
             active_limit = 5
 
         if active_limit is not None:
-            now_utc = datetime.utcnow()
+            now_utc = datetime.now(timezone.utc)
             active_events_count = (
                 db.query(Event)
                 .filter(Event.partner_user_id == current_user.id)
