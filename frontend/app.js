@@ -397,6 +397,14 @@ function selectRole(role) {
     ? "Stwórz konto Towarzysza i ustaw profil."
     : "Stwórz konto Organizatora i ustaw profil.");
 
+  // Show/Hide registration account fields
+  const regUserAccountFields = $("regUserAccountFields");
+  const regPartnerAccountFields = $("regPartnerAccountFields");
+  if (regUserAccountFields && regPartnerAccountFields) {
+    if (role === "user") { show(regUserAccountFields); hide(regPartnerAccountFields); }
+    else { hide(regUserAccountFields); show(regPartnerAccountFields); }
+  }
+
   // Show/Hide registration blocks
   const userBox = $("regUserBox");
   const partnerBox = $("regPartnerBox");
@@ -659,13 +667,7 @@ async function registerPrimary() {
     const company = $("regCompany")?.value?.trim();
     const category = $("regCategory")?.value;
     const city = normalizeCity($("regCityPartner")?.value);
-    const dobEl = $("regBirthDatePartner");
-    dob = (dobEl?.value || "").trim();
-
-    if (!dob) {
-      toast("Podaj datę urodzenia.");
-      return;
-    }
+    dob = null;
 
     if (!company || !city) {
       toast("Uzupełnij nazwę i miasto organizatora");
@@ -2312,15 +2314,44 @@ function openEvent(eventId) {
   syncEventDetailButtons();
 }
 
-function toggleSaveEvent() {
+async function toggleSaveEvent() {
   const ev = App.events.find(e => e.id === App.selectedEventId);
   if (!ev) return;
-  ev.saved = !ev.saved;
-  persistSavedEventIds();
-  syncEventDetailButtons();
-  toast(ev.saved ? "Dodano do obserwowanych" : "Usunięto z obserwowanych");
-  renderEventsList();
-  renderNearby();
+
+  try {
+    if (ev.saved) {
+      const res = await apiFetch(`/events/${ev.id}/save`, {
+        method: "DELETE",
+      });
+      if (!res?.success) {
+        toast(res?.error?.message || "Nie udało się usunąć z obserwowanych");
+        return;
+      }
+      toast("Usunięto z obserwowanych");
+    } else {
+      const res = await apiFetch(`/events/${ev.id}/save`, {
+        method: "POST",
+      });
+      if (!res?.success) {
+        toast(res?.error?.message || "Nie udało się dodać do obserwowanych");
+        return;
+      }
+      toast("Dodano do obserwowanych");
+    }
+
+    await loadEvents();
+
+    const fresh = App.events.find(e => String(e.id) === String(App.selectedEventId));
+    if (fresh) {
+      openEvent(fresh.id);
+      syncEventDetailButtons();
+    } else {
+      renderEventsList();
+      renderNearby();
+    }
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się zmienić obserwowanych wydarzeń");
+  }
 }
 
 async function toggleInterestedEvent() {
@@ -3034,10 +3065,7 @@ function openPartnerEventEditor(eventId) {
   if ($("peCity")) $("peCity").value = ev.city || "";
   if ($("peWhen")) {
     if (ev.start_at) {
-      const d = new Date(ev.start_at);
-      $("peWhen").value = Number.isNaN(d.getTime())
-        ? String(ev.start_at)
-        : d.toLocaleString("sv-SE").replace(" ", " ").slice(0, 16);
+      $("peWhen").value = toLocalDateTimeInputValue(ev.start_at);
     } else {
       $("peWhen").value = "";
     }
@@ -3147,8 +3175,8 @@ async function savePartnerEventDraft() {
     city,
     where,
     interest_tag: interest,
-    start_at: startAt.toISOString(),
-    end_at: endAt.toISOString(),
+    start_at: toLocalApiDateTime(when),
+    end_at: addHourToLocalDateTime(when),
     pricing_type: pricingTypeMap[paidMode] || "free",
     payment_link: ticketLink,
     capacity: unlimitedCapacity ? null : capacityValue,
@@ -3312,8 +3340,8 @@ async function publishPartnerEvent() {
     city,
     where,
     interest_tag: interest,
-    start_at: startAt.toISOString(),
-    end_at: endAt.toISOString(),
+    start_at: toLocalApiDateTime(when),
+    end_at: addHourToLocalDateTime(when),
     pricing_type: pricingTypeMap[paidMode] || "free",
     payment_link: ticketLink,
     capacity: unlimitedCapacity ? null : capacityValue,
@@ -4941,6 +4969,31 @@ function mapApiGroupToViewModel(g) {
   };
 }
 
+function toLocalDateTimeInputValue(value) {
+  if (!value) return "";
+  const raw = String(value).trim().replace(" ", "T");
+  const normalized = /[zZ]|[+-]\d\d:\d\d$/.test(raw) ? raw : `${raw}Z`;
+  const d = new Date(normalized);
+  if (Number.isNaN(d.getTime())) return raw.slice(0, 16);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function toLocalApiDateTime(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  return raw.length === 16 ? `${raw}:00` : raw;
+}
+
+function addHourToLocalDateTime(value) {
+  const raw = String(value || "").trim();
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  const shifted = new Date(d.getTime() + 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${shifted.getFullYear()}-${pad(shifted.getMonth() + 1)}-${pad(shifted.getDate())}T${pad(shifted.getHours())}:${pad(shifted.getMinutes())}:00`;
+}
+
 function mapApiEventToViewModel(e) {
   const start = e?.start_at ? new Date(e.start_at) : null;
   const when =
@@ -4967,6 +5020,9 @@ function mapApiEventToViewModel(e) {
       "wydarzenie"
     ),
     desc: e.description || "",
+    status: e.status || "draft",
+    start_at: e.start_at || null,
+    end_at: e.end_at || null,
     paidMode: e.pricing_type || "free",
     price: typeof e.price_fixed === "number" ? Math.round(e.price_fixed / 100) : null,
     priceFrom: typeof e.price_min === "number" ? Math.round(e.price_min / 100) : null,
@@ -5017,7 +5073,7 @@ async function loadNearbyPeople() {
 
 async function loadEvents() {
   try {
-    const data = await apiFetch("/events?limit=20");
+    const data = await apiFetch("/events?limit=100");
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
 
     let joinedIds = new Set();
@@ -5034,7 +5090,19 @@ async function loadEvents() {
       console.error("loadEvents joined state failed", err);
     }
 
-    const savedIds = getSavedEventIds();
+    let savedIds = new Set();
+    try {
+      const savedRes = await apiFetch("/users/me/saved-events?limit=100");
+      const savedItems = Array.isArray(savedRes?.data?.items) ? savedRes.data.items : [];
+      savedIds = new Set(
+        savedItems
+          .map(x => x?.saved?.event_id ?? x?.event?.id)
+          .filter(v => v != null)
+          .map(v => String(v))
+      );
+    } catch (err) {
+      console.error("loadEvents saved state failed", err);
+    }
 
     App.events = items.map(raw => {
       const ev = mapApiEventToViewModel(raw);
@@ -5079,7 +5147,7 @@ async function loadGroups() {
 
 async function loadPartnerEvents() {
   try {
-    const data = await apiFetch("/partners/events");
+    const data = await apiFetch("/partners/events?limit=100");
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
 
     const enriched = await Promise.all(
@@ -5413,6 +5481,7 @@ async function init() {
       const me = await apiFetch("/auth/me");
       App.currentUserId = me?.id ?? me?.data?.id ?? null;
       App.role = me?.role === "partner" ? "partner" : "user";
+      selectRole(App.role);
       App.isLoggedIn = true;
       $("appRoot")?.classList.add("isLoggedIn");
       updateTabbars();

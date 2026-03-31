@@ -62,6 +62,7 @@ from models import (
     Event,
     AuditLog,
     EventSignup,
+    EventSave,
     UserStatus,
     Group,
     GroupMembership,
@@ -191,6 +192,57 @@ def join_event(
 # =========================
 # MVP: LEAVE EVENT
 # =========================
+
+
+@app.post("/events/{event_id}/save")
+def save_event(
+    event_id: int,
+    request: Request,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        if event.status != "published":
+            raise HTTPException(status_code=409, detail="EVENT_NOT_PUBLISHED")
+
+        existing = (
+            db.query(EventSave)
+            .filter(
+                EventSave.event_id == event_id,
+                EventSave.user_id == current_user.id,
+            )
+            .first()
+        )
+
+        if existing:
+            raise HTTPException(status_code=409, detail="ALREADY_SAVED")
+
+        saved = EventSave(
+            event_id=event_id,
+            user_id=current_user.id,
+        )
+
+        db.add(saved)
+        db.commit()
+
+        _audit(
+            db,
+            action="EVENT_SAVE",
+            request=request,
+            user_id=current_user.id,
+            details=f"event_id={event_id}",
+        )
+
+        return ok({"saved": True, "event_id": event_id})
+
+    finally:
+        db.close()
+
+
 @app.delete("/events/{event_id}/join")
 def leave_event(
     event_id: int,
@@ -1606,10 +1658,10 @@ def list_events(
                 {
                     "id": e.id,
                     "partner_user_id": e.partner_user_id,
-                    "partner_name": ((partner_profile or {}).get("nazwa")) or "",
-                    "partner_category": ((partner_profile or {}).get("kategoria")) or "",
-                    "partner_bio": ((partner_profile or {}).get("bio")) or "",
-                    "partner_logo_url": ((partner_profile or {}).get("logo_url")) or "",
+                    "partner_name": getattr(partner_profile, "nazwa", "") or "",
+                    "partner_category": getattr(partner_profile, "kategoria", "") or "",
+                    "partner_bio": getattr(partner_profile, "bio", "") or "",
+                    "partner_logo_url": getattr(partner_profile, "logo_url", "") or "",
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
@@ -1863,6 +1915,100 @@ def partner_get_event_details(
 # EVENTS  USER: MOJE ZAPISY
 # GET /users/me/events?limit=10&offset=0&sort=created_at_desc
 # =========================
+
+
+@app.delete("/events/{event_id}/save")
+def unsave_event(
+    event_id: int,
+    request: Request,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        saved = (
+            db.query(EventSave)
+            .filter(
+                EventSave.event_id == event_id,
+                EventSave.user_id == current_user.id,
+            )
+            .first()
+        )
+
+        if not saved:
+            raise HTTPException(status_code=404, detail="SAVE_NOT_FOUND")
+
+        db.delete(saved)
+        db.commit()
+
+        _audit(
+            db,
+            action="EVENT_UNSAVE",
+            request=request,
+            user_id=current_user.id,
+            details=f"event_id={event_id}",
+        )
+
+        return ok({"saved": False, "event_id": event_id})
+
+    finally:
+        db.close()
+
+
+
+
+@app.get("/users/me/saved-events")
+def my_saved_events(
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        q = (
+            db.query(EventSave, Event)
+            .join(Event, Event.id == EventSave.event_id)
+            .filter(EventSave.user_id == current_user.id)
+            .order_by(EventSave.created_at.desc())
+        )
+
+        total = q.count()
+        rows = q.offset(offset).limit(limit).all()
+
+        items = []
+        for saved, event in rows:
+            items.append({
+                "saved": {
+                    "event_id": saved.event_id,
+                    "created_at": saved.created_at,
+                },
+                "event": {
+                    "id": event.id,
+                    "title": event.title,
+                    "city": event.city,
+                    "start_at": event.start_at,
+                    "end_at": event.end_at,
+                    "status": event.status,
+                    "capacity": event.capacity,
+                    "event_cover_url": event.event_cover_url,
+                },
+            })
+
+        return ok({
+            "items": items,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "total": total,
+            },
+        })
+    finally:
+        db.close()
+
+
 @app.get("/users/me/events")
 def my_event_signups(
     limit: int = Query(10, ge=1, le=100),

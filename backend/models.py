@@ -455,6 +455,38 @@ class EventSignup(Base):
     )
 
 
+# =====================
+# EVENT SAVES (OBSERWOWANE EVENTY)
+# =====================
+
+class EventSave(Base):
+    __tablename__ = "event_saves"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        Index("ix_event_saves_event_user", "event_id", "user_id"),
+        UniqueConstraint("event_id", "user_id", name="uq_event_saves_event_user"),
+    )
+
 
 # =====================
 # GROUPS
