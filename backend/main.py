@@ -1578,7 +1578,7 @@ def list_events(
 ):
     db = SessionLocal()
     try:
-        now_utc = datetime.utcnow()
+        now_utc = datetime.now(timezone.utc)
         q = (
             db.query(Event)
             .filter(Event.status == "published")
@@ -2232,7 +2232,7 @@ def partner_dashboard_stats(
 ):
     db = SessionLocal()
     try:
-        now_utc = datetime.utcnow()
+        now_utc = datetime.now(timezone.utc)
 
         events = (
             db.query(Event)
