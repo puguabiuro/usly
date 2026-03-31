@@ -2258,10 +2258,12 @@ def partner_dashboard_stats(
                 .count()
             )
 
+        total_capacity = 0
         free_spots = 0
         for e in active_events:
             if e.capacity is None:
                 continue
+            total_capacity += e.capacity
             signups_count = (
                 db.query(EventSignup)
                 .filter(EventSignup.event_id == e.id)
@@ -2274,6 +2276,7 @@ def partner_dashboard_stats(
                 "total_events": total_events,
                 "draft_events": draft_events,
                 "total_signups": total_signups,
+                "total_capacity": total_capacity,
                 "free_spots": free_spots,
                 "plan": current_user.plan if hasattr(current_user, "plan") else None,
             }
