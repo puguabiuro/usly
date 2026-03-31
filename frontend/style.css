@@ -2781,20 +2781,13 @@ section#S11_PLANS .card[data-plan].is-current .btn{
 
 
 /* === EVENT STATUS CHIP (Biorę udział / Obserwowane) === */
-.listItem {
-  position: relative;
-}
-
-.listBody .chips {
-  position: absolute;
-  right: 16px;
-  top: 58px;
-}
-
-
-/* nearby events: status chip a bit higher to avoid overlap */
-#nearbyEventsList .listBody .chips{
-  top: 44px !important;
+.listBody .chips{
+  position: static;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:8px;
+  justify-content:center;
 }
 
 .eventStatusBadge{

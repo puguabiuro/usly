@@ -2151,6 +2151,76 @@ def partner_event_participants(
         )
     finally:
         db.close()
+
+
+# =========================
+# EVENTS  PARTNER: OBSERVERS
+# GET /partners/events/{id}/observers?limit=10&offset=0
+# =========================
+@app.get("/partners/events/{event_id}/observers")
+def partner_event_observers(
+    event_id: int,
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(require_role("partner")),
+):
+    db = SessionLocal()
+    try:
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        if event.partner_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        q = (
+            db.query(EventSave, User)
+            .join(User, User.id == EventSave.user_id)
+            .filter(EventSave.event_id == event_id)
+        )
+
+        total = q.count()
+
+        rows = (
+            q.order_by(EventSave.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        items = []
+        for saved, user in rows:
+            user_profile = (
+                db.query(UserProfile)
+                .filter(UserProfile.user_id == user.id)
+                .first()
+            )
+            items.append(
+                {
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "nick": user_profile.nick if user_profile else None,
+                    },
+                    "saved": {
+                        "created_at": saved.created_at,
+                    },
+                }
+            )
+
+        return ok(
+            {
+                "event_id": event_id,
+                "items": items,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "total": total,
+                },
+            }
+        )
+    finally:
+        db.close()
 # =========================
 # EVENTS  PARTNER: STATS
 # GET /partners/events/{id}/stats

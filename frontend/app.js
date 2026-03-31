@@ -3430,26 +3430,44 @@ async function renderNotifications() {
 
   try {
     if (App.role === "partner") {
-      const evRes = await apiFetch("/partners/events");
+      const evRes = await apiFetch("/partners/events?limit=100");
       const events = Array.isArray(evRes?.data?.items) ? evRes.data.items : [];
 
-      const signupBatches = await Promise.all(events.map(async (ev) => {
+      const notifBatches = await Promise.all(events.map(async (ev) => {
+        const out = [];
+
         try {
           const res = await apiFetch(`/partners/events/${ev.id}/participants?limit=20`);
           const rows = Array.isArray(res?.data?.items) ? res.data.items : [];
-          return rows.map((row) => ({
+          out.push(...rows.map((row) => ({
+            type: "signup",
             eventId: ev.id,
             eventTitle: ev.title || "Wydarzenie",
             userNick: row?.user?.nick || row?.user?.email || `Użytkownik #${row?.user?.id || "?"}`,
             createdAt: row?.signup?.created_at || null,
-          }));
+          })));
         } catch (err) {
           console.error(`partner notifications participants failed for event ${ev.id}`, err);
-          return [];
         }
+
+        try {
+          const res = await apiFetch(`/partners/events/${ev.id}/observers?limit=20`);
+          const rows = Array.isArray(res?.data?.items) ? res.data.items : [];
+          out.push(...rows.map((row) => ({
+            type: "observer",
+            eventId: ev.id,
+            eventTitle: ev.title || "Wydarzenie",
+            userNick: row?.user?.nick || row?.user?.email || `Użytkownik #${row?.user?.id || "?"}`,
+            createdAt: row?.saved?.created_at || null,
+          })));
+        } catch (err) {
+          console.error(`partner notifications observers failed for event ${ev.id}`, err);
+        }
+
+        return out;
       }));
 
-      items = signupBatches
+      items = notifBatches
         .flat()
         .sort((a, b) => {
           const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -3458,8 +3476,10 @@ async function renderNotifications() {
         })
         .slice(0, 20)
         .map((item) => ({
-          title: "Nowy zapis na wydarzenie",
-          body: `${item.userNick} zapisał(a) się na: ${item.eventTitle}`,
+          title: item.type === "observer" ? "Nowe obserwowanie wydarzenia" : "Nowy zapis na wydarzenie",
+          body: item.type === "observer"
+            ? `${item.userNick} obserwuje: ${item.eventTitle}`
+            : `${item.userNick} zapisał(a) się na: ${item.eventTitle}`,
           targetView: "S9_PARTNER_EVENTS",
           createdAt: item.createdAt || null,
         }));
@@ -3612,23 +3632,39 @@ async function refreshPartnerNotifBadgeCount() {
     const seenAtRaw = localStorage.getItem("usly_partner_notifications_seen_at");
     const seenAt = seenAtRaw ? new Date(seenAtRaw).getTime() : 0;
 
-    const evRes = await apiFetch("/partners/events");
+    const evRes = await apiFetch("/partners/events?limit=100");
     const events = Array.isArray(evRes?.data?.items) ? evRes.data.items : [];
 
-    const signupBatches = await Promise.all(events.map(async (ev) => {
+    const notifBatches = await Promise.all(events.map(async (ev) => {
+      const out = [];
+
       try {
         const res = await apiFetch(`/partners/events/${ev.id}/participants?limit=20`);
-        return Array.isArray(res?.data?.items) ? res.data.items : [];
+        const rows = Array.isArray(res?.data?.items) ? res.data.items : [];
+        out.push(...rows.map((row) => ({
+          createdAt: row?.signup?.created_at || null,
+        })));
       } catch (err) {
         console.error(`partner notif badge participants failed for event ${ev.id}`, err);
-        return [];
       }
+
+      try {
+        const res = await apiFetch(`/partners/events/${ev.id}/observers?limit=20`);
+        const rows = Array.isArray(res?.data?.items) ? res.data.items : [];
+        out.push(...rows.map((row) => ({
+          createdAt: row?.saved?.created_at || null,
+        })));
+      } catch (err) {
+        console.error(`partner notif badge observers failed for event ${ev.id}`, err);
+      }
+
+      return out;
     }));
 
-    const totalUnread = signupBatches
+    const totalUnread = notifBatches
       .flat()
       .filter((row) => {
-        const createdAt = row?.signup?.created_at ? new Date(row.signup.created_at).getTime() : 0;
+        const createdAt = row?.createdAt ? new Date(row.createdAt).getTime() : 0;
         return createdAt > seenAt;
       })
       .length;
@@ -4311,6 +4347,8 @@ async function renderPartnerMsgList() {
           unread,
         };
       });
+
+    const finalChats = chats;
 
     if (!(finalChats || []).length) {
       list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
@@ -5406,9 +5444,19 @@ function initSearchBindings() {
 
     setInterval(async () => {
       if (!App.isLoggedIn) return;
-      if (App.role === "partner") return;
 
       try {
+        if (App.role === "partner") {
+          await refreshPartnerNotifBadgeCount();
+          await refreshPartnerMsgBadgeCount();
+
+          if (App.currentView === "S12_NOTIFICATIONS") {
+            await renderNotifications();
+          }
+
+          return;
+        }
+
         await refreshNotifBadgeCount();
 
         if (App.currentView === "S10E_PROFILE_INVITES") {
