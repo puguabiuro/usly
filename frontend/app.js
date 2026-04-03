@@ -714,7 +714,7 @@ async function registerPrimary() {
 
     const me = await apiFetch("/auth/me");
     App.currentUserId = me?.id ?? me?.data?.id ?? null;
-    App.role = me?.role === "partner" ? "partner" : "user";
+    App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
     App.isLoggedIn = true;
 
     if (App.role === "user") {
@@ -2037,7 +2037,7 @@ async function renderChatThread() {
   const box = $("chatBubbles");
   if (!box || !App.selectedChatUserId) return;
 
-  const renderMessageRow = ({ from, text, senderUserId }) => {
+  const renderMessageRow = ({ from, text, senderUserId, createdAt, isRead }) => {
     const row = document.createElement("div");
     row.style.display = "flex";
     row.style.alignItems = "flex-end";
@@ -2103,6 +2103,18 @@ async function renderChatThread() {
     bubble.style.boxShadow = "0 4px 14px rgba(16,24,40,0.06)";
 
     const rawText = String(text || "");
+    const ts = parseUslyTimestamp(createdAt);
+    const timeLabel = ts
+      ? new Date(ts).toLocaleString("pl-PL", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
+    const readLabel = from === "me" ? (isRead ? "✓✓" : "✓") : "";
+    const metaLabel = [timeLabel, readLabel].filter(Boolean).join("   ");
+
     if (rawText.startsWith("📣 ")) {
       const lines = rawText.split("\n").map(x => x.trim()).filter(Boolean);
       const titleLine = lines[0] || "📣 Wydarzenie";
@@ -2114,10 +2126,16 @@ async function renderChatThread() {
           <div style="font-weight:1000;line-height:1.15;">${escapeHtml(titleLine)}</div>
           <div style="font-size:12px;font-weight:900;letter-spacing:.01em;opacity:.72;text-transform:uppercase;">Wiadomość od organizatora</div>
           <div style="line-height:1.45;">${escapeHtml(bodyText)}</div>
+          ${metaLabel ? `<div style="font-size:11px;opacity:.65;text-align:right;">${metaLabel.includes("✓✓") ? escapeHtml(metaLabel).replace("✓✓", '<span style="color:#6EE7FF;font-weight:700;">✓✓</span>') : metaLabel.includes("✓") ? escapeHtml(metaLabel).replace("✓", '<span style="opacity:0.4;">✓</span>') : escapeHtml(metaLabel)}</div>` : ``}
         </div>
       `;
     } else {
-      bubble.textContent = rawText;
+      bubble.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="line-height:1.45;">${escapeHtml(rawText)}</div>
+          ${metaLabel ? `<div style="font-size:11px;opacity:.65;text-align:right;">${metaLabel.includes("✓✓") ? escapeHtml(metaLabel).replace("✓✓", '<span style="color:#6EE7FF;font-weight:700;">✓✓</span>') : metaLabel.includes("✓") ? escapeHtml(metaLabel).replace("✓", '<span style="opacity:0.4;">✓</span>') : escapeHtml(metaLabel)}</div>` : ``}
+        </div>
+      `;
     }
 
     if (from === "me") {
@@ -2142,6 +2160,8 @@ async function renderChatThread() {
         from,
         text: m.content || "",
         senderUserId: m.sender_user_id,
+        createdAt: m.created_at || null,
+        isRead: !!m.is_read,
       });
     });
 
@@ -2152,6 +2172,8 @@ async function renderChatThread() {
         from: String(m.sender_user_id) === String(App.currentUserId) ? "me" : "them",
         text: m.content || "",
         senderUserId: m.sender_user_id,
+        createdAt: m.created_at || null,
+        isRead: !!m.is_read,
       }));
     }
   } catch (err) {
@@ -2166,6 +2188,8 @@ async function renderChatThread() {
         from: m.from === "me" ? "me" : "them",
         text: m.text || "",
         senderUserId: m.senderUserId || App.selectedChatUserId,
+        createdAt: m.createdAt || null,
+        isRead: !!m.isRead,
       });
     });
   }
@@ -2425,7 +2449,7 @@ function openEventOrganizerProfile() {
         nick: organizerName,
         role: "partner",
         company: organizerName,
-        city: ev.city || "",
+        city: ev.organizer?.city || ev.city || "",
         category: ev.organizer?.category || ev.category || "",
         bio: ev.organizer?.bio || "",
         avatarUrl: ev.organizer?.logoUrl || "",
@@ -2850,7 +2874,7 @@ function initPartnerPricingFields() {
 function syncPartnerEventSubmitBtn() {
   const btn = getPartnerEventSubmitBtn();
   if (!btn) return;
-  btn.textContent = App.selectedPartnerEventId ? "Zapisz zmiany" : "Utwórz wydarzenie";
+  btn.textContent = App.selectedPartnerEventId ? "Opublikuj" : "Utwórz wydarzenie";
 }
 
 function resetPartnerEventFormMode() {
@@ -3065,7 +3089,7 @@ function openPartnerEventEditor(eventId) {
   if ($("peCity")) $("peCity").value = ev.city || "";
   if ($("peWhen")) {
     if (ev.start_at) {
-      $("peWhen").value = toLocalDateTimeInputValue(ev.start_at);
+      $("peWhen").value = String(ev.start_at).trim().replace(" ", "T").slice(0, 16);
     } else {
       $("peWhen").value = "";
     }
@@ -3367,8 +3391,25 @@ async function publishPartnerEvent() {
         return;
       }
 
+      const publishBlockMessage = getPartnerPublishLimitBlockMessage();
+      if (publishBlockMessage) {
+        toast(publishBlockMessage);
+        await loadPartnerEvents();
+        return;
+      }
+
+      const publishData = await apiFetch(`/partners/events/${App.selectedPartnerEventId}/publish`, {
+        method: "POST",
+      });
+
+      if (!publishData?.success || !publishData?.data) {
+        toast(publishData?.error?.message || "Zapisano szkic, ale nie udało się go opublikować");
+        await loadPartnerEvents();
+        return;
+      }
+
       await loadPartnerEvents();
-      toast("Zapisano zmiany wydarzenia");
+      toast("Opublikowano wydarzenie");
     } else {
       const data = await apiFetch("/partners/events", {
         method: "POST",
@@ -5528,7 +5569,7 @@ async function init() {
     try {
       const me = await apiFetch("/auth/me");
       App.currentUserId = me?.id ?? me?.data?.id ?? null;
-      App.role = me?.role === "partner" ? "partner" : "user";
+      App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
       selectRole(App.role);
       App.isLoggedIn = true;
       $("appRoot")?.classList.add("isLoggedIn");

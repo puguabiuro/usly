@@ -1662,6 +1662,7 @@ def list_events(
                     "partner_category": getattr(partner_profile, "kategoria", "") or "",
                     "partner_bio": getattr(partner_profile, "bio", "") or "",
                     "partner_logo_url": getattr(partner_profile, "logo_url", "") or "",
+                    "partner_city": getattr(partner_profile, "miasto", "") or "",
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
@@ -2244,7 +2245,9 @@ def partner_dashboard_stats(
 
         active_events = [
             e for e in events
-            if (e.status or "").lower() == "published" and e.end_at is not None and e.end_at >= now_utc
+            if (e.status or "").lower() == "published"
+            and e.end_at is not None
+            and _ensure_utc(e.end_at) >= now_utc
         ]
 
         total_events = len(active_events)
@@ -2368,6 +2371,7 @@ def send_private_message(
                 group_id=msg.group_id,
                 content=msg.content,
                 created_at=msg.created_at,
+                is_read=msg.is_read,
             ).model_dump()
         )
     finally:
@@ -2422,6 +2426,7 @@ def list_private_messages(
                 group_id=m.group_id,
                 content=m.content,
                 created_at=m.created_at,
+                is_read=m.is_read,
             ).model_dump()
             for m in rows
         ]

@@ -347,4 +347,5 @@ class MessageOut(BaseModel):
     group_id: Optional[int] = None
     content: str
     created_at: datetime
+    is_read: bool = False
 
