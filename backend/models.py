@@ -6,7 +6,7 @@ from enum import StrEnum
 from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
-from db.database import Base
+from backend.db.database import Base
 
 
 # =====================
@@ -692,3 +692,173 @@ class Friendship(Base):
         Index("ix_friendships_requester_status", "requester_user_id", "status"),
     )
 
+
+class GroupInvitation(Base):
+    __tablename__ = "group_invitations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    inviter_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    invitee_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="pending",
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    responded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    __table_args__ = (
+        CheckConstraint("inviter_user_id <> invitee_user_id", name="ck_group_invitations_no_self"),
+        CheckConstraint("status IN ('pending','accepted','rejected')", name="ck_group_invitations_status"),
+        UniqueConstraint("group_id", "invitee_user_id", name="uq_group_invitations_group_invitee"),
+        Index("ix_group_invitations_invitee_status", "invitee_user_id", "status"),
+        Index("ix_group_invitations_inviter_status", "inviter_user_id", "status"),
+    )
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    token: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        Index("ix_password_reset_tokens_user_used", "user_id", "used_at"),
+    )
+
+
+class UserBlock(Base):
+    __tablename__ = "user_blocks"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    blocker_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    blocked_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        CheckConstraint("blocker_user_id <> blocked_user_id", name="ck_user_blocks_no_self"),
+        UniqueConstraint("blocker_user_id", "blocked_user_id", name="uq_user_blocks_blocker_blocked"),
+        Index("ix_user_blocks_blocker_created", "blocker_user_id", "created_at"),
+        Index("ix_user_blocks_blocked_created", "blocked_user_id", "created_at"),
+    )
+
+
+# =====================
+# USER NOTIFICATIONS (MVP)
+# =====================
+
+class UserNotification(Base):
+    __tablename__ = "user_notifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    partner_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    type: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )

@@ -23,6 +23,9 @@ const App = {
   isLoggedIn: false,
   history: ["S0_WELCOME"],
   currentView: "S0_WELCOME",
+  resetToken: "",
+  resetEmail: "",
+  partnerEventFormMode: "create", // create | draft_edit | published_edit | archived_edit
 
   // Sub-states / filters
   eventsTab: "for_you", // 'for_you' | 'followed'
@@ -111,13 +114,7 @@ const App = {
   ],
 
   // Group model: interestTag used for filtering by profile interests
-  groups: [
-    { id: "g1", title: "Kawosze Warszawa", interestTag: "kawa", members: 128, desc: "Nowe kawiarnie, spotkania, degustacje." },
-    { id: "g2", title: "Kino i seriale", interestTag: "kino", members: 214, desc: "Polecajki, seanse, dyskusje." },
-    { id: "g3", title: "Spacery i miasta", interestTag: "spacer", members: 92, desc: "Trasy, parki, małe odkrycia." },
-    { id: "g4", title: "AI & Tech", interestTag: "AI", members: 301, desc: "Nowinki, projekty, dyskusje." },
-    { id: "g5", title: "Fotografia", interestTag: "fotografia", members: 175, desc: "Kadry, sprzęt, sesje." },
-  ],
+  groups: [],
 
   myGroups: [],
   partnerEvents: [],
@@ -579,11 +576,33 @@ function logout() {
 function openForgot() {
   openModal("Odzyskiwanie hasła", `
     <div class="tStrong">Reset hasła</div>
-    <div class="sectionSub">W wersji nie wysyłamy maili. W backendzie: token resetu + email.</div>
+    <div class="sectionSub">Podaj adres e-mail przypisany do konta. Wyślemy link do ustawienia nowego hasła.</div>
     <label class="mt12">Email</label>
-    <input type="email" placeholder="np. ola@email.com" />
-    <button class="btn mt16" type="button" onclick="toast('Wysłano link ')">Wyślij link</button>
+    <input id="forgotEmail" type="email" placeholder="np. ola@email.com" />
+    <button class="btn mt16" type="button" onclick="submitForgotPassword()">Wyślij link</button>
   `);
+}
+
+async function submitForgotPassword() {
+  const email = ($("forgotEmail")?.value || "").trim().toLowerCase();
+
+  if (!email) {
+    toast("Podaj adres e-mail");
+    return;
+  }
+
+  try {
+    await apiFetch("/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    closeModal();
+    toast("Jeśli konto istnieje, wyślemy link do ustawienia nowego hasła.");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wysłać linku. Spróbuj ponownie.");
+  }
 }
 
 /* ------------------------- Registration -------------------------- */
@@ -767,7 +786,7 @@ async function registerPrimary() {
 function refreshUserPlanCardsUi() {
   const current = String(App.user?.plan || "free").toLowerCase();
 
-  document.querySelectorAll('#S11_PLANS .card[data-plan]').forEach(card => {
+  document.querySelectorAll('#S11_PLANS #plansUserOnly .card[data-plan]').forEach(card => {
     const plan = String(card.dataset.plan || "").toLowerCase();
     const btn = card.querySelector('button.btn.secondary');
 
@@ -1184,7 +1203,7 @@ function canJoinMoreGroups() {
     vip: null,
   };
 
-  const limit = limits[plan] ?? 1;
+  const limit = Object.prototype.hasOwnProperty.call(limits, plan) ? limits[plan] : 1;
 
   if (limit === null) return true;
 
@@ -1507,6 +1526,35 @@ function resolvePersonById(userId) {
     };
   }
 
+  const groupPeople = window._lastGroupPeople || { members: [], invited: [] };
+  const fromGroupMembers = (groupPeople.members || []).find(p => String(p.id) === pid);
+  if (fromGroupMembers) {
+    return {
+      id: pid,
+      nick: fromGroupMembers.nick || `Użytkownik #${pid}`,
+      city: fromGroupMembers.city || "",
+      age: 0,
+      emoji: "🙂",
+      interests: [],
+      bio: "",
+      avatarUrl: fromGroupMembers.avatar_url || "",
+    };
+  }
+
+  const fromGroupInvited = (groupPeople.invited || []).find(p => String(p.id) === pid);
+  if (fromGroupInvited) {
+    return {
+      id: pid,
+      nick: fromGroupInvited.nick || `Użytkownik #${pid}`,
+      city: fromGroupInvited.city || "",
+      age: 0,
+      emoji: "🙂",
+      interests: [],
+      bio: "",
+      avatarUrl: fromGroupInvited.avatar_url || "",
+    };
+  }
+
   return null;
 }
 
@@ -1580,6 +1628,7 @@ function openPerson(personId) {
   safeSetText("personTitle", p.nick);
   safeSetText("personNick", p.nick);
   safeSetText("personMeta", [p.city, Number.isFinite(p.age) && p.age > 0 ? `${p.age} lat` : ""].filter(Boolean).join(" • ") || "Profil użytkownika");
+  safeSetText("personMatchScore", `${sharedScore(p)}% dopasowania`);
   safeSetText("personBio", p.bio || "Ta osoba nie dodała jeszcze bio.");
 
   if (avatar) {
@@ -1591,7 +1640,14 @@ function openPerson(personId) {
   if (chips) {
     chips.dataset.label = "Zainteresowania";
     chips.innerHTML = "";
-    (p.interests || []).forEach(tag => chips.appendChild(makeChip(`#${tag}`, null)));
+    const shared = new Set(commonInterests(p).map(x => String(x).toLowerCase()));
+    (p.interests || []).forEach(tag => {
+      const chip = makeChip(`#${tag}`, null);
+      if (shared.has(String(tag).toLowerCase())) {
+        chip.classList.add("isShared");
+      }
+      chips.appendChild(chip);
+    });
   }
 
   go("S5_PERSON_PROFILE");
@@ -1608,6 +1664,7 @@ function openPerson(personId) {
       safeSetText("personTitle", full.nick);
       safeSetText("personNick", full.nick);
       safeSetText("personMeta", [full.city, Number.isFinite(full.age) && full.age > 0 ? `${full.age} lat` : ""].filter(Boolean).join(" • ") || "Profil użytkownika");
+      safeSetText("personMatchScore", `${sharedScore(full)}% dopasowania`);
       safeSetText("personBio", full.bio || "Ta osoba nie dodała jeszcze bio.");
 
       const avatarEl = $("personAvatar");
@@ -1621,7 +1678,14 @@ function openPerson(personId) {
       if (fullChips) {
         fullChips.dataset.label = "Zainteresowania";
         fullChips.innerHTML = "";
-        (full.interests || []).forEach(tag => fullChips.appendChild(makeChip(`#${tag}`, null)));
+        const shared = new Set(commonInterests(full).map(x => String(x).toLowerCase()));
+        (full.interests || []).forEach(tag => {
+          const chip = makeChip(`#${tag}`, null);
+          if (shared.has(String(tag).toLowerCase())) {
+            chip.classList.add("isShared");
+          }
+          fullChips.appendChild(chip);
+        });
       }
 
       const idx = (App.people || []).findIndex(x => String(x.id) === String(full.id));
@@ -1634,10 +1698,50 @@ function openPerson(personId) {
     .catch(() => {});
 }
 
+
+async function blockUser(userId) {
+  const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
+  if (!token || !userId) {
+    toast("Brak danych użytkownika");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/blocks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ blocked_user_id: Number(userId) }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      toast("Nie udało się zablokować użytkownika");
+      return;
+    }
+
+    toast("Użytkownik został zablokowany");
+    closeModal();
+
+    // szybki refresh danych
+    await Promise.all([
+      loadNearbyPeople(),
+      renderChatList?.(),
+    ]);
+
+  } catch (e) {
+    toast("Błąd połączenia");
+  }
+}
+
+
 function openPersonMenu() {
   openModal("Opcje", `
     <button class="btn secondary" type="button" onclick="toast('Zgłaszanie treści będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zgłoś</button>
-    <button class="btn danger mt12" type="button" onclick="toast('Blokowanie użytkowników będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zablokuj</button>
+    <button class="btn danger mt12" type="button" onclick="blockUser(App.selectedPersonId)">Zablokuj</button>
   `);
 }
 
@@ -1847,8 +1951,11 @@ async function refreshProfileRelations() {
   if (!token) return;
 
   try {
-    const [requestsRes, friendsRes] = await Promise.all([
+    const [requestsRes, groupInvRes, friendsRes] = await Promise.all([
       fetch(`${API_BASE_URL}/friends/requests`, {
+        headers: { "Authorization": `Bearer ${token}` },
+      }),
+      fetch(`${API_BASE_URL}/group-invitations`, {
         headers: { "Authorization": `Bearer ${token}` },
       }),
       fetch(`${API_BASE_URL}/friends`, {
@@ -1857,10 +1964,15 @@ async function refreshProfileRelations() {
     ]);
 
     const requestsData = await requestsRes.json().catch(() => ({}));
+    const groupInvData = await groupInvRes.json().catch(() => ({}));
     const friendsData = await friendsRes.json().catch(() => ({}));
 
     const requestsPayload = requestsData && typeof requestsData === "object"
       ? (requestsData.data || requestsData)
+      : {};
+
+    const groupInvPayload = groupInvData && typeof groupInvData === "object"
+      ? (groupInvData.data || groupInvData)
       : {};
 
     const friendsPayload = friendsData && typeof friendsData === "object"
@@ -1869,11 +1981,33 @@ async function refreshProfileRelations() {
 
     const incoming = Array.isArray(requestsPayload.incoming) ? requestsPayload.incoming : [];
     const outgoing = Array.isArray(requestsPayload.outgoing) ? requestsPayload.outgoing : [];
+    const incomingGroupInvites = Array.isArray(groupInvPayload.incoming) ? groupInvPayload.incoming : [];
+    const outgoingGroupInvites = Array.isArray(groupInvPayload.outgoing) ? groupInvPayload.outgoing : [];
     const friends = Array.isArray(friendsPayload) ? friendsPayload : (Array.isArray(friendsPayload.items) ? friendsPayload.items : []);
+    window._lastFriendsList = friends.map(friend => ({
+      ...friend,
+      avatarUrl: friend.avatar_url || "",
+      interests: Array.isArray(friend.interests) ? friend.interests : [],
+      emoji: friend.emoji || "🙂",
+    }));
+    window._lastOutgoingGroupInvites = Array.isArray(outgoingGroupInvites) ? outgoingGroupInvites : [];
 
-    renderProfileFriendRequests(incoming, outgoing);
-    renderProfileFriends(friends);
-    syncPersonFriendButton(incoming, outgoing, friends);
+    const sortedFriends = [...friends].sort((a, b) => {
+      const an = String(a?.nick || a?.name || a?.friend_nick || "").toLocaleLowerCase("pl-PL");
+      const bn = String(b?.nick || b?.name || b?.friend_nick || "").toLocaleLowerCase("pl-PL");
+      return an.localeCompare(bn, "pl-PL");
+    });
+
+    window._lastFriendsList = sortedFriends.map(friend => ({
+      ...friend,
+      avatarUrl: friend.avatar_url || "",
+      interests: Array.isArray(friend.interests) ? friend.interests : [],
+      emoji: friend.emoji || "🙂",
+    }));
+
+    renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites, outgoingGroupInvites);
+    renderProfileFriends(sortedFriends);
+    syncPersonFriendButton(incoming, outgoing, sortedFriends);
   } catch (_) {
     renderProfileFriendRequests([], []);
     renderProfileFriends([]);
@@ -1881,14 +2015,16 @@ async function refreshProfileRelations() {
   }
 }
 
-function renderProfileFriendRequests(incoming, outgoing) {
+function renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites = [], outgoingGroupInvites = []) {
   const el = $("profileFriendRequestsList");
   if (!el) return;
 
   const inItems = Array.isArray(incoming) ? incoming : [];
   const outItems = Array.isArray(outgoing) ? outgoing : [];
+  const inGroupItems = Array.isArray(incomingGroupInvites) ? incomingGroupInvites : [];
+  const outGroupItems = Array.isArray(outgoingGroupInvites) ? outgoingGroupInvites : [];
 
-  if (!inItems.length && !outItems.length) {
+  if (!inItems.length && !outItems.length && !inGroupItems.length && !outGroupItems.length) {
     el.innerHTML = '<div class="tMuted">Brak oczekujących zaproszeń.</div>';
     return;
   }
@@ -1933,7 +2069,48 @@ function renderProfileFriendRequests(incoming, outgoing) {
     `;
   }).join("");
 
-  el.innerHTML = incomingHtml + outgoingHtml;
+  const groupInvHtml = incomingGroupInvites.map(inv => {
+    const user = inv.user || {};
+    const group = inv.group || {};
+    const nick = user.nick || `Użytkownik #${user.id || "—"}`;
+    const groupTitle = group.title || "Grupa";
+
+    return `
+      <div class="card" style="margin:0;">
+        <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
+          <div style="text-align:left;flex:1;">
+            <div class="sectionTitle" style="font-size:16px;">${groupTitle}</div>
+            <div class="sectionSub">${nick} zaprasza Cię do grupy</div>
+          </div>
+          <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="btn small" type="button" onclick="respondToGroupInvitation(${Number(inv.id)}, 'accepted')">Akceptuj</button>
+            <button class="btn secondary small" type="button" onclick="respondToGroupInvitation(${Number(inv.id)}, 'rejected')">Odrzuć</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  el.innerHTML = incomingHtml + groupInvHtml + outgoingHtml;
+}
+
+
+
+function filterFriendsList(query) {
+  const q = String(query || "").toLowerCase();
+
+  const all = Array.isArray(window._lastFriendsList)
+    ? window._lastFriendsList
+    : [];
+
+  const filtered = !q
+    ? all
+    : all.filter(f => {
+        const nick = String(f.nick || f.name || "").toLowerCase();
+        return nick.includes(q);
+      });
+
+  renderProfileFriends(filtered);
 }
 
 function renderProfileFriends(items) {
@@ -1963,6 +2140,42 @@ function renderProfileFriends(items) {
     `;
   }).join("");
 }
+
+
+async function respondToGroupInvitation(invitationId, action) {
+  const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
+  if (!token || !invitationId) {
+    toast("Brak danych zaproszenia do grupy");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/group-invitations/${invitationId}/respond`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      toast(data?.error?.message || data?.detail || "Nie udało się zaktualizować zaproszenia do grupy");
+      return;
+    }
+
+    toast(action === "accepted" ? "Zaproszenie do grupy zaakceptowane" : "Zaproszenie do grupy odrzucone");
+    await loadMyGroups();
+    await refreshProfileRelations();
+    await refreshGroupBadgeCount();
+    if (App.currentView === "S12_NOTIFICATIONS") await renderNotifications();
+  } catch (_) {
+    toast("Błąd połączenia przy aktualizacji zaproszenia do grupy");
+  }
+}
+
 
 async function respondToFriendRequest(requestId, action) {
   const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
@@ -2023,13 +2236,13 @@ async function openChat(chatId) {
   if (!chat) return;
   App.selectedChatId = chatId;
   App.selectedChatUserId = chat.with.id;
+  App.chatUnreadAtOpen = Number(chat.rawUnread ?? chat.unread ?? 0);
 
   safeSetText("chatTitle", chat.with.nick);
 
   // Mark read
   chat.unread = 0;
 
-  await renderChatThread();
   go("S6B_CHAT_THREAD");
 }
 
@@ -2152,10 +2365,35 @@ async function renderChatThread() {
   try {
     const data = await apiFetch(`/messages/private/${App.selectedChatUserId}`);
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    const unreadAtOpen = Math.max(0, Number(App.chatUnreadAtOpen || 0));
+    const incomingTotal = items.filter(m => String(m.sender_user_id) !== String(App.currentUserId)).length;
+    const dividerIncomingIndex = unreadAtOpen > 0 ? Math.max(0, incomingTotal - unreadAtOpen) : -1;
 
     box.innerHTML = "";
+    let newDividerInserted = false;
+    let incomingIndex = 0;
+
     items.forEach(m => {
       const from = String(m.sender_user_id) === String(App.currentUserId) ? "me" : "them";
+
+      if (from === "them") {
+        if (!newDividerInserted && dividerIncomingIndex >= 0 && incomingIndex === dividerIncomingIndex) {
+          const divider = document.createElement("div");
+          divider.style.display = "flex";
+          divider.style.alignItems = "center";
+          divider.style.gap = "10px";
+          divider.style.margin = "18px 0 10px";
+          divider.innerHTML = `
+            <div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div>
+            <div class="sectionSub" style="white-space:nowrap;">Nowe wiadomości</div>
+            <div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div>
+          `;
+          box.appendChild(divider);
+          newDividerInserted = true;
+        }
+        incomingIndex += 1;
+      }
+
       renderMessageRow({
         from,
         text: m.content || "",
@@ -2176,6 +2414,8 @@ async function renderChatThread() {
         isRead: !!m.is_read,
       }));
     }
+
+    markChatAsSeen(App.selectedChatId);
   } catch (err) {
     console.error("renderChatThread failed", err);
 
@@ -2226,9 +2466,16 @@ async function sendChat() {
 }
 
 function openChatMenu() {
+  const chatId = App.selectedChatId;
+  const isMuted = isChatMuted(chatId);
+
   openModal("Menu czatu", `
-    <button class="btn secondary" type="button" onclick="toast('Wyciszanie rozmów będzie dostępne w kolejnej aktualizacji.'); closeModal();">Wycisz</button>
-    <button class="btn danger mt12" type="button" onclick="toast('Blokowanie użytkowników będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zablokuj</button>
+    <button class="btn secondary" type="button"
+      onclick="setChatMuted('${chatId}', ${isMuted ? "false" : "true"}); closeModal(); renderChatList(); toast('${isMuted ? "Powiadomienia dla rozmowy zostały włączone" : "Rozmowa została wyciszona"}');">
+      ${isMuted ? "Włącz powiadomienia" : "Wycisz rozmowę"}
+    </button>
+
+    <button class="btn danger mt12" type="button" onclick="blockUser(Number(String(App.selectedChatUserId).replace('u', '')))">Zablokuj</button>
   `);
 }
 
@@ -2530,7 +2777,7 @@ function openChatWithOrganizer() {
 }
 
 /* ------------------------- Groups -------------------------- */
-function openGroup(groupId) {
+async function openGroup(groupId) {
   const allGroups = [...(App.myGroups || []), ...(App.groups || [])];
   const g = allGroups.find(x => String(x.id) === String(groupId));
   if (!g) return;
@@ -2551,42 +2798,142 @@ function openGroup(groupId) {
   }
 
   safeSetText("groupTitle", g.title);
+  safeSetText("groupTagline", g.interestTag ? `#${g.interestTag}` : "");
 
+  const joinCta = $("groupJoinCta");
   const input = $("groupInput");
-  const sendBtn = $("groupSendBtn");
-  if (input) {
-    input.disabled = !inGroup;
-    input.value = "";
-    input.placeholder = inGroup ? "Napisz w grupie." : "Dołącz do grupy, aby pisać wiadomości.";
+  const inputDock = $("groupInputDock");
+
+  if (joinCta) {
+    joinCta.innerHTML = "";
   }
-  if (sendBtn) {
-    sendBtn.disabled = !inGroup;
-    sendBtn.style.opacity = inGroup ? "1" : "0.5";
-    sendBtn.style.cursor = inGroup ? "pointer" : "not-allowed";
+
+  if (inputDock) {
+    inputDock.innerHTML = inGroup
+      ? `
+          <input id="groupInput" type="text" placeholder="Napisz w grupie." />
+          <button class="btn small" id="groupSendBtn" type="button" onclick="sendGroup()" aria-label="Wyślij wiadomość do grupy">➜</button>
+        `
+      : `
+          <button class="btn" type="button" style="width:100%;" onclick="joinGroup('${groupId}')">
+            Dołącz do grupy
+          </button>
+        `;
+  }
+
+  const currentInput = $("groupInput");
+  const currentSendBtn = $("groupSendBtn");
+
+  if (currentInput) {
+    currentInput.disabled = false;
+    currentInput.value = "";
+    currentInput.placeholder = "Napisz w grupie.";
+  }
+  if (currentSendBtn) {
+    currentSendBtn.disabled = false;
+    currentSendBtn.style.opacity = "1";
+    currentSendBtn.style.cursor = "pointer";
+  }
+
+  bindMessageInputs();
+
+  try {
+    const peopleRes = await apiFetch(`/groups/${groupId}/people`);
+    const peopleData = peopleRes?.data || peopleRes || {};
+    window._lastGroupPeople = {
+      members: Array.isArray(peopleData.members) ? peopleData.members : [],
+      invited: Array.isArray(peopleData.invited) ? peopleData.invited : [],
+    };
+  } catch (err) {
+    console.error("group people preload failed", err);
   }
 
   // messages
   const box = $("groupBubbles");
   if (box) {
-    box.innerHTML = "";
-    const msgs = inGroup
-      ? [
-          { from: "them", text: `Witaj w grupie „${g.title}”!` },
-          { from: "them", text: `Temat: #${g.interestTag}.` },
-          { from: "me", text: "Cześć wszystkim! 🙂" },
-        ]
-      : [
-          { from: "them", text: `To jest grupa „${g.title}”.` },
-          { from: "them", text: `Temat: #${g.interestTag}.` },
-          { from: "them", text: "Dołącz do grupy, aby odblokować pisanie wiadomości." },
-        ];
+    if (!inGroup) {
+      box.innerHTML = `
+        <div style="padding:16px;">
+          <div class="tStrong">${g.title}</div>
+          <div class="sectionSub" style="margin-top:6px;">
+            ${g.desc || "Grupa oparta na wspólnych zainteresowaniach."}
+          </div>
+          <div class="tMuted" style="margin-top:12px;">
+            Dołącz do grupy, aby zobaczyć rozmowę i napisać wiadomość.
+          </div>
+        `;
+      go("S8B_GROUP_THREAD");
+      return;
+    }
 
-    msgs.forEach(m => {
-      const div = document.createElement("div");
-      div.className = `bubble ${m.from === "me" ? "me" : "them"}`;
-      div.textContent = m.text;
-      box.appendChild(div);
-    });
+    box.innerHTML = '<div class="tMuted" style="padding:16px; text-align:center;">Ładowanie wiadomości...</div>';
+    const seenAt = parseUslyTimestamp(readGroupSeenMap()[String(groupId)]);
+
+    try {
+      const data = await apiFetch(`/messages/group/${groupId}`);
+      const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+
+      if (!items.length) {
+        box.innerHTML = `
+          <div class="tMuted" style="padding:16px; text-align:center;">
+            Nie ma jeszcze wiadomości w tej grupie. Napisz jako pierwsza osoba.
+          </div>
+        `;
+      } else {
+        let newDividerInserted = false;
+        box.innerHTML = items.map(m => {
+          const from = String(m.sender_user_id) === String(App.currentUserId) ? "me" : "them";
+          const person = resolvePersonById(m.sender_user_id);
+          const ts = parseUslyTimestamp(m.created_at);
+          const isNewForCurrentUser = !newDividerInserted && from !== "me" && ts > seenAt;
+          const timeLabel = ts
+            ? new Date(ts).toLocaleString("pl-PL", {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "";
+
+          const avatarHtml = person?.avatarUrl
+            ? `<img src="${String(person.avatarUrl).startsWith("http") ? person.avatarUrl : `${API_BASE_URL}${person.avatarUrl}`}" alt="${escapeHtml(person.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;" />`
+            : escapeHtml(person?.emoji || "🙂");
+
+          const avatarButton = `
+            <button
+              type="button"
+              onclick="openPerson('${String(m.sender_user_id)}')"
+              title="Otwórz profil"
+              style="width:32px;height:32px;min-width:32px;border-radius:999px;border:${from === "me" ? "0" : "1px solid rgba(16,24,40,0.08)"};padding:0;display:inline-flex;align-items:center;justify-content:center;background:#f2f4f7;overflow:hidden;box-shadow:${from === "me" ? "none" : "0 2px 8px rgba(16,24,40,0.08)"};cursor:pointer;flex-shrink:0;"
+            >${avatarHtml}</button>
+          `;
+
+          const senderLabel = from === "me" ? "Ty" : escapeHtml(person?.nick || `Użytkownik #${String(m.sender_user_id)}`);
+          const dividerHtml = isNewForCurrentUser
+            ? `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;"><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div><div class="sectionSub" style="white-space:nowrap;">Nowe wiadomości</div><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div></div>`
+            : ``;
+
+          if (isNewForCurrentUser) newDividerInserted = true;
+
+          return `
+            ${dividerHtml}
+            <div style="display:flex; align-items:flex-end; gap:10px; justify-content:${from === "me" ? "flex-end" : "flex-start"}; margin:10px 0;">
+              ${from === "me" ? "" : avatarButton}
+              <div class="bubble ${from === "me" ? "me" : "them"}" style="max-width:78%; word-break:break-word;">
+                <div style="font-size:12px; opacity:.72; margin-bottom:4px; font-weight:800;">${senderLabel}</div>
+                <div style="line-height:1.45;">${escapeHtml(m.content || "")}</div>
+                ${timeLabel ? `<div style="font-size:11px; opacity:.65; text-align:right; margin-top:6px;">${escapeHtml(timeLabel)}</div>` : ``}
+              </div>
+              ${from === "me" ? avatarButton : ""}
+            </div>
+          `;
+        }).join("");
+        markGroupAsSeen(groupId);
+      }
+    } catch (err) {
+      console.error("load group messages failed", err);
+      box.innerHTML = '<div class="tMuted" style="padding:16px; text-align:center;">Nie udało się załadować wiadomości grupy.</div>';
+    }
   }
 
   go("S8B_GROUP_THREAD");
@@ -2627,7 +2974,7 @@ function bindMessageInputs() {
   }
 }
 
-function sendGroup() {
+async function sendGroup() {
   const groupId = App.selectedGroupId;
   if (!isUserInGroup(groupId)) {
     toast("Dołącz do grupy, aby pisać wiadomości");
@@ -2638,18 +2985,27 @@ function sendGroup() {
   const text = inp?.value?.trim();
   if (!text) return;
 
-  const box = $("groupBubbles");
-  if (!box) return;
+  try {
+    const res = await apiFetch("/messages/group", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        group_id: Number(groupId),
+        content: text,
+      }),
+    });
 
-  const div = document.createElement("div");
-  div.className = "bubble me";
-  div.textContent = text;
-  box.appendChild(div);
-  inp.value = "";
+    if (!res?.success) {
+      toast(res?.error?.message || "Nie udało się wysłać wiadomości");
+      return;
+    }
 
-  setTimeout(() => {
-    box.parentElement?.scrollTo({ top: box.parentElement.scrollHeight, behavior: "smooth" });
-  }, 0);
+    if (inp) inp.value = "";
+    await openGroup(groupId);
+  } catch (err) {
+    console.error("sendGroup failed", err);
+    toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+  }
 }
 
 
@@ -2669,6 +3025,7 @@ async function joinGroup(groupId) {
       await loadMyGroups();
       toast("Dołączono do grupy");
       renderAll();
+      openGroup(groupId);
     } else {
       toast("Nie udało się dołączyć do grupy");
     }
@@ -2678,6 +3035,29 @@ async function joinGroup(groupId) {
     toast("Błąd dołączania do grupy");
   }
 }
+
+
+async function closeGroup(groupId) {
+  try {
+    const res = await apiFetch(`/groups/${groupId}/close`, {
+      method: "POST"
+    });
+
+    if (res?.success) {
+      await loadMyGroups();
+      toast("Grupa została zamknięta");
+      App.selectedGroupId = null;
+      renderAll();
+    } else {
+      toast("Nie udało się zamknąć grupy");
+    }
+
+  } catch (err) {
+    console.error("closeGroup failed", err);
+    toast(err?.userMessage || "Błąd zamykania grupy");
+  }
+}
+
 
 async function leaveGroup(groupId) {
   try {
@@ -2696,45 +3076,223 @@ async function leaveGroup(groupId) {
 
   } catch (err) {
     console.error("leaveGroup failed", err);
-    toast("Błąd opuszczania grupy");
+    toast(err?.userMessage || "Błąd opuszczania grupy");
   }
 }
 function openGroupMenu() {
   const groupId = App.selectedGroupId;
   const inGroup = isUserInGroup(groupId);
   const canInvite = canInviteFriendsToGroup();
+  const allGroups = [...(App.myGroups || []), ...(App.groups || [])];
+  const g = allGroups.find(x => String(x.id) === String(groupId));
+  const isCreator = !!g?.isCreator;
+  const isMuted = isGroupMuted(groupId);
 
   openModal("Menu grupy", `
-    <button class="btn secondary" type="button" onclick="toast('Wyciszanie rozmów będzie dostępne w kolejnej aktualizacji.'); closeModal();">Wycisz</button>
+    <button class="btn secondary" type="button" onclick="setGroupMuted('${groupId}', ${isMuted ? "false" : "true"}); closeModal(); renderGroups(); refreshGroupBadgeCount(); toast('${isMuted ? "Powiadomienia dla grupy zostały włączone" : "Grupa została wyciszona"}');">
+      ${isMuted ? "Włącz powiadomienia" : "Wycisz grupę"}
+    </button>
+
+    <button class="btn secondary mt12" type="button"
+             onclick="closeModal(); openGroupPeopleScreen();">
+             Ludzie w grupie
+           </button>
 
     ${
-      canInvite
-        ? `<button class="btn secondary mt12" type="button"
-             onclick="openInviteFriendToGroup();">
-             Dodaj znajomego
-           </button>`
-        : `<button class="btn secondary mt12" type="button"
-             onclick="toast('Dodawanie znajomych do grup jest dostępne od planu PREMIUM'); closeModal();">
-             Dodaj znajomego
-           </button>`
-    }
-
-    ${
-      inGroup
+      inGroup && isCreator
         ? `<button class="btn danger mt12" type="button"
-             onclick="leaveGroup('${groupId}'); closeModal();">
-             Opuść grupę
+             onclick="closeGroup('${groupId}'); closeModal();">
+             Zamknij grupę
            </button>`
-        : `<button class="btn mt12" type="button"
-             onclick="joinGroup('${groupId}'); closeModal();">
-             Dołącz do grupy
-           </button>`
+        : inGroup
+          ? `<button class="btn danger mt12" type="button"
+               onclick="leaveGroup('${groupId}'); closeModal();">
+               Opuść grupę
+             </button>`
+          : ``
     }
   `);
 }
 
 // Punkt 9: dodanie znajomego do grupy, nawet jeśli jej nie widzi
-function openInviteFriendToGroup() {
+
+async function inviteFriendToSelectedGroup(userId) {
+  const groupId = App.selectedGroupId;
+  if (!groupId || !userId) {
+    toast("Brak danych zaproszenia");
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`/groups/${groupId}/invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invitee_user_id: Number(userId) }),
+    });
+
+    if (res?.success) {
+      toast("Zaproszenie do grupy zostało wysłane");
+      await refreshProfileRelations();
+      if (App.currentView === "S12_NOTIFICATIONS") await renderNotifications();
+      closeModal();
+    } else {
+      toast("Nie udało się wysłać zaproszenia do grupy");
+    }
+  } catch (err) {
+    console.error("inviteFriendToSelectedGroup failed", err);
+    toast(err?.userMessage || "Nie udało się wysłać zaproszenia do grupy");
+  }
+}
+
+
+async function openGroupPeopleScreen() {
+  App.groupInviteTab = App.groupInviteTab || "invite";
+  const canInvite = canInviteFriendsToGroup();
+  if (!canInvite && App.groupInviteTab === "invite") {
+    App.groupInviteTab = "members";
+  }
+
+  if (!window._lastFriendsList || window._lastFriendsList.length === 0) {
+    try {
+      await refreshProfileRelations();
+    } catch (_) {}
+  }
+
+  const allGroups = [...(App.myGroups || []), ...(App.groups || [])];
+  const g = allGroups.find(x => String(x.id) === String(App.selectedGroupId));
+  if (!g) return;
+
+  safeSetText("groupPeopleTitle", "Ludzie w grupie");
+  safeSetText("groupPeopleTagline", g.title ? `${g.title}${g.interestTag ? ` • #${g.interestTag}` : ""}` : (g.interestTag ? `#${g.interestTag}` : ""));
+
+  let groupPeople = { members: [], invited: [] };
+  try {
+    const peopleRes = await apiFetch(`/groups/${g.id}/people`);
+    const peopleData = peopleRes?.data || peopleRes || {};
+    groupPeople = {
+      members: Array.isArray(peopleData.members) ? peopleData.members : [],
+      invited: Array.isArray(peopleData.invited) ? peopleData.invited : [],
+    };
+    window._lastGroupPeople = groupPeople;
+  } catch (err) {
+    console.error("group people load failed", err);
+  }
+
+  const allFriends = (window._lastFriendsList || []);
+  const memberIds = new Set((groupPeople.members || []).map(x => String(x.id)));
+  const invitedIds = new Set((groupPeople.invited || []).map(x => String(x.id)));
+  const myId = String(App.currentUserId || "");
+  const tag = String(g.interestTag || "").toLowerCase();
+
+  const similarFriends = allFriends
+    .filter(f => {
+      const id = String(f.id || "");
+      if (!Array.isArray(f.interests)) return false;
+      if (!f.interests.map(x => x.toLowerCase()).includes(tag)) return false;
+      if (!id || id === myId) return false;
+      if (memberIds.has(id)) return false;
+      if (invitedIds.has(id)) return false;
+      return true;
+    })
+    .slice(0, 24);
+
+  const members = Array.isArray(groupPeople.members) ? [...groupPeople.members] : [];
+  members.sort((a, b) => {
+    if (!!a.is_founder !== !!b.is_founder) return a.is_founder ? -1 : 1;
+    return String(a.nick || "").localeCompare(String(b.nick || ""), "pl", { sensitivity: "base" });
+  });
+
+  const invited = Array.isArray(groupPeople.invited) ? [...groupPeople.invited] : [];
+  invited.sort((a, b) => String(a.nick || "").localeCompare(String(b.nick || ""), "pl", { sensitivity: "base" }));
+
+  const inviteHtml = similarFriends.map(p => `
+        <div class="listItem groupPeopleRow" style="margin-bottom:10px; cursor:default;">
+          <div class="groupPeopleMain">
+            <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
+            <div class="groupPeopleText">
+              <div class="listTitle">${p.nick}</div>
+              <div class="listMeta">Wspólne: ${commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ")}</div>
+            </div>
+          </div>
+          <div class="groupPeopleAction">
+            <button class="btn small" type="button" onclick="inviteFriendToSelectedGroup('${p.id}')">Zaproś</button>
+          </div>
+        </div>
+      `).join("") || '<div class="tMuted">Brak osób do zaproszenia.</div>';
+
+  const membersHtml = members.map(p => `
+        <div class="listItem groupPeopleRow" style="margin-bottom:10px; cursor:pointer;" onclick="${String(p.id) === myId ? "" : `openPerson('${String(p.id)}')`}">
+          <div class="groupPeopleMain">
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="groupPeopleText">
+              <div class="listTitle">${p.nick}</div>
+              <div class="listMeta">${p.city || "Grupowicz w USLY"}</div>
+            </div>
+          </div>
+          <div class="groupPeopleAction">
+            ${p.is_founder
+              ? `<button class="btn secondary small" type="button" disabled>Założyciel</button>`
+              : (String(p.id) === myId
+                  ? `<button class="btn secondary small" type="button" disabled>Twój profil</button>`
+                  : `<button class="btn secondary small" type="button" onclick="event.stopPropagation(); openPerson('${String(p.id)}')">Zobacz profil</button>`
+                )
+            }
+          </div>
+        </div>
+      `).join("") || '<div class="tMuted">Brak grupowiczów.</div>';
+
+  const invitedHtml = invited.map(p => `
+        <div class="listItem groupPeopleRow" style="margin-bottom:10px; cursor:pointer;" onclick="openPerson('${String(p.id)}')">
+          <div class="groupPeopleMain">
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="groupPeopleText">
+              <div class="listTitle">${p.nick}</div>
+              <div class="listMeta">${p.city || "Zaproszenie oczekuje"}</div>
+            </div>
+          </div>
+          <div class="groupPeopleAction">
+            <button class="btn secondary small" type="button" onclick="event.stopPropagation(); openPerson('${String(p.id)}')">Zobacz profil</button>
+          </div>
+        </div>
+      `).join("") || '<div class="tMuted">Brak oczekujących zaproszeń.</div>';
+
+  const activeHtml = App.groupInviteTab === "members"
+    ? membersHtml
+    : (App.groupInviteTab === "invited" ? invitedHtml : inviteHtml);
+
+  const screen = $("groupPeopleScreen");
+  if (screen) {
+    screen.innerHTML = `
+      <div class="groupInviteModal">
+        <div class="sectionTitle">Ludzie w grupie</div>
+        <div class="sectionSub mt8">
+          Zarządzaj zaproszeniami i sprawdź, kto już jest w grupie.
+        </div>
+        ${canInvite ? "" : `<div class="tMuted mt8">Zapraszanie do grup jest dostępne od planu PREMIUM.</div>`}
+        <div class="segmented mt12">
+          <button class="segBtn ${App.groupInviteTab === "invite" ? "on" : ""}" type="button" ${canInvite ? `onclick="App.groupInviteTab='invite'; openGroupPeopleScreen()"` : "disabled aria-disabled='true'"}>Do zaproszenia</button>
+          <button class="segBtn ${App.groupInviteTab === "members" ? "on" : ""}" type="button" onclick="App.groupInviteTab='members'; openGroupPeopleScreen()">Grupowicze</button>
+          <button class="segBtn ${App.groupInviteTab === "invited" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invited'; openGroupPeopleScreen()">Zaproszeni</button>
+        </div>
+        <div class="mt16">
+          ${activeHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  go("S8C_GROUP_PEOPLE");
+}
+
+async function openInviteFriendToGroup() {
+  App.groupInviteTab = App.groupInviteTab || "invite";
+
+  if (!window._lastFriendsList || window._lastFriendsList.length === 0) {
+    try {
+      await refreshProfileRelations();
+    } catch (_) {}
+  }
+
   const allGroups = [...(App.myGroups || []), ...(App.groups || [])];
   const g = allGroups.find(x => String(x.id) === String(App.selectedGroupId));
   if (!g) return;
@@ -2744,32 +3302,120 @@ function openInviteFriendToGroup() {
     return;
   }
 
-  const similarFriends = suggestPeopleByInterest(g.interestTag).slice(0, 6);
+  let groupPeople = { members: [], invited: [] };
+  try {
+    const peopleRes = await apiFetch(`/groups/${g.id}/people`);
+    const peopleData = peopleRes?.data || peopleRes || {};
+    groupPeople = {
+      members: Array.isArray(peopleData.members) ? peopleData.members : [],
+      invited: Array.isArray(peopleData.invited) ? peopleData.invited : [],
+    };
+    window._lastGroupPeople = groupPeople;
+  } catch (err) {
+    console.error("group people load failed", err);
+  }
 
-  openModal("Funkcja dostępna po testach", `
-    <div class="tStrong">Wybierz znajomego</div>
-    <div class="sectionSub mt10">
-      Możliwość dodawania znajomych do grup będzie dostępna po testach.
-    </div>
-    <div class="mt16">
-      ${similarFriends.map(p => `
-        <div class="listItem" style="margin-bottom:10px; cursor:default;">
-          <div class="listTop">
-            <div class="listLeft">
-              <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
-              <div style="min-width:0;">
-                <div class="listTitle">${p.nick}</div>
-                <div class="listMeta">Wspólne: ${commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ")}</div>
-              </div>
-            </div>
-            <div class="listRight">
-              <button class="btn small" type="button" onclick="toast('Dodano '); closeModal();">Dodaj</button>
+  const allFriends = (window._lastFriendsList || []);
+  const outgoingGroupInvites = Array.isArray(window._lastOutgoingGroupInvites) ? window._lastOutgoingGroupInvites : [];
+  const pendingInviteUserIds = new Set(
+    outgoingGroupInvites
+      .filter(inv => String(inv?.group?.id || "") === String(g.id))
+      .map(inv => String(inv?.user?.id || ""))
+      .filter(Boolean)
+  );
+  const memberIds = new Set((groupPeople.members || []).map(x => String(x.id)));
+  const invitedIds = new Set((groupPeople.invited || []).map(x => String(x.id)));
+  const myId = String(App.user?.id || "");
+  const tag = String(g.interestTag || "").toLowerCase();
+
+  const similarFriends = allFriends
+    .filter(f => {
+      const id = String(f.id || "");
+      if (!Array.isArray(f.interests)) return false;
+      if (!f.interests.map(x => x.toLowerCase()).includes(tag)) return false;
+      if (!id || id === myId) return false;
+      if (memberIds.has(id)) return false;
+      if (invitedIds.has(id)) return false;
+      return true;
+    })
+    .slice(0, 6);
+
+  const members = Array.isArray(groupPeople.members) ? [...groupPeople.members] : [];
+  members.sort((a, b) => {
+    if (!!a.is_founder !== !!b.is_founder) return a.is_founder ? -1 : 1;
+    return String(a.nick || "").localeCompare(String(b.nick || ""), "pl", { sensitivity: "base" });
+  });
+
+  const invited = Array.isArray(groupPeople.invited) ? [...groupPeople.invited] : [];
+  invited.sort((a, b) => String(a.nick || "").localeCompare(String(b.nick || ""), "pl", { sensitivity: "base" }));
+
+  const inviteHtml = similarFriends.map(p => `
+        <div class="listItem groupInviteCard" style="margin-bottom:10px; cursor:default;">
+          <div class="groupInviteCardTop">
+            <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
+            <div class="groupInviteCardText">
+              <div class="listTitle">${p.nick}</div>
+              <div class="listMeta">Wspólne: ${commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ")}</div>
             </div>
           </div>
+          <div class="groupInviteCardAction">
+            <button class="btn small" type="button" onclick="inviteFriendToSelectedGroup('${p.id}')">Dodaj</button>
+          </div>
         </div>
-      `).join("") || '<div class="tMuted">Brak pasujących znajomych</div>'}
+      `).join("") || '<div class="tMuted">Brak osób do zaproszenia.</div>';
+
+  const membersHtml = members.map(p => `
+        <div class="listItem groupInviteCard" style="margin-bottom:10px; cursor:pointer;" onclick="openChatParticipantProfile('${String(p.id)}'); closeModal();">
+          <div class="groupInviteCardTop">
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="groupInviteCardText">
+              <div class="listTitle">${p.nick}</div>
+              <div class="listMeta">${p.city || "Grupowicz w USLY"}</div>
+            </div>
+          </div>
+          <div class="groupInviteCardAction">
+            ${p.is_founder
+              ? `<button class="btn secondary small" type="button" disabled>Założyciel</button>`
+              : `<button class="btn secondary small" type="button">Zobacz profil</button>`
+            }
+          </div>
+        </div>
+      `).join("") || '<div class="tMuted">Brak grupowiczów.</div>';
+
+  const invitedHtml = invited.map(p => `
+        <div class="listItem groupInviteCard" style="margin-bottom:10px; cursor:default;">
+          <div class="groupInviteCardTop">
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="groupInviteCardText">
+              <div class="listTitle">${p.nick}</div>
+              <div class="listMeta">${p.city || "Zaproszenie oczekuje"}</div>
+            </div>
+          </div>
+          <div class="groupInviteCardAction">
+            <button class="btn secondary small" type="button" disabled>Zaproszeni</button>
+          </div>
+        </div>
+      `).join("") || '<div class="tMuted">Brak oczekujących zaproszeń.</div>';
+
+  const activeHtml = App.groupInviteTab === "members"
+    ? membersHtml
+    : (App.groupInviteTab === "invited" ? invitedHtml : inviteHtml);
+
+  openModal("Dodaj znajomego do grupy", `
+    <div class="groupInviteModal">
+      <div class="tStrong">Wybierz znajomego</div>
+    <div class="sectionSub mt10">
+      Wybierz znajomego, którego chcesz zaprosić do tej grupy.
     </div>
-    <button class="btn secondary mt16" type="button" onclick="closeModal()">Zamknij</button>
+    <div class="segmented mt12">
+      <button class="segBtn ${App.groupInviteTab === "invite" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invite'; openInviteFriendToGroup()">Do zaproszenia</button>
+      <button class="segBtn ${App.groupInviteTab === "members" ? "on" : ""}" type="button" onclick="App.groupInviteTab='members'; openInviteFriendToGroup()">Grupowicze</button>
+      <button class="segBtn ${App.groupInviteTab === "invited" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invited'; openInviteFriendToGroup()">Zaproszeni</button>
+    </div>
+    <div class="mt16">
+      ${activeHtml}
+    </div>
+    </div>
   `);
 }
 
@@ -2873,12 +3519,29 @@ function initPartnerPricingFields() {
 
 function syncPartnerEventSubmitBtn() {
   const btn = getPartnerEventSubmitBtn();
+  const draftBtn = document.querySelector('#S9_PARTNER_CREATE button[onclick="savePartnerEventDraft()"]');
   if (!btn) return;
+
+  if (App.partnerEventFormMode === "published_edit") {
+    btn.textContent = "Zaktualizuj wydarzenie";
+    if (draftBtn) draftBtn.style.display = "none";
+    return;
+  }
+
+  if (App.partnerEventFormMode === "archived_edit") {
+    btn.textContent = "Wznów wydarzenie";
+    if (draftBtn) draftBtn.style.display = "none";
+    return;
+  }
+
+  if (draftBtn) draftBtn.style.display = "";
+
   btn.textContent = App.selectedPartnerEventId ? "Opublikuj" : "Utwórz wydarzenie";
 }
 
 function resetPartnerEventFormMode() {
   App.selectedPartnerEventId = null;
+  App.partnerEventFormMode = "create";
   syncPartnerEventSubmitBtn();
   const card = $("partnerEventParticipantsCard");
   const list = $("partnerEventParticipantsList");
@@ -2935,7 +3598,7 @@ async function renderPartnerEventParticipants() {
     list.innerHTML = items.map(item => {
       const user = item?.user || {};
       const when = item?.signup?.created_at
-        ? new Date(item.signup.created_at).toLocaleString("pl-PL")
+        ? new Date(parseUslyTimestamp(item.signup.created_at)).toLocaleString("pl-PL")
         : "—";
 
       const canMessageParticipants = getPartnerPlanRules().canMessageParticipants;
@@ -3083,6 +3746,10 @@ function openPartnerEventEditor(eventId) {
   if (!ev) return;
 
   App.selectedPartnerEventId = ev.id;
+  const eventStatus = String(ev.status || "").toLowerCase();
+  App.partnerEventFormMode = eventStatus === "published"
+    ? "published_edit"
+    : (eventStatus === "archived" ? "archived_edit" : "draft_edit");
   syncPartnerEventSubmitBtn();
 
   if ($("peTitle")) $("peTitle").value = ev.title || "";
@@ -3391,25 +4058,30 @@ async function publishPartnerEvent() {
         return;
       }
 
-      const publishBlockMessage = getPartnerPublishLimitBlockMessage();
-      if (publishBlockMessage) {
-        toast(publishBlockMessage);
+      if (App.partnerEventFormMode === "published_edit") {
         await loadPartnerEvents();
-        return;
-      }
+        toast("Zaktualizowano wydarzenie");
+      } else {
+        const publishBlockMessage = getPartnerPublishLimitBlockMessage();
+        if (publishBlockMessage) {
+          toast(publishBlockMessage);
+          await loadPartnerEvents();
+          return;
+        }
 
-      const publishData = await apiFetch(`/partners/events/${App.selectedPartnerEventId}/publish`, {
-        method: "POST",
-      });
+        const publishData = await apiFetch(`/partners/events/${App.selectedPartnerEventId}/publish`, {
+          method: "POST",
+        });
 
-      if (!publishData?.success || !publishData?.data) {
-        toast(publishData?.error?.message || "Zapisano szkic, ale nie udało się go opublikować");
+        if (!publishData?.success || !publishData?.data) {
+          toast(publishData?.error?.message || "Zapisano szkic, ale nie udało się go opublikować");
+          await loadPartnerEvents();
+          return;
+        }
+
         await loadPartnerEvents();
-        return;
+        toast(App.partnerEventFormMode === "archived_edit" ? "Wznowiono wydarzenie" : "Opublikowano wydarzenie");
       }
-
-      await loadPartnerEvents();
-      toast("Opublikowano wydarzenie");
     } else {
       const data = await apiFetch("/partners/events", {
         method: "POST",
@@ -3511,8 +4183,8 @@ async function renderNotifications() {
       items = notifBatches
         .flat()
         .sort((a, b) => {
-          const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          const ad = parseUslyTimestamp(a?.createdAt);
+          const bd = parseUslyTimestamp(b?.createdAt);
           return bd - ad;
         })
         .slice(0, 20)
@@ -3525,8 +4197,15 @@ async function renderNotifications() {
           createdAt: item.createdAt || null,
         }));
     } else {
-      const reqRes = await apiFetch("/friends/requests");
+      const [reqRes, groupInvRes, eventNotifRes] = await Promise.all([
+        apiFetch("/friends/requests"),
+        apiFetch("/group-invitations"),
+        apiFetch("/users/me/notifications?limit=50"),
+      ]);
+
       const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
+      const incomingGroupInvites = Array.isArray(groupInvRes?.data?.incoming) ? groupInvRes.data.incoming : [];
+      const eventNotifItems = Array.isArray(eventNotifRes?.data?.items) ? eventNotifRes.data.items : [];
 
       incoming.forEach((req) => {
         const nick = req?.user?.nick || req?.user?.email || "Nowa osoba";
@@ -3536,6 +4215,55 @@ async function renderNotifications() {
           targetView: "S10E_PROFILE_INVITES",
           createdAt: req?.created_at || null,
         });
+      });
+
+      eventNotifItems.forEach((row) => {
+        const notification = row?.notification || {};
+        const event = row?.event || {};
+        const isTimeAndLocationChange = notification.type === "event_time_and_location_changed";
+        const isTimeChange = notification.type === "event_time_changed";
+        const isLocationChange = notification.type === "event_location_changed";
+        const isLegacyUpdate = notification.type === "event_updated";
+
+        if (!isTimeAndLocationChange && !isTimeChange && !isLocationChange && !isLegacyUpdate) return;
+
+        const title = event?.title || "Wydarzenie";
+        const place = [event?.city, event?.where].filter(Boolean).join(", ");
+        const when = event?.start_at
+          ? String(event.start_at).trim().replace("T", " ").slice(0, 16)
+          : "";
+
+        items.push({
+          title: isTimeAndLocationChange
+            ? "Zmiana godziny i miejsca wydarzenia"
+            : isTimeChange
+              ? "Zmiana godziny wydarzenia"
+              : isLocationChange
+                ? "Zmiana miejsca wydarzenia"
+                : "Zmiana w zapisanym wydarzeniu",
+          body: place || when
+            ? `${title} — ${[when, place].filter(Boolean).join(" • ")}`
+            : `${title} zostało zaktualizowane`,
+          targetView: "S7_EVENTS",
+          createdAt: notification?.created_at || null,
+        });
+      });
+
+      incomingGroupInvites.forEach((inv) => {
+        const nick = inv?.user?.nick || inv?.user?.email || "Użytkownik";
+        const groupTitle = inv?.group?.title || "Grupa";
+        items.push({
+          title: "Zaproszenie do grupy",
+          body: `${nick} zaprasza Cię do grupy: ${groupTitle}`,
+          targetView: "S10E_PROFILE_INVITES",
+          createdAt: inv?.created_at || null,
+        });
+      });
+
+      items.sort((a, b) => {
+        const ad = parseUslyTimestamp(a?.createdAt);
+        const bd = parseUslyTimestamp(b?.createdAt);
+        return bd - ad;
       });
     }
 
@@ -3560,9 +4288,20 @@ async function renderNotifications() {
 
   list.innerHTML = items.map(n => {
     const isNew = parseUslyTimestamp(n?.createdAt) > seenAt;
+    const ts = n?.createdAt
+      ? new Date(parseUslyTimestamp(n.createdAt)).toLocaleString("pl-PL", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
     return `
     <div class="listItem ${isNew ? 'notifNew' : ''}" style="cursor:pointer;" onclick="go('${n.targetView}')">
-      <div class="listTitle">${n.title}</div>
+      <div class="row" style="align-items:flex-start;justify-content:space-between;gap:12px;">
+        <div class="listTitle" style="flex:1;min-width:0;">${n.title}</div>
+        <div class="sectionSub" style="white-space:nowrap;flex-shrink:0;">${ts}</div>
+      </div>
       <div class="listBody">${n.body}</div>
     </div>
   `;
@@ -3617,13 +4356,29 @@ async function refreshNotifBadgeCount() {
     const seenAtRaw = localStorage.getItem("usly_user_notifications_seen_at");
     const seenAt = parseUslyTimestamp(seenAtRaw);
 
-    const reqRes = await apiFetch("/friends/requests");
-    const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
+    const [reqRes, groupInvRes, eventNotifRes] = await Promise.all([
+      apiFetch("/friends/requests"),
+      apiFetch("/group-invitations"),
+      apiFetch("/users/me/notifications?limit=50"),
+    ]);
 
-    const totalUnread = incoming.filter((req) => {
-      const createdAt = parseUslyTimestamp(req?.created_at);
-      return createdAt > seenAt;
-    }).length;
+    const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
+    const incomingGroupInvites = Array.isArray(groupInvRes?.data?.incoming) ? groupInvRes.data.incoming : [];
+    const eventNotifItems = Array.isArray(eventNotifRes?.data?.items) ? eventNotifRes.data.items : [];
+
+    const totalUnread =
+      incoming.filter((req) => {
+        const createdAt = parseUslyTimestamp(req?.created_at);
+        return createdAt > seenAt;
+      }).length +
+      incomingGroupInvites.filter((inv) => {
+        const createdAt = parseUslyTimestamp(inv?.created_at);
+        return createdAt > seenAt;
+      }).length +
+      eventNotifItems.filter((row) => {
+        const createdAt = parseUslyTimestamp(row?.notification?.created_at);
+        return createdAt > seenAt;
+      }).length;
 
     updateNotifBadges(totalUnread);
   } catch (e) {
@@ -3648,12 +4403,199 @@ async function refreshPartnerMsgBadgeCount() {
   try {
     const data = await apiFetch("/messages/private");
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
-    const totalUnread = items.reduce((sum, item) => sum + Number(item?.unread_count || 0), 0);
+    const totalUnread = items.reduce((sum, item) => {
+      const chatId = `pm_${item?.other_user_id}`;
+      const muted = isChatMuted(chatId);
+      return sum + (muted ? 0 : Number(item?.unread_count || 0));
+    }, 0);
 
     badge.textContent = String(totalUnread);
     badge.style.display = totalUnread > 0 ? "inline-flex" : "none";
   } catch (e) {
     console.error("partner msg badge refresh error", e);
+    badge.style.display = "none";
+  }
+}
+
+function getGroupSeenMapStorageKey() {
+  return `usly_group_seen_map_${App.role || "user"}_${App.currentUserId || "guest"}`;
+}
+
+function getMutedGroupsStorageKey() {
+  return `usly_muted_groups_${App.role || "user"}_${App.currentUserId || "guest"}`;
+}
+
+function getMutedChatsStorageKey() {
+  return `usly_muted_chats_${App.role || "user"}_${App.currentUserId || "guest"}`;
+}
+
+function getChatSeenMapStorageKey() {
+  return `usly_chat_seen_map_${App.role || "user"}_${App.currentUserId || "guest"}`;
+}
+
+function readChatSeenMap() {
+  try {
+    const raw = localStorage.getItem(getChatSeenMapStorageKey());
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeChatSeenMap(map) {
+  try {
+    localStorage.setItem(getChatSeenMapStorageKey(), JSON.stringify(map || {}));
+  } catch (_) {}
+}
+
+function markChatAsSeen(chatId) {
+  if (!chatId) return;
+  const seenMap = readChatSeenMap();
+  seenMap[String(chatId)] = new Date().toISOString();
+  writeChatSeenMap(seenMap);
+}
+
+function readMutedChatsMap() {
+  try {
+    const raw = localStorage.getItem(getMutedChatsStorageKey());
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeMutedChatsMap(map) {
+  try {
+    localStorage.setItem(getMutedChatsStorageKey(), JSON.stringify(map || {}));
+  } catch (_) {}
+}
+
+function isChatMuted(chatId) {
+  if (!chatId) return false;
+  const map = readMutedChatsMap();
+  return !!map[String(chatId)];
+}
+
+function setChatMuted(chatId, muted) {
+  if (!chatId) return;
+  const map = readMutedChatsMap();
+  if (muted) {
+    map[String(chatId)] = true;
+  } else {
+    delete map[String(chatId)];
+  }
+  writeMutedChatsMap(map);
+}
+
+function readMutedGroupsMap() {
+  try {
+    const raw = localStorage.getItem(getMutedGroupsStorageKey());
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeMutedGroupsMap(map) {
+  try {
+    localStorage.setItem(getMutedGroupsStorageKey(), JSON.stringify(map || {}));
+  } catch (_) {}
+}
+
+function isGroupMuted(groupId) {
+  if (!groupId) return false;
+  const mutedMap = readMutedGroupsMap();
+  return !!mutedMap[String(groupId)];
+}
+
+function setGroupMuted(groupId, muted) {
+  if (!groupId) return;
+  const mutedMap = readMutedGroupsMap();
+  if (muted) {
+    mutedMap[String(groupId)] = true;
+  } else {
+    delete mutedMap[String(groupId)];
+  }
+  writeMutedGroupsMap(mutedMap);
+}
+
+function readGroupSeenMap() {
+  try {
+    const raw = localStorage.getItem(getGroupSeenMapStorageKey());
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeGroupSeenMap(map) {
+  try {
+    localStorage.setItem(getGroupSeenMapStorageKey(), JSON.stringify(map || {}));
+  } catch (_) {}
+}
+
+function markGroupAsSeen(groupId) {
+  if (!groupId) return;
+  const seenMap = readGroupSeenMap();
+  seenMap[String(groupId)] = new Date().toISOString();
+  writeGroupSeenMap(seenMap);
+}
+
+async function getGroupUnreadSummary() {
+  if (!App.isLoggedIn || App.role !== "user") {
+    return { totalGroupsWithUnread: 0, byGroupId: {} };
+  }
+
+  const seenMap = readGroupSeenMap();
+  const myGroups = Array.isArray(App.myGroups) ? App.myGroups : [];
+  const byGroupId = {};
+  let totalGroupsWithUnread = 0;
+
+  for (const g of myGroups) {
+    try {
+      const data = await apiFetch(`/messages/group/${g.id}`);
+      const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+      const seenAt = parseUslyTimestamp(seenMap[String(g.id)]);
+      const unreadCount = items.filter((m) => {
+        const createdAt = parseUslyTimestamp(m?.created_at);
+        return createdAt > seenAt && String(m?.sender_user_id) !== String(App.currentUserId);
+      }).length;
+
+      const muted = isGroupMuted(g.id);
+      const finalUnread = muted ? 0 : unreadCount;
+
+      byGroupId[String(g.id)] = finalUnread;
+      if (finalUnread > 0) totalGroupsWithUnread += 1;
+    } catch (_) {
+      byGroupId[String(g.id)] = 0;
+    }
+  }
+
+  return { totalGroupsWithUnread, byGroupId };
+}
+
+
+async function refreshGroupBadgeCount() {
+  const badge = $("badgeGroups");
+  if (!badge) return;
+
+  if (!App.isLoggedIn || App.role !== "user") {
+    badge.style.display = "none";
+    return;
+  }
+
+  try {
+    const summary = await getGroupUnreadSummary();
+    const count = Number(summary?.totalGroupsWithUnread || 0);
+
+    badge.textContent = String(count);
+    badge.style.display = count > 0 ? "inline-flex" : "none";
+  } catch (e) {
+    console.error("group badge refresh error", e);
     badge.style.display = "none";
   }
 }
@@ -3705,7 +4647,7 @@ async function refreshPartnerNotifBadgeCount() {
     const totalUnread = notifBatches
       .flat()
       .filter((row) => {
-        const createdAt = row?.createdAt ? new Date(row.createdAt).getTime() : 0;
+        const createdAt = parseUslyTimestamp(row?.createdAt);
         return createdAt > seenAt;
       })
       .length;
@@ -3883,7 +4825,7 @@ function renderEventsList() {
   `).join("");
 }
 
-function renderGroups() {
+async function renderGroups() {
   const list = $("groupList");
   if (!list) return;
 
@@ -3893,6 +4835,8 @@ function renderGroups() {
 
   let myGroups = Array.isArray(App.myGroups) ? [...App.myGroups] : [];
   let suggestedGroups = Array.isArray(App.groups) ? [...App.groups] : [];
+  const unreadSummary = await getGroupUnreadSummary().catch(() => ({ totalGroupsWithUnread: 0, byGroupId: {} }));
+  const unreadByGroupId = unreadSummary?.byGroupId || {};
 
   const myInterestTags = (Array.isArray(App.user?.interests) ? App.user.interests : [])
     .map(x => normalizeTag(String(x)))
@@ -3916,23 +4860,55 @@ function renderGroups() {
     );
   }
 
-  const renderGroupCard = (g) => `
-    <div class="listItem" onclick="openGroup('${g.id}')">
-      <div class="listTop">
-        <div class="listLeft">
-          <div class="listAvatar">👥</div>
-          <div style="min-width:0;">
-            <div class="listTitle">${g.title}</div>
-            <div class="listMeta">#${g.interestTag} • ${g.members} osób</div>
+  const renderGroupCard = (g) => {
+    const unread = Number(unreadByGroupId[String(g.id)] || 0);
+    const muted = isGroupMuted(g.id);
+    const m = Number(g.members);
+const membersLabel = m === 1
+  ? "1 osoba"
+  : (m >= 2 && m <= 4)
+    ? `${m} osoby`
+    : `${m} osób`;
+    return `
+      <div class="listItem ${unread > 0 ? 'unread' : ''}" onclick="openGroup('${g.id}')" style="position:relative; padding-bottom:36px;">
+        ${g.isCreator ? `<div style="
+  position:absolute;
+  bottom:10px;
+  right:12px;
+  max-width:110px;
+  padding:6px 8px;
+  border-radius:12px;
+  font-size:10.5px;
+  font-weight:900;
+  line-height:1.15;
+  text-align:center;
+  word-break:break-word;
+  color:#f4f8ff;
+  background: rgba(9,12,24,.55);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:
+    0 6px 16px rgba(0,0,0,.35),
+    0 0 0 1px rgba(255,255,255,.04) inset,
+    0 0 12px rgba(52,230,255,.18);
+  backdrop-filter: blur(6px);
+">Założona<br>przez Ciebie</div>` : ``}
+        <div class="listTop">
+          <div class="listLeft">
+            <div class="listAvatar">👥</div>
+            <div style="min-width:0;">
+              <div class="listTitle">${g.title}</div>
+              <div class="listMeta">#${g.interestTag} • ${membersLabel}</div>
+            </div>
+          </div>
+          <div class="listRight">
+            ${muted ? `<div style="font-size:14px;opacity:.7;">🔕</div>` : ``}
+            ${unread > 0 ? `<div class="badgeMini">${unread}</div>` : ``}
           </div>
         </div>
-        <div class="listRight">
-          <div class="listTag">${g.members}</div>
-        </div>
+        <div class="listBody">${g.desc}</div>
       </div>
-      <div class="listBody">${g.desc}</div>
-    </div>
-  `;
+    `;
+  };
 
   let html = "";
 
@@ -3962,28 +4938,8 @@ function renderGroups() {
 
   const sug = $("groupPeopleSuggestions");
   if (sug) {
-    const ranked = App.people
-      .map(p => ({ p, score: commonInterests(p).length }))
-      .sort((a, b) => b.score - a.score)
-      .filter(x => x.score > 0)
-      .slice(0, 6);
-
-    sug.innerHTML = ranked.map(x => `
-      <div class="listItem" onclick="openPerson('${x.p.id}')">
-        <div class="listTop">
-          <div class="listLeft">
-            <div class="listAvatar">${x.p.avatarUrl ? `<img src="${String(x.p.avatarUrl).startsWith("http") ? x.p.avatarUrl : `${API_BASE_URL}${x.p.avatarUrl}`}" alt="${x.p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : x.p.emoji}</div>
-            <div style="min-width:0;">
-              <div class="listTitle">${x.p.nick}</div>
-              <div class="listMeta">Wspólne: ${commonInterests(x.p).slice(0,3).map(t => `#${t}`).join(" ")}</div>
-            </div>
-          </div>
-          <div class="listRight">
-            <div class="listTag">${sharedScore(x.p)}%</div>
-          </div>
-        </div>
-      </div>
-    `).join("");
+    sug.innerHTML = "";
+    sug.style.display = "none";
   }
 }
 
@@ -4042,6 +4998,10 @@ async function renderChatList() {
           existing.unread = Number(c.unread_count || existing.unread || 0);
         }
 
+        const rawUnread = Number(c.unread_count || 0);
+        const muted = isChatMuted(chatId);
+        const finalUnread = muted ? 0 : rawUnread;
+
         return {
           id: chatId,
           with: {
@@ -4058,28 +5018,19 @@ async function renderChatList() {
             emoji: isPartner ? "🏢" : (existing?.with?.emoji || "💬"),
           },
           last: c.last_message || "",
-          unread: Number(c.unread_count || 0),
+          unread: finalUnread,
         };
       });
 
-    const localOnlyChats = App.chats.filter(c =>
-      c?.with?.id != null &&
-      !items.some(x => String(x.other_user_id) === String(c.with.id)) &&
-      (!q || String(c.with?.nick || c.with?.company || "").toLowerCase().includes(q))
-    ).map(c => ({
-      id: c.id || `pm_${c.with.id}`,
-      with: c.with || {},
-      last: c.last || "",
-      unread: Number(c.unread || 0),
-    }));
-
-    const finalChats = [...localOnlyChats, ...chats];
+    const finalChats = chats;
 
     if (list) {
       if (!(finalChats || []).length) {
         list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
       } else {
-        list.innerHTML = (finalChats || []).map(c => `
+        list.innerHTML = (finalChats || []).map(c => {
+        const muted = isChatMuted(c.id);
+        return `
         <div class="listItem ${c.unread > 0 ? 'unread' : ''}" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
@@ -4089,10 +5040,11 @@ async function renderChatList() {
                 <div class="listMeta">${c.last || "—"}</div>
               </div>
             </div>
-            ${c.unread > 0 ? `<div class="listRight"><div class="badgeMini">${c.unread}</div></div>` : ``}
+            ${(muted || c.unread > 0) ? `<div class="listRight">${muted ? `<div style="font-size:14px;opacity:.7;">🔕</div>` : ``}${c.unread > 0 ? `<div class="badgeMini">${c.unread}</div>` : ``}</div>` : ``}
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
       }
     }
 
@@ -4219,12 +5171,14 @@ function renderPartnerEvents() {
             <button class="btn" type="button" onclick="event.stopPropagation(); quickPublishPartnerEvent('${ev.id}')">Opublikuj</button>
           </div>
         ` : ""}
-        ${String(ev.status || "").toLowerCase() === "published" && (() => {
-          const endAt = ev?.end_at ? new Date(ev.end_at) : null;
-          return endAt && !Number.isNaN(endAt.getTime()) && endAt < now;
-        })() ? `
+        ${String(ev.status || "").toLowerCase() === "published" ? `
           <div class="row mt12">
-            <button class="btn secondary" type="button" onclick="event.stopPropagation(); quickArchivePartnerEvent('${ev.id}')">Zarchiwizuj</button>
+            <button class="btn secondary" type="button" onclick="event.stopPropagation(); quickArchivePartnerEvent('${ev.id}')">${(() => {
+              const endAt = ev?.end_at ? new Date(ev.end_at) : null;
+              return endAt && !Number.isNaN(endAt.getTime()) && endAt < now
+                ? "Zarchiwizuj"
+                : "Zamknij wydarzenie";
+            })()}</button>
           </div>
         ` : ""}
       </div>
@@ -4338,9 +5292,11 @@ async function renderPartnerMsgList() {
     const chats = items
       .filter(c => !q || String(c.other_user_name || "").toLowerCase().includes(q))
       .map(c => {
-        const unread = Number(c.unread_count || 0);
+        const rawUnread = Number(c.unread_count || 0);
         const existing = App.chats.find(x => String(x.with?.id) === String(c.other_user_id));
         const chatId = existing?.id || `pm_${c.other_user_id}`;
+        const muted = isChatMuted(chatId);
+        const unread = muted ? 0 : rawUnread;
 
         if (!existing) {
           App.chats.unshift({
@@ -4356,6 +5312,7 @@ async function renderPartnerMsgList() {
             },
             last: c.last_message || "",
             unread,
+            rawUnread,
             messages: [],
           });
         } else {
@@ -4371,6 +5328,7 @@ async function renderPartnerMsgList() {
           };
           existing.last = c.last_message || existing.last || "";
           existing.unread = unread;
+          existing.rawUnread = rawUnread;
         }
 
         return {
@@ -4386,6 +5344,7 @@ async function renderPartnerMsgList() {
           },
           last: c.last_message || "",
           unread,
+          rawUnread,
         };
       });
 
@@ -4394,7 +5353,9 @@ async function renderPartnerMsgList() {
     if (!(finalChats || []).length) {
       list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
     } else {
-      list.innerHTML = (finalChats || []).map(c => `
+      list.innerHTML = (finalChats || []).map(c => {
+        const muted = isChatMuted(c.id);
+        return `
         <div class="listItem ${c.unread > 0 ? 'unread' : ''}" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
@@ -4404,10 +5365,11 @@ async function renderPartnerMsgList() {
                 <div class="listMeta">${c.last || "—"}</div>
               </div>
             </div>
-            ${c.unread > 0 ? `<div class="listRight"><div class="badgeMini">${c.unread}</div></div>` : ``}
+            ${(muted || c.unread > 0) ? `<div class="listRight">${muted ? `<div style="font-size:14px;opacity:.7;">🔕</div>` : ``}${c.unread > 0 ? `<div class="badgeMini">${c.unread}</div>` : ``}</div>` : ``}
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
     }
 
     const badge = $("badgePartnerMsgs");
@@ -5045,6 +6007,7 @@ function mapApiGroupToViewModel(g) {
     interestTag: g.interest_tag || "",
     members: Number(g.members_count || 0),
     desc: g.description || "",
+    isCreator: !!g.is_creator,
   };
 }
 
@@ -5272,6 +6235,30 @@ function renderAll() {
     el.textContent = String(App.partner.plan || "free").toUpperCase();
   });
 
+  [
+    "uplan_free", "uplan_plus", "uplan_premium", "uplan_vip",
+    "uplan_free_set", "uplan_plus_set", "uplan_premium_set", "uplan_vip_set",
+  ].forEach((id) => {
+    const b = $(id);
+    if (!b) return;
+    const isOn = b.dataset.plan === String(App.user.plan || "free");
+    b.classList.toggle("on", isOn);
+    b.classList.toggle("active", isOn);
+  });
+
+  [
+    "pplan_free", "pplan_pro", "pplan_premium", "pplan_enterprise",
+    "pplan_free_set", "pplan_pro_set", "pplan_premium_set", "pplan_enterprise_set",
+  ].forEach((id) => {
+    const b = $(id);
+    if (!b) return;
+    const isOn = b.dataset.plan === String(App.partner.plan || "free");
+    b.classList.toggle("on", isOn);
+    b.classList.toggle("active", isOn);
+  });
+
+  refreshUserPlanCardsUi();
+
   document.querySelectorAll('#S11_PLANS #plansPartnerOnly .card[data-plan]').forEach((card) => {
     const currentPlan = String(App.partner.plan || "free").toLowerCase();
     const isCurrent = String(card.dataset.plan || "").toLowerCase() === currentPlan;
@@ -5462,6 +6449,7 @@ function renderAll() {
   if (App.currentView === "S9_PARTNER_EVENTS") renderPartnerEvents();
   if (App.currentView === "S9_PARTNER_MESSAGES") renderPartnerMsgList();
   if (App.role === "user" && !["S2_REGISTER","S3_PROFILE_SETUP"].includes(App.currentView)) refreshNotifBadgeCount();
+  if (App.role === "user" && !["S2_REGISTER","S3_PROFILE_SETUP"].includes(App.currentView)) refreshGroupBadgeCount();
   if (App.role === "partner") refreshPartnerNotifBadgeCount();
   if (App.role === "partner") refreshPartnerMsgBadgeCount();
   if (App.currentView === "S12_NOTIFICATIONS") renderNotifications();
@@ -5540,9 +6528,7 @@ async function init() {
   // Default role toggle UI
   selectRole(App.role);
 
-  // Default plan selections (sync)
-  setUserPlan(App.user.plan, true);
-  setPartnerPlan(App.partner.plan, true);
+  // Default plan selections are synced passively in renderAll()/session restore.
 
   const regBirthDate = $("regBirthDate");
   const ageError = $("ageError");
@@ -5586,6 +6572,8 @@ async function init() {
           App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(profile.data, "age_max") ? profile.data.age_max : App.user.prefAgeTo;
           App.user.plan = profile.data.plan || App.user.plan;
           App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
+          try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
+          refreshUserPlanCardsUi();
           }
         await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
         renderAll();
@@ -5594,6 +6582,7 @@ async function init() {
         return;
       } else {
         await loadPartnerProfile();
+        try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, App.partner.plan || "free"); } catch (_) {}
         await loadPartnerEvents();
         renderAll();
         bindMessageInputs();
@@ -6064,3 +7053,100 @@ async function submitBugReport() {
     toast(err?.userMessage || "Nie udało się wysłać zgłoszenia");
   }
 }
+
+async function submitResetPassword() {
+  const newPassword = $("resetPasswordNew")?.value?.trim() || "";
+  const repeatPassword = $("resetPasswordRepeat")?.value?.trim() || "";
+
+  if (!newPassword || !repeatPassword) {
+    toast("Uzupełnij wszystkie pola hasła");
+    return;
+  }
+
+  if (newPassword !== repeatPassword) {
+    toast("Hasła nie są takie same");
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    toast("Hasło musi mieć co najmniej 8 znaków");
+    return;
+  }
+
+  if (!App.resetToken) {
+    toast("Brak tokenu resetu hasła");
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: App.resetToken,
+        new_password: newPassword,
+      }),
+    });
+
+    if (res?.success) {
+      toast("Hasło zostało zmienione");
+      go("S1_LOGIN");
+      return;
+    }
+
+    toast(res?.error?.message || "Nie udało się zmienić hasła");
+  } catch (err) {
+    toast(err?.userMessage || "Błąd resetu hasła");
+  }
+}
+
+async function loadResetPasswordScreen(token) {
+  const tokenValue = String(token || "").trim();
+
+  if (!tokenValue) {
+    toast("Brak linku do resetu hasła");
+    return false;
+  }
+
+  try {
+    const res = await apiFetch("/auth/reset-password-info", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: tokenValue }),
+    });
+
+    if (!res?.success || !res?.data?.email) {
+      toast("Link do resetu hasła jest nieprawidłowy");
+      return false;
+    }
+
+    App.resetToken = tokenValue;
+    App.resetEmail = String(res.data.email || "");
+
+    closeModal();
+    go("S3_RESET_PASSWORD");
+
+    if ($("resetPasswordEmail")) $("resetPasswordEmail").value = App.resetEmail;
+    if ($("resetPasswordNew")) $("resetPasswordNew").value = "";
+    if ($("resetPasswordRepeat")) $("resetPasswordRepeat").value = "";
+
+    return true;
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się otworzyć resetu hasła");
+    return false;
+  }
+}
+
+function handlePasswordResetTokenFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    const token = (params.get("token") || "").trim();
+    if (!token) return;
+    setTimeout(() => {
+      loadResetPasswordScreen(token).catch(() => {});
+    }, 0);
+  } catch (_) {}
+}
+
+document.addEventListener("DOMContentLoaded", handlePasswordResetTokenFromUrl);
+

@@ -532,7 +532,7 @@ section#S11_PLANS .card[data-plan].is-current{
           <button id="tabChats" type="button" onclick="go('S6_CHATS_LIST')">
             <div class="ico" style="position:relative;" aria-hidden="true">
               💬
-              <span class="pill" id="badgeChats" style="position:absolute;right:-6px;top:-6px;min-width:22px;justify-content:center;display:none;">0</span>
+              <span class="pill" id="badgeChats" style="position:absolute;right:-6px;top:-10px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
             <div>Czaty</div>
           </button>
@@ -541,7 +541,10 @@ section#S11_PLANS .card[data-plan].is-current{
             <div>Wydarzenia</div>
           </button>
           <button id="tabGroups" type="button" onclick="go('S8_GROUPS')">
-            <div class="ico" aria-hidden="true">👥</div>
+            <div class="ico" style="position:relative;" aria-hidden="true">
+              👥
+              <span class="pill" id="badgeGroups" style="position:absolute;right:-6px;top:-10px;min-width:22px;justify-content:center;display:none;">0</span>
+            </div>
             <div>Grupy</div>
           </button>
           <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
@@ -572,7 +575,7 @@ section#S11_PLANS .card[data-plan].is-current{
           <button id="ptabMsgs" type="button" onclick="go('S9_PARTNER_MESSAGES')">
             <div class="ico" style="position:relative;" aria-hidden="true">
               ✉️
-              <span class="pill" id="badgePartnerMsgs" style="position:absolute;right:-6px;top:-6px;min-width:22px;justify-content:center;display:none;">0</span>
+              <span class="pill" id="badgePartnerMsgs" style="position:absolute;right:-6px;top:-10px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
             <div>Wiadomości</div>
           </button>
@@ -703,6 +706,43 @@ section#S11_PLANS .card[data-plan].is-current{
           </div>
         </section>
   
+        <!-- =========================================================
+        S3 RESET PASSWORD (PL ONLY)
+        ========================================================== -->
+        <section class="view" id="S3_RESET_PASSWORD" aria-label="Reset hasła">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline">Reset hasła</div>
+                </div>
+              </div>
+            </div>
+            <div class="ghostBtn" aria-hidden="true">•</div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard profileSummaryCard">
+              <div class="sectionTitle">Ustaw nowe hasło</div>
+              <div class="sectionSub">Potwierdź konto i ustaw nowe hasło do aplikacji.</div>
+
+              <label class="mt12">Email</label>
+              <input id="resetPasswordEmail" type="email" placeholder="Adres e-mail" disabled />
+
+              <label class="mt12">Nowe hasło</label>
+              <input id="resetPasswordNew" type="password" placeholder="Wpisz nowe hasło" autocomplete="new-password" />
+
+              <label class="mt12">Powtórz nowe hasło</label>
+              <input id="resetPasswordRepeat" type="password" placeholder="Powtórz nowe hasło" autocomplete="new-password" />
+
+              <button class="btn mt16" type="button" onclick="submitResetPassword()">Zapisz nowe hasło</button>
+            </div>
+          </div>
+        </section>
+
         <!-- =========================================================
         S2 REGISTER (PL ONLY) + UJEDNOLICONE ID
         ========================================================== -->
@@ -997,10 +1037,16 @@ section#S11_PLANS .card[data-plan].is-current{
           </header>
 
           <div class="content">
-            <div class="heroCard">
-              <div class="sectionTitle">Znajomi</div>
-              <div class="sectionSub">Lista kontaktów w stylu produktu, nie technicznej listy.</div>
+            <div class="mt12">
+              <input
+                type="text"
+                id="friendsSearchInput"
+                class="input"
+                placeholder="Szukaj znajomego..."
+                oninput="filterFriendsList(this.value)"
+              />
             </div>
+
             <div class="col mt16" id="profileFriendsList"></div>
           </div>
         </section>
@@ -1231,34 +1277,8 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <div class="mapCard">
               <!-- Mapa -->
-              <div class="mapReal" id="nearbyMap" aria-label="Mapa okolicy">
-                <div class="mapTiles"></div>
-                <div class="mapRoads"></div>
-                <div class="mapRiver"></div>
-                <div class="mapDistricts" aria-hidden="true"></div>
-                <div class="mapLabels" aria-hidden="true"></div>
-  
-                <!-- markery (osoby / wydarzenia) -->
-                <button class="marker person" style="left:46%;top:36%;" type="button" aria-label="Osoba 1" onclick="openMapMarker('person', 0)">
-                  <div class="mk"></div><div class="pulse"></div>
-                </button>
-                <button class="marker event" style="left:70%;top:28%;" type="button" aria-label="Wydarzenie 1" onclick="openMapMarker('event', 0)">
-                  <div class="mk"></div><div class="pulse"></div>
-                </button>
-                <button class="marker person" style="left:26%;top:68%;" type="button" aria-label="Osoba 2" onclick="openMapMarker('person', 1)">
-                  <div class="mk"></div><div class="pulse"></div>
-                </button>
-                <button class="marker event" style="left:58%;top:62%;" type="button" aria-label="Wydarzenie 2" onclick="openMapMarker('event', 1)">
-                  <div class="mk"></div><div class="pulse"></div>
-                </button>
-                <button class="marker event" style="left:18%;top:40%;" type="button" aria-label="Wydarzenie 3" onclick="openMapMarker('event', 2)">
-                  <div class="mk"></div><div class="pulse"></div>
-                </button>
-                <button class="marker person" style="left:78%;top:74%;" type="button" aria-label="Osoba 3" onclick="openMapMarker('person', 2)">
-                  <div class="mk"></div><div class="pulse"></div>
-                </button>
-              </div>
-  
+              <div class="mapReal" id="nearbyMap" aria-label="Mapa okolicy"></div>
+
               <div class="mapMeta">
                 <div class="mapTitle">W okolicy</div>
                 <div class="mapSub">Kliknij znacznik, aby podejrzeć osobę lub wydarzenie.</div>
@@ -1312,6 +1332,7 @@ section#S11_PLANS .card[data-plan].is-current{
                     <div style="text-align:center;width:100%;">
                     <div class="sectionTitle" id="personNick">—</div>
                     <div class="sectionSub" id="personMeta">—</div>
+                    <div id="personMatchScore" class="personMatchScore">—</div>
                   </div>
 
                   <div style="width:100%;">
@@ -1562,11 +1583,6 @@ section#S11_PLANS .card[data-plan].is-current{
             <!-- Grupy na bazie zainteresowań -->
             <div class="col mt16" id="groupList" data-scope="byInterests"></div>
   
-            <div class="card mt16">
-              <div class="sectionTitle">Propozycje osób</div>
-              <div class="sectionSub">Na bazie wspólnych #.</div>
-              <div class="col mt12" id="groupPeopleSuggestions"></div>
-            </div>
           </div>
         </section>
   
@@ -1579,19 +1595,43 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="brandText">
                   <div class="brandName">USLY</div>
                   <div class="brandTagline" id="groupTitle">—</div>
+                  <div class="sectionSub" id="groupTagline"></div>
                 </div>
               </div>
             </div>
             <button class="topIconBtn" type="button" onclick="openGroupMenu()" aria-label="Menu"></button>
           </header>
   
+          <div id="groupJoinCta"></div>
+
           <div class="content chatContent">
             <div id="groupBubbles"></div>
           </div>
 
-          <div class="inputDock">
+          <div class="inputDock" id="groupInputDock">
             <input id="groupInput" type="text" placeholder="Napisz w grupie." />
             <button class="btn small" id="groupSendBtn" type="button" onclick="sendGroup()" aria-label="Wyślij wiadomość do grupy">➜</button>
+          </div>
+        </section>
+
+        <section class="view" id="S8C_GROUP_PEOPLE" aria-label="Ludzie w grupie">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline" id="groupPeopleTitle">Ludzie w grupie</div>
+                  <div class="sectionSub" id="groupPeopleTagline"></div>
+                </div>
+              </div>
+            </div>
+            <button class="topIconBtn" type="button" onclick="openGroupMenu()" aria-label="Menu"></button>
+          </header>
+
+          <div class="content">
+            <div id="groupPeopleScreen"></div>
           </div>
         </section>
   

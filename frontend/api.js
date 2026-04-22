@@ -137,7 +137,7 @@
       return dict.UNAUTHORIZED;
     }
 
-    const msg = data && (data.message || data.detail);
+    const msg = data && (data.message || data.detail || (data.error && data.error.message));
     if (typeof msg === "string" && msg.trim()) return msg;
 
     return dict.UNKNOWN_ERROR;

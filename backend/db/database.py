@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.engine import Engine
 
@@ -28,7 +28,16 @@ def get_database_url() -> str:
 def make_engine(url: str) -> Engine:
     # SQLite needs check_same_thread=False; Postgres does not.
     if url.startswith("sqlite"):
-        return create_engine(url, connect_args={"check_same_thread": False})
+        engine = create_engine(url, connect_args={"check_same_thread": False})
+
+        @event.listens_for(engine, "connect")
+        def _set_sqlite_pragma(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+
+        return engine
+
     return create_engine(url)
 
 

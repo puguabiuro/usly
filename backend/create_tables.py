@@ -1,5 +1,5 @@
-from db.database import engine, Base
-import models  # noqa: F401  (ważne: rejestruje modele)
+from backend.db.database import engine, Base
+import backend.models  # noqa: F401  (ważne: rejestruje modele)
 
 def main() -> None:
     Base.metadata.create_all(bind=engine)

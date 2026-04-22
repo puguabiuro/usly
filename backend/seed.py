@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, UTC
 
-from db.database import SessionLocal
-from models import User, UserRole, UserStatus, UserProfile, Event, EventStatus, Group
-from security import hash_password
+from backend.db.database import SessionLocal
+from backend.models import User, UserRole, UserStatus, UserProfile, Event, EventStatus, Group
+from backend.security import hash_password
 
 
 def _looks_like_bcrypt(hash_value: str | None) -> bool:

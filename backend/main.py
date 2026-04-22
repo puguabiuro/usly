@@ -2,13 +2,14 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from request_id_middleware import RequestIdMiddleware
+from backend.request_id_middleware import RequestIdMiddleware
 # -*- coding: utf-8 -*-
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 # --- SENTRY (optional) ---
 # Enable by setting SENTRY_DSN in env (Render / local .env).
@@ -52,25 +53,29 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
-from api_response import ok, fail
-from error_codes import ErrorCode
-from db.database import SessionLocal
-from models import (
+from backend.api_response import ok, fail
+from backend.error_codes import ErrorCode
+from backend.db.database import SessionLocal
+from backend.models import (
     User,
     UserProfile,
     PartnerProfile,
     Event,
     AuditLog,
     EventSignup,
+    UserBlock,
     EventSave,
+    UserNotification,
     UserStatus,
     Group,
     GroupMembership,
     Message,
     Friendship,
+    GroupInvitation,
+    PasswordResetToken,
 )
-from schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, MessageOut
-from security import (
+from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, GroupMessageCreate, MessageOut
+from backend.security import (
     hash_password,
 require_role,
 create_access_token,
@@ -302,7 +307,7 @@ app.mount("/uploads/static", StaticFiles(directory=str(UPLOADS_DIR)), name="uplo
 # =========================
 # Exceptions
 # =========================
-from exceptions import ApiException
+from backend.exceptions import ApiException
 
 
 
@@ -403,7 +408,7 @@ def _is_at_least_18(dob: date) -> bool:
 # =========================
 # UWAGA: RegisterRequest/RegisterResponse musz istnie w Twoim projekcie.
 # Jeli masz je w innym pliku, zmie import tutaj.
-from schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
+from backend.schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
 
 
 @app.post("/auth/register")
@@ -624,8 +629,171 @@ def change_password(
     finally:
         db.close()
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=8, max_length=255)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
 class DeleteAccountRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
+
+
+# =========================
+# AUTH  FORGOT PASSWORD
+# =========================
+@app.post("/auth/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, request: Request):
+    db = SessionLocal()
+    try:
+        email = str(payload.email).strip().lower()
+        user = db.query(User).filter(User.email == email).first()
+
+        # zawsze zwracamy ten sam wynik — nie ujawniamy, czy konto istnieje
+        if not user or user.status != UserStatus.ACTIVE.value:
+            _audit(db, action="FORGOT_PASSWORD_REQUEST", request=request, user_id=None, details=f"email={email}, result=ignored")
+            return ok({"sent": True})
+
+        token = str(uuid4())
+        reset_row = PasswordResetToken(
+            user_id=user.id,
+            token=token,
+            expires_at=datetime.utcnow().replace(microsecond=0) + __import__("datetime").timedelta(hours=1),
+            used_at=None,
+        )
+        db.add(reset_row)
+        db.commit()
+
+        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", "usly://reset-password").strip() or "usly://reset-password"
+        separator = "&" if "?" in link_base else "?"
+        reset_link = f"{link_base}{separator}token={token}"
+
+        emailed = False
+        email_error = None
+
+        smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+        smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+        smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+        smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+        smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+        if smtp_host and smtp_from:
+            try:
+                import smtplib
+                import ssl
+
+                msg = EmailMessage()
+                msg["Subject"] = "USLY — reset hasła"
+                msg["From"] = smtp_from
+                msg["To"] = user.email
+                msg.set_content(
+                    "Otrzymaliśmy prośbę o reset hasła do konta USLY.\n\n"
+                    f"Otwórz ten link w aplikacji:\n{reset_link}\n\n"
+                    "Link jest jednorazowy i ważny przez 60 minut.\n"
+                    "Jeśli to nie Ty, zignoruj tę wiadomość."
+                )
+
+                context = ssl.create_default_context()
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                    server.starttls(context=context)
+                    if smtp_user and smtp_pass:
+                        server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+
+                emailed = True
+            except Exception as e:
+                email_error = str(e)
+
+        _audit(
+            db,
+            action="FORGOT_PASSWORD_REQUEST",
+            request=request,
+            user_id=user.id,
+            details=f"email={email}, token_created=1, emailed={1 if emailed else 0}, email_error={email_error or '-'}",
+        )
+        return ok({"sent": True})
+    finally:
+        db.close()
+
+
+class ResetPasswordInfoRequest(BaseModel):
+    token: str = Field(min_length=8, max_length=255)
+
+
+# =========================
+# AUTH  RESET PASSWORD INFO
+# =========================
+@app.post("/auth/reset-password-info")
+def reset_password_info(payload: ResetPasswordInfoRequest):
+    db = SessionLocal()
+    try:
+        token_value = str(payload.token).strip()
+
+        reset_row = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token == token_value)
+            .first()
+        )
+
+        if not reset_row or reset_row.used_at is not None:
+            raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_INVALID")
+
+        if reset_row.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_EXPIRED")
+
+        user = db.query(User).filter(User.id == reset_row.user_id).first()
+        if not user or user.status != UserStatus.ACTIVE.value:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        return ok({
+            "email": user.email,
+        })
+    finally:
+        db.close()
+
+
+# =========================
+# AUTH  RESET PASSWORD
+# =========================
+@app.post("/auth/reset-password")
+def reset_password(payload: ResetPasswordRequest, request: Request):
+    db = SessionLocal()
+    try:
+        token_value = str(payload.token).strip()
+
+        reset_row = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token == token_value)
+            .first()
+        )
+
+        if not reset_row or reset_row.used_at is not None:
+            raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_INVALID")
+
+        if reset_row.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_EXPIRED")
+
+        user = db.query(User).filter(User.id == reset_row.user_id).first()
+        if not user or user.status != UserStatus.ACTIVE.value:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        if user.password_hash and verify_password(payload.new_password, user.password_hash):
+            raise HTTPException(status_code=400, detail="NEW_PASSWORD_SAME_AS_CURRENT")
+
+        user.password_hash = hash_password(payload.new_password)
+        reset_row.used_at = datetime.utcnow().replace(microsecond=0)
+
+        db.add(user)
+        db.add(reset_row)
+        db.commit()
+
+        _audit(db, action="RESET_PASSWORD_SUCCESS", request=request, user_id=user.id, details="token_used=1")
+        return ok({"reset": True})
+    finally:
+        db.close()
 
 
 # =========================
@@ -646,6 +814,15 @@ def delete_account(
         if not verify_password(payload.password, user.password_hash):
             _audit(db, action="DELETE_ACCOUNT_FAIL", request=request, user_id=current_user.id, details="invalid_password")
             raise HTTPException(status_code=400, detail="PASSWORD_INVALID")
+
+        owned_groups = (
+            db.query(Group)
+            .filter(Group.creator_id == current_user.id)
+            .all()
+        )
+
+        for g in owned_groups:
+            db.delete(g)
 
         user.status = UserStatus.DELETED.value
         db.add(user)
@@ -790,6 +967,22 @@ def users_nearby(
             .order_by(UserProfile.updated_at.desc())
             .all()
         )
+
+        if rows:
+            candidate_user_ids = [user.id for user, _profile in rows]
+            blocked_rows = (
+                db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+                .filter(
+                    ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id.in_(candidate_user_ids))) |
+                    ((UserBlock.blocked_user_id == current_user.id) & (UserBlock.blocker_user_id.in_(candidate_user_ids)))
+                )
+                .all()
+            )
+            blocked_user_ids = {
+                blocked_id if blocker_id == current_user.id else blocker_id
+                for blocker_id, blocked_id in blocked_rows
+            }
+            rows = [(user, profile) for user, profile in rows if user.id not in blocked_user_ids]
 
         matched_items = []
         for user, profile in rows:
@@ -1369,6 +1562,8 @@ def partner_update_event(
 
         current_start = _ensure_utc(event.start_at)
         current_end = _ensure_utc(event.end_at)
+        previous_where = event.where
+        previous_city = event.city
 
         new_start = _ensure_utc(payload.start_at) if payload.start_at is not None else current_start
         new_end = _ensure_utc(payload.end_at) if payload.end_at is not None else current_end
@@ -1421,7 +1616,53 @@ def partner_update_event(
         if payload.payment_link is not None:
             event.payment_link = _to_str_or_none(payload.payment_link)
 
+        event_time_changed = (
+            current_start != _ensure_utc(event.start_at)
+            or current_end != _ensure_utc(event.end_at)
+        )
+        event_location_changed = (
+            previous_where != event.where
+            or previous_city != event.city
+        )
+        event_key_details_changed = event_time_changed or event_location_changed
+
         event.updated_at = datetime.utcnow()
+
+        if event_key_details_changed:
+            signup_user_ids = {
+                user_id
+                for (user_id,) in (
+                    db.query(EventSignup.user_id)
+                    .filter(EventSignup.event_id == event.id)
+                    .all()
+                )
+            }
+            saved_user_ids = {
+                user_id
+                for (user_id,) in (
+                    db.query(EventSave.user_id)
+                    .filter(EventSave.event_id == event.id)
+                    .all()
+                )
+            }
+            target_user_ids = signup_user_ids | saved_user_ids
+
+            if event_time_changed and event_location_changed:
+                notification_type = "event_time_and_location_changed"
+            elif event_time_changed:
+                notification_type = "event_time_changed"
+            else:
+                notification_type = "event_location_changed"
+
+            for target_user_id in target_user_ids:
+                db.add(
+                    UserNotification(
+                        user_id=target_user_id,
+                        event_id=event.id,
+                        partner_user_id=current_user.id,
+                        type=notification_type,
+                    )
+                )
 
         db.add(event)
         db.commit()
@@ -1496,7 +1737,7 @@ def partner_publish_event(
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
 
-        if event.status != "draft":
+        if event.status not in {"draft", "archived"}:
             raise HTTPException(status_code=409, detail="INVALID_STATUS_TRANSITION")
 
         profile = (
@@ -1512,8 +1753,12 @@ def partner_publish_event(
         elif current_plan == "pro":
             active_limit = 5
 
+        now_utc = datetime.now(timezone.utc)
+
+        if event.end_at is not None and _ensure_utc(event.end_at) < now_utc:
+            raise HTTPException(status_code=409, detail="INVALID_STATUS_TRANSITION")
+
         if active_limit is not None:
-            now_utc = datetime.now(timezone.utc)
             active_events_count = (
                 db.query(Event)
                 .filter(Event.partner_user_id == current_user.id)
@@ -1578,12 +1823,28 @@ def list_events(
 ):
     db = SessionLocal()
     try:
+        blocked_partner_ids_rows = (
+            db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+            .filter(
+                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id != current_user.id)) |
+                ((UserBlock.blocked_user_id == current_user.id) & (UserBlock.blocker_user_id != current_user.id))
+            )
+            .all()
+        )
+        blocked_partner_ids = {
+            blocked_user_id if blocker_user_id == current_user.id else blocker_user_id
+            for blocker_user_id, blocked_user_id in blocked_partner_ids_rows
+        }
+
         now_utc = datetime.now(timezone.utc)
         q = (
             db.query(Event)
             .filter(Event.status == "published")
             .filter(Event.end_at >= now_utc)
         )
+
+        if blocked_partner_ids:
+            q = q.filter(~Event.partner_user_id.in_(blocked_partner_ids))
 
         if city is not None and city.strip() != "":
             q = q.filter(Event.city == city.strip())
@@ -1704,7 +1965,10 @@ def list_events(
 # EVENTS  USER: SZCZEGY EVENTU
 # =========================
 @app.get("/events/{event_id}")
-def get_event_details(event_id: int):
+def get_event_details(
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+):
     db = SessionLocal()
     try:
         event = (
@@ -1714,6 +1978,17 @@ def get_event_details(event_id: int):
             .first()
         )
         if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        block_exists = (
+            db.query(UserBlock)
+            .filter(
+                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id == event.partner_user_id)) |
+                ((UserBlock.blocker_user_id == event.partner_user_id) & (UserBlock.blocked_user_id == current_user.id))
+            )
+            .first()
+        )
+        if block_exists:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
         signups_count = (
@@ -2103,12 +2378,28 @@ def partner_event_participants(
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
 
+        blocked_rows = (
+            db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+            .filter(
+                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id != current_user.id)) |
+                ((UserBlock.blocked_user_id == current_user.id) & (UserBlock.blocker_user_id != current_user.id))
+            )
+            .all()
+        )
+        blocked_user_ids = {
+            blocked_user_id if blocker_user_id == current_user.id else blocker_user_id
+            for blocker_user_id, blocked_user_id in blocked_rows
+        }
+
         # 3) query zapisw + user
         q = (
             db.query(EventSignup, User)
             .join(User, User.id == EventSignup.user_id)
             .filter(EventSignup.event_id == event_id)
         )
+
+        if blocked_user_ids:
+            q = q.filter(~User.id.in_(blocked_user_ids))
 
         total = q.count()
 
@@ -2304,12 +2595,29 @@ def partner_event_stats(
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
 
+        blocked_rows = (
+            db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+            .filter(
+                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id != current_user.id)) |
+                ((UserBlock.blocked_user_id == current_user.id) & (UserBlock.blocker_user_id != current_user.id))
+            )
+            .all()
+        )
+        blocked_user_ids = {
+            blocked_user_id if blocker_user_id == current_user.id else blocker_user_id
+            for blocker_user_id, blocked_user_id in blocked_rows
+        }
+
         # 3) policz zapisy
-        signups_count = (
+        q = (
             db.query(EventSignup)
             .filter(EventSignup.event_id == event_id)
-            .count()
         )
+
+        if blocked_user_ids:
+            q = q.filter(~EventSignup.user_id.in_(blocked_user_ids))
+
+        signups_count = q.count()
 
         capacity = event.capacity  # moe by None
         spots_left = None
@@ -2332,8 +2640,119 @@ class FriendRequestCreate(BaseModel):
     addressee_user_id: int
 
 
+
+
+class GroupInvitationCreate(BaseModel):
+    invitee_user_id: int
+
+
+class GroupInvitationRespond(BaseModel):
+    action: str = Field(pattern="^(accepted|rejected)$")
+
+
 class FriendRequestRespond(BaseModel):
     action: str = Field(pattern="^(accepted|rejected)$")
+
+
+class UserBlockCreate(BaseModel):
+    blocked_user_id: int
+
+
+@app.post("/blocks")
+def create_user_block(
+    payload: UserBlockCreate,
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    db = SessionLocal()
+    try:
+        if payload.blocked_user_id == current_user.id:
+            raise HTTPException(status_code=400, detail="CANNOT_BLOCK_SELF")
+
+        target = (
+            db.query(User)
+            .filter(User.id == payload.blocked_user_id)
+            .filter(User.status == UserStatus.ACTIVE.value)
+            .first()
+        )
+        if not target:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        existing = (
+            db.query(UserBlock)
+            .filter(
+                UserBlock.blocker_user_id == current_user.id,
+                UserBlock.blocked_user_id == payload.blocked_user_id,
+            )
+            .first()
+        )
+
+        blocker = current_user
+        blocked = target
+
+        def cleanup_partner_user_event_signups():
+            if {blocker.role, blocked.role} != {"partner", "user"}:
+                return
+
+            partner_user_id = blocker.id if blocker.role == "partner" else blocked.id
+            regular_user_id = blocker.id if blocker.role == "user" else blocked.id
+
+            partner_event_ids = [
+                event_id
+                for (event_id,) in (
+                    db.query(Event.id)
+                    .filter(Event.partner_user_id == partner_user_id)
+                    .all()
+                )
+            ]
+
+            if partner_event_ids:
+                (
+                    db.query(EventSignup)
+                    .filter(
+                        EventSignup.user_id == regular_user_id,
+                        EventSignup.event_id.in_(partner_event_ids),
+                    )
+                    .delete(synchronize_session=False)
+                )
+
+        if existing:
+            cleanup_partner_user_event_signups()
+            db.commit()
+            return ok({
+                "blocker_user_id": existing.blocker_user_id,
+                "blocked_user_id": existing.blocked_user_id,
+                "created_at": existing.created_at,
+                "already_blocked": True,
+            })
+
+        block = UserBlock(
+            blocker_user_id=current_user.id,
+            blocked_user_id=payload.blocked_user_id,
+        )
+        db.add(block)
+
+        (
+            db.query(Friendship)
+            .filter(
+                ((Friendship.requester_user_id == current_user.id) & (Friendship.addressee_user_id == payload.blocked_user_id)) |
+                ((Friendship.requester_user_id == payload.blocked_user_id) & (Friendship.addressee_user_id == current_user.id))
+            )
+            .delete(synchronize_session=False)
+        )
+
+        cleanup_partner_user_event_signups()
+
+        db.commit()
+        db.refresh(block)
+
+        return ok({
+            "blocker_user_id": block.blocker_user_id,
+            "blocked_user_id": block.blocked_user_id,
+            "created_at": block.created_at,
+            "already_blocked": False,
+        })
+    finally:
+        db.close()
 
 
 # =========================
@@ -2352,6 +2771,17 @@ def send_private_message(
         recipient = db.query(User).filter(User.id == payload.recipient_user_id).first()
         if not recipient:
             raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        block_exists = (
+            db.query(UserBlock)
+            .filter(
+                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id == payload.recipient_user_id)) |
+                ((UserBlock.blocker_user_id == payload.recipient_user_id) & (UserBlock.blocked_user_id == current_user.id))
+            )
+            .first()
+        )
+        if block_exists:
+            raise HTTPException(status_code=403, detail="USER_BLOCKED")
 
         msg = Message(
             sender_user_id=current_user.id,
@@ -2390,6 +2820,24 @@ def list_private_messages(
         other_user = db.query(User).filter(User.id == user_id).first()
         if not other_user:
             raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        block_exists = (
+            db.query(UserBlock)
+            .filter(
+                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id == user_id)) |
+                ((UserBlock.blocker_user_id == user_id) & (UserBlock.blocked_user_id == current_user.id))
+            )
+            .first()
+        )
+        if block_exists:
+            return ok({
+                "items": [],
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "total": 0,
+                },
+            })
 
         q = db.query(Message).filter(
             Message.group_id.is_(None),
@@ -2444,6 +2892,131 @@ def list_private_messages(
 
 
 
+@app.post("/messages/group")
+def send_group_message(
+    payload: GroupMessageCreate,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        group = db.query(Group).filter(Group.id == payload.group_id).first()
+        if not group:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.group_id == payload.group_id,
+                GroupMembership.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not membership:
+            raise HTTPException(status_code=403, detail="GROUP_MEMBERSHIP_REQUIRED")
+
+        msg = Message(
+            sender_user_id=current_user.id,
+            group_id=payload.group_id,
+            content=payload.content.strip(),
+            is_read=False,
+        )
+        db.add(msg)
+        db.commit()
+        db.refresh(msg)
+
+        return ok(
+            MessageOut(
+                id=msg.id,
+                sender_user_id=msg.sender_user_id,
+                recipient_user_id=msg.recipient_user_id,
+                group_id=msg.group_id,
+                content=msg.content,
+                created_at=msg.created_at,
+                is_read=msg.is_read,
+            ).model_dump()
+        )
+    finally:
+        db.close()
+
+
+@app.get("/messages/group/{group_id}")
+def list_group_messages(
+    group_id: int,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        group = db.query(Group).filter(Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.group_id == group_id,
+                GroupMembership.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not membership:
+            raise HTTPException(status_code=403, detail="GROUP_MEMBERSHIP_REQUIRED")
+
+        q = db.query(Message).filter(
+            Message.group_id == group_id,
+            Message.recipient_user_id.is_(None),
+        )
+
+        blocked_rows = (
+            db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+            .filter(
+                (UserBlock.blocker_user_id == current_user.id) |
+                (UserBlock.blocked_user_id == current_user.id)
+            )
+            .all()
+        )
+        blocked_user_ids = {
+            blocked_id if blocker_id == current_user.id else blocker_id
+            for blocker_id, blocked_id in blocked_rows
+        }
+
+        if blocked_user_ids:
+            q = q.filter(~Message.sender_user_id.in_(blocked_user_ids))
+
+        total = q.count()
+        rows = (
+            q.order_by(Message.created_at.asc(), Message.id.asc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        items = [
+            MessageOut(
+                id=m.id,
+                sender_user_id=m.sender_user_id,
+                recipient_user_id=m.recipient_user_id,
+                group_id=m.group_id,
+                content=m.content,
+                created_at=m.created_at,
+                is_read=m.is_read,
+            ).model_dump()
+            for m in rows
+        ]
+
+        return ok({
+            "items": items,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "total": total,
+            },
+        })
+    finally:
+        db.close()
+
+
 @app.get("/messages/private")
 def list_private_conversations(
     limit: int = Query(100, ge=1, le=500),
@@ -2477,6 +3050,27 @@ def list_private_conversations(
                 latest_by_other_user_id[other_user_id] = m
 
         other_user_ids = list(latest_by_other_user_id.keys())
+
+        if other_user_ids:
+            blocked_rows = (
+                db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+                .filter(
+                    ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id.in_(other_user_ids))) |
+                    ((UserBlock.blocked_user_id == current_user.id) & (UserBlock.blocker_user_id.in_(other_user_ids)))
+                )
+                .all()
+            )
+            blocked_user_ids = {
+                blocked_id if blocker_id == current_user.id else blocker_id
+                for blocker_id, blocked_id in blocked_rows
+            }
+            latest_by_other_user_id = {
+                other_user_id: msg
+                for other_user_id, msg in latest_by_other_user_id.items()
+                if other_user_id not in blocked_user_ids
+            }
+            other_user_ids = list(latest_by_other_user_id.keys())
+
         users = (
             db.query(User)
             .filter(User.id.in_(other_user_ids))
@@ -2714,6 +3308,142 @@ def list_friend_requests(
         db.close()
 
 
+
+
+@app.get("/group-invitations")
+def list_group_invitations(
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        incoming_rows = (
+            db.query(GroupInvitation, Group, UserProfile)
+            .join(Group, Group.id == GroupInvitation.group_id)
+            .join(UserProfile, UserProfile.user_id == GroupInvitation.inviter_user_id, isouter=True)
+            .filter(
+                GroupInvitation.invitee_user_id == current_user.id,
+                GroupInvitation.status == "pending",
+            )
+            .order_by(GroupInvitation.created_at.desc(), GroupInvitation.id.desc())
+            .all()
+        )
+
+        outgoing_rows = (
+            db.query(GroupInvitation, Group, UserProfile)
+            .join(Group, Group.id == GroupInvitation.group_id)
+            .join(UserProfile, UserProfile.user_id == GroupInvitation.invitee_user_id, isouter=True)
+            .filter(
+                GroupInvitation.inviter_user_id == current_user.id,
+                GroupInvitation.status == "pending",
+            )
+            .order_by(GroupInvitation.created_at.desc(), GroupInvitation.id.desc())
+            .all()
+        )
+
+        incoming = [
+            {
+                "id": inv.id,
+                "status": inv.status,
+                "created_at": inv.created_at.isoformat() if inv.created_at else None,
+                "group": {
+                    "id": group.id,
+                    "title": group.title,
+                    "interest_tag": group.interest_tag,
+                },
+                "user": {
+                    "id": inv.inviter_user_id,
+                    "nick": profile.nick if profile and profile.nick else "Użytkownik",
+                    "city": profile.miasto if profile else "",
+                    "avatar_url": profile.avatar_url if profile else "",
+                },
+            }
+            for inv, group, profile in incoming_rows
+        ]
+
+        outgoing = [
+            {
+                "id": inv.id,
+                "status": inv.status,
+                "created_at": inv.created_at.isoformat() if inv.created_at else None,
+                "group": {
+                    "id": group.id,
+                    "title": group.title,
+                    "interest_tag": group.interest_tag,
+                },
+                "user": {
+                    "id": inv.invitee_user_id,
+                    "nick": profile.nick if profile and profile.nick else "Użytkownik",
+                    "city": profile.miasto if profile else "",
+                    "avatar_url": profile.avatar_url if profile else "",
+                },
+            }
+            for inv, group, profile in outgoing_rows
+        ]
+
+        return ok({
+            "incoming": incoming,
+            "outgoing": outgoing,
+        })
+    finally:
+        db.close()
+
+
+
+
+
+@app.post("/group-invitations/{invitation_id}/respond")
+def respond_group_invitation(
+    invitation_id: int,
+    payload: GroupInvitationRespond,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        inv = db.query(GroupInvitation).filter(
+            GroupInvitation.id == invitation_id,
+            GroupInvitation.invitee_user_id == current_user.id,
+            GroupInvitation.status == "pending",
+        ).first()
+
+        if not inv:
+            raise HTTPException(status_code=404, detail="GROUP_INVITATION_NOT_FOUND")
+
+        if payload.action == "accepted":
+            group = db.query(Group).filter(Group.id == inv.group_id).first()
+            if not group:
+                raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+            existing_membership = db.query(GroupMembership).filter(
+                GroupMembership.user_id == current_user.id,
+                GroupMembership.group_id == inv.group_id,
+            ).first()
+
+            if not existing_membership:
+                membership = GroupMembership(
+                    user_id=current_user.id,
+                    group_id=inv.group_id,
+                    role="member",
+                )
+                db.add(membership)
+                group.members_count += 1
+                db.add(group)
+
+        inv.status = payload.action
+        inv.responded_at = datetime.utcnow()
+        db.add(inv)
+        db.commit()
+        db.refresh(inv)
+
+        return ok({
+            "id": inv.id,
+            "status": inv.status,
+            "group_id": inv.group_id,
+        })
+    finally:
+        db.close()
+
+
+
 @app.post("/friends/requests/{request_id}/respond")
 def respond_friend_request(
     request_id: int,
@@ -2771,6 +3501,21 @@ def list_friends(
             for fr in rows
         ]
 
+        if friend_ids:
+            blocked_rows = (
+                db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+                .filter(
+                    ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id.in_(friend_ids))) |
+                    ((UserBlock.blocked_user_id == current_user.id) & (UserBlock.blocker_user_id.in_(friend_ids)))
+                )
+                .all()
+            )
+            blocked_friend_ids = {
+                blocked_id if blocker_id == current_user.id else blocker_id
+                for blocker_id, blocked_id in blocked_rows
+            }
+            friend_ids = [fid for fid in friend_ids if fid not in blocked_friend_ids]
+
         profiles = (
             db.query(UserProfile)
             .filter(UserProfile.user_id.in_(friend_ids))
@@ -2782,11 +3527,20 @@ def list_friends(
         items = []
         for fid in friend_ids:
             profile = profiles_by_user_id.get(fid)
+
+            interests = []
+            if profile and profile.zainteresowania_json:
+                try:
+                    interests = json.loads(profile.zainteresowania_json) or []
+                except Exception:
+                    interests = []
+
             items.append({
                 "id": fid,
                 "nick": profile.nick if profile and profile.nick else "Użytkownik",
                 "city": profile.miasto if profile else "",
                 "avatar_url": profile.avatar_url if profile else "",
+                "interests": interests,
             })
 
         return ok({"items": items})
@@ -2823,6 +3577,7 @@ def list_my_groups(
                     "interest_tag": g.interest_tag,
                     "members_count": g.members_count,
                     "joined_at": m.joined_at,
+                    "is_creator": g.creator_id == current_user.id,
                 }
             )
 
@@ -3009,6 +3764,16 @@ def join_group(
 
         db.add(m)
 
+        (
+            db.query(GroupInvitation)
+            .filter(
+                GroupInvitation.group_id == group_id,
+                GroupInvitation.invitee_user_id == current_user.id,
+                GroupInvitation.status == "pending",
+            )
+            .delete(synchronize_session=False)
+        )
+
         g.members_count += 1
 
         db.commit()
@@ -3046,6 +3811,9 @@ def leave_group(
         if not membership:
             return ok({"left": False, "msg": "NOT_A_MEMBER"})
 
+        if membership.role == "owner":
+            raise HTTPException(status_code=400, detail="GROUP_OWNER_CANNOT_LEAVE")
+
         db.delete(membership)
 
         if g.members_count > 0:
@@ -3054,6 +3822,144 @@ def leave_group(
         db.commit()
 
         return ok({"left": True})
+
+    finally:
+        db.close()
+
+
+
+
+
+
+@app.post("/groups/{group_id}/invite")
+def invite_to_group(
+    group_id: int,
+    payload: GroupInvitationCreate,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        g = db.query(Group).filter(Group.id == group_id).first()
+        if not g:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.user_id == current_user.id,
+                GroupMembership.group_id == group_id,
+            )
+            .first()
+        )
+
+        if not membership:
+            raise HTTPException(status_code=403, detail="GROUP_INVITE_REQUIRES_MEMBERSHIP")
+
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+
+        if not profile:
+            raise HTTPException(status_code=400, detail="PROFILE_NOT_FOUND")
+
+        inviter_plan = (profile.plan or "free").lower()
+        if inviter_plan not in {"premium", "vip"}:
+            raise HTTPException(status_code=403, detail="GROUP_INVITE_PLAN_REQUIRED")
+
+        if payload.invitee_user_id == current_user.id:
+            raise HTTPException(status_code=400, detail="CANNOT_INVITE_SELF")
+
+        existing_membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.group_id == group_id,
+                GroupMembership.user_id == payload.invitee_user_id,
+            )
+            .first()
+        )
+
+        if existing_membership:
+            raise HTTPException(status_code=400, detail="USER_ALREADY_IN_GROUP")
+
+        friendship = (
+            db.query(Friendship)
+            .filter(
+                Friendship.status == "accepted",
+                (
+                    ((Friendship.requester_user_id == current_user.id) & (Friendship.addressee_user_id == payload.invitee_user_id)) |
+                    ((Friendship.requester_user_id == payload.invitee_user_id) & (Friendship.addressee_user_id == current_user.id))
+                )
+            )
+            .first()
+        )
+
+        if not friendship:
+            raise HTTPException(status_code=400, detail="GROUP_INVITE_ONLY_FOR_FRIENDS")
+
+        existing = (
+            db.query(GroupInvitation)
+            .filter(
+                GroupInvitation.group_id == group_id,
+                GroupInvitation.invitee_user_id == payload.invitee_user_id,
+                GroupInvitation.status == "pending",
+            )
+            .first()
+        )
+
+        if existing:
+            raise HTTPException(status_code=400, detail="GROUP_INVITATION_ALREADY_PENDING")
+
+        inv = GroupInvitation(
+            group_id=group_id,
+            inviter_user_id=current_user.id,
+            invitee_user_id=payload.invitee_user_id,
+            status="pending",
+        )
+        db.add(inv)
+        db.commit()
+        db.refresh(inv)
+
+        return ok({
+            "id": inv.id,
+            "status": inv.status,
+        })
+
+    finally:
+        db.close()
+
+
+@app.post("/groups/{group_id}/close")
+def close_group(
+    group_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        g = db.query(Group).filter(Group.id == group_id).first()
+        if not g:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.user_id == current_user.id,
+                GroupMembership.group_id == group_id,
+            )
+            .first()
+        )
+
+        if not membership:
+            raise HTTPException(status_code=403, detail="GROUP_MEMBERSHIP_REQUIRED")
+
+        if membership.role != "owner":
+            raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        db.delete(g)
+        db.commit()
+
+        return ok({"closed": True})
 
     finally:
         db.close()
@@ -3137,6 +4043,100 @@ def list_suggested_groups(
             items.append(item)
 
         return ok({"items": items})
+    finally:
+        db.close()
+
+
+@app.get("/groups/{group_id}/people")
+def get_group_people(
+    group_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        g = db.query(Group).filter(Group.id == group_id).first()
+        if not g:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        current_membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.group_id == group_id,
+                GroupMembership.user_id == current_user.id,
+            )
+            .first()
+        )
+
+        if not current_membership:
+            raise HTTPException(status_code=403, detail="GROUP_ACCESS_REQUIRES_MEMBERSHIP")
+
+        blocked_rows = (
+            db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+            .filter(
+                (UserBlock.blocker_user_id == current_user.id) |
+                (UserBlock.blocked_user_id == current_user.id)
+            )
+            .all()
+        )
+        blocked_user_ids = {
+            blocked_user_id if blocker_user_id == current_user.id else blocker_user_id
+            for blocker_user_id, blocked_user_id in blocked_rows
+        }
+
+        member_rows = (
+            db.query(GroupMembership, UserProfile)
+            .join(UserProfile, UserProfile.user_id == GroupMembership.user_id, isouter=True)
+            .filter(GroupMembership.group_id == group_id)
+            .order_by(
+                GroupMembership.user_id == g.creator_id,
+                GroupMembership.joined_at.asc(),
+                GroupMembership.id.asc(),
+            )
+            .all()
+        )
+
+        members = []
+        for membership, profile in member_rows:
+            if membership.user_id in blocked_user_ids:
+                continue
+            members.append({
+                "id": membership.user_id,
+                "nick": profile.nick if profile and profile.nick else "Użytkownik",
+                "city": profile.miasto if profile else "",
+                "avatar_url": profile.avatar_url if profile else "",
+                "is_founder": membership.user_id == g.creator_id,
+                "joined_at": membership.joined_at.isoformat() if membership.joined_at else None,
+            })
+
+        invited_rows = (
+            db.query(GroupInvitation, UserProfile)
+            .join(UserProfile, UserProfile.user_id == GroupInvitation.invitee_user_id, isouter=True)
+            .filter(
+                GroupInvitation.group_id == group_id,
+                GroupInvitation.status == "pending",
+            )
+            .order_by(GroupInvitation.created_at.desc(), GroupInvitation.id.desc())
+            .all()
+        )
+
+        invited = []
+        for invitation, profile in invited_rows:
+            if invitation.invitee_user_id in blocked_user_ids:
+                continue
+            invited.append({
+                "id": invitation.invitee_user_id,
+                "nick": profile.nick if profile and profile.nick else "Użytkownik",
+                "city": profile.miasto if profile else "",
+                "avatar_url": profile.avatar_url if profile else "",
+                "invitation_id": invitation.id,
+                "created_at": invitation.created_at.isoformat() if invitation.created_at else None,
+            })
+
+        return ok({
+            "group_id": g.id,
+            "members": members,
+            "invited": invited,
+        })
     finally:
         db.close()
 
@@ -3326,3 +4326,55 @@ def get_bug_reports():
                 pass
 
     return {"success": True, "count": len(items), "data": items[::-1]}
+
+@app.get("/users/me/notifications")
+def my_notifications(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        q = (
+            db.query(UserNotification, Event)
+            .outerjoin(Event, Event.id == UserNotification.event_id)
+            .filter(UserNotification.user_id == current_user.id)
+            .order_by(UserNotification.created_at.desc())
+        )
+
+        total = q.count()
+        rows = q.offset(offset).limit(limit).all()
+
+        items = []
+        for notification, event in rows:
+            items.append(
+                {
+                    "notification": {
+                        "id": notification.id,
+                        "type": notification.type,
+                        "created_at": notification.created_at,
+                        "read_at": notification.read_at,
+                        "event_id": notification.event_id,
+                        "partner_user_id": notification.partner_user_id,
+                    },
+                    "event": {
+                        "id": event.id,
+                        "title": event.title,
+                        "city": event.city,
+                        "where": event.where,
+                        "start_at": event.start_at,
+                        "end_at": event.end_at,
+                        "status": event.status,
+                    } if event else None,
+                }
+            )
+
+        return ok({
+            "items": items,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        })
+    finally:
+        db.close()
+

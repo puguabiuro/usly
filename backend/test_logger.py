@@ -1,4 +1,4 @@
-from logger import get_logger, log_exception
+from backend.logger import get_logger, log_exception
 
 log = get_logger(__name__)
 
