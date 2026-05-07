@@ -76,6 +76,247 @@
   gap: 10px !important;
 }
 
+
+/* === iOS-style avatar action cards === */
+
+/* === Nearby people premium cards === */
+
+/* === Person profile buttons glow (premium motion) === */
+.personProfileActions .btn{
+  position:relative;
+  overflow:hidden;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+
+.personProfileActions .btn::after{
+  content:"";
+  position:absolute;
+  inset:-20%;
+  background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.35), transparent 60%);
+  opacity:0;
+  transition:opacity .25s ease;
+}
+
+.personProfileActions .btn:hover{
+  transform:translateY(-2px) scale(1.02);
+  box-shadow:
+    0 16px 34px rgba(0,0,0,.28),
+    0 0 18px rgba(255,92,218,.35),
+    0 0 22px rgba(58,224,255,.28);
+}
+
+.personProfileActions .btn:hover::after{
+  opacity:.6;
+}
+
+.personProfileActions .btn:active{
+  transform:scale(.96);
+  box-shadow:0 6px 14px rgba(0,0,0,.22);
+}
+
+
+/* === Person profile screen premium pass === */
+.personHeroCard{
+  position:relative;
+  overflow:hidden;
+  border-radius:30px !important;
+  padding:18px !important;
+  background:
+    radial-gradient(120% 90% at 18% 0%,rgba(255,92,218,.18),rgba(255,92,218,0) 58%),
+    radial-gradient(120% 90% at 82% 0%,rgba(58,224,255,.15),rgba(58,224,255,0) 58%),
+    linear-gradient(180deg,rgba(255,255,255,.095),rgba(255,255,255,.04)) !important;
+  border:1px solid rgba(255,255,255,.15) !important;
+  box-shadow:0 24px 58px rgba(0,0,0,.24) !important;
+}
+
+.personHeroCard::before{
+  content:"";
+  position:absolute;
+  inset:1px 1px auto 1px;
+  height:34%;
+  border-radius:28px 28px 18px 18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0));
+  pointer-events:none;
+}
+
+.personHeroInner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+  margin-top:4px;
+  position:relative;
+  z-index:1;
+}
+
+.personHeroCard #personAvatar{
+  width:104px !important;
+  height:104px !important;
+  border-radius:32px !important;
+  border:2px solid rgba(255,255,255,.24);
+  box-shadow:
+    0 18px 40px rgba(0,0,0,.26),
+    0 0 22px rgba(255,92,218,.14),
+    0 0 26px rgba(58,224,255,.12);
+  overflow:hidden;
+}
+
+.personHeroCard #personNick{
+  font-size:24px !important;
+  line-height:1.05 !important;
+  letter-spacing:-.035em !important;
+  margin-bottom:6px !important;
+}
+
+.personHeroCard #personMeta,
+.personHeroCard #personDistanceMeta{
+  color:rgba(247,251,255,.78) !important;
+}
+
+.personProfilePanel{
+  width:100%;
+  padding:14px 15px;
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.035));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+}
+
+.personProfilePanel .sectionTitle{
+  font-size:14px !important;
+  margin-bottom:8px !important;
+  color:#f7fbff !important;
+}
+
+.personProfilePanel #personBio{
+  font-size:13.5px !important;
+  line-height:1.45 !important;
+  color:rgba(247,251,255,.82) !important;
+}
+
+.personHeroCard .chips{
+  justify-content:center;
+}
+
+.personHeroCard .chip{
+  background:rgba(255,255,255,.08) !important;
+  border:1px solid rgba(255,255,255,.11) !important;
+  color:rgba(247,251,255,.88) !important;
+}
+
+.nearbyPersonCard{
+  border-radius:24px !important;
+  padding:14px !important;
+  background:
+    radial-gradient(120% 120% at 0% 0%,rgba(255,92,218,.12),rgba(255,92,218,0) 55%),
+    radial-gradient(120% 120% at 100% 0%,rgba(58,224,255,.10),rgba(58,224,255,0) 55%),
+    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 14px 34px rgba(0,0,0,.16) !important;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.nearbyPersonCard:hover{
+  transform:translateY(-2px);
+  border-color:rgba(255,255,255,.22) !important;
+  box-shadow:
+    0 18px 40px rgba(0,0,0,.22),
+    0 0 18px rgba(255,92,218,.10),
+    0 0 22px rgba(58,224,255,.08) !important;
+}
+
+.nearbyPersonAvatar{
+  border-radius:999px !important;
+  overflow:hidden;
+  border:2px solid rgba(255,255,255,.22);
+  box-shadow:0 10px 24px rgba(0,0,0,.20),0 0 16px rgba(58,224,255,.10);
+}
+
+.nearbyMatchTag{
+  border-radius:999px !important;
+  padding:7px 10px !important;
+  background:linear-gradient(135deg,rgba(255,92,218,.20),rgba(58,224,255,.16)) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  color:#f7fbff !important;
+  font-weight:950 !important;
+}
+
+.nearbyInterestChips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:12px;
+}
+
+.nearbyInterestChip{
+  border-radius:999px;
+  padding:5px 9px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.10);
+  color:rgba(247,251,255,.86);
+  font-size:12px;
+  font-weight:800;
+}
+
+.avatarCardActions{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+}
+
+.iosCardBtn{
+  position:relative;
+  overflow:hidden;
+  min-height:54px !important;
+  border-radius:22px !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,.07)) !important;
+  border:1px solid rgba(255,255,255,.24) !important;
+  color:#f7fbff !important;
+  font-weight:950 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -18px 28px rgba(0,0,0,.10),
+    0 12px 26px rgba(0,0,0,.16) !important;
+  backdrop-filter:blur(14px) saturate(1.25);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.iosCardBtn::before{
+  content:"";
+  position:absolute;
+  inset:1px 1px auto 1px;
+  height:45%;
+  border-radius:20px 20px 14px 14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0));
+  pointer-events:none;
+}
+
+.iosCardBtn:hover{
+  transform:translateY(-2px);
+  border-color:rgba(255,255,255,.36) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 -18px 28px rgba(0,0,0,.10),
+    0 16px 32px rgba(0,0,0,.20),
+    0 0 18px rgba(255,92,218,.18),
+    0 0 22px rgba(58,224,255,.14) !important;
+}
+
+.iosCardBtn:active{
+  transform:translateY(0) scale(.985);
+  box-shadow:
+    inset 0 2px 8px rgba(0,0,0,.20),
+    0 8px 18px rgba(0,0,0,.14) !important;
+}
+
+.iosCardBtn.ai{
+  background:
+    radial-gradient(120% 100% at 20% 0%,rgba(255,92,218,.28),rgba(255,92,218,0) 55%),
+    radial-gradient(120% 100% at 80% 0%,rgba(58,224,255,.24),rgba(58,224,255,0) 55%),
+    linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07)) !important;
+}
+
 .premiumProfileScope .profileActionRow .btn{
   min-height: 46px !important;
   border-radius: 16px !important;
@@ -84,6 +325,28 @@
   justify-content: center !important;
   width: 100% !important;
   padding: 0 14px !important;
+}
+
+.premiumProfileScope .orgLogoManageCard{
+  padding: 14px 16px !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: none !important;
+}
+
+.premiumProfileScope .orgLogoManageActions{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 12px !important;
+}
+
+.premiumProfileScope .orgLogoManageActions .btn{
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 44px !important;
+  justify-content: center !important;
 }
 
 .premiumProfileScope .profileHeroBtnPrimary{
@@ -108,6 +371,30 @@
   color: #f4f8ff !important;
   border: 1px solid rgba(255,255,255,.18) !important;
   box-shadow: 0 10px 24px rgba(0,0,0,.10) !important;
+}
+
+
+/* === iOS-style inputs (Towarzysz) === */
+.iosInput{
+  border-radius:16px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04)) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  color:#f7fbff !important;
+  backdrop-filter:blur(10px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.25),
+    0 6px 14px rgba(0,0,0,.12);
+  transition:all .18s ease;
+}
+
+.iosInput:focus{
+  outline:none;
+  border-color:rgba(255,255,255,.32) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.35),
+    0 10px 22px rgba(0,0,0,.18),
+    0 0 12px rgba(255,92,218,.18),
+    0 0 16px rgba(58,224,255,.12);
 }
 
 .premiumProfileScope .profileSummaryCard{
@@ -467,6 +754,1054 @@ section#S11_PLANS .card[data-plan].is-current{
   border: 1px solid transparent;
 }
 
+
+/* === Avatar buttons hover glow (premium subtle) === */
+.btn.small:hover{
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.18),
+    0 0 14px rgba(255,92,218,.18),
+    0 0 18px rgba(58,224,255,.14);
+  border-color: rgba(255,255,255,.32);
+}
+
+.btn.small:active{
+  transform: translateY(0);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,.25),
+    0 6px 14px rgba(0,0,0,.12);
+}
+
+
+/* === Person profile actions (glow + motion) === */
+.personProfileActions .btn{
+  position:relative;
+  overflow:hidden;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+
+.personProfileActions .btn::after{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background:radial-gradient(circle, rgba(255,255,255,.28), transparent 60%);
+  opacity:0;
+  transition:opacity .25s ease;
+}
+
+.personProfileActions .btn:hover{
+  transform:translateY(-2px) scale(1.02);
+  box-shadow:
+    0 14px 34px rgba(0,0,0,.22),
+    0 0 18px rgba(255,92,218,.25),
+    0 0 22px rgba(58,224,255,.18);
+}
+
+.personProfileActions .btn:hover::after{
+  opacity:.6;
+}
+
+
+.personHeroCard #personAvatar{
+  transition:transform .4s ease, box-shadow .3s ease;
+}
+
+.personHeroCard #personAvatar:hover{
+  transform:scale(1.04);
+  box-shadow:
+    0 24px 48px rgba(0,0,0,.30),
+    0 0 26px rgba(255,92,218,.22),
+    0 0 32px rgba(58,224,255,.18);
+}
+
+
+.personMatchScore{
+  font-weight:1000;
+  font-size:18px;
+  margin-top:6px;
+  background:linear-gradient(90deg,#ff5cda,#3ae0ff);
+  -webkit-background-clip:text;
+  color:transparent;
+  animation:personMatchPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes personMatchPulse{
+  0%,100%{ transform:scale(1); filter:brightness(1);}
+  50%{ transform:scale(1.06); filter:brightness(1.2);}
+}
+
+
+/* === Person profile lighter overrides + relation badge === */
+.personHeroCard{
+  padding:16px !important;
+  box-shadow:0 18px 42px rgba(0,0,0,.20) !important;
+}
+
+.personHeroCard #personAvatar{
+  width:92px !important;
+  height:92px !important;
+  border-radius:28px !important;
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.22),
+    0 0 16px rgba(255,92,218,.10),
+    0 0 18px rgba(58,224,255,.09) !important;
+}
+
+.personProfilePanel{
+  padding:12px 14px !important;
+  border-radius:20px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025)) !important;
+}
+
+.personMatchScore{
+  animation:none !important;
+  filter:none !important;
+  font-size:15px !important;
+  padding:8px 18px !important;
+  border-radius:999px !important;
+  background:linear-gradient(135deg,rgba(255,92,218,.30),rgba(58,224,255,.22)) !important;
+  color:#f7fbff !important;
+  -webkit-background-clip:initial !important;
+  box-shadow:0 10px 24px rgba(0,0,0,.16),0 0 16px rgba(255,92,218,.12) !important;
+}
+
+.personRelationBadge{
+  display:none;
+  margin-top:10px;
+  padding:7px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);
+  color:rgba(247,251,255,.88);
+  font-size:13px;
+  font-weight:950;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 8px 18px rgba(0,0,0,.12);
+}
+
+.personRelationBadge.isVisible{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.personProfileActions.isFriend{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+}
+
+
+/* === Relation badge placement tweak === */
+.personRelationBadge{
+  margin-top:8px !important;
+  margin-bottom:6px !important;
+  padding:5px 10px !important;
+  font-size:12px !important;
+  background:rgba(255,255,255,.075) !important;
+  border-color:rgba(255,255,255,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 14px rgba(0,0,0,.10) !important;
+}
+
+.personMatchScore{
+  margin-top:14px !important;
+}
+
+
+/* === Relation badge final placement: corner status === */
+.personRelationBadge{
+  position:absolute !important;
+  left:18px !important;
+  top:18px !important;
+  z-index:3 !important;
+  margin:0 !important;
+  padding:6px 11px !important;
+  border-radius:999px !important;
+  background:rgba(10,18,32,.34) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  color:rgba(247,251,255,.90) !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.14) !important;
+  backdrop-filter:blur(12px) saturate(1.2);
+}
+
+.personRelationBadge.isVisible{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+
+/* === Relation badge fix: calm inline status, no floating sticker === */
+.personRelationBadge{
+  position:static !important;
+  left:auto !important;
+  top:auto !important;
+  z-index:auto !important;
+  margin:7px auto 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  color:rgba(247,251,255,.64) !important;
+  font-size:12px !important;
+  font-weight:850 !important;
+  letter-spacing:.01em !important;
+}
+
+.personRelationBadge.isVisible{
+  display:block !important;
+}
+
+
+/* === Person profile final premium polish === */
+#S5_PERSON_PROFILE .content{
+  padding-bottom:118px !important;
+}
+
+.personHeroInner{
+  gap:13px !important;
+}
+
+.personHeroCard{
+  padding:15px !important;
+  border-radius:28px !important;
+}
+
+.personHeroCard #personAvatar{
+  width:86px !important;
+  height:86px !important;
+  border-radius:26px !important;
+}
+
+.personHeroCard #personNick{
+  font-size:22px !important;
+  margin-bottom:4px !important;
+}
+
+.personHeroCard #personMeta{
+  font-size:13.5px !important;
+}
+
+.personHeroCard #personDistanceMeta{
+  display:inline-flex !important;
+  margin-top:8px !important;
+  padding:6px 12px !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.075) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  font-weight:850 !important;
+}
+
+.personProfileActions{
+  margin-top:18px !important;
+}
+
+.personProfileActions .btn{
+  min-height:54px !important;
+  border-radius:22px !important;
+}
+
+
+/* === Person profile layout: app profile, not poster === */
+.personProfileLayout{
+  align-items:stretch !important;
+  gap:14px !important;
+}
+
+.personProfileHeader{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  width:100%;
+  text-align:left;
+  padding:8px 4px 4px;
+}
+
+.personProfileHeaderText{
+  min-width:0;
+  flex:1;
+  text-align:left;
+}
+
+.personProfileHeaderText #personNick{
+  text-align:left !important;
+}
+
+.personProfileHeaderText #personMeta,
+.personProfileHeaderText #personDistanceMeta{
+  text-align:left !important;
+}
+
+.personProfileHeaderText .personRelationBadge{
+  margin:6px 0 0 !important;
+  text-align:left !important;
+}
+
+.personProfileHeader #personAvatar{
+  width:76px !important;
+  height:76px !important;
+  min-width:76px !important;
+  border-radius:24px !important;
+}
+
+.personProfileLayout .personMatchScore{
+  align-self:flex-start;
+  margin-top:4px !important;
+}
+
+.personProfileLayout .personProfilePanel{
+  text-align:left;
+}
+
+.personProfileLayout .personProfilePanel .chips{
+  justify-content:flex-start;
+}
+
+
+
+/* === FINAL S5 person profile: Instagram-like premium layout === */
+#S5_PERSON_PROFILE .personHeroCard{
+  padding:18px !important;
+  border-radius:28px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.032)) !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+  box-shadow:0 18px 42px rgba(0,0,0,.20) !important;
+  overflow:hidden !important;
+}
+
+#S5_PERSON_PROFILE .personHeroCard::before{
+  display:none !important;
+}
+
+#S5_PERSON_PROFILE .personHeroInner,
+#S5_PERSON_PROFILE .personProfileLayout{
+  align-items:stretch !important;
+  gap:14px !important;
+  margin-top:0 !important;
+}
+
+#S5_PERSON_PROFILE .personProfileHeader{
+  display:grid !important;
+  grid-template-columns:78px minmax(0,1fr) !important;
+  gap:14px !important;
+  align-items:center !important;
+  width:100% !important;
+  padding:2px 0 6px !important;
+}
+
+#S5_PERSON_PROFILE #personAvatar.avatar.big{
+  width:78px !important;
+  height:78px !important;
+  min-width:78px !important;
+  border-radius:999px !important;
+  border:2px solid rgba(255,255,255,.26) !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.22),0 0 18px rgba(58,224,255,.10) !important;
+}
+
+#S5_PERSON_PROFILE .personProfileHeaderText{
+  min-width:0 !important;
+  text-align:left !important;
+}
+
+#S5_PERSON_PROFILE #personNick{
+  font-size:22px !important;
+  line-height:1.05 !important;
+  letter-spacing:-.035em !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  margin:0 0 5px !important;
+  text-align:left !important;
+}
+
+#S5_PERSON_PROFILE #personMeta,
+#S5_PERSON_PROFILE #personDistanceMeta{
+  display:block !important;
+  padding:0 !important;
+  margin:3px 0 0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:rgba(247,251,255,.72) !important;
+  font-size:12.5px !important;
+  line-height:1.25 !important;
+  text-align:left !important;
+}
+
+#S5_PERSON_PROFILE .personRelationBadge{
+  display:none;
+  margin:6px 0 0 !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:rgba(247,251,255,.64) !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  text-align:left !important;
+}
+
+#S5_PERSON_PROFILE .personRelationBadge.isVisible{
+  display:block !important;
+}
+
+#S5_PERSON_PROFILE .personMatchScore{
+  align-self:flex-start !important;
+  width:auto !important;
+  margin:2px 0 0 !important;
+  padding:7px 12px !important;
+  border-radius:999px !important;
+  background:linear-gradient(135deg,rgba(255,92,218,.26),rgba(58,224,255,.20)) !important;
+  color:#f7fbff !important;
+  -webkit-background-clip:initial !important;
+  font-size:12.5px !important;
+  font-weight:950 !important;
+  box-shadow:0 8px 18px rgba(0,0,0,.14) !important;
+  animation:none !important;
+  filter:none !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel{
+  width:100% !important;
+  padding:14px !important;
+  border-radius:22px !important;
+  text-align:left !important;
+  background:rgba(255,255,255,.045) !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel .sectionTitle{
+  margin:0 0 10px !important;
+  font-size:14px !important;
+  font-weight:1000 !important;
+  text-align:left !important;
+}
+
+#S5_PERSON_PROFILE #personInterests{
+  justify-content:flex-start !important;
+}
+
+#S5_PERSON_PROFILE #personInterests::before{
+  display:none !important;
+  content:none !important;
+}
+
+#S5_PERSON_PROFILE #personBio{
+  font-size:13.5px !important;
+  line-height:1.45 !important;
+  color:rgba(247,251,255,.80) !important;
+}
+
+#S5_PERSON_PROFILE .personProfileActions{
+  margin-top:16px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+
+#S5_PERSON_PROFILE .personProfileActions.isFriend{
+  grid-template-columns:1fr !important;
+}
+
+#S5_PERSON_PROFILE .personProfileActions .btn{
+  min-height:52px !important;
+  border-radius:20px !important;
+}
+
+
+/* === FINAL S5 taste polish: softer, less school-like === */
+#S5_PERSON_PROFILE .personHeroCard{
+  background:
+    radial-gradient(120% 90% at 0% 0%,rgba(255,92,218,.13),rgba(255,92,218,0) 58%),
+    radial-gradient(120% 90% at 100% 0%,rgba(58,224,255,.12),rgba(58,224,255,0) 58%),
+    linear-gradient(180deg,rgba(255,255,255,.060),rgba(255,255,255,.026)) !important;
+  border-color:rgba(255,255,255,.105) !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel{
+  padding:13px 14px !important;
+  border-radius:20px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.050),rgba(255,255,255,.022)) !important;
+  border-color:rgba(255,255,255,.085) !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel .sectionTitle{
+  font-size:13px !important;
+  line-height:1.15 !important;
+  letter-spacing:.01em !important;
+  color:rgba(247,251,255,.76) !important;
+  margin:0 0 10px !important;
+}
+
+#S5_PERSON_PROFILE #personBio{
+  color:rgba(247,251,255,.78) !important;
+  font-size:13.5px !important;
+  font-weight:750 !important;
+}
+
+#S5_PERSON_PROFILE #personInterests .chip{
+  padding:7px 12px !important;
+  border-radius:999px !important;
+  font-size:13px !important;
+  box-shadow:0 8px 18px rgba(0,0,0,.12) !important;
+}
+
+#S5_PERSON_PROFILE .personMatchScore{
+  padding:7px 13px !important;
+  font-size:12.5px !important;
+  background:linear-gradient(135deg,rgba(255,92,218,.22),rgba(58,224,255,.17)) !important;
+}
+
+#S5_PERSON_PROFILE .personProfileActions.isSingle,
+#S5_PERSON_PROFILE .personProfileActions.isFriend{
+  grid-template-columns:1fr !important;
+}
+
+#S5_PERSON_PROFILE #personFriendBtn:disabled{
+  background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.035)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  color:rgba(247,251,255,.68) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 10px 20px rgba(0,0,0,.10) !important;
+}
+
+
+/* === S5 readable pending status + softer section titles === */
+#S5_PERSON_PROFILE .personProfilePanel .sectionTitle{
+  font-size:12px !important;
+  font-weight:900 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.08em !important;
+  color:rgba(247,251,255,.58) !important;
+  margin:0 0 12px !important;
+}
+
+#S5_PERSON_PROFILE #personFriendBtn:disabled{
+  min-height:48px !important;
+  border-radius:18px !important;
+  background:
+    radial-gradient(120% 100% at 0% 0%,rgba(255,92,218,.13),rgba(255,92,218,0) 55%),
+    linear-gradient(180deg,rgba(255,255,255,.105),rgba(255,255,255,.045)) !important;
+  border:1px solid rgba(255,255,255,.20) !important;
+  color:rgba(247,251,255,.86) !important;
+  font-weight:950 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.20),
+    0 10px 22px rgba(0,0,0,.13),
+    0 0 16px rgba(58,224,255,.08) !important;
+  opacity:1 !important;
+}
+
+#S5_PERSON_PROFILE #personFriendBtn:disabled::before{
+  content:"";
+  display:inline-block;
+  width:7px;
+  height:7px;
+  margin-right:8px;
+  border-radius:999px;
+  background:rgba(58,224,255,.82);
+  box-shadow:0 0 10px rgba(58,224,255,.42);
+  vertical-align:middle;
+}
+
+
+/* === S5 correction: less blocky, cleaner profile feel === */
+#S5_PERSON_PROFILE .personProfilePanel{
+  padding:12px 0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel + .personProfilePanel{
+  border-top:1px solid rgba(255,255,255,.10) !important;
+  padding-top:16px !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel .sectionTitle{
+  font-size:15px !important;
+  font-weight:900 !important;
+  text-transform:none !important;
+  letter-spacing:-.01em !important;
+  color:rgba(247,251,255,.92) !important;
+  margin:0 0 10px !important;
+}
+
+#S5_PERSON_PROFILE #personInterests .chip{
+  background:rgba(255,255,255,.075) !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:none !important;
+}
+
+#S5_PERSON_PROFILE #personFriendBtn:disabled{
+  min-height:auto !important;
+  padding:8px 0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:rgba(247,251,255,.58) !important;
+  font-size:13px !important;
+  font-weight:850 !important;
+  opacity:1 !important;
+}
+
+#S5_PERSON_PROFILE #personFriendBtn:disabled::before{
+  content:"";
+  display:inline-block;
+  width:6px;
+  height:6px;
+  margin-right:7px;
+  border-radius:999px;
+  background:rgba(58,224,255,.72);
+  box-shadow:0 0 8px rgba(58,224,255,.28);
+}
+
+#S5_PERSON_PROFILE .personProfileActions.isSingle{
+  margin-top:8px !important;
+}
+
+
+/* === S5 FINAL: Instagram-like social profile direction === */
+#S5_PERSON_PROFILE .personHeroCard{
+  padding:18px !important;
+  border-radius:30px !important;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255,92,218,.16), transparent 55%),
+    radial-gradient(120% 100% at 100% 0%, rgba(58,224,255,.14), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025)) !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+  box-shadow:0 22px 46px rgba(0,0,0,.22) !important;
+}
+
+#S5_PERSON_PROFILE .personProfileHeader{
+  display:grid !important;
+  grid-template-columns:84px minmax(0,1fr) !important;
+  gap:16px !important;
+  align-items:center !important;
+  padding:4px 0 12px !important;
+}
+
+#S5_PERSON_PROFILE #personAvatar.avatar.big{
+  width:84px !important;
+  height:84px !important;
+  min-width:84px !important;
+  border-radius:999px !important;
+  border:2px solid rgba(255,255,255,.30) !important;
+  box-shadow:0 14px 30px rgba(0,0,0,.22),0 0 18px rgba(58,224,255,.10) !important;
+}
+
+#S5_PERSON_PROFILE .personProfileHeaderText{
+  text-align:left !important;
+  min-width:0 !important;
+}
+
+#S5_PERSON_PROFILE #personNick{
+  font-size:24px !important;
+  line-height:1.05 !important;
+  letter-spacing:-.035em !important;
+  margin:0 0 5px !important;
+  text-align:left !important;
+  white-space:normal !important;
+}
+
+#S5_PERSON_PROFILE #personMeta,
+#S5_PERSON_PROFILE #personDistanceMeta{
+  display:block !important;
+  margin:2px 0 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:rgba(247,251,255,.70) !important;
+  font-size:13px !important;
+  line-height:1.25 !important;
+  text-align:left !important;
+}
+
+#S5_PERSON_PROFILE .personRelationBadge{
+  margin:4px 0 0 !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:rgba(247,251,255,.58) !important;
+  font-size:12px !important;
+  font-weight:850 !important;
+  text-align:left !important;
+}
+
+#S5_PERSON_PROFILE .personMatchScore{
+  align-self:flex-start !important;
+  margin:0 0 4px !important;
+  padding:7px 13px !important;
+  border-radius:999px !important;
+  font-size:12.5px !important;
+  background:linear-gradient(135deg,rgba(255,92,218,.25),rgba(58,224,255,.18)) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  color:#f7fbff !important;
+  box-shadow:0 10px 22px rgba(0,0,0,.14) !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel{
+  padding:14px 0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  border-top:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:none !important;
+}
+
+#S5_PERSON_PROFILE .personProfilePanel .sectionTitle{
+  font-size:13px !important;
+  font-weight:900 !important;
+  text-transform:none !important;
+  letter-spacing:0 !important;
+  color:rgba(247,251,255,.68) !important;
+  margin:0 0 10px !important;
+}
+
+#S5_PERSON_PROFILE #personInterests .chip{
+  background:rgba(255,255,255,.075) !important;
+  border:1px solid rgba(255,255,255,.11) !important;
+  box-shadow:none !important;
+}
+
+#S5_PERSON_PROFILE .personProfileActions{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+  margin-top:14px !important;
+}
+
+#S5_PERSON_PROFILE .personProfileActions .btn{
+  width:100% !important;
+  min-height:54px !important;
+  border-radius:22px !important;
+  justify-content:center !important;
+  text-align:center !important;
+}
+
+#S5_PERSON_PROFILE #personFriendBtn:not(:disabled){
+  background:linear-gradient(90deg,rgba(255,75,212,.96),rgba(52,230,255,.96)) !important;
+  color:#07121e !important;
+  border:0 !important;
+  box-shadow:0 16px 34px rgba(0,0,0,.22),0 0 18px rgba(255,92,218,.16) !important;
+}
+
+#S5_PERSON_PROFILE #personFriendBtn:disabled{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:rgba(247,251,255,.58) !important;
+  min-height:auto !important;
+  padding:8px 0 !important;
+}
+
+
+/* === S7B Event detail Instagram-like premium pass === */
+#S7B_EVENT_DETAIL .eventDetailCard{
+  padding:18px !important;
+  border-radius:30px !important;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255,92,218,.15), transparent 55%),
+    radial-gradient(120% 100% at 100% 0%, rgba(58,224,255,.14), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,.070), rgba(255,255,255,.026)) !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+  box-shadow:0 22px 46px rgba(0,0,0,.22) !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailTop{
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:space-between !important;
+  gap:14px !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailTitleBlock{
+  min-width:0 !important;
+  text-align:left !important;
+}
+
+#S7B_EVENT_DETAIL #evTitle{
+  font-size:25px !important;
+  line-height:1.05 !important;
+  letter-spacing:-.04em !important;
+  margin:0 0 7px !important;
+}
+
+#S7B_EVENT_DETAIL #evMeta{
+  font-size:13px !important;
+  line-height:1.35 !important;
+  color:rgba(247,251,255,.72) !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailChips{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+  margin-top:18px !important;
+}
+
+#S7B_EVENT_DETAIL .eventCaption{
+  margin-top:16px !important;
+  font-size:15px !important;
+  line-height:1.45 !important;
+  font-weight:800 !important;
+  color:rgba(247,251,255,.86) !important;
+  text-align:left !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailPanel{
+  margin-top:18px !important;
+  padding:14px !important;
+  border-radius:22px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025)) !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+#S7B_EVENT_DETAIL .eventPanelLabel{
+  font-size:12px !important;
+  font-weight:900 !important;
+  color:rgba(247,251,255,.62) !important;
+  margin-bottom:10px !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerPanel{
+  cursor:pointer !important;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerPanel:hover{
+  transform:translateY(-2px) !important;
+  border-color:rgba(255,255,255,.18) !important;
+  box-shadow:0 16px 32px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerRow{
+  display:grid !important;
+  grid-template-columns:58px minmax(0,1fr) !important;
+  gap:13px !important;
+  align-items:center !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerLogo{
+  width:58px !important;
+  height:58px !important;
+  border-radius:18px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 10px 24px rgba(0,0,0,.16) !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerText{
+  min-width:0 !important;
+  text-align:left !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerText .tStrong{
+  font-size:18px !important;
+  line-height:1.15 !important;
+}
+
+#S7B_EVENT_DETAIL .eventTicketRow{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid{
+  margin-top:18px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid .btn,
+#S7B_EVENT_DETAIL .eventWideBtn{
+  min-height:50px !important;
+  border-radius:20px !important;
+  justify-content:center !important;
+}
+
+#S7B_EVENT_DETAIL .eventWideBtn{
+  width:100% !important;
+  margin-top:12px !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailNote{
+  margin-top:14px !important;
+  font-size:13px !important;
+  line-height:1.4 !important;
+  color:rgba(247,251,255,.64) !important;
+  text-align:left !important;
+}
+
+
+/* === S7B Event detail social / Instagram-like refinement === */
+#S7B_EVENT_DETAIL .eventSocialCard{
+  padding:18px !important;
+  border-radius:30px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.060), rgba(255,255,255,.022)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 22px 46px rgba(0,0,0,.22) !important;
+}
+
+#S7B_EVENT_DETAIL .eventSocialHeader{
+  text-align:left !important;
+  padding-bottom:16px !important;
+}
+
+#S7B_EVENT_DETAIL .eventSocialKicker{
+  font-size:12px !important;
+  font-weight:900 !important;
+  color:rgba(247,251,255,.52) !important;
+  letter-spacing:.02em !important;
+  margin-bottom:8px !important;
+}
+
+#S7B_EVENT_DETAIL .eventSocialCard #evTitle{
+  font-size:26px !important;
+  line-height:1.04 !important;
+  letter-spacing:-.045em !important;
+  margin:0 0 7px !important;
+}
+
+#S7B_EVENT_DETAIL .eventSocialCard #evMeta{
+  font-size:13px !important;
+  line-height:1.35 !important;
+  color:rgba(247,251,255,.68) !important;
+}
+
+#S7B_EVENT_DETAIL .eventSocialSection{
+  padding:16px 0 !important;
+  border-top:1px solid rgba(255,255,255,.095) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+#S7B_EVENT_DETAIL .eventPanelLabel{
+  font-size:13px !important;
+  font-weight:900 !important;
+  color:rgba(247,251,255,.58) !important;
+  margin:0 0 10px !important;
+}
+
+#S7B_EVENT_DETAIL .eventCaption{
+  margin:0 !important;
+  font-size:15px !important;
+  line-height:1.45 !important;
+  font-weight:760 !important;
+  color:rgba(247,251,255,.88) !important;
+  text-align:left !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailChips{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+  margin-top:12px !important;
+}
+
+#S7B_EVENT_DETAIL .eventPlacePreview{
+  display:grid !important;
+  grid-template-columns:46px minmax(0,1fr) !important;
+  gap:12px !important;
+  align-items:center !important;
+  padding:12px !important;
+  border-radius:20px !important;
+  background:rgba(255,255,255,.045) !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+}
+
+#S7B_EVENT_DETAIL .eventPlacePin{
+  width:46px !important;
+  height:46px !important;
+  border-radius:16px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:linear-gradient(135deg,rgba(255,92,218,.18),rgba(58,224,255,.16)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  color:rgba(247,251,255,.86) !important;
+  font-weight:1000 !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerPanel{
+  cursor:pointer !important;
+  transition:transform .18s ease, opacity .18s ease !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerPanel:hover{
+  transform:translateY(-2px) !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerRow{
+  display:grid !important;
+  grid-template-columns:54px minmax(0,1fr) !important;
+  gap:12px !important;
+  align-items:center !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerLogo{
+  width:54px !important;
+  height:54px !important;
+  border-radius:18px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  background:rgba(255,255,255,.055) !important;
+  border:1px solid rgba(255,255,255,.11) !important;
+}
+
+#S7B_EVENT_DETAIL .eventOrganizerText{
+  text-align:left !important;
+  min-width:0 !important;
+}
+
+#S7B_EVENT_DETAIL .eventTicketRow{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid{
+  margin-top:4px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid .btn,
+#S7B_EVENT_DETAIL .eventWideBtn{
+  min-height:50px !important;
+  border-radius:20px !important;
+  justify-content:center !important;
+}
+
+#S7B_EVENT_DETAIL .eventWideBtn{
+  width:100% !important;
+  margin-top:10px !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailNote{
+  margin-top:13px !important;
+  font-size:13px !important;
+  line-height:1.4 !important;
+  color:rgba(247,251,255,.58) !important;
+  text-align:left !important;
+}
+
 </style>
 
 </head>
@@ -764,7 +2099,7 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <div class="heroCard profileSummaryCard">
               <div class="sectionTitle">Załóż konto</div>
-              <div class="sectionSub" id="regSubLine">Dołącz do USLY i zacznij od dobrze ustawionego profilu startowego.</div>
+              <div class="sectionSub" id="regSubLine">Utwórz konto i przejdź do profilu.</div>
 
               <label class="mt12">Tryb</label>
               <div class="seg wide">
@@ -774,7 +2109,7 @@ section#S11_PLANS .card[data-plan].is-current{
 
               <div class="card mt16">
                 <div class="sectionTitle">Konto</div>
-                <div class="sectionSub">Podaj podstawowe dane potrzebne do utworzenia konta.</div>
+                
 
                 <label class="mt12">Email *</label>
                 <input id="regEmail" type="email" placeholder="np. ola@email.com" autocomplete="email" />
@@ -797,9 +2132,56 @@ section#S11_PLANS .card[data-plan].is-current{
               </div>
 
               <div id="regUserBox">
-                <div class="card mt16" id="regUserPlanBox">
+  
+                <div class="card mt16">
+                  <div class="sectionTitle">Wiek i lokalizacja</div>
+                  
+
+                  <label class="mt12">Data urodzenia *</label>
+                  <input id="regBirthDate" type="date" required />
+                  <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
+                   Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
+                  </div>
+                  <div class="tMuted mt10" style="text-align:left;">Wymagane 18+.</div>
+
+                  <label class="mt12">Lokalizacja *</label>
+                  <input id="regCity" type="text" placeholder="Pobieramy miasto..." readonly />
+                  <input id="regGeoLat" type="hidden" value="" />
+                  <input id="regGeoLng" type="hidden" value="" />
+                  <div class="locationConsentNote mt12">📍 Twoja okolica, lepsze dopasowania.</div>
+
+                  
+                </div>
+              </div>
+
+              <div id="regPartnerBox" style="display:none;">
+                <div class="card mt16">
+                  <div class="sectionTitle">Twoje miejsce</div>
+
+                  <label class="mt12">Miasto *</label>
+                  <input id="regCityPartner" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+                </div>
+
+                <div class="card mt16">
+                  <div class="sectionTitle">Plan organizatora</div>
+                  <div class="sectionSub">Wybierz dostęp dla miejsca.</div>
+
+                  <div class="seg wide mt12">
+                    <button class="segBtn on" id="pplan_free" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">FREE • 0 zł / mies.</button>
+                    <button class="segBtn" id="pplan_pro" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">PRO • 99 zł / mies.</button>
+                  </div>
+                  <div class="seg wide mt10">
+                    <button class="segBtn" id="pplan_premium" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">PREMIUM • 199 zł / mies.</button>
+                    <button class="segBtn" id="pplan_enterprise" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">ENTERPRISE • indywidualnie</button>
+                  </div>
+
+                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
+                </div>
+              </div>
+
+              <div class="card mt16" id="regUserPlanBox">
                   <div class="sectionTitle">Plan</div>
-                  <div class="sectionSub">Domyślnie aktywny jest FREE. Możesz od razu wybrać inny plan i później go zmienić.</div>
+                  <div class="sectionSub">Wybierz startowy dostęp.</div>
 
                   <div class="seg wide mt12">
                     <button class="segBtn on" id="uplan_free" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓">FREE • 0 zł / mies.</button>
@@ -813,72 +2195,19 @@ section#S11_PLANS .card[data-plan].is-current{
                   <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
                 </div>
 
-                <div class="card mt16">
-                  <div class="sectionTitle">Profil startowy</div>
-                  <div class="sectionSub">Uzupełnij podstawowe dane na start.</div>
-
-                  <label class="mt12">Data urodzenia *</label>
-                  <input id="regBirthDate" type="date" required />
-                  <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
-                   Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
-                  </div>
-                  <div class="tMuted mt10" style="text-align:left;">Konto jest dostępne dla osób pełnoletnich.</div>
-
-                  <label class="mt12">Miasto *</label>
-                  <div class="row">
-                    <div style="flex:1;">
-                      <input id="regCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
-                    </div>
-                    <button class="btn secondary small" id="btnUseLocation" type="button">Użyj lokalizacji</button>
-                  </div>
-                  <input id="regGeoLat" type="hidden" value="" />
-                  <input id="regGeoLng" type="hidden" value="" />
-                  <div class="tMuted mt10" style="text-align:left;">Możesz użyć lokalizacji, aby szybciej uzupełnić miasto.</div>
-
-                  <div class="tMuted mt12" style="text-align:left;">Zdjęcie i bio uzupełnisz w następnym kroku.</div>
-                </div>
-              </div>
-
-              <div id="regPartnerBox" style="display:none;">
-                <div class="card mt16">
-                  <div class="sectionTitle">Plan</div>
-                  <div class="sectionSub">Domyślnie aktywny jest FREE. Możesz od razu wybrać inny plan i później go zmienić.</div>
-
-                  <div class="seg wide mt12">
-                    <button class="segBtn on" id="pplan_free" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">FREE • 0 zł / mies.</button>
-                    <button class="segBtn" id="pplan_pro" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">PRO • 99 zł / mies.</button>
-                  </div>
-                  <div class="seg wide mt10">
-                    <button class="segBtn" id="pplan_premium" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">PREMIUM • 199 zł / mies.</button>
-                    <button class="segBtn" id="pplan_enterprise" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">ENTERPRISE • indywidualnie</button>
-                  </div>
-
-                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
-                </div>
-
-                <div class="card mt16">
-                  <div class="sectionTitle">Lokalizacja miejsca</div>
-                  <div class="sectionSub">Podaj miasto, a pozostałe dane uzupełnisz w następnym kroku.</div>
-
-                  <label class="mt12">Miasto *</label>
-                  <input id="regCityPartner" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
-
-                  <div class="tMuted mt12" style="text-align:left;">Branżę, logo i opis uzupełnisz w następnym kroku.</div>
-                </div>
-              </div>
 
               <div class="card mt16">
-                <div class="sectionTitle">Dokumenty i zgody</div>
-                <div class="sectionSub">Przed utworzeniem konta zaakceptuj wymagane dokumenty.</div>
+                <div class="sectionTitle">Zgody</div>
+                
 
                 <div class="mt16 legalBox">
                   <label class="checkRow">
                     <input id="acceptTerms" type="checkbox" />
-                    <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin</span> *</span>
+                    <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin*</span></span>
                   </label>
                   <label class="checkRow mt10">
                     <input id="acceptRodo" type="checkbox" />
-                    <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności</span> *</span>
+                    <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności*</span></span>
                   </label>
                 </div>
 
@@ -904,26 +2233,40 @@ section#S11_PLANS .card[data-plan].is-current{
           </header>
 
           <div class="content">
-            <div class="heroCard">
-              <div class="sectionTitle">Edytuj profil</div>
-              <div class="sectionSub">Zadbaj o dane po zalogowaniu — bez chaosu i bez dublowania rejestracji.</div>
-            </div>
-
             <div class="card mt16">
               <label>Email</label>
               <input id="setEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
 
+<div class="mt16" style="padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+                <div style="font-weight:900;font-size:14px;">Zdjęcie / awatar</div>
+                <div class="tMuted" style="margin-top:4px;">Dodaj zdjęcie lub użyj awatara.</div>
+                <div class="mt12 avatarCardActions">
+                  <button class="btn small iosCardBtn" type="button" onclick="openAddPhoto()">Dodaj</button>
+                  <button class="btn small iosCardBtn ai" type="button" onclick="openAvatarAI()">AI</button>
+                  <button class="btn small iosCardBtn" type="button" onclick="removeUserAvatar()">Usuń</button>
+                </div>
+              </div>
+
               <label class="mt12">Nick</label>
-              <input id="setNick" type="text" placeholder="np. Ola_88" />
+              <input id="setNick" class="iosInput" type="text" placeholder="np. Ola_88" />
 
               <label class="mt12">BIO</label>
-              <textarea id="setBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
+              <textarea id="setBio" class="iosInput" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
               <div class="charHint"><span id="setBioCount">0</span>/250</div>
 
 
 
-              <label class="mt12">Miasto</label>
-              <input id="setCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+              <label class="mt12">Aktualna lokalizacja</label>
+              <input id="setCity" type="text" placeholder="—" readonly />
+
+              <label class="mt12">Zasięg okolicy</label>
+              <select id="setNearbyRadiusKm">
+                <option value="5">Do 5 km</option>
+                <option value="10">Do 10 km</option>
+                <option value="25">Do 25 km</option>
+                <option value="50">Do 50 km</option>
+                <option value="100">Do 100 km</option>
+              </select>
 
               <div class="hintCard mt16">
                 <div class="hintTitle">Preferowany zakres wieku</div>
@@ -973,14 +2316,6 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
 
-              <div class="hintCard mt16">
-                <div class="hintTitle">Zdjęcie / awatar</div>
-                <div class="hintText">Zdjęcie profilu lub estetyczny awatar.</div>
-                <div class="row mt12">
-                  <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
-                  <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
-                </div>
-              </div>
 
               <button class="btn mt16" type="button" onclick="saveSettings()">Zapisz zmiany</button>
             </div>
@@ -1111,13 +2446,38 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="row mt12">
                   <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
                   <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
+                  <button class="btn secondary small" type="button" onclick="removeUserAvatar()">Usuń zdjęcie</button>
                 </div>
 
                 <label class="mt16">Nick</label>
                 <input id="setupNick" type="text" placeholder="Twój nick" />
 
-                <label class="mt12">Miasto</label>
-                <input id="setupCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+                <label class="mt12">Aktualna lokalizacja</label>
+                <input id="setupCity" type="text" placeholder="—" readonly />
+
+                <label class="mt12">Zasięg okolicy</label>
+                <select id="setupNearbyRadiusKm">
+                  <option value="5">Do 5 km</option>
+                  <option value="10">Do 10 km</option>
+                  <option value="25" selected>Do 25 km</option>
+                  <option value="50">Do 50 km</option>
+                  <option value="100">Do 100 km</option>
+                </select>
+
+                <div class="setupInterestCard mt16">
+                  <div class="setupInterestHeader">
+                    <div class="setupInterestTitle">Zainteresowania</div>
+                    <div class="sectionSub" id="setupInterestLimitHint">—</div>
+                  </div>
+
+                  <div class="hashRow mt12">
+                    <span class="hashPrefix">#</span>
+                    <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
+                    <button class="btn secondary small hashAddBtn" id="interestAddBtn" type="button" aria-label="Dodaj zainteresowanie">Dodaj</button>
+                  </div>
+                  <div class="chips" id="interestChips"></div>
+                  <div class="typeahead" id="interestTypeahead"></div>
+                </div>
 
                 <label class="mt12">BIO (max 250)</label>
                 <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
@@ -1171,16 +2531,6 @@ section#S11_PLANS .card[data-plan].is-current{
                   </div>
                 </div>
 
-                <label class="mt12">Zainteresowania *</label>
-                <div class="sectionSub" id="setupInterestLimitHint">—</div>
-                <div class="hashRow">
-                  <span class="hashPrefix">#</span>
-                  <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
-                  <button class="btn secondary small hashAddBtn" id="interestAddBtn" type="button" aria-label="Dodaj zainteresowanie">Dodaj</button>
-                </div>
-                <div class="chips" id="interestChips"></div>
-                <div class="typeahead" id="interestTypeahead"></div>
-
                 <button class="btn mt16" type="button" onclick="finishProfileSetup()">Zapisz i przejdź dalej</button>
               </div>
             </div>
@@ -1203,31 +2553,30 @@ section#S11_PLANS .card[data-plan].is-current{
 
           <div class="content">
             <div class="heroCard profileHubCard">
-              <div class="sectionSub" style="margin-bottom:6px;">Dokończ profil miejsca</div>
-              <div class="sectionTitle" id="setupPartnerCompanyName" style="margin:0;">Twoje miejsce</div>
-              <div class="sectionSub mt10">Uzupełnij profil i przejdź dalej.</div>
+              <div class="sectionTitle" id="setupPartnerCompanyName" style="margin:0;">Uzupełnij profil</div>
+              <div class="sectionSub mt10">Logo, miasto i charakter miejsca.</div>
             </div>
 
-            <div class="card mt16">
-              <div class="sectionTitle">Logo i lokalizacja</div>
+            <div class="card mt16 setupOrgIdentityCard">
+              <div class="sectionTitle">Tożsamość miejsca</div>
 
               <div class="row mt12" style="align-items:center;gap:14px;">
-                <div class="avatar big" id="setupOrgLogoPreview">🏷️</div>
+                <div class="avatar big setupOrgLogoPreview" id="setupOrgLogoPreview"></div>
                 <div style="flex:1;text-align:left;">
-                  <input id="setupOrgLogo" type="file" accept="image/*" />
-                  <div class="tMuted mt10">Dodaj logo teraz albo później.</div>
+                  <button class="btn small mt10" type="button" onclick="document.getElementById('setupOrgLogo').click()">Dodaj logo</button>
+                  <input id="setupOrgLogo" type="file" accept="image/*" style="display:none;" />
                 </div>
               </div>
 
-              <label class="mt16">Miasto</label>
+              <label class="mt16">Miasto działania</label>
               <input id="setupOrgCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
-              <div class="tMuted mt10" style="text-align:left;">Możesz je poprawić teraz.</div>
             </div>
 
             <div class="card mt16">
-              <div class="sectionTitle">Dane marki</div>
+              <div class="sectionTitle">Klimat miejsca</div>
+              <div class="sectionSub mt6">Pokaż użytkownikom, czego mogą się spodziewać.</div>
 
-              <label class="mt12">Branża</label>
+              <label class="mt12">Kategoria</label>
               <select id="setupOrgCategory">
                 <option value="gastro">Gastro / restauracja / kawiarnia</option>
                 <option value="bar_nocne">Bar / klub / nightlife</option>
@@ -1242,10 +2591,10 @@ section#S11_PLANS .card[data-plan].is-current{
                 <option value="plener">Plener / turystyka / rekreacja</option>
                 <option value="inne">Inne / trudno powiedzieć</option>
               </select>
-              <div class="tMuted mt10" style="text-align:left;">Wybierz główną kategorię miejsca.</div>
+              
 
-              <label class="mt12">Opis</label>
-              <textarea id="setupOrgAbout" maxlength="500" placeholder="Krótko opisz miejsce: czym jest, jaki ma klimat i dla kogo jest oferta."></textarea>
+              <label class="mt12">Krótki opis</label>
+              <textarea id="setupOrgAbout" maxlength="500" placeholder="Co warto wiedzieć o tym miejscu?"></textarea>
               <div class="charHint"><span id="setupOrgAboutCount">0</span>/500</div>
             </div>
 
@@ -1326,26 +2675,31 @@ section#S11_PLANS .card[data-plan].is-current{
                   <button class="btn small secondary" type="button" onclick="openPersonMenu()">⋯</button>
                 </div>
 
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:4px;">
-                  <div class="avatar big" id="personAvatar"></div>
+                  <div class="personHeroInner personProfileLayout">
+                    <div class="personProfileHeader">
+                      <div class="avatar big" id="personAvatar"></div>
+                      <div class="personProfileHeaderText">
+                        <div class="sectionTitle" id="personNick">—</div>
+                        <div class="sectionSub" id="personMeta">—</div>
+                        <div id="personRelationBadge" class="personRelationBadge"></div>
+                        <div class="sectionSub" id="personDistanceMeta"></div>
+                      </div>
+                    </div>
 
-                    <div style="text-align:center;width:100%;">
-                    <div class="sectionTitle" id="personNick">—</div>
-                    <div class="sectionSub" id="personMeta">—</div>
                     <div id="personMatchScore" class="personMatchScore">—</div>
+
+                    <div class="personProfilePanel">
+                      <div class="sectionTitle">Zainteresowania</div>
+                      <div class="chips" id="personInterests"></div>
+                    </div>
+
+                    <div class="personProfilePanel">
+                      <div class="sectionTitle">O mnie</div>
+                      <div class="sectionSub" id="personBio">Ta osoba nie dodała jeszcze bio.</div>
+                    </div>
                   </div>
 
-                  <div style="width:100%;">
-                    <div class="chips" id="personInterests"></div>
-                  </div>
-
-                  <div style="width:100%;">
-                    <div class="sectionTitle">O mnie</div>
-                    <div class="sectionSub" id="personBio">Ta osoba nie dodała jeszcze bio.</div>
-                  </div>
-                </div>
-
-                <div class="row mt16">
+                <div class="row mt16 personProfileActions">
                   <button class="btn" id="personChatBtn" type="button" onclick="startChatFromProfile()">Napisz</button>
                   <button class="btn secondary" id="personFriendBtn" type="button" onclick="addFriendFromProfile()">Dodaj do znajomych</button>
                 </div>
@@ -1478,35 +2832,44 @@ section#S11_PLANS .card[data-plan].is-current{
           </header>
   
           <div class="content">
-            <div class="heroCard profileSummaryCard">
-              <div class="row" style="align-items:center;justify-content:space-between;">
-                <div>
-                  <div class="sectionTitle" id="evTitle">—</div>
-                  <div class="sectionSub" id="evMeta">—</div>
-                </div>
-                <div class="planPill" id="evBadge">FREE</div>
+            <div class="heroCard profileSummaryCard eventDetailCard eventSocialCard">
+              <div class="eventSocialHeader">
+                <div class="eventSocialKicker">Wydarzenie</div>
+                <div class="sectionTitle" id="evTitle">—</div>
+                <div class="sectionSub" id="evMeta">—</div>
+                <div class="eventDetailChips" id="evInterestChips"></div>
               </div>
-  
-              <div class="divider mt16"><span>#</span></div>
-              <div class="chips" id="evInterestChips"></div>
-  
-              <p class="mt16" id="evDesc">—</p>
 
-              <div class="hintCard mt16" id="evOrganizerBox" onclick="openEventOrganizerProfile()" style="cursor:pointer;">
-                <div class="hintTitle">Organizator</div>
-                <div class="row mt12" style="align-items:center;gap:14px;">
-                  <div id="evOrganizerLogo" style="width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;flex:0 0 64px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 24px rgba(6,10,24,.18);overflow:hidden;">🏢</div>
-                  <div style="min-width:0;flex:1;">
-                    <div class="tStrong" id="evOrganizerName" style="font-size:18px;line-height:1.2;">—</div>
-                    <div class="sectionSub mt6" id="evOrganizerMeta">—</div>
+              <div class="eventSocialSection">
+                <div class="eventPanelLabel">Opis wydarzenia</div>
+                <div class="eventCaption" id="evDesc">—</div>
+              </div>
+
+              <div class="eventSocialSection eventPlacePanel">
+                <div class="eventPanelLabel">Miejsce</div>
+                <div class="eventPlacePreview">
+                  <div class="eventPlacePin">⌖</div>
+                  <div>
+                    <div class="tStrong" id="evPlaceTitle">—</div>
+                    <div class="sectionSub" id="evPlaceMeta">Mapa lokalizacji będzie tutaj.</div>
                   </div>
                 </div>
               </div>
-  
-              <!-- Ticketing -->
-              <div class="hintCard mt16" id="evTicketBox">
-                <div class="hintTitle">Bilety</div>
-                <div class="row mt12" style="align-items:center;justify-content:space-between;">
+
+              <div class="eventSocialSection eventOrganizerPanel" id="evOrganizerBox" onclick="openEventOrganizerProfile()">
+                <div class="eventPanelLabel">Organizator</div>
+                <div class="eventOrganizerRow">
+                  <div id="evOrganizerLogo" class="eventOrganizerLogo"></div>
+                  <div class="eventOrganizerText">
+                    <div class="tStrong" id="evOrganizerName">—</div>
+                    <div class="sectionSub" id="evOrganizerMeta">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="eventSocialSection" id="evTicketBox">
+                <div class="eventPanelLabel">Bilety</div>
+                <div class="eventTicketRow">
                   <div class="tStrong" id="evTicketType">Bezpłatne</div>
                   <div class="planPill" id="evTicketPricePill">0 zł</div>
                 </div>
@@ -1521,23 +2884,19 @@ section#S11_PLANS .card[data-plan].is-current{
                   </div>
                 </div>
               </div>
-  
-              <div class="row mt16">
-                <button class="btn" type="button" onclick="toggleSaveEvent()">Zapisz</button>
-                <button class="btn secondary" type="button" onclick="toggleInterestedEvent()">Zainteresowany</button>
+
+              <div class="eventActionsGrid">
+                <button class="btn" type="button" onclick="toggleSaveEvent()">Obserwuj</button>
+                <button class="btn secondary" type="button" onclick="toggleInterestedEvent()">Wezmę udział</button>
               </div>
-  
-              <div class="row mt12">
-                <button class="btn secondary" type="button" onclick="openShare()">Udostępnij</button>
+
+              <button class="btn secondary eventWideBtn" type="button" onclick="openShare()">Udostępnij</button>
+
+              <div class="eventDetailNote" id="interestedNote">
+                Jeśli zaznaczysz „Wezmę udział”, organizator zobaczy Cię na liście zainteresowanych.
               </div>
-  
-              <div class="tMuted mt12" style="text-align:left;" id="interestedNote">
-                Jeśli zaznaczysz „Zainteresowany”, organizator zobaczy Cię na liście zainteresowanych.
-              </div>
-  
-              <div class="row mt16">
-                <button class="btn secondary" type="button" onclick="openChatWithOrganizer()">Napisz do organizatora</button>
-              </div>
+
+              <button class="btn secondary eventWideBtn" type="button" onclick="openChatWithOrganizer()">Napisz do organizatora</button>
             </div>
           </div>
         </section>
@@ -1660,7 +3019,7 @@ section#S11_PLANS .card[data-plan].is-current{
             <div class="heroCard profileHubCard">
               <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
                 <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
-                  <div class="avatar big" id="partnerHubLogoPreview">🏷️</div>
+                  <div class="avatar big" id="partnerHubLogoPreview"></div>
                   <div style="text-align:left;min-width:0;flex:1;">
                     <div class="sectionTitle" id="partnerHubName" style="margin:0;">Twoje miejsce</div>
                     <div class="sectionSub" id="partnerHubMeta">Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.</div>
@@ -2000,7 +3359,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <div class="heroCard mt16 profileHubCard">
                 <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
                   <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
-                    <div class="avatar big" id="setOrgLogoPreview">🏷️</div>
+                    <div class="avatar big" id="setOrgLogoPreview"></div>
                     <div style="text-align:left;min-width:0;flex:1;">
                       <div class="sectionTitle" id="settingsPartnerHubName" style="margin:0;">Twoje miejsce</div>
                       <div class="sectionSub" id="settingsPartnerHubMeta">Uzupełnij profil organizatora.</div>
@@ -2009,16 +3368,15 @@ section#S11_PLANS .card[data-plan].is-current{
                   <div class="planPill" id="partnerPlanPill">FREE</div>
                 </div>
 
-                <div class="card mt16" style="padding:14px 16px !important;border-radius:22px !important;background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)) !important;border:1px solid rgba(255,255,255,.10) !important;box-shadow:none !important;">
+                <div class="card mt16 orgLogoManageCard">
                   <input id="setOrgLogo" type="file" accept="image/*" style="display:none;" />
-                  <div class="row" style="align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <div style="text-align:left;flex:1;min-width:0;">
-                      <div style="font-size:15px;font-weight:1000;line-height:1.15;color:#f4f8ff;">Logo miejsca</div>
-                      <div class="tMuted" style="margin-top:4px;text-align:left;">Dodaj lub podmień logo organizatora.</div>
-                    </div>
-                    <button class="btn secondary small" type="button" style="min-width:128px;" onclick="document.getElementById('setOrgLogo').click()">
-                      Dodaj logo
-                    </button>
+                  <div style="text-align:left;">
+                    <div style="font-size:15px;font-weight:1000;line-height:1.15;color:#f4f8ff;">Logo miejsca</div>
+                    <div class="tMuted" style="margin-top:4px;text-align:left;">Dodaj, podmień albo usuń logo organizatora.</div>
+                  </div>
+                  <div class="orgLogoManageActions">
+                    <button class="btn secondary small" type="button" onclick="document.getElementById('setOrgLogo').click()">Dodaj logo</button>
+                    <button class="btn secondary small" type="button" onclick="removePartnerLogo()">Usuń logo</button>
                   </div>
                 </div>
 

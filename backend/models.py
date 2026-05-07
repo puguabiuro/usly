@@ -147,8 +147,26 @@ class UserProfile(Base):
         default=None,
     )
 
+    nearby_radius_km: Mapped[int] = mapped_column(
+        nullable=False,
+        default=25,
+        server_default="25",
+    )
+
     avatar_url: Mapped[str | None] = mapped_column(
         String(500),
+        nullable=True,
+        default=None,
+    )
+
+    # Przybliżona lokalizacja do funkcji "W okolicy".
+    # Nie przechowujemy precyzyjnego punktu GPS użytkownika.
+    location_lat: Mapped[float | None] = mapped_column(
+        nullable=True,
+        default=None,
+    )
+
+    location_lng: Mapped[float | None] = mapped_column(
         nullable=True,
         default=None,
     )

@@ -1,3 +1,46 @@
+
+function avatarInitial(name){
+  return String(name || "U").trim().charAt(0).toUpperCase() || "U";
+}
+
+function getAvatarGradient(name){
+  const colors = [
+    "linear-gradient(145deg,#2a2f3a,#3b4252)",
+    "linear-gradient(145deg,#2c2c34,#444455)",
+    "linear-gradient(145deg,#2b313c,#3f4a5a)",
+    "linear-gradient(145deg,#2d2f36,#4a4f5c)",
+    "linear-gradient(145deg,#2a2d33,#3e4452)"
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function premiumAvatarStyle(bg){
+  return `background:${bg};color:#f8fbff;border:1px solid rgba(255,255,255,.22);box-shadow:0 12px 30px rgba(0,0,0,.28),0 0 18px rgba(180,205,255,.16),inset 0 1px 0 rgba(255,255,255,.22),inset 0 -10px 22px rgba(255,255,255,.06);text-shadow:0 1px 10px rgba(255,255,255,.22);`;
+}
+
+function premiumBadge(label, seed){
+  const safeLabel = escapeHtml(String(label || "•").slice(0, 2).toUpperCase());
+  const bg = getAvatarGradient(seed || label || "USLY");
+  return `<div class="userAvatarFallback" style="${premiumAvatarStyle(bg)}font-weight:900;letter-spacing:-0.04em;" data-name="${safeLabel}">${safeLabel}</div>`;
+}
+
+function premiumIcon(kind, seed){
+  const bg = getAvatarGradient(seed || kind || "USLY");
+  const icons = {
+    group: `<circle cx="12" cy="12" r="4.2" fill="currentColor" opacity=".96"/><circle cx="21" cy="13.5" r="3.5" fill="currentColor" opacity=".72"/><path d="M6.5 24c1.4-4.2 4.2-6.3 8.1-6.3s6.7 2.1 8.1 6.3" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".96"/>`,
+    chat: `<path d="M8 10.5c0-2 1.7-3.7 3.8-3.7h8.4c2.1 0 3.8 1.7 3.8 3.7v5.8c0 2-1.7 3.7-3.8 3.7h-4.4l-5.2 4.1v-4.1C9.1 19.6 8 18.1 8 16.3v-5.8z" fill="currentColor" opacity=".95"/>`,
+    mail: `<path d="M7 10.5c0-1.4 1.1-2.5 2.5-2.5h13c1.4 0 2.5 1.1 2.5 2.5v10c0 1.4-1.1 2.5-2.5 2.5h-13A2.5 2.5 0 0 1 7 20.5v-10z" fill="currentColor" opacity=".94"/><path d="M9 11l7 5 7-5" stroke="#111827" stroke-opacity=".35" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`,
+    calendar: `<rect x="7" y="8.5" width="18" height="16" rx="4" fill="currentColor" opacity=".94"/><path d="M11 6.5v4M21 6.5v4M10 14h12" stroke="#111827" stroke-opacity=".35" stroke-width="2.2" stroke-linecap="round"/>`,
+    org: `<path d="M9 24V9.5c0-1.2 1-2.2 2.2-2.2h9.6c1.2 0 2.2 1 2.2 2.2V24" fill="currentColor" opacity=".94"/><path d="M12 12h2.2M17.8 12H20M12 16h2.2M17.8 16H20M14 24v-4h4v4" stroke="#111827" stroke-opacity=".35" stroke-width="2.1" stroke-linecap="round"/>
+`
+  };
+  return `<div class="userAvatarFallback" style="${premiumAvatarStyle("linear-gradient(145deg,rgba(255,255,255,.20),rgba(255,255,255,.07))")}backdrop-filter:blur(10px);"><svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">${icons[kind] || icons.chat}</svg></div>`;
+}
+
 /* =========================================================
 USLY — JS FINAL (v11) — SPÓJNY Z HTML v11 (PL ONLY)
 CEL: UI + przygotowanie pod backend (spójne ID, stan, hooki)
@@ -34,15 +77,15 @@ const App = {
   user: {
     plan: "free", // free | plus | premium | vip
     email: "",
-    nick: "Ola_88",
-    city: "Warszawa",
-    age: 24,
+    nick: "",
+    city: "",
+    age: "",
     bio: "",
     interests: [],
     prefAgeFrom: 18,
     prefAgeTo: 35,
     geo: { lat: "", lng: "" },
-    avatarEmoji: "🙂",
+    avatarEmoji: "",
     avatarUrl: "",
   },
 
@@ -53,7 +96,7 @@ const App = {
     category: "gastro",
     city: "Warszawa",
     about: "",
-    logoEmoji: "🏷️",
+    logoEmoji: "",
   },
 
   // data
@@ -233,6 +276,89 @@ function go(viewId) {
     refreshProfileRelations().catch(() => {});
   }
 
+  if (viewId === "S2_REGISTER" && App.role === "user") {
+    useCurrentLocationForCity();
+  }
+
+
+  
+  if (viewId === "S3_PROFILE_SETUP" && App.role === "user") {
+    const setupCity = $("setupCity");
+    if (setupCity) setupCity.value = "Pobieranie lokalizacji...";
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          App.user.geo = App.user.geo || {};
+          App.user.geo.lat = String(lat);
+          App.user.geo.lng = String(lng);
+
+          const cityInput = $("setupCity");
+          if (cityInput) cityInput.value = "Pobieranie lokalizacji...";
+
+          apiFetch("/users/me", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location_lat: lat,
+              location_lng: lng,
+            }),
+          })
+            .then((data) => {
+              App.user.city = data?.data?.miasto || App.user.city;
+              App.user.geo = App.user.geo || {};
+              App.user.geo.lat = String(data?.data?.location_lat || lat);
+              App.user.geo.lng = String(data?.data?.location_lng || lng);
+
+              if (cityInput) cityInput.value = App.user.city || "Lokalizacja pobrana";
+            })
+            .catch(() => {
+              if (cityInput) cityInput.value = App.user.city || "Lokalizacja pobrana";
+            });
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+      );
+    }
+  }
+
+
+if (viewId === "S4_NEARBY" && App.role === "user") {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          App.user.geo.lat = String(lat);
+          App.user.geo.lng = String(lng);
+
+          apiFetch("/users/me", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location_lat: lat,
+              location_lng: lng,
+            }),
+          })
+            .then(() => loadNearbyPeople())
+            .then(() => renderNearby())
+            .catch((err) => console.error("location save failed", err));
+
+          if (nearbyMap) {
+            nearbyMap.setView([lat, lng], 12);
+            renderNearbyMapMarkers();
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+      );
+    }
+  }
+
   if (viewId === "S10_SETTINGS") {
     if ($("setNick")) $("setNick").value = App.user.nick || "";
     if ($("setBio")) $("setBio").value = App.user.bio || "";
@@ -269,6 +395,12 @@ function back() {
   App.currentView = prev;
 
   renderAll();
+
+  if (prev === "S4_NEARBY" && App.role === "user") {
+    loadNearbyPeople()
+      .then(() => renderNearby())
+      .catch(() => renderNearby());
+  }
 }
 
 /* ------------------------- Toast -------------------------- */
@@ -291,6 +423,12 @@ function openModal(title, html) {
 
   ttl.textContent = title || "USLY";
   body.innerHTML = html || "";
+
+  const footer = document.querySelector("#modalBox .modalFooter");
+  if (footer) {
+    footer.style.display = String(html || "").includes('data-hide-modal-footer="1"') ? "none" : "";
+  }
+
   overlay.classList.add("show");
   overlay.setAttribute("aria-hidden", "false");
 }
@@ -404,10 +542,18 @@ function selectRole(role) {
 
   // Show/Hide registration blocks
   const userBox = $("regUserBox");
+  const userPlanBox = $("regUserPlanBox");
   const partnerBox = $("regPartnerBox");
   if (userBox && partnerBox) {
-    if (role === "user") { show(userBox); hide(partnerBox); }
-    else { hide(userBox); show(partnerBox); }
+    if (role === "user") {
+      show(userBox);
+      if (userPlanBox) show(userPlanBox);
+      hide(partnerBox);
+    } else {
+      hide(userBox);
+      if (userPlanBox) hide(userPlanBox);
+      show(partnerBox);
+    }
   }
 
   // Settings sections
@@ -447,7 +593,7 @@ async function loginPrimary() {
     const data = await apiFetch("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, expected_role: App.role === "partner" ? "partner" : "user" }),
+      body: JSON.stringify({ email, password, expected_role: String(email).trim().toLowerCase() === "admin@usly.dev" ? "admin" : (App.role === "partner" ? "partner" : "user") }),
     });
 
     if (!data?.success || !data?.data?.access_token) {
@@ -460,8 +606,13 @@ async function loginPrimary() {
     const me = await apiFetch("/auth/me");
     const meData = me?.data || me || {};
     App.currentUserId = meData.id ?? null;
-    App.role = meData.role === "partner" ? "partner" : "user";
+    App.role = meData.role === "admin" ? "admin" : (meData.role === "partner" ? "partner" : "user");
     App.isLoggedIn = true;
+
+    if (App.role === "admin") {
+      go("S_ADMIN_REPORTS");
+      return;
+    }
 
     const accountEmail = meData.email || "";
     if (App.role === "user") {
@@ -488,6 +639,10 @@ async function loginPrimary() {
         try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
         App.user.plan = profile.data.plan || App.user.plan;
         App.user.avatarUrl = profile.data.avatar_url ?? "";
+        if (profile.data.location_lat != null && profile.data.location_lng != null) {
+          App.user.geo.lat = String(profile.data.location_lat);
+          App.user.geo.lng = String(profile.data.location_lng);
+        }
         try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
       }
     } else {
@@ -673,8 +828,13 @@ async function registerPrimary() {
 
     hideAgeError();
 
-    if (!city || !nick) {
-      toast("Uzupełnij datę urodzenia, miasto i nick");
+    if (!nick) {
+      toast("Uzupełnij datę urodzenia i nick");
+      return;
+    }
+
+    if (!App.user?.geo?.lat || !App.user?.geo?.lng) {
+      toast("Włącz lokalizację, aby kontynuować");
       return;
     }
 
@@ -695,7 +855,7 @@ async function registerPrimary() {
 
     App.partner.company = company;
     App.partner.category = category || "inne";
-    App.partner.city = city || "Warszawa";
+    App.partner.city = city;
     App.partner.about = $("regOrgAbout")?.value?.trim() || "";
   }
 
@@ -720,7 +880,7 @@ async function registerPrimary() {
     const loginData = await apiFetch("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: pass, expected_role: App.role === "partner" ? "partner" : "user" }),
+      body: JSON.stringify({ email, password: pass, expected_role: String(email).trim().toLowerCase() === "admin@usly.dev" ? "admin" : (App.role === "partner" ? "partner" : "user") }),
     });
 
     if (!loginData?.success || !loginData?.data?.access_token) {
@@ -763,7 +923,7 @@ async function registerPrimary() {
     toast("Konto utworzone i zalogowano");
       if (App.role === "user") {
         if ($("setupNick")) $("setupNick").value = App.user.nick || "";
-        if ($("setupCity")) $("setupCity").value = App.user.city || "Warszawa";
+        if ($("setupCity")) $("setupCity").value = App.user.city || "";
         if ($("setupBio")) $("setupBio").value = App.user.bio || "";
         if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
         if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
@@ -774,7 +934,13 @@ async function registerPrimary() {
         refreshInterestUi();
         go("S3_PROFILE_SETUP");
       } else {
-        go("S9_PARTNER");
+        if ($("setupOrgCity")) $("setupOrgCity").value = App.partner.city || "";
+        if ($("setupOrgCategory")) $("setupOrgCategory").value = App.partner.category || "inne";
+        if ($("setupOrgAbout")) $("setupOrgAbout").value = App.partner.about || "";
+        safeSetText("setupOrgAboutCount", String(($("setupOrgAbout")?.value || "").length));
+        safeSetText("setupPartnerCompanyName", App.partner.company || "Uzupełnij profil");
+        go("S3B_PARTNER_SETUP");
+        setTimeout(updateOrgLogoFallback, 0);
       }
   } catch (err) {
     toast(err?.userMessage || "Nie udało się utworzyć konta");
@@ -1226,18 +1392,26 @@ async function saveSettings() {
   const ageMin = ageAny ? null : Math.min(f, t);
   const ageMax = ageAny ? null : Math.max(f, t);
 
+  const payload = {
+    nick: nick,
+    miasto: city,
+    bio: bio,
+    zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+    age_min: ageMin,
+    age_max: ageMax,
+    nearby_radius_km: nearbyRadiusKm,
+  };
+
+  if (App.user?.geo?.lat && App.user?.geo?.lng) {
+    payload.location_lat = Number(App.user.geo.lat);
+    payload.location_lng = Number(App.user.geo.lng);
+  }
+
   try {
     const data = await apiFetch("/users/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nick: nick,
-        miasto: city,
-        bio: bio,
-        zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
-        age_min: ageMin,
-        age_max: ageMax,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!data?.success || !data?.data) {
@@ -1247,6 +1421,7 @@ async function saveSettings() {
 
     App.user.nick = data.data.nick || nick;
     App.user.bio = data.data.bio || bio;
+    App.user.nearbyRadiusKm = data.data.nearby_radius_km || nearbyRadiusKm;
     App.user.city = data.data.miasto || city;
     App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(data.data, "age_min") ? data.data.age_min : ageMin;
     App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(data.data, "age_max") ? data.data.age_max : ageMax;
@@ -1371,6 +1546,50 @@ async function uploadUserAvatar(file) {
   }
 }
 
+
+async function removeUserAvatar() {
+  try {
+    const data = await apiFetch("/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ avatar_url: "" }),
+    });
+
+    if (!data?.success) {
+      toast(data?.error?.message || "Nie udało się usunąć zdjęcia");
+      return;
+    }
+
+    App.user.avatarUrl = "";
+    toast("Zdjęcie usunięte");
+    renderAll();
+    closeModal();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się usunąć zdjęcia");
+  }
+}
+
+async function removePartnerLogo() {
+  try {
+    const data = await apiFetch("/partners/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ logo_url: "" }),
+    });
+
+    if (!data?.success) {
+      toast(data?.error?.message || "Nie udało się usunąć logo");
+      return;
+    }
+
+    App.partner.logoUrl = "";
+    toast("Logo usunięte");
+    renderAll();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się usunąć logo");
+  }
+}
+
 function openAddPhoto() {
   openModal("Dodaj zdjęcie", `
     <div class="tStrong">Upload zdjęcia</div>
@@ -1407,11 +1626,65 @@ function openAvatarAI() {
   `);
 }
 
+function updateOrgLogoFallback() {
+  const el = $("setupOrgLogoPreview");
+  if (!el) return;
+
+  const hasImg = el.querySelector("img");
+  if (hasImg) return;
+
+  const name = App.partner?.company || "U";
+  const initial = name.trim().charAt(0).toUpperCase();
+
+  el.textContent = initial;
+}
+async function finishPartnerSetup() {
+  const company = App.partner.company || $("regCompany")?.value?.trim() || "Twoje miejsce";
+  const category = $("setupOrgCategory")?.value || App.partner.category || "inne";
+  const city = normalizeCity($("setupOrgCity")?.value) || App.partner.city;
+  const about = $("setupOrgAbout")?.value?.trim() || "";
+
+  if (!city) {
+    toast("Podaj miasto działania");
+    return;
+  }
+
+  try {
+    const data = await apiFetch("/partners/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nazwa: company,
+        miasto: city,
+        kategoria: category,
+        bio: about,
+      }),
+    });
+
+    if (!data?.success || !data?.data) {
+      toast(data?.error?.message || "Nie udało się zapisać profilu organizatora");
+      return;
+    }
+
+    App.partner.company = data.data.nazwa || company;
+    App.partner.city = data.data.miasto || city;
+    App.partner.category = data.data.kategoria || category;
+    App.partner.about = data.data.bio || about;
+
+    await Promise.all([loadPartnerProfile(), loadPartnerEvents()]);
+    toast("Profil organizatora zapisany");
+    go("S9_PARTNER");
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się zapisać profilu organizatora");
+  }
+}
+
 /* ------------------------- Profile Setup -------------------------- */
 async function finishProfileSetup() {
   const nick = $("setupNick")?.value?.trim() || App.user.nick;
   const city = normalizeCity($("setupCity")?.value) || App.user.city;
   const bio = $("setupBio")?.value?.trim() || "";
+  const nearbyRadiusKm = Number($("setupNearbyRadiusKm")?.value || App.user.nearbyRadiusKm || 25);
 
   const ageAny = !!$("setupAgeAny")?.checked;
   const f = Number($("setupPrefAgeFrom")?.value || App.user.prefAgeFrom);
@@ -1419,18 +1692,26 @@ async function finishProfileSetup() {
   const ageMin = ageAny ? null : Math.min(f, t);
   const ageMax = ageAny ? null : Math.max(f, t);
 
+  const payload = {
+    nick: nick,
+    miasto: city,
+    bio: bio,
+    zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+    age_min: ageMin,
+    age_max: ageMax,
+    nearby_radius_km: nearbyRadiusKm,
+  };
+
+  if (App.user?.geo?.lat && App.user?.geo?.lng) {
+    payload.location_lat = Number(App.user.geo.lat);
+    payload.location_lng = Number(App.user.geo.lng);
+  }
+
   try {
     const data = await apiFetch("/users/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nick: nick,
-        miasto: city,
-        bio: bio,
-        zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
-        age_min: ageMin,
-        age_max: ageMax,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!data?.success || !data?.data) {
@@ -1441,6 +1722,7 @@ async function finishProfileSetup() {
     App.user.nick = data.data.nick || nick;
     App.user.city = data.data.miasto || city;
     App.user.bio = data.data.bio || bio;
+    App.user.nearbyRadiusKm = data.data.nearby_radius_km || nearbyRadiusKm;
     App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(data.data, "age_min") ? data.data.age_min : ageMin;
     App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(data.data, "age_max") ? data.data.age_max : ageMax;
     App.user.interests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : (Array.isArray(App.user.interests) ? App.user.interests : []);
@@ -1501,7 +1783,7 @@ function resolvePersonById(userId) {
       city: fromChats.with.city || "",
       category: fromChats.with.category || "",
       age: fromChats.with.age || 0,
-      emoji: fromChats.with.emoji || "🙂",
+      emoji: fromChats.with.emoji || "",
       interests: Array.isArray(fromChats.with.interests) ? fromChats.with.interests : [],
       bio: fromChats.with.bio || "",
       avatarUrl: fromChats.with.avatarUrl || "",
@@ -1519,7 +1801,7 @@ function resolvePersonById(userId) {
       nick: title,
       city: sub === "Znajomy w USLY" ? "" : sub,
       age: 0,
-      emoji: "🙂",
+      emoji: "",
       interests: [],
       bio: "",
       avatarUrl: "",
@@ -1534,7 +1816,7 @@ function resolvePersonById(userId) {
       nick: fromGroupMembers.nick || `Użytkownik #${pid}`,
       city: fromGroupMembers.city || "",
       age: 0,
-      emoji: "🙂",
+      emoji: "",
       interests: [],
       bio: "",
       avatarUrl: fromGroupMembers.avatar_url || "",
@@ -1548,7 +1830,7 @@ function resolvePersonById(userId) {
       nick: fromGroupInvited.nick || `Użytkownik #${pid}`,
       city: fromGroupInvited.city || "",
       age: 0,
-      emoji: "🙂",
+      emoji: "",
       interests: [],
       bio: "",
       avatarUrl: fromGroupInvited.avatar_url || "",
@@ -1592,13 +1874,18 @@ function openPerson(personId) {
     safeSetText("personTitle", displayName);
     safeSetText("personNick", displayName);
     safeSetText("personMeta", p.city || "Organizator");
+    const matchEl = $("personMatchScore");
+    if (matchEl) matchEl.style.display = "none";
+    safeSetText("personMatchScore", "");
     safeSetText("personBio", p.bio || "To miejsce nie dodało jeszcze opisu.");
 
     if (avatar) {
-      const src = p.logoUrl || p.avatarUrl || "";
+      const rawSrc = p.logoUrl || p.avatarUrl || "";
+      const src = rawSrc && String(rawSrc).trim() !== "" ? rawSrc : "";
+      avatar.style.display = src ? "" : "none";
       avatar.innerHTML = src
         ? `<img src="${String(src).startsWith("http") ? src : `${API_BASE_URL}${src}`}" alt="${displayName}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
-        : (p.emoji || "🏷️");
+        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;">${displayName.trim().charAt(0).toUpperCase()}</div>`;
     }
 
     if (chips) {
@@ -1627,18 +1914,24 @@ function openPerson(personId) {
 
   safeSetText("personTitle", p.nick);
   safeSetText("personNick", p.nick);
-  safeSetText("personMeta", [p.city, Number.isFinite(p.age) && p.age > 0 ? `${p.age} lat` : ""].filter(Boolean).join(" • ") || "Profil użytkownika");
+  safeSetText("personMeta", [
+    p.city,
+    Number.isFinite(p.age) && p.age > 0 ? `${p.age} lat` : ""
+  ].filter(Boolean).join(" • ") || "Profil użytkownika");
+  safeSetText("personDistanceMeta", formatDistanceFromMe(p));
+  const matchEl = $("personMatchScore");
+  if (matchEl) matchEl.style.display = "";
   safeSetText("personMatchScore", `${sharedScore(p)}% dopasowania`);
   safeSetText("personBio", p.bio || "Ta osoba nie dodała jeszcze bio.");
 
   if (avatar) {
     avatar.innerHTML = p.avatarUrl
       ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
-      : (p.emoji || "🙂");
+      : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`;
   }
 
   if (chips) {
-    chips.dataset.label = "Zainteresowania";
+    chips.dataset.label = "";
     chips.innerHTML = "";
     const shared = new Set(commonInterests(p).map(x => String(x).toLowerCase()));
     (p.interests || []).forEach(tag => {
@@ -1659,11 +1952,27 @@ function openPerson(personId) {
     .then((data) => {
       const full = data?.data ? mapApiPersonToViewModel(data.data) : null;
       if (!full) return;
+
+      const previous = resolvePersonById(personId);
+      const nearbyPerson = (App.people || []).find(p => String(p.id) === String(personId));
+
+      if (nearbyPerson?.distance_km != null) full.distance_km = nearbyPerson.distance_km;
+      if (nearbyPerson?.location_lat != null) full.location_lat = nearbyPerson.location_lat;
+      if (nearbyPerson?.location_lng != null) full.location_lng = nearbyPerson.location_lng;
+
+      if (full.distance_km == null && previous?.distance_km != null) {
+        full.distance_km = previous.distance_km;
+      }
+
       if (String(App.selectedPersonId) !== String(personId)) return;
 
       safeSetText("personTitle", full.nick);
       safeSetText("personNick", full.nick);
-      safeSetText("personMeta", [full.city, Number.isFinite(full.age) && full.age > 0 ? `${full.age} lat` : ""].filter(Boolean).join(" • ") || "Profil użytkownika");
+      safeSetText("personMeta", [
+        full.city,
+        Number.isFinite(full.age) && full.age > 0 ? `${full.age} lat` : ""
+      ].filter(Boolean).join(" • ") || "Profil użytkownika");
+      safeSetText("personDistanceMeta", formatDistanceFromMe(full));
       safeSetText("personMatchScore", `${sharedScore(full)}% dopasowania`);
       safeSetText("personBio", full.bio || "Ta osoba nie dodała jeszcze bio.");
 
@@ -1671,12 +1980,12 @@ function openPerson(personId) {
       if (avatarEl) {
         avatarEl.innerHTML = full.avatarUrl
           ? `<img src="${String(full.avatarUrl).startsWith("http") ? full.avatarUrl : `${API_BASE_URL}${full.avatarUrl}`}" alt="${full.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
-          : (full.emoji || "🙂");
+          : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(full.nick || "U"))}" data-name="${escapeHtml(full.nick || "U")}">${avatarInitial(full.nick || "U")}</div>`;
       }
 
       const fullChips = $("personInterests");
       if (fullChips) {
-        fullChips.dataset.label = "Zainteresowania";
+        fullChips.dataset.label = "";
         fullChips.innerHTML = "";
         const shared = new Set(commonInterests(full).map(x => String(x).toLowerCase()));
         (full.interests || []).forEach(tag => {
@@ -1733,16 +2042,94 @@ async function blockUser(userId) {
     ]);
 
   } catch (e) {
-    toast("Błąd połączenia");
+    console.error("submitEventReport failed", e);
+    toast(e?.userMessage || e?.message || "Błąd połączenia");
   }
 }
 
 
 function openPersonMenu() {
   openModal("Opcje", `
-    <button class="btn secondary" type="button" onclick="toast('Zgłaszanie treści będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zgłoś</button>
+    <button class="btn secondary" type="button" onclick="openUserReportModal()">Zgłoś</button>
     <button class="btn danger mt12" type="button" onclick="blockUser(App.selectedPersonId)">Zablokuj</button>
   `);
+}
+
+
+function openUserReportModal() {
+  if (!App.selectedPersonId) {
+    toast("Nie wybrano użytkownika");
+    return;
+  }
+
+  openModal("Zgłoś użytkownika", `
+    <div data-hide-modal-footer="1" style="display:none;"></div>\n    <div class="tStrong">Powód zgłoszenia</div>
+    <div class="sectionSub mt10">Zgłoszenie trafi do moderacji USLY.</div>
+
+    <label class="mt12">Wybierz powód</label>
+    <select id="userReportReason">
+      <option value="spam">Spam / scam</option>
+      <option value="harassment">Nękanie lub obraźliwe treści</option>
+      <option value="inappropriate_profile">Nieodpowiedni profil lub bio</option>
+      <option value="impersonation">Podszywanie się</option>
+      <option value="other">Inne</option>
+    </select>
+
+    <label class="mt12">Opis opcjonalny</label>
+    <textarea id="userReportDescription" maxlength="1000" placeholder="Dodaj szczegóły, które pomogą moderacji."></textarea>
+    <div class="charHint"><span id="userReportDescriptionCount">0</span>/1000</div>
+
+    <button class="btn mt16" type="button" onclick="submitUserReport()">Wyślij zgłoszenie</button>
+    <button class="btn secondary mt12" type="button" onclick="closeModal()">Anuluj</button>
+  `);
+
+  setTimeout(() => {
+    const ta = $("userReportDescription");
+    const cnt = $("userReportDescriptionCount");
+    if (!ta || !cnt) return;
+    ta.addEventListener("input", () => {
+      cnt.textContent = String(ta.value.length);
+    });
+  }, 0);
+}
+
+async function submitUserReport() {
+  const reportedUserId = App.selectedPersonId;
+  const reason = $("userReportReason")?.value || "";
+  const description = $("userReportDescription")?.value?.trim() || "";
+
+  if (!reportedUserId) {
+    toast("Nie wybrano użytkownika");
+    return;
+  }
+
+  if (!reason) {
+    toast("Wybierz powód zgłoszenia");
+    return;
+  }
+
+  try {
+    const data = await apiFetch("/reports/user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reported_user_id: Number(reportedUserId),
+        reason,
+        description,
+        current_view: App.currentView || "",
+      }),
+    });
+
+    if (!data?.success) {
+      toast(data?.error?.message || "Nie udało się wysłać zgłoszenia");
+      return;
+    }
+
+    toast(`Zgłoszenie wysłane • #${data.data?.ticket || ""}`.trim());
+    closeModal();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wysłać zgłoszenia");
+  }
 }
 
 function startChatFromProfile() {
@@ -1777,7 +2164,7 @@ function startChatFromProfile() {
         city: p.city || "",
         bio: p.bio || "",
         avatarUrl: p.avatarUrl || "",
-        emoji: p.emoji || "💬",
+        emoji: p.emoji || "",
       },
       last: "",
       unread: 0,
@@ -1793,6 +2180,18 @@ function startChatFromProfile() {
 function setPersonFriendButtonState(state) {
   const btn = $("personFriendBtn");
   if (!btn) return;
+
+  const badge = $("personRelationBadge");
+  const actions = document.querySelector(".personProfileActions");
+
+  if (badge) {
+    badge.textContent = "";
+    badge.classList.remove("isVisible");
+  }
+  if (actions) {
+    actions.classList.remove("isFriend");
+    actions.classList.remove("isSingle");
+  }
 
   if (App.role === "partner") {
     btn.style.display = "none";
@@ -1812,14 +2211,20 @@ function setPersonFriendButtonState(state) {
     btn.disabled = true;
     btn.style.opacity = "0.7";
     btn.classList.add("secondary");
+    if (actions) actions.classList.add("isSingle");
     return;
   }
 
   if (state === "friend") {
-    btn.textContent = "Znajomy";
-    btn.disabled = true;
-    btn.style.opacity = "0.7";
-    btn.classList.add("secondary");
+    btn.style.display = "none";
+    btn.dataset.state = "friend_status";
+    if (badge) {
+      badge.textContent = "Znajomy";
+      badge.classList.add("isVisible");
+    }
+    if (actions) {
+      actions.classList.add("isFriend");
+    }
     return;
   }
 
@@ -1828,6 +2233,7 @@ function setPersonFriendButtonState(state) {
     btn.disabled = true;
     btn.style.opacity = "0.7";
     btn.classList.add("secondary");
+    if (actions) actions.classList.add("isSingle");
     return;
   }
 }
@@ -1988,7 +2394,7 @@ async function refreshProfileRelations() {
       ...friend,
       avatarUrl: friend.avatar_url || "",
       interests: Array.isArray(friend.interests) ? friend.interests : [],
-      emoji: friend.emoji || "🙂",
+      emoji: friend.emoji || "",
     }));
     window._lastOutgoingGroupInvites = Array.isArray(outgoingGroupInvites) ? outgoingGroupInvites : [];
 
@@ -2002,7 +2408,7 @@ async function refreshProfileRelations() {
       ...friend,
       avatarUrl: friend.avatar_url || "",
       interests: Array.isArray(friend.interests) ? friend.interests : [],
-      emoji: friend.emoji || "🙂",
+      emoji: friend.emoji || "",
     }));
 
     renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites, outgoingGroupInvites);
@@ -2282,7 +2688,7 @@ async function renderChatThread() {
           : `${API_BASE_URL}${App.user.avatarUrl}`;
         avatar.innerHTML = `<img src="${src}" alt="Twój awatar" style="width:100%;height:100%;object-fit:cover;" />`;
       } else {
-        avatar.textContent = App.user.avatarEmoji || "🙂";
+        avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${getAvatarGradient(App.user.nick || "U")}">${avatarInitial(App.user.nick || "U")}</div>`;
       }
       avatar.disabled = true;
     } else {
@@ -2293,7 +2699,7 @@ async function renderChatThread() {
           : `${API_BASE_URL}${other.avatarUrl}`;
         avatar.innerHTML = `<img src="${src}" alt="${escapeHtml(other.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;" />`;
       } else {
-        avatar.textContent = other?.emoji || "🙂";
+        avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${getAvatarGradient(other?.nick || "U")}">${avatarInitial(other?.nick || "U")}</div>`;
       }
       avatar.title = "Otwórz profil";
       avatar.addEventListener("mouseenter", () => {
@@ -2500,6 +2906,8 @@ function openEvent(eventId) {
   safeSetText("eventTitleTop", ev.title);
   safeSetText("evTitle", ev.title);
   safeSetText("evMeta", `${ev.city} • ${ev.where} • ${ev.when}`);
+  safeSetText("evPlaceTitle", ev.where || "Miejsce wydarzenia");
+  safeSetText("evPlaceMeta", ev.city ? `${ev.city} • mapa lokalizacji w przygotowaniu` : "Mapa lokalizacji w przygotowaniu");
 
   const chips = $("evInterestChips");
   if (chips) {
@@ -2522,8 +2930,8 @@ function openEvent(eventId) {
   if (organizerLogo) {
     const src = ev.organizer?.logoUrl || "";
     organizerLogo.innerHTML = src
-      ? `<img src="${String(src).startsWith("http") ? src : `${API_BASE_URL}${src}`}" alt="${organizerName}" style="width:100%;height:100%;object-fit:cover;" />`
-      : "🏢";
+      ? `<img src="${String(src).startsWith("http") ? src : `${API_BASE_URL}${src}`}" alt="${organizerName}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
+      : premiumIcon("org", organizerName || "Organizator");
   }
 
   const capacityLine = $("evCapacityLine");
@@ -2673,9 +3081,77 @@ function openShare() {
   `);
 }
 
+
+function openEventReportModal() {
+  const eventId = App.selectedEventId;
+
+  if (!eventId) {
+    toast("Brak wydarzenia");
+    return;
+  }
+
+  openModal("Zgłoś wydarzenie", `
+    <div data-hide-modal-footer="1" style="display:none;"></div>
+
+    <div class="tStrong">Powód zgłoszenia</div>
+
+    <select id="eventReportReason" class="input mt8">
+      <option value="">Wybierz powód</option>
+      <option value="spam">Spam / scam</option>
+      <option value="misleading">Fałszywe lub mylące wydarzenie</option>
+      <option value="inappropriate">Nieodpowiednia treść</option>
+      <option value="unsafe">Podejrzane lub niebezpieczne wydarzenie</option>
+      <option value="other">Inne</option>
+    </select>
+
+    <textarea id="eventReportDesc" class="mt12" maxlength="1000"
+      placeholder="Dodatkowe informacje (opcjonalnie)"></textarea>
+
+    <div class="row mt16">
+      <button class="btn" type="button" onclick="submitEventReport()">Wyślij zgłoszenie</button>
+      <button class="btn secondary" type="button" onclick="closeModal()">Anuluj</button>
+    </div>
+  `);
+}
+
+async function submitEventReport() {
+  const eventId = App.selectedEventId;
+  const reason = $("eventReportReason")?.value;
+  const description = $("eventReportDesc")?.value || "";
+
+  if (!reason) {
+    toast("Wybierz powód zgłoszenia");
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/reports/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_id: Number(eventId),
+        reason,
+        description,
+        current_view: App.currentView || "unknown",
+      }),
+    });
+
+    if (!res?.success) {
+      toast(res?.error?.message || "Nie udało się wysłać zgłoszenia");
+      return;
+    }
+
+    toast(`Zgłoszenie wysłane • #${res.data.ticket}`);
+    closeModal();
+
+  } catch (e) {
+    toast("Błąd połączenia");
+  }
+}
+
 function openEventMenu() {
   openModal("Opcje wydarzenia", `
-    <button class="btn secondary" type="button" onclick="toast('Zgłaszanie treści będzie dostępne w kolejnej aktualizacji.'); closeModal();">Zgłoś</button>
+    <button class="btn secondary" type="button" onclick="openEventReportModal();">Zgłoś</button>
     <button class="btn danger mt12" type="button" onclick="toast('Ukrywanie wydarzeń będzie dostępne w kolejnej aktualizacji.'); closeModal();">Ukryj</button>
   `);
 }
@@ -2701,7 +3177,7 @@ function openEventOrganizerProfile() {
         bio: ev.organizer?.bio || "",
         avatarUrl: ev.organizer?.logoUrl || "",
         logoUrl: ev.organizer?.logoUrl || "",
-        emoji: "🏢",
+        emoji: "",
       },
       last: "",
       unread: 0,
@@ -2720,7 +3196,7 @@ function openEventOrganizerProfile() {
       bio: chat.with?.bio || ev.organizer?.bio || "",
       avatarUrl: chat.with?.avatarUrl || ev.organizer?.logoUrl || "",
       logoUrl: chat.with?.logoUrl || ev.organizer?.logoUrl || chat.with?.avatarUrl || "",
-      emoji: chat.with?.emoji || "🏢",
+      emoji: chat.with?.emoji || "",
     };
   }
 
@@ -2748,7 +3224,7 @@ function openChatWithOrganizer() {
         bio: ev.organizer?.bio || "",
         avatarUrl: ev.organizer?.logoUrl || "",
         logoUrl: ev.organizer?.logoUrl || "",
-        emoji: "🏢",
+        emoji: "",
       },
       last: "",
       unread: 0,
@@ -2767,7 +3243,7 @@ function openChatWithOrganizer() {
       bio: chat.with?.bio || ev.organizer?.bio || "",
       avatarUrl: chat.with?.avatarUrl || ev.organizer?.logoUrl || "",
       logoUrl: chat.with?.logoUrl || ev.organizer?.logoUrl || chat.with?.avatarUrl || "",
-      emoji: chat.with?.emoji || "🏢",
+      emoji: chat.with?.emoji || "",
     };
   }
 
@@ -2897,7 +3373,7 @@ async function openGroup(groupId) {
 
           const avatarHtml = person?.avatarUrl
             ? `<img src="${String(person.avatarUrl).startsWith("http") ? person.avatarUrl : `${API_BASE_URL}${person.avatarUrl}`}" alt="${escapeHtml(person.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;" />`
-            : escapeHtml(person?.emoji || "🙂");
+            : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(person?.nick || "U"))}" data-name="${escapeHtml(person?.nick || "U")}">${avatarInitial(person?.nick || "U")}</div>`;
 
           const avatarButton = `
             <button
@@ -3223,7 +3699,7 @@ async function openGroupPeopleScreen() {
   const membersHtml = members.map(p => `
         <div class="listItem groupPeopleRow" style="margin-bottom:10px; cursor:pointer;" onclick="${String(p.id) === myId ? "" : `openPerson('${String(p.id)}')`}">
           <div class="groupPeopleMain">
-            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupPeopleText">
               <div class="listTitle">${p.nick}</div>
               <div class="listMeta">${p.city || "Grupowicz w USLY"}</div>
@@ -3244,7 +3720,7 @@ async function openGroupPeopleScreen() {
   const invitedHtml = invited.map(p => `
         <div class="listItem groupPeopleRow" style="margin-bottom:10px; cursor:pointer;" onclick="openPerson('${String(p.id)}')">
           <div class="groupPeopleMain">
-            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupPeopleText">
               <div class="listTitle">${p.nick}</div>
               <div class="listMeta">${p.city || "Zaproszenie oczekuje"}</div>
@@ -3367,7 +3843,7 @@ async function openInviteFriendToGroup() {
   const membersHtml = members.map(p => `
         <div class="listItem groupInviteCard" style="margin-bottom:10px; cursor:pointer;" onclick="openChatParticipantProfile('${String(p.id)}'); closeModal();">
           <div class="groupInviteCardTop">
-            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupInviteCardText">
               <div class="listTitle">${p.nick}</div>
               <div class="listMeta">${p.city || "Grupowicz w USLY"}</div>
@@ -3385,7 +3861,7 @@ async function openInviteFriendToGroup() {
   const invitedHtml = invited.map(p => `
         <div class="listItem groupInviteCard" style="margin-bottom:10px; cursor:default;">
           <div class="groupInviteCardTop">
-            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : "🙂"}</div>
+            <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupInviteCardText">
               <div class="listTitle">${p.nick}</div>
               <div class="listMeta">${p.city || "Zaproszenie oczekuje"}</div>
@@ -3607,7 +4083,7 @@ async function renderPartnerEventParticipants() {
         <div class="listItem">
           <div class="listTop">
             <div class="listLeft">
-              <div class="listAvatar">🙂</div>
+              <div class="listAvatar"><div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(user.nick || user.email || "U"))}" data-name="${escapeHtml(user.nick || user.email || "U")}">${avatarInitial(user.nick || user.email || "U")}</div></div>
               <div style="min-width:0;">
                 <div class="listTitle">${user.nick || user.email || `Użytkownik #${user.id || "?"}`}</div>
                 <div class="listMeta">Zapis: ${when}</div>
@@ -4709,20 +5185,20 @@ function renderNearby() {
       pList.innerHTML = '<div class="tMuted">Nie widzimy jeszcze osób z wspólnymi zainteresowaniami w Twojej okolicy.</div>';
     } else {
       pList.innerHTML = people.map(p => `
-      <div class="listItem" onclick="openPerson('${p.id}')">
+      <div class="listItem nearbyPersonCard" onclick="openPerson('${p.id}')">
         <div class="listTop">
           <div class="listLeft">
-              <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
+            <div class="listAvatar nearbyPersonAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div style="min-width:0;">
-              <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">${p.city} • ${p.age} lat</div>
+              <div class="listTitle">${escapeHtml(p.nick || "Użytkownik")}</div>
+              <div class="listMeta">${p.distance_km != null ? (p.distance_km < 1 ? "< 1 km od Ciebie" : `${String(p.distance_km).replace(".", ",")} km od Ciebie`) : "W okolicy"}${p.age ? ` • ${p.age} lat` : ""}</div>
             </div>
           </div>
           <div class="listRight">
-            <div class="listTag">${sharedScore(p)}% wspólne</div>
+            <div class="listTag nearbyMatchTag">${sharedScore(p)}%</div>
           </div>
         </div>
-        <div class="listBody">${p.interests.slice(0,3).map(t => `#${t}`).join(" ")}</div>
+        <div class="nearbyInterestChips">${(p.interests || []).slice(0,3).map(t => `<span class="nearbyInterestChip">#${escapeHtml(t)}</span>`).join("")}</div>
       </div>
     `).join("");
     }
@@ -4744,7 +5220,7 @@ function renderNearby() {
       <div class="listItem" onclick="openEvent('${ev.id}')">
         <div class="listTop">
           <div class="listLeft">
-            <div class="listAvatar">🎫</div>
+            <div class="listAvatar">${premiumIcon("calendar", ev.title || ev.name || "Wydarzenie")}</div>
             <div style="min-width:0;">
               <div class="listTitle">${ev.title}</div>
               <div class="listMeta">${ev.city} • ${ev.where} • ${ev.when}</div>
@@ -4798,7 +5274,7 @@ function renderEventsList() {
     <div class="listItem" onclick="openEvent('${ev.id}')">
       <div class="listTop">
         <div class="listLeft">
-          <div class="listAvatar">🎫</div>
+          <div class="listAvatar">${premiumIcon("calendar", ev.title || ev.name || "Wydarzenie")}</div>
           <div style="min-width:0;">
             <div class="listTitle">${ev.title}</div>
             <div class="listMeta">${ev.city} • ${ev.where} • ${ev.when}</div>
@@ -4894,7 +5370,7 @@ const membersLabel = m === 1
 ">Założona<br>przez Ciebie</div>` : ``}
         <div class="listTop">
           <div class="listLeft">
-            <div class="listAvatar">👥</div>
+            <div class="listAvatar">${premiumIcon("group", g.title || "Grupa")}</div>
             <div style="min-width:0;">
               <div class="listTitle">${g.title}</div>
               <div class="listMeta">#${g.interestTag} • ${membersLabel}</div>
@@ -4974,7 +5450,7 @@ async function renderChatList() {
               bio: c.other_user_bio || "",
               avatarUrl: c.other_user_avatar_url || "",
               logoUrl: c.other_user_logo_url || c.other_user_avatar_url || "",
-              emoji: isPartner ? "🏢" : "💬",
+              emoji: isPartner ? "" : "",
             },
             last: c.last_message || "",
             unread: Number(c.unread_count || 0),
@@ -4992,7 +5468,7 @@ async function renderChatList() {
             bio: c.other_user_bio || existing.with?.bio || "",
             avatarUrl: c.other_user_avatar_url || existing.with?.avatarUrl || "",
             logoUrl: c.other_user_logo_url || existing.with?.logoUrl || c.other_user_avatar_url || existing.with?.avatarUrl || "",
-            emoji: isPartner ? "🏢" : (existing.with?.emoji || "💬"),
+            emoji: isPartner ? "" : (existing.with?.emoji || ""),
           };
           existing.last = c.last_message || existing.last || "";
           existing.unread = Number(c.unread_count || existing.unread || 0);
@@ -5015,7 +5491,7 @@ async function renderChatList() {
             bio: c.other_user_bio || existing?.with?.bio || "",
             avatarUrl: c.other_user_avatar_url || existing?.with?.avatarUrl || "",
             logoUrl: c.other_user_logo_url || existing?.with?.logoUrl || c.other_user_avatar_url || existing?.with?.avatarUrl || "",
-            emoji: isPartner ? "🏢" : (existing?.with?.emoji || "💬"),
+            emoji: isPartner ? "" : (existing?.with?.emoji || ""),
           },
           last: c.last_message || "",
           unread: finalUnread,
@@ -5034,7 +5510,15 @@ async function renderChatList() {
         <div class="listItem ${c.unread > 0 ? 'unread' : ''}" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
-              <div class="listAvatar">${c.with.emoji || "💬"}</div>
+              <div class="listAvatar" style="border-radius:999px;overflow:hidden;border:2px solid rgba(255,255,255,.18);box-shadow:0 10px 26px rgba(0,0,0,.22);">${(() => {
+                const avatarSrc = c.with.logoUrl || c.with.avatarUrl || "";
+                if (avatarSrc) {
+                  const src = String(avatarSrc).startsWith("http") ? avatarSrc : `${API_BASE_URL}${avatarSrc}`;
+                  return `<img src="${src}" alt="${escapeHtml(c.with.nick || "Rozmowa")}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;" />`;
+                }
+                if (c.with.role === "partner") return premiumIcon("org", c.with.company || c.with.nick || "Organizator");
+                return `<div class="userAvatarFallback" style="border-radius:999px;${premiumAvatarStyle(getAvatarGradient(c.with.nick || "U"))}" data-name="${escapeHtml(c.with.nick || "U")}">${avatarInitial(c.with.nick || "U")}</div>`;
+              })()}</div>
               <div style="min-width:0;">
                 <div class="listTitle">${c.with.nick}</div>
                 <div class="listMeta">${c.last || "—"}</div>
@@ -5075,7 +5559,7 @@ async function renderChatList() {
         <div class="listItem" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
-              <div class="listAvatar">${c.with?.emoji || "💬"}</div>
+              <div class="listAvatar">${premiumIcon("chat", c.with?.nick || "Czat")}</div>
               <div style="min-width:0;">
                 <div class="listTitle">${c.with?.nick || "Czat"}</div>
                 <div class="listMeta">${c.last || "—"}</div>
@@ -5146,7 +5630,7 @@ function renderPartnerEvents() {
       <div class="listItem ${isFeatured ? "isFeatured" : ""}" onclick="openPartnerEventEditor('${ev.id}')">
         <div class="listTop">
           <div class="listLeft">
-            <div class="listAvatar">🗓️</div>
+            <div class="listAvatar">${premiumIcon("calendar", "Wydarzenie")}</div>
             <div style="min-width:0;">
               <div class="listTitle">${ev.title || "Bez nazwy"}</div>
               <div class="listMeta">${ev.city || "—"} • ${ev.where || "—"} • ${formatWhen(ev.start_at)}</div>
@@ -5308,7 +5792,7 @@ async function renderPartnerMsgList() {
               company: c.other_user_company || "",
               bio: c.other_user_bio || "",
               avatarUrl: c.other_user_avatar_url || "",
-              emoji: c.other_user_role === "partner" ? "🏷️" : "✉️",
+              emoji: c.other_user_role === "partner" ? "" : "",
             },
             last: c.last_message || "",
             unread,
@@ -5324,7 +5808,7 @@ async function renderPartnerMsgList() {
             company: c.other_user_company || existing.with?.company || "",
             bio: c.other_user_bio || existing.with?.bio || "",
             avatarUrl: c.other_user_avatar_url || existing.with?.avatarUrl || "",
-            emoji: existing.with?.emoji || (c.other_user_role === "partner" ? "🏷️" : "✉️"),
+            emoji: existing.with?.emoji || (c.other_user_role === "partner" ? "" : ""),
           };
           existing.last = c.last_message || existing.last || "";
           existing.unread = unread;
@@ -5340,7 +5824,7 @@ async function renderPartnerMsgList() {
             company: c.other_user_company || "",
             bio: c.other_user_bio || "",
             avatarUrl: c.other_user_avatar_url || "",
-            emoji: c.other_user_role === "partner" ? "🏷️" : "✉️",
+            emoji: "",
           },
           last: c.last_message || "",
           unread,
@@ -5359,7 +5843,7 @@ async function renderPartnerMsgList() {
         <div class="listItem ${c.unread > 0 ? 'unread' : ''}" onclick="openChat('${c.id}')">
           <div class="listTop">
             <div class="listLeft">
-              <div class="listAvatar">${c.with.emoji || "✉️"}</div>
+              <div class="listAvatar">${premiumIcon("mail", c.with?.nick || "Rozmowa")}</div>
               <div style="min-width:0;">
                 <div class="listTitle">${c.with.nick}</div>
                 <div class="listMeta">${c.last || "—"}</div>
@@ -5891,16 +6375,32 @@ function useCurrentLocationForCity() {
       App.user.geo.lat = String(lat);
       App.user.geo.lng = String(lng);
 
-      // Reverse geocoding can be added later if needed.
-      // For now: set city to placeholder if empty
       const city = $("regCity");
-      if (city && !city.value.trim() && App.role === "user") {
-        city.value = "Warszawa";
-      }
+      if (city && App.role === "user") city.value = "Pobieramy miasto...";
 
-      toast("Lokalizacja zapisana ");
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=10&addressdetails=1`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((geoData) => {
+          const a = geoData?.address || {};
+          const cityName = a.city || a.town || a.village || a.municipality || a.county || "";
+          if (cityName) {
+            App.user.city = cityName;
+            if (city && App.role === "user") city.value = cityName;
+          } else if (city && App.role === "user") {
+            city.value = "Lokalizacja pobrana";
+          }
+          toast("Lokalizacja ustawiona");
+        })
+        .catch(() => {
+          if (city && App.role === "user") city.value = "Lokalizacja pobrana";
+          toast("Lokalizacja ustawiona");
+        });
     },
-    () => toast("Nie udało się pobrać lokalizacji (brak zgody?)"),
+    () => {
+      const city = $("regCity");
+      if (city && App.role === "user") city.value = "Włącz lokalizację, aby kontynuować";
+      toast("Nie udało się pobrać lokalizacji (brak zgody?)");
+    },
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
   );
 }
@@ -5966,6 +6466,47 @@ function sharedScore(person) {
   return Math.min(99, Math.round((common / base) * 100));
 }
 
+
+function formatDistanceFromMe(person) {
+  const rawMyLat = App.user?.geo?.lat;
+  const rawMyLng = App.user?.geo?.lng;
+  const rawLat = person?.location_lat;
+  const rawLng = person?.location_lng;
+
+  const myLat = Number(rawMyLat);
+  const myLng = Number(rawMyLng);
+  const lat = Number(rawLat);
+  const lng = Number(rawLng);
+
+  const rawDistance = person?.distance_km;
+  let d = rawDistance != null && rawDistance !== "" ? Number(rawDistance) : NaN;
+
+  if (
+    rawMyLat != null && rawMyLat !== "" &&
+    rawMyLng != null && rawMyLng !== "" &&
+    rawLat != null && rawLat !== "" &&
+    rawLng != null && rawLng !== "" &&
+    Number.isFinite(myLat) &&
+    Number.isFinite(myLng) &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng)
+  ) {
+    const toRad = value => value * Math.PI / 180;
+    const R = 6371;
+    const dLat = toRad(lat - myLat);
+    const dLng = toRad(lng - myLng);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(myLat)) * Math.cos(toRad(lat)) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  if (!Number.isFinite(d)) return "";
+  if (d < 1) return "< 1 km od Ciebie";
+  return `${String(Math.round(d * 10) / 10).replace(".", ",")} km od Ciebie`;
+}
+
 function suggestPeopleByInterest(tag) {
   const t = tag.toLowerCase();
   return App.people.filter(p => (p.interests || []).map(x => x.toLowerCase()).includes(t));
@@ -5993,10 +6534,13 @@ function mapApiPersonToViewModel(p) {
     nick: p.nick || "Uzytkownik",
     city: p.miasto || "",
     age: Number.isFinite(Number(p.age)) ? Number(p.age) : 0,
-    emoji: "🙂",
+    emoji: "",
     interests: Array.isArray(p.zainteresowania) ? p.zainteresowania : [],
     bio: p.bio || "",
     avatarUrl: p.avatar_url || "",
+    distance_km: p.distance_km ?? null,
+    location_lat: p.location_lat ?? null,
+    location_lng: p.location_lng ?? null,
   };
 }
 
@@ -6269,8 +6813,12 @@ function renderAll() {
 
   if (App.currentView === "S3_PROFILE_SETUP") {
     if ($("setupNick")) $("setupNick").value = App.user.nick || "";
-    if ($("setupCity")) $("setupCity").value = App.user.city || "";
+    const setupCity = $("setupCity");
+    if (setupCity && App.user.city && setupCity.value !== "Pobieranie lokalizacji...") {
+      setupCity.value = App.user.city;
+    }
     if ($("setupBio")) $("setupBio").value = App.user.bio || "";
+    if ($("setupNearbyRadiusKm")) $("setupNearbyRadiusKm").value = String(App.user.nearbyRadiusKm || 25);
     if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
     if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
     safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
@@ -6313,7 +6861,7 @@ function renderAll() {
       partnerHubLogoPreview.innerHTML = `<img src="${src}" alt="Logo organizatora" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
     } else {
       partnerHubLogoPreview.innerHTML = "";
-      partnerHubLogoPreview.textContent = "🏷️";
+      partnerHubLogoPreview.textContent = (App.partner.company || "U").trim().charAt(0).toUpperCase();
     }
   }
 
@@ -6398,8 +6946,8 @@ function renderAll() {
         : `${API_BASE_URL}${App.user.avatarUrl}`;
       el.innerHTML = `<img src="${src}" alt="Awatar użytkownika" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
     } else {
-      el.innerHTML = "";
-      el.textContent = "👤";
+      const name = App.user.nick || "U";
+      el.innerHTML = `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(name))}">${avatarInitial(name)}</div>`;
     }
   };
 
@@ -6430,7 +6978,7 @@ function renderAll() {
         : `${API_BASE_URL}${App.partner.logoUrl}`;
       orgLogoPreview.innerHTML = `<img src="${src}" alt="Logo organizatora" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
     } else {
-      orgLogoPreview.textContent = App.partner.logoEmoji || "🏷️";
+      orgLogoPreview.textContent = (App.partner.company || "U").trim().charAt(0).toUpperCase();
     }
   }
 
@@ -6696,7 +7244,7 @@ function initAuthMvp() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email, password, expected_role: App.role === "partner" ? "partner" : "user" }),
+          body: JSON.stringify({ email, password, expected_role: String(email).trim().toLowerCase() === "admin@usly.dev" ? "admin" : (App.role === "partner" ? "partner" : "user") }),
         });
         
         if (!data?.success) {
@@ -6778,7 +7326,10 @@ function initNearbyMap() {
   const el = document.getElementById("nearbyMap");
   if (!el || nearbyMap) return;
 
-  nearbyMap = L.map("nearbyMap").setView([52.2297, 21.0122], 12);
+  const lat = App.user?.geo?.lat ? Number(App.user.geo.lat) : 52.2297;
+  const lng = App.user?.geo?.lng ? Number(App.user.geo.lng) : 21.0122;
+
+  nearbyMap = L.map("nearbyMap").setView([lat, lng], 12);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap"
@@ -6791,48 +7342,52 @@ function renderNearbyMapMarkers() {
   nearbyMarkers.forEach(m => nearbyMap.removeLayer(m));
   nearbyMarkers = [];
 
-  const baseLat = 52.2297;
-  const baseLng = 21.0122;
-
-  const personIcon = L.divIcon({
-    className: "nearby-person-marker",
-    html: `<div style="position:relative;width:28px;height:34px;display:flex;align-items:flex-start;justify-content:center;"><div style="width:26px;height:26px;border-radius:999px 999px 999px 0;transform:rotate(-45deg);background:linear-gradient(135deg,#ff4bd4,#7b61ff);border:2px solid rgba(255,255,255,.96);box-shadow:0 10px 22px rgba(0,0,0,.30);position:absolute;top:0;left:1px;"></div><div style="position:absolute;top:3px;left:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:12px;transform:rotate(0deg);">👤</div></div>`,
-    iconSize: [28, 34],
-    iconAnchor: [14, 30],
-  });
+  const baseLat = App.user?.geo?.lat ? Number(App.user.geo.lat) : 52.2297;
+  const baseLng = App.user?.geo?.lng ? Number(App.user.geo.lng) : 21.0122;
 
   const eventIcon = L.divIcon({
     className: "nearby-event-marker",
-    html: `<div style="width:24px;height:24px;border-radius:999px;background:linear-gradient(135deg,#34e6ff,#00c48c);border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 22px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#052b2f;font-size:12px;font-weight:900;">🎫</div>`,
+    html: `<div style="width:28px;height:28px;border-radius:999px;background:linear-gradient(135deg,#34e6ff,#00c48c);border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 22px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#052b2f;font-size:11px;font-weight:900;letter-spacing:-0.04em;">EV</div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
 
-  getNearbyPeopleForView().forEach((person, index) => {
-    const lat = baseLat + (Math.random() - 0.5) * 0.06;
-    const lng = baseLng + (Math.random() - 0.5) * 0.06;
+  const seenCoords = {};
 
-    const marker = L.marker([lat, lng], { icon: personIcon })
+  getNearbyPeopleForView().forEach((person, index) => {
+    const lat = Number(person.location_lat);
+    const lng = Number(person.location_lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+    const sameCoordIndex = seenCoords[coordKey] || 0;
+    seenCoords[coordKey] = sameCoordIndex + 1;
+    const markerLat = lat + sameCoordIndex * 0.00012;
+    const markerLng = lng + sameCoordIndex * 0.00012;
+
+    const personInitial = avatarInitial(person.nick || "U");
+    const personBg = getAvatarGradient(person.nick || "U");
+    const personAvatarSrc = person.avatarUrl
+      ? (String(person.avatarUrl).startsWith("http") ? person.avatarUrl : `${API_BASE_URL}${person.avatarUrl}`)
+      : "";
+
+    const dynamicIcon = L.divIcon({
+      className: "nearby-person-marker",
+      html: `<div style="position:relative;width:48px;height:56px;display:flex;align-items:flex-start;justify-content:center;">
+        <div style="width:40px;height:40px;border-radius:999px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:900;background:${personBg};border:3px solid rgba(255,255,255,.96);box-shadow:0 12px 28px rgba(0,0,0,.34);">${personAvatarSrc ? `<img src="${personAvatarSrc}" alt="${escapeHtml(person.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;" />` : personInitial}</div>
+        <div style="position:absolute;left:19px;top:36px;width:10px;height:10px;background:#fff;transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,.18);"></div>
+      </div>`,
+      iconSize: [48, 56],
+      iconAnchor: [24, 48],
+    });
+
+    const marker = L.marker([markerLat, markerLng], { icon: dynamicIcon })
       .addTo(nearbyMap);
 
     marker.on("click", () => openMapMarker("person", index));
     nearbyMarkers.push(marker);
   });
 
-  App.events
-    .filter(ev => matchesUserEventInterest(ev) && isEventInMyCity(ev))
-    .slice(0, 12)
-    .forEach((ev, index) => {
-    const lat = baseLat + (Math.random() - 0.5) * 0.05;
-    const lng = baseLng + (Math.random() - 0.5) * 0.05;
-
-    const marker = L.marker([lat, lng], { icon: eventIcon })
-      .addTo(nearbyMap)
-      .bindPopup("<b>" + ev.title + "</b><br>" + (ev.city || ""));
-
-    marker.on("click", () => openMapMarker("event", index));
-    nearbyMarkers.push(marker);
-  });
 }
 
 
@@ -6869,8 +7424,8 @@ function refreshInterestUi() {
   ].filter(Boolean);
 
   const hintText = limit === null
-    ? `Zainteresowania: ${count} • Bez limitu w planie VIP`
-    : `Zainteresowania: ${count} / ${limit}`;
+    ? `${count} • VIP`
+    : `${count}/${limit}`;
 
   hintTargets.forEach((hint) => {
     hint.textContent = hintText;

@@ -28,6 +28,39 @@ if _SENTRY_DSN:
     )
 
 import json
+import math
+
+import requests
+
+def _reverse_geocode_city(lat: float, lng: float) -> str | None:
+    try:
+        url = "https://nominatim.openstreetmap.org/reverse"
+        params = {
+            "lat": lat,
+            "lon": lng,
+            "format": "json",
+            "zoom": 10,
+            "addressdetails": 1,
+        }
+        headers = {
+            "User-Agent": "usly-app"
+        }
+
+        r = requests.get(url, params=params, headers=headers, timeout=3)
+        if r.status_code != 200:
+            return None
+
+        data = r.json()
+        addr = data.get("address", {})
+
+        return (
+            addr.get("city")
+            or addr.get("town")
+            or addr.get("village")
+            or addr.get("municipality")
+        )
+    except Exception:
+        return None
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -899,7 +932,10 @@ def users_me(current_user: User = Depends(require_role("user"))):
                 "zainteresowania": zainteresowania,
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
+                "nearby_radius_km": profile.nearby_radius_km,
                 "avatar_url": profile.avatar_url,
+                "location_lat": profile.location_lat,
+                "location_lng": profile.location_lng,
                 "plan": profile.plan,
                 "plan_source": profile.plan_source,
                 "plan_status": profile.plan_status,
@@ -916,6 +952,7 @@ def users_me(current_user: User = Depends(require_role("user"))):
 def users_nearby(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    max_distance_km: int = Query(default=50, ge=1, le=200),
     current_user: User = Depends(require_role("user")),
 ):
     db = SessionLocal()
@@ -987,7 +1024,25 @@ def users_nearby(
         matched_items = []
         for user, profile in rows:
             other_city = norm_city(profile.miasto)
-            if my_city and other_city and my_city != other_city:
+
+            # distance filter (Nearby)
+            if (
+                my_profile.location_lat is None
+                or my_profile.location_lng is None
+                or profile.location_lat is None
+                or profile.location_lng is None
+            ):
+                continue
+
+            dist_km = _distance_km(
+                my_profile.location_lat,
+                my_profile.location_lng,
+                profile.location_lat,
+                profile.location_lng,
+            )
+
+            user_radius = my_profile.nearby_radius_km or 25
+            if dist_km > user_radius:
                 continue
 
             other_tags = norm_tags(profile.zainteresowania_json)
@@ -1025,13 +1080,16 @@ def users_nearby(
                     "age_min": profile.age_min,
                     "age_max": profile.age_max,
                     "avatar_url": profile.avatar_url,
+                    "distance_km": round(dist_km, 1),
+                    "location_lat": profile.location_lat,
+                    "location_lng": profile.location_lng,
                 }
             )
 
         matched_items.sort(
             key=lambda x: (
                 -int(x.get("shared_count") or 0),
-                x.get("miasto") or "",
+                float(x.get("distance_km") or 9999),
                 x.get("nick") or "",
             )
         )
@@ -1074,6 +1132,25 @@ def users_profile_by_id(
 
         user, profile = profile_row
 
+        viewer_profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+        distance_km = None
+        if (
+            viewer_profile
+            and viewer_profile.location_lat is not None
+            and viewer_profile.location_lng is not None
+            and profile.location_lat is not None
+            and profile.location_lng is not None
+        ):
+            distance_km = round(
+                _distance_km(
+                    viewer_profile.location_lat,
+                    viewer_profile.location_lng,
+                    profile.location_lat,
+                    profile.location_lng,
+                ),
+                1,
+            )
+
         zainteresowania = []
         if profile.zainteresowania_json:
             try:
@@ -1099,6 +1176,7 @@ def users_profile_by_id(
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
                 "avatar_url": profile.avatar_url,
+                "distance_km": distance_km,
             }
         )
     finally:
@@ -1116,8 +1194,11 @@ class UserMePatch(BaseModel):
     zainteresowania: Optional[List[str]] = Field(default=None)
     age_min: Optional[int] = Field(default=None, ge=16, le=120)
     age_max: Optional[int] = Field(default=None, ge=16, le=120)
+    nearby_radius_km: Optional[int] = Field(default=None, ge=1, le=200)
     avatar_url: Optional[str] = Field(default=None)
     plan: Optional[str] = Field(default=None)
+    location_lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    location_lng: Optional[float] = Field(default=None, ge=-180, le=180)
 
 
 def _trim(s: Optional[str]) -> Optional[str]:
@@ -1125,6 +1206,17 @@ def _trim(s: Optional[str]) -> Optional[str]:
         return None
     s2 = s.strip()
     return s2 if s2 != "" else None
+
+
+def _distance_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    radius_km = 6371.0
+    d_lat = math.radians(lat2 - lat1)
+    d_lng = math.radians(lng2 - lng1)
+    a = (
+        math.sin(d_lat / 2) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lng / 2) ** 2
+    )
+    return radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 @app.patch("/users/me")
@@ -1164,6 +1256,8 @@ def users_me_patch(
             profile.age_min = payload.age_min
         if "age_max" in fields_set:
             profile.age_max = payload.age_max
+        if "nearby_radius_km" in fields_set and payload.nearby_radius_km is not None:
+            profile.nearby_radius_km = payload.nearby_radius_km
 
         if payload.zainteresowania is not None:
             cleaned: list[str] = []
@@ -1206,6 +1300,18 @@ def users_me_patch(
             profile.plan = payload.plan
             profile.plan_updated_at = datetime.utcnow()
 
+        # Przybliżona lokalizacja (anonimizowana)
+        if payload.location_lat is not None and payload.location_lng is not None:
+            lat = round(payload.location_lat, 2)
+            lng = round(payload.location_lng, 2)
+
+            profile.location_lat = lat
+            profile.location_lng = lng
+
+            city = _reverse_geocode_city(lat, lng)
+            if city:
+                profile.miasto = city
+
         profile.updated_at = datetime.utcnow()
 
         db.add(profile)
@@ -1228,7 +1334,10 @@ def users_me_patch(
                 "zainteresowania": zainteresowania,
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
+                "nearby_radius_km": profile.nearby_radius_km,
                 "avatar_url": profile.avatar_url,
+                "location_lat": profile.location_lat,
+                "location_lng": profile.location_lng,
                 "plan": profile.plan,
                 "plan_source": profile.plan_source,
                 "plan_status": profile.plan_status,
@@ -2543,14 +2652,29 @@ def partner_dashboard_stats(
 
         total_events = len(active_events)
 
+        blocked_rows = (
+            db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+            .filter(
+                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id != current_user.id)) |
+                ((UserBlock.blocked_user_id == current_user.id) & (UserBlock.blocker_user_id != current_user.id))
+            )
+            .all()
+        )
+        blocked_user_ids = {
+            blocked_user_id if blocker_user_id == current_user.id else blocker_user_id
+            for blocker_user_id, blocked_user_id in blocked_rows
+        }
+
         active_event_ids = [e.id for e in active_events]
         total_signups = 0
         if active_event_ids:
-            total_signups = (
+            total_signups_q = (
                 db.query(EventSignup)
                 .filter(EventSignup.event_id.in_(active_event_ids))
-                .count()
             )
+            if blocked_user_ids:
+                total_signups_q = total_signups_q.filter(~EventSignup.user_id.in_(blocked_user_ids))
+            total_signups = total_signups_q.count()
 
         total_capacity = 0
         free_spots = 0
@@ -2558,11 +2682,13 @@ def partner_dashboard_stats(
             if e.capacity is None:
                 continue
             total_capacity += e.capacity
-            signups_count = (
+            signups_q = (
                 db.query(EventSignup)
                 .filter(EventSignup.event_id == e.id)
-                .count()
             )
+            if blocked_user_ids:
+                signups_q = signups_q.filter(~EventSignup.user_id.in_(blocked_user_ids))
+            signups_count = signups_q.count()
             free_spots += max(e.capacity - signups_count, 0)
 
         return ok(
@@ -4306,6 +4432,275 @@ async def submit_feedback(payload: dict):
         "ticket": ticket,
         "email_error": email_error,
     })
+
+
+# =========================
+# USER REPORTS / MODERATION
+# =========================
+@app.post("/reports/user")
+async def submit_user_report(
+    payload: dict,
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    import os
+    import json
+    import smtplib
+    import ssl
+    from pathlib import Path
+    from datetime import datetime
+    from email.message import EmailMessage
+
+    report_email_to = "kontakt@uslyapp.pl"
+
+    reported_user_id = (payload or {}).get("reported_user_id")
+    reason = str((payload or {}).get("reason") or "").strip()
+    description = str((payload or {}).get("description") or "").strip()
+    current_view = str((payload or {}).get("current_view") or "—").strip() or "—"
+
+    allowed_reasons = {
+        "spam": "Spam / scam",
+        "harassment": "Nękanie lub obraźliwe treści",
+        "inappropriate_profile": "Nieodpowiedni profil lub bio",
+        "impersonation": "Podszywanie się",
+        "other": "Inne",
+    }
+
+    if not reported_user_id:
+        raise HTTPException(status_code=422, detail="REPORTED_USER_REQUIRED")
+
+    if int(reported_user_id) == current_user.id:
+        raise HTTPException(status_code=400, detail="CANNOT_REPORT_SELF")
+
+    if reason not in allowed_reasons:
+        raise HTTPException(status_code=422, detail="INVALID_REPORT_REASON")
+
+    if len(description) > 1000:
+        raise HTTPException(status_code=422, detail="REPORT_DESCRIPTION_TOO_LONG")
+
+    db = SessionLocal()
+    try:
+        target = (
+            db.query(User)
+            .filter(User.id == int(reported_user_id))
+            .filter(User.status == UserStatus.ACTIVE.value)
+            .first()
+        )
+        if not target:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+    finally:
+        db.close()
+
+    data_dir = Path(__file__).resolve().parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    report_file = data_dir / "user_reports.jsonl"
+
+    existing_count = 0
+    if report_file.exists():
+        with report_file.open("r", encoding="utf-8") as f:
+            existing_count = sum(1 for _ in f if _.strip())
+
+    ticket_no = existing_count + 1
+    ticket = f"UR-{ticket_no:04d}"
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    record = {
+        "ticket": ticket,
+        "reporter_user_id": current_user.id,
+        "reporter_role": current_user.role,
+        "reported_user_id": int(reported_user_id),
+        "reason": reason,
+        "reason_label": allowed_reasons[reason],
+        "description": description,
+        "current_view": current_view,
+        "created_at": now,
+        "status": "new",
+    }
+
+    with report_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    subject = f"[USLY REPORT #{ticket}] {allowed_reasons[reason]}"
+    body = (
+        f"Numer: #{ticket}\n"
+        f"Zgłaszający ID: {current_user.id}\n"
+        f"Rola zgłaszającego: {current_user.role}\n"
+        f"Zgłoszony user ID: {int(reported_user_id)}\n"
+        f"Powód: {allowed_reasons[reason]} ({reason})\n"
+        f"Widok: {current_view}\n"
+        f"Czas: {now}\n\n"
+        f"Opis:\n"
+        f"{description or '—'}"
+    )
+
+    smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+    smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+    smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+    smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+    smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+    emailed = False
+    email_error = None
+
+    if smtp_host and smtp_from:
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = smtp_from
+            msg["To"] = report_email_to
+            msg.set_content(body)
+
+            context = ssl.create_default_context()
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls(context=context)
+                if smtp_user and smtp_pass:
+                    server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+
+            emailed = True
+        except Exception as e:
+            email_error = str(e)
+
+    return ok({
+        "saved": True,
+        "emailed": emailed,
+        "ticket": ticket,
+        "email_error": email_error,
+    })
+
+
+@app.post("/reports/event")
+async def submit_event_report(
+    payload: dict,
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    import os
+    import json
+    import smtplib
+    import ssl
+    from pathlib import Path
+    from datetime import datetime
+    from email.message import EmailMessage
+
+    report_email_to = "kontakt@uslyapp.pl"
+
+    event_id = (payload or {}).get("event_id")
+    reason = str((payload or {}).get("reason") or "").strip()
+    description = str((payload or {}).get("description") or "").strip()
+    current_view = str((payload or {}).get("current_view") or "—").strip() or "—"
+
+    allowed_reasons = {
+        "spam": "Spam / scam",
+        "misleading": "Fałszywe lub mylące wydarzenie",
+        "inappropriate": "Nieodpowiednia treść",
+        "unsafe": "Podejrzane lub niebezpieczne wydarzenie",
+        "other": "Inne",
+    }
+
+    if not event_id:
+        raise HTTPException(status_code=422, detail="EVENT_REQUIRED")
+
+    if reason not in allowed_reasons:
+        raise HTTPException(status_code=422, detail="INVALID_REPORT_REASON")
+
+    if len(description) > 1000:
+        raise HTTPException(status_code=422, detail="REPORT_DESCRIPTION_TOO_LONG")
+
+    db = SessionLocal()
+    try:
+        event = (
+            db.query(Event)
+            .filter(Event.id == int(event_id))
+            .first()
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        event_title = getattr(event, "title", None) or getattr(event, "name", None) or f"Wydarzenie #{event_id}"
+        partner_user_id = getattr(event, "partner_user_id", None)
+    finally:
+        db.close()
+
+    data_dir = Path(__file__).resolve().parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    report_file = data_dir / "event_reports.jsonl"
+
+    existing_count = 0
+    if report_file.exists():
+        with report_file.open("r", encoding="utf-8") as f:
+            existing_count = sum(1 for _ in f if _.strip())
+
+    ticket_no = existing_count + 1
+    ticket = f"ER-{ticket_no:04d}"
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    record = {
+        "ticket": ticket,
+        "reporter_user_id": current_user.id,
+        "reporter_role": current_user.role,
+        "event_id": int(event_id),
+        "event_title": event_title,
+        "partner_user_id": partner_user_id,
+        "reason": reason,
+        "reason_label": allowed_reasons[reason],
+        "description": description,
+        "current_view": current_view,
+        "created_at": now,
+        "status": "new",
+    }
+
+    with report_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    subject = f"[USLY EVENT REPORT #{ticket}] {allowed_reasons[reason]}"
+    body = (
+        f"Numer: #{ticket}\n"
+        f"Zgłaszający ID: {current_user.id}\n"
+        f"Rola zgłaszającego: {current_user.role}\n"
+        f"Event ID: {int(event_id)}\n"
+        f"Tytuł wydarzenia: {event_title}\n"
+        f"Partner user ID: {partner_user_id if partner_user_id is not None else '—'}\n"
+        f"Powód: {allowed_reasons[reason]} ({reason})\n"
+        f"Widok: {current_view}\n"
+        f"Czas: {now}\n\n"
+        f"Opis:\n"
+        f"{description or '—'}"
+    )
+
+    smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+    smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+    smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+    smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+    smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+    emailed = False
+    email_error = None
+
+    if smtp_host and smtp_from:
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = smtp_from
+            msg["To"] = report_email_to
+            msg.set_content(body)
+
+            context = ssl.create_default_context()
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls(context=context)
+                if smtp_user and smtp_pass:
+                    server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+
+            emailed = True
+        except Exception as e:
+            email_error = str(e)
+
+    return ok({
+        "saved": True,
+        "emailed": emailed,
+        "ticket": ticket,
+        "email_error": email_error,
+    })
+
 
 
 @app.get("/admin/bug-reports")
