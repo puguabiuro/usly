@@ -4703,12 +4703,278 @@ async def submit_event_report(
 
 
 
+def _admin_reports_file(report_type: str):
+    from pathlib import Path
+    files = {
+        "user": "user_reports.jsonl",
+        "event": "event_reports.jsonl",
+        "bug": "bug_reports.jsonl",
+    }
+    if report_type not in files:
+        raise HTTPException(status_code=404, detail="REPORT_TYPE_NOT_FOUND")
+    return Path(__file__).resolve().parent / "data" / files[report_type]
+
+
+@app.post("/admin/reports/{report_type}/{ticket}/status")
+def admin_update_report_status(
+    report_type: str,
+    ticket: str,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    import json
+
+    allowed = {"new", "in_review", "resolved", "rejected", "archived", "accepted", "in_progress", "fixed", "not_reproducible"}
+    new_status = str((payload or {}).get("status") or "").strip()
+
+    if new_status not in allowed:
+        raise HTTPException(status_code=422, detail="INVALID_REPORT_STATUS")
+
+    f = _admin_reports_file(report_type)
+    if not f.exists():
+        raise HTTPException(status_code=404, detail="REPORT_FILE_NOT_FOUND")
+
+    rows = []
+    found = None
+    with f.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+
+            if str(row.get("ticket")) == str(ticket):
+                row["status"] = new_status
+                found = row
+
+            rows.append(row)
+
+    if not found:
+        raise HTTPException(status_code=404, detail="REPORT_NOT_FOUND")
+
+    with f.open("w", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    return ok({"ticket": ticket, "status": new_status, "report": found})
+
+
+@app.post("/admin/users/{user_id}/status")
+def admin_update_user_status(
+    user_id: int,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    new_status = str((payload or {}).get("status") or "").strip()
+    if new_status not in {UserStatus.ACTIVE.value, UserStatus.BLOCKED.value}:
+        raise HTTPException(status_code=422, detail="INVALID_USER_STATUS")
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+        if user.role == "admin":
+            raise HTTPException(status_code=400, detail="CANNOT_MODERATE_ADMIN")
+
+        user.status = new_status
+        db.add(user)
+        db.commit()
+
+        return ok({"id": user.id, "status": user.status})
+    finally:
+        db.close()
+
+
+@app.post("/admin/events/{event_id}/status")
+def admin_update_event_status(
+    event_id: int,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    new_status = str((payload or {}).get("status") or "").strip()
+    if new_status not in {"published", "archived"}:
+        raise HTTPException(status_code=422, detail="INVALID_EVENT_STATUS")
+
+    db = SessionLocal()
+    try:
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        event.status = new_status
+        event.updated_at = datetime.utcnow()
+        db.add(event)
+        db.commit()
+
+        return ok({"id": event.id, "status": event.status})
+    finally:
+        db.close()
+
+
+@app.get("/admin/users/{user_id}/preview")
+def admin_user_preview(
+    user_id: int,
+    current_user: User = Depends(require_role("admin")),
+):
+    import json
+
+    db = SessionLocal()
+    try:
+        row = (
+            db.query(User, UserProfile)
+            .outerjoin(UserProfile, UserProfile.user_id == User.id)
+            .filter(User.id == user_id)
+            .first()
+        )
+        if not row:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        user, profile = row
+        interests = []
+        if profile and profile.zainteresowania_json:
+            try:
+                interests = json.loads(profile.zainteresowania_json) or []
+            except Exception:
+                interests = []
+
+        reports_file = Path(__file__).resolve().parent / "data" / "user_reports.jsonl"
+        reports_total = 0
+        reports_open = 0
+        if reports_file.exists():
+            with reports_file.open("r", encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        row = json.loads(line)
+                    except Exception:
+                        continue
+                    if int(row.get("reported_user_id") or 0) == int(user_id):
+                        reports_total += 1
+                        if str(row.get("status") or "new") not in {"resolved", "rejected", "archived"}:
+                            reports_open += 1
+
+        return ok({
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "status": user.status,
+            "reports_total": reports_total,
+            "reports_open": reports_open,
+            "nick": getattr(profile, "nick", None) if profile else None,
+            "city": getattr(profile, "city", None) if profile else None,
+            "bio": getattr(profile, "bio", None) if profile else None,
+            "avatar_url": getattr(profile, "avatar_url", None) if profile else None,
+            "interests": interests,
+            "dob": str(user.dob) if getattr(user, "dob", None) else None,
+            "created_at": str(user.created_at) if getattr(user, "created_at", None) else None,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/admin/events/{event_id}/preview")
+def admin_event_preview(
+    event_id: int,
+    current_user: User = Depends(require_role("admin")),
+):
+    db = SessionLocal()
+    try:
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        signups_count = db.query(EventSignup).filter(EventSignup.event_id == event.id).count()
+        saves_count = db.query(EventSave).filter(EventSave.event_id == event.id).count()
+
+        reports_file = Path(__file__).resolve().parent / "data" / "event_reports.jsonl"
+        reports_total = 0
+        reports_open = 0
+        if reports_file.exists():
+            with reports_file.open("r", encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        row = json.loads(line)
+                    except Exception:
+                        continue
+                    if int(row.get("event_id") or 0) == int(event_id):
+                        reports_total += 1
+                        if str(row.get("status") or "new") not in {"resolved", "rejected", "archived"}:
+                            reports_open += 1
+
+        return ok({
+            "id": event.id,
+            "partner_user_id": event.partner_user_id,
+            "reports_total": reports_total,
+            "reports_open": reports_open,
+            "title": event.title,
+            "description": event.description,
+            "city": event.city,
+            "where": getattr(event, "where", None),
+            "interest_tag": getattr(event, "interest_tag", None),
+            "start_at": str(event.start_at) if event.start_at else None,
+            "end_at": str(event.end_at) if event.end_at else None,
+            "capacity": event.capacity,
+            "status": event.status,
+            "signups_count": signups_count,
+            "saves_count": saves_count,
+            "created_at": str(event.created_at) if event.created_at else None,
+            "updated_at": str(event.updated_at) if event.updated_at else None,
+            "event_cover_url": getattr(event, "event_cover_url", None),
+        })
+    finally:
+        db.close()
+
+
+@app.get("/admin/user-reports")
+def get_admin_user_reports(current_user: User = Depends(require_role("admin"))):
+    import json
+    from pathlib import Path
+
+    f = Path(__file__).resolve().parent / "data" / "user_reports.jsonl"
+    if not f.exists():
+        return {"success": True, "count": 0, "data": []}
+
+    items = []
+    with f.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            try:
+                if line.strip():
+                    items.append(json.loads(line))
+            except Exception:
+                pass
+
+    return {"success": True, "count": len(items), "data": items[::-1]}
+
+
+@app.get("/admin/event-reports")
+def get_admin_event_reports(current_user: User = Depends(require_role("admin"))):
+    import json
+    from pathlib import Path
+
+    f = Path(__file__).resolve().parent / "data" / "event_reports.jsonl"
+    if not f.exists():
+        return {"success": True, "count": 0, "data": []}
+
+    items = []
+    with f.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            try:
+                if line.strip():
+                    items.append(json.loads(line))
+            except Exception:
+                pass
+
+    return {"success": True, "count": len(items), "data": items[::-1]}
+
+
 @app.get("/admin/bug-reports")
 def get_bug_reports():
     import json
     from pathlib import Path
 
-    f = Path("data/bug_reports.jsonl")
+    f = Path(__file__).resolve().parent / "data" / "bug_reports.jsonl"
     if not f.exists():
         return {"success": True, "data": []}
 

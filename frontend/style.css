@@ -3786,3 +3786,168 @@ button[id^="notifBtn"]:active{
 .userAvatarFallback::after{
   display: none !important;
 }
+
+/* ===== ADMIN WORKFLOW LIST ===== */
+
+.adminWorkflowList{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.adminWorkflowRow{
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:12px 14px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(14,18,32,.72);
+  backdrop-filter:blur(10px);
+}
+
+.adminWorkflowTicket{
+  min-width:0;
+}
+
+.adminWorkflowTicket strong{
+  display:block;
+  font-size:15px;
+  font-weight:900;
+  line-height:1.1;
+}
+
+.adminWorkflowDate{
+  margin-top:4px;
+  font-size:11px;
+  opacity:.72;
+  line-height:1.15;
+}
+
+.adminWorkflowMain{
+  min-width:0;
+}
+
+.adminWorkflowTop{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.adminWorkflowTitle{
+  font-size:13px;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.adminWorkflowMeta{
+  margin-top:4px;
+  font-size:12px;
+  opacity:.72;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.adminWorkflowActions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.adminStatusBadge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:110px;
+  padding:8px 12px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.02em;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);
+}
+
+.adminStatusBadge[data-status="new"]{
+  background:rgba(59,130,246,.18);
+}
+
+.adminStatusBadge[data-status="in_review"],
+.adminStatusBadge[data-status="accepted"]{
+  background:rgba(245,158,11,.18);
+}
+
+.adminStatusBadge[data-status="in_progress"]{
+  background:rgba(168,85,247,.18);
+}
+
+.adminStatusBadge[data-status="resolved"],
+.adminStatusBadge[data-status="fixed"]{
+  background:rgba(34,197,94,.18);
+}
+
+.adminStatusBadge[data-status="rejected"],
+.adminStatusBadge[data-status="not_reproducible"],
+.adminStatusBadge[data-status="archived"]{
+  background:rgba(239,68,68,.16);
+  opacity:.78;
+}
+
+
+/* ===== ADMIN DASHBOARD RECOVERY ===== */
+
+.adminDashboard{
+  padding-bottom:40px;
+}
+
+.adminDashboardHero{
+  border-radius:28px;
+  padding:22px;
+  background:
+    linear-gradient(180deg, rgba(18,24,44,.96), rgba(10,14,26,.96));
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.adminDashboardSection{
+  border-radius:24px;
+  padding:18px;
+  background:
+    linear-gradient(180deg, rgba(16,20,34,.94), rgba(10,12,24,.96));
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.adminDashboardSection .sectionTitle{
+  font-size:18px;
+  font-weight:900;
+  margin-bottom:4px;
+}
+
+.adminDashboardSection #adminUserReportsList,
+.adminDashboardSection #adminEventReportsList,
+.adminDashboardSection #adminBugReportsList{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.adminDashboardSection .card{
+  margin-top:0 !important;
+  border-radius:18px !important;
+  padding:14px !important;
+  background:rgba(255,255,255,.04) !important;
+  border:1px solid rgba(255,255,255,.07);
+}
+
+.adminDashboardSection .pill{
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.10);
+  font-weight:900;
+}
+
