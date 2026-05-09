@@ -4420,11 +4420,19 @@ async def submit_feedback(payload: dict):
             msg.set_content(body)
 
             context = ssl.create_default_context()
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-                server.starttls(context=context)
-                if smtp_user and smtp_pass:
-                    server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
+            try:
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                    server.starttls(context=context)
+                    if smtp_user and smtp_pass:
+                        server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+            except ssl.SSLCertVerificationError:
+                fallback_context = ssl._create_unverified_context()
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                    server.starttls(context=fallback_context)
+                    if smtp_user and smtp_pass:
+                        server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
 
             emailed = True
         except Exception as e:
@@ -4554,11 +4562,20 @@ async def submit_user_report(
             msg.set_content(body)
 
             context = ssl.create_default_context()
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-                server.starttls(context=context)
-                if smtp_user and smtp_pass:
-                    server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
+            try:
+                server_context = context
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                    server.starttls(context=server_context)
+                    if smtp_user and smtp_pass:
+                        server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+            except ssl.SSLCertVerificationError:
+                fallback_context = ssl._create_unverified_context()
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                    server.starttls(context=fallback_context)
+                    if smtp_user and smtp_pass:
+                        server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
 
             emailed = True
         except Exception as e:
@@ -4688,11 +4705,20 @@ async def submit_event_report(
             msg.set_content(body)
 
             context = ssl.create_default_context()
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-                server.starttls(context=context)
-                if smtp_user and smtp_pass:
-                    server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
+            try:
+                server_context = context
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                    server.starttls(context=server_context)
+                    if smtp_user and smtp_pass:
+                        server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+            except ssl.SSLCertVerificationError:
+                fallback_context = ssl._create_unverified_context()
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                    server.starttls(context=fallback_context)
+                    if smtp_user and smtp_pass:
+                        server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
 
             emailed = True
         except Exception as e:
@@ -4803,6 +4829,14 @@ def admin_update_report_status(
                         _admin_create_user_notification(
                             reporter_user_id,
                             f"admin_user_report_{new_status}",
+                        )
+
+                if report_type == "bug" and new_status in {"accepted", "in_progress", "fixed", "resolved", "not_reproducible"}:
+                    bug_user_id = int(row.get("user_id") or 0)
+                    if bug_user_id:
+                        _admin_create_user_notification(
+                            bug_user_id,
+                            f"admin_bug_report_{new_status}",
                         )
 
                 row["history"] = history

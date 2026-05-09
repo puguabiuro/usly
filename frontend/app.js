@@ -4708,15 +4708,23 @@ async function renderNotifications() {
           admin_user_warning_warning_profile: "Ostrzeżenie dotyczące profilu",
           admin_user_warning_warning_content: "Ostrzeżenie dotyczące treści",
           admin_user_warning_warning_behavior: "Ostrzeżenie dotyczące zachowania",
+          admin_bug_report_accepted: "Przyjęliśmy Twoje zgłoszenie błędu",
+          admin_bug_report_in_progress: "Pracujemy nad Twoim zgłoszeniem",
+          admin_bug_report_fixed: "Zgłoszony błąd został poprawiony",
+          admin_bug_report_resolved: "Twoje zgłoszenie błędu zostało rozwiązane",
+          admin_bug_report_not_reproducible: "Nie udało się odtworzyć zgłoszonego błędu",
         };
 
         if (userReportTitles[notification.type]) {
           const isWarning = String(notification.type || "").startsWith("admin_user_warning_");
+          const isBugReport = String(notification.type || "").startsWith("admin_bug_report_");
           items.push({
             title: userReportTitles[notification.type],
             body: isWarning
               ? "Administracja wysłała ostrzeżenie dotyczące zasad USLY. Sprawdź swój profil i aktywność w aplikacji. W razie pytań możesz skontaktować się z supportem USLY."
-              : "Administracja zaktualizowała status Twojego zgłoszenia. Dziękujemy za pomoc w dbaniu o bezpieczeństwo społeczności.",
+              : isBugReport
+                ? "Dziękujemy za zgłoszenie. Aktualizujemy status, żeby było jasne, co dzieje się z Twoją sprawą."
+                : "Administracja zaktualizowała status Twojego zgłoszenia. Dziękujemy za pomoc w dbaniu o bezpieczeństwo społeczności.",
             targetView: "S12_NOTIFICATIONS",
             createdAt: notification?.created_at || null,
           });

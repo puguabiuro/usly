@@ -460,7 +460,7 @@ async function adminSubmitBugDecision(ticket, status = "accepted") {
   });
 
   await reloadAdminReports();
-  openBugPreview(ticket);
+  await openBugPreview(ticket);
 }
 
 function adminHistoryEntryLabel(h) {
@@ -1124,6 +1124,23 @@ document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
   adminToast("Wylogowano lokalnie.");
 });
 
+let adminAutoRefreshTimer = null;
+
+function startAdminAutoRefresh() {
+  if (adminAutoRefreshTimer) return;
+
+  adminAutoRefreshTimer = window.setInterval(() => {
+    const token = localStorage.getItem("usly_token");
+    const dashboardVisible = !document.getElementById("adminDashboardView")?.hasAttribute("hidden");
+
+    if (!token || !dashboardVisible) return;
+
+    reloadAdminReports().catch((e) => {
+      console.error("admin auto refresh error", e);
+    });
+  }, 20000);
+}
+
 
 async function adminLogin(email, password) {
   const res = await window.apiFetch("/auth/login", {
@@ -1142,6 +1159,7 @@ async function adminLogin(email, password) {
 
   adminToast("Zalogowano do panelu administratora.");
   await reloadAdminReports();
+  startAdminAutoRefresh();
 }
 
 document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) => {
@@ -1166,5 +1184,6 @@ document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) 
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
   reloadAdminReports().catch(() => {});
+  startAdminAutoRefresh();
 })();
 
