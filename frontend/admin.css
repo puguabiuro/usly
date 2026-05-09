@@ -877,3 +877,376 @@ body{
   background:var(--line);
   margin:18px 0 14px;
 }
+
+
+.adminMetricGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;
+}
+
+.adminMetricCard{
+  background:#121826;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.adminMetricCard span{
+  font-size:13px;
+  color:#9fb0d1;
+}
+
+.adminMetricCard strong{
+  font-size:30px;
+  line-height:1;
+  color:#fff;
+}
+
+
+.adminChartRow{
+  display:grid;
+  grid-template-columns:minmax(120px,1.2fr) 2fr auto;
+  gap:12px;
+  align-items:center;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.adminChartRow:last-child{border-bottom:0;}
+
+.adminChartRow strong{
+  display:block;
+  color:#fff;
+  text-transform:uppercase;
+  font-size:13px;
+}
+
+.adminChartRow span{
+  display:block;
+  color:#9fb0d1;
+  font-size:12px;
+  margin-top:3px;
+}
+
+.adminChartRow b{
+  color:#fff;
+  font-size:15px;
+}
+
+.adminChartBar{
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  overflow:hidden;
+}
+
+.adminChartBar i{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#58d3ff,#8b6cff);
+}
+
+
+.adminRevenueHero{
+  margin-bottom:16px;
+  padding:14px;
+  border-radius:16px;
+  background:rgba(88,211,255,.08);
+  border:1px solid rgba(88,211,255,.18);
+}
+
+.adminRevenueHero span,
+.adminRevenueHero small{
+  display:block;
+  color:#9fb0d1;
+  font-size:12px;
+}
+
+.adminRevenueHero strong{
+  display:block;
+  color:#fff;
+  font-size:28px;
+  margin:6px 0;
+}
+
+.adminMiniSectionTitle{
+  margin:14px 0 8px;
+  color:#58d3ff;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  font-size:12px;
+}
+
+
+.adminDashboardBlock{
+  margin-bottom:18px;
+}
+
+.adminDashboardBlock:last-child{
+  margin-bottom:0;
+}
+
+.adminDashboardBlockHighlighted{
+  padding:14px;
+  border-radius:18px;
+  background:rgba(88,211,255,.06);
+  border:1px solid rgba(88,211,255,.14);
+}
+
+
+.adminHealthOk,
+.adminHealthBad{
+  padding:12px 14px;
+  border-radius:14px;
+  font-weight:900;
+  margin-bottom:12px;
+}
+
+.adminHealthOk{
+  color:#b9ffd7;
+  background:rgba(54,211,122,.10);
+  border:1px solid rgba(54,211,122,.22);
+}
+
+.adminHealthBad{
+  color:#ffd1d1;
+  background:rgba(255,90,90,.10);
+  border:1px solid rgba(255,90,90,.22);
+}
+
+.adminHealthRow{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.adminHealthRow:last-child{border-bottom:0;}
+
+.adminHealthRow span{
+  color:#9fb0d1;
+  font-size:13px;
+}
+
+.adminHealthRow strong{
+  color:#fff;
+  text-align:right;
+  font-size:13px;
+}
+
+
+.adminActivityFeed{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.adminActivityItem{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.adminActivityItem:last-child{border-bottom:0;}
+
+.adminActivityItem strong{
+  display:block;
+  color:#fff;
+  font-size:14px;
+}
+
+.adminActivityItem span{
+  display:block;
+  color:#9fb0d1;
+  font-size:12px;
+  margin-top:4px;
+}
+
+.adminActivityItem time{
+  color:#7f90b5;
+  font-size:12px;
+  white-space:nowrap;
+  text-align:right;
+}
+
+
+.adminRoleSplitGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:14px;
+  margin-bottom:18px;
+}
+
+.adminRoleCard{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:16px;
+  background:rgba(255,255,255,.035);
+}
+
+.adminRoleCardHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.adminRoleCardHead span{
+  color:#58d3ff;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.adminRoleCardHead strong{
+  color:#fff;
+  font-size:32px;
+  line-height:1;
+}
+
+.adminRoleMetrics{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.adminRoleMetrics div{
+  border-radius:14px;
+  padding:10px;
+  background:rgba(18,24,38,.72);
+}
+
+.adminRoleMetrics span{
+  display:block;
+  color:#9fb0d1;
+  font-size:12px;
+}
+
+.adminRoleMetrics strong{
+  display:block;
+  color:#fff;
+  font-size:17px;
+  margin-top:4px;
+}
+
+
+.adminTimelineChart{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.adminTimelineRow{
+  display:grid;
+  grid-template-columns:80px 1fr 150px;
+  gap:14px;
+  align-items:center;
+}
+
+.adminTimelineMonth{
+  color:#9fb0d1;
+  font-size:13px;
+  font-weight:800;
+}
+
+.adminTimelineBars{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.adminTimelineBar{
+  height:10px;
+  border-radius:999px;
+}
+
+.adminTimelineUser{
+  background:linear-gradient(90deg,#58d3ff,#8b6cff);
+}
+
+.adminTimelinePartner{
+  background:linear-gradient(90deg,#ffd166,#ff7a90);
+}
+
+.adminTimelineValue{
+  text-align:right;
+}
+
+.adminTimelineValue strong{
+  display:block;
+  color:#fff;
+  font-size:14px;
+}
+
+.adminTimelineValue span{
+  display:block;
+  color:#9fb0d1;
+  font-size:11px;
+  margin-top:3px;
+}
+
+.adminTimelineLegend{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-top:14px;
+  color:#9fb0d1;
+  font-size:12px;
+}
+
+.adminTimelineLegend span{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+
+.adminTimelineDot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  display:inline-block;
+}
+
+.adminTimelineUserDot{
+  background:#58d3ff;
+}
+
+.adminTimelinePartnerDot{
+  background:#ffd166;
+}
+
+
+.adminTimelineAxis{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:8px;
+  margin:14px 150px 0 94px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+
+.adminTimelineAxis span{
+  color:#7f90b5;
+  font-size:11px;
+}
+
+.adminTimelineAxis span:nth-child(2),
+.adminTimelineAxis span:nth-child(3),
+.adminTimelineAxis span:nth-child(4){
+  text-align:center;
+}
+
+.adminTimelineAxis span:last-child{
+  text-align:right;
+}

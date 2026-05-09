@@ -665,7 +665,8 @@ async function adminSetUserStatus(userId, status) {
 
     adminToast(status === "blocked" ? "Użytkownik zablokowany." : "Użytkownik odblokowany.");
 
-    await reloadAdminReports();
+    await reloadAdminUsers();
+    if (typeof reloadAdminDashboard === "function") await reloadAdminDashboard();
     await openUserPreview(userId);
   } catch (e) {
     console.error("adminSetUserStatus error", e);
@@ -1755,7 +1756,516 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
 }
 
 
+async function reloadAdminDashboard() {
+  const summaryBox = document.getElementById("adminDashboardSummary");
+  const updatedAt = document.getElementById("adminDashboardUpdatedAt");
+
+  if (summaryBox) summaryBox.innerHTML = adminEmpty("Ładowanie danych dashboardu...");
+
+  try {
+    const [usersRes, eventsRes, userReportsRes, eventReportsRes, bugReportsRes] = await Promise.all([
+      window.apiFetch("/admin/users"),
+      window.apiFetch("/admin/events"),
+      window.apiFetch("/admin/user-reports"),
+      window.apiFetch("/admin/event-reports"),
+      window.apiFetch("/admin/bug-reports"),
+    ]);
+
+    const users = Array.isArray(usersRes?.data?.items) ? usersRes.data.items : [];
+    const events = Array.isArray(eventsRes?.data?.items) ? eventsRes.data.items : [];
+    const userReports = Array.isArray(userReportsRes?.data) ? userReportsRes.data : [];
+    const eventReports = Array.isArray(eventReportsRes?.data) ? eventReportsRes.data : [];
+    const bugReports = Array.isArray(bugReportsRes?.data) ? bugReportsRes.data : [];
+
+    Admin.users = users;
+    Admin.events = events;
+    Admin.reports.users = userReports;
+    Admin.reports.events = eventReports;
+    Admin.reports.bugs = bugReports;
+
+    const rangeValue = String(document.getElementById("adminDashboardRange")?.value || "30");
+    const now = new Date();
+    const rangeStart = rangeValue === "all" ? null : new Date(now.getTime() - Number(rangeValue) * 24 * 60 * 60 * 1000);
+    const toDate = (value) => {
+      if (!value) return null;
+      const d = new Date(String(value).replace(" ", "T"));
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+    const inRange = (value) => {
+      if (!rangeStart) return true;
+      const d = toDate(value);
+      return !!d && d >= rangeStart;
+    };
+
+    const usersInRange = users.filter(u => inRange(u.created_at));
+    const eventsInRange = events.filter(ev => inRange(ev.created_at));
+    const reportsInRange = [...userReports, ...eventReports, ...bugReports].filter(r => inRange(r.created_at || r.createdAt || r.date));
+
+    const activeUsers = users.filter(u => String(u.status || "active") === "active");
+    const partners = users.filter(u => String(u.role || "") === "partner");
+    const admins = users.filter(u => String(u.role || "") === "admin");
+    const activeEvents = events.filter(ev => String(ev.status || "") === "published");
+    const archivedEvents = events.filter(ev => String(ev.status || "") === "archived");
+    const draftEvents = events.filter(ev => String(ev.status || "") === "draft");
+
+    const openReportStatuses = new Set(["new", "in_review", "accepted", "in_progress"]);
+    const openReports = [...userReports, ...eventReports, ...bugReports].filter(r => openReportStatuses.has(String(r.status || "new")));
+
+    if (updatedAt) updatedAt.textContent = new Date().toLocaleString("pl-PL");
+
+    if (summaryBox) {
+      summaryBox.innerHTML = `
+        <div class="adminDashboardBlock">
+          <div class="adminMiniSectionTitle">Stan całej aplikacji</div>
+          <div class="adminMetricGrid">
+            <div class="adminMetricCard"><span>Aktywni użytkownicy</span><strong>${activeUsers.length}</strong></div>
+            <div class="adminMetricCard"><span>Organizatorzy</span><strong>${partners.length}</strong></div>
+            <div class="adminMetricCard"><span>Admini</span><strong>${admins.length}</strong></div>
+            <div class="adminMetricCard"><span>Aktywne wydarzenia</span><strong>${activeEvents.length}</strong></div>
+            <div class="adminMetricCard"><span>Szkice wydarzeń</span><strong>${draftEvents.length}</strong></div>
+            <div class="adminMetricCard"><span>Archiwum wydarzeń</span><strong>${archivedEvents.length}</strong></div>
+            <div class="adminMetricCard"><span>Otwarte zgłoszenia</span><strong>${openReports.length}</strong></div>
+            <div class="adminMetricCard"><span>Bug reporty</span><strong>${bugReports.length}</strong></div>
+          </div>
+        </div>
+
+        <div class="adminDashboardBlock adminDashboardBlockHighlighted">
+          <div class="adminMiniSectionTitle">W wybranym okresie: ${rangeValue === "all" ? "cały okres" : `ostatnie ${rangeValue} dni`}</div>
+          <div class="adminMetricGrid">
+            <div class="adminMetricCard"><span>Nowe konta</span><strong>${usersInRange.length}</strong></div>
+            <div class="adminMetricCard"><span>Nowe wydarzenia</span><strong>${eventsInRange.length}</strong></div>
+            <div class="adminMetricCard"><span>Zgłoszenia</span><strong>${reportsInRange.length}</strong></div>
+          </div>
+        </div>
+      `;
+    }
+
+    
+    const userPrices = { free: 0, plus: 19, premium: 39, vip: 79 };
+    const partnerPrices = { free: 0, pro: 99, premium: 199, enterprise: 0 };
+
+    const freeSources = new Set(["barter", "free", "trial"]);
+    const isPaidAccount = (u) => !freeSources.has(String(u.plan_source || "manual").toLowerCase());
+
+    const growthBox = document.getElementById("adminDashboardGrowth");
+    const growthLabel = document.getElementById("adminDashboardGrowthRangeLabel");
+
+    const usersInRangeByRole = {
+      user: usersInRange.filter(u => String(u.role || "") === "user"),
+      partner: usersInRange.filter(u => String(u.role || "") === "partner"),
+    };
+
+    const paidUsersInRange = usersInRangeByRole.user.filter(isPaidAccount);
+    const paidPartnersInRange = usersInRangeByRole.partner.filter(isPaidAccount);
+
+    const newUserMrr = paidUsersInRange.reduce((sum, u) => {
+      return sum + Number(userPrices[String(u.plan || "free").toLowerCase()] || 0);
+    }, 0);
+
+    const newPartnerMrr = paidPartnersInRange.reduce((sum, u) => {
+      return sum + Number(partnerPrices[String(u.plan || "free").toLowerCase()] || 0);
+    }, 0);
+
+    const totalNewMrr = newUserMrr + newPartnerMrr;
+
+    if (growthLabel) {
+      growthLabel.textContent =
+        rangeValue === "all"
+          ? "Cały okres"
+          : `Ostatnie ${rangeValue} dni`;
+    }
+
+    if (growthBox) {
+      growthBox.innerHTML = `
+        <div class="adminRoleSplitGrid">
+          <div class="adminRoleCard">
+            <div class="adminRoleCardHead">
+              <span>Towarzysze</span>
+              <strong>${usersInRangeByRole.user.length}</strong>
+            </div>
+
+            <div class="adminRoleMetrics">
+              <div>
+                <span>Nowi płatni</span>
+                <strong>${paidUsersInRange.length}</strong>
+              </div>
+
+              <div>
+                <span>Added MRR</span>
+                <strong>${newUserMrr} zł</strong>
+              </div>
+
+              <div>
+                <span>Free</span>
+                <strong>${usersInRangeByRole.user.filter(u => String(u.plan || "free") === "free").length}</strong>
+              </div>
+
+              <div>
+                <span>Premium+</span>
+                <strong>${usersInRangeByRole.user.filter(u => ["premium","vip"].includes(String(u.plan || "").toLowerCase())).length}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="adminRoleCard">
+            <div class="adminRoleCardHead">
+              <span>Organizatorzy</span>
+              <strong>${usersInRangeByRole.partner.length}</strong>
+            </div>
+
+            <div class="adminRoleMetrics">
+              <div>
+                <span>Nowi płatni</span>
+                <strong>${paidPartnersInRange.length}</strong>
+              </div>
+
+              <div>
+                <span>Added MRR</span>
+                <strong>${newPartnerMrr} zł</strong>
+              </div>
+
+              <div>
+                <span>Free</span>
+                <strong>${usersInRangeByRole.partner.filter(u => String(u.plan || "free") === "free").length}</strong>
+              </div>
+
+              <div>
+                <span>Premium+</span>
+                <strong>${usersInRangeByRole.partner.filter(u => ["premium","enterprise"].includes(String(u.plan || "").toLowerCase())).length}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="adminRevenueHero">
+          <span>Added MRR in selected period</span>
+          <strong>${totalNewMrr} zł</strong>
+          <small>Current MRR to aktywna baza. Added MRR pokazuje tylko nowy przyrost z wybranego okresu.</small>
+        </div>
+      `;
+    }
+
+
+const planBox = document.getElementById("adminDashboardPlans");
+    const planCount = document.getElementById("adminDashboardPlansCount");
+const buildPlanRows = (role, prices) => {
+      const roleUsers = users.filter(u => String(u.role || "") === role);
+      const rowsByPlan = roleUsers.reduce((acc, u) => {
+        const plan = String(u.plan || "free").toLowerCase();
+        const source = String(u.plan_source || "manual").toLowerCase();
+        const status = String(u.plan_status || "active").toLowerCase();
+        const paid = isPaidAccount(u);
+        const price = paid ? Number(prices[plan] || 0) : 0;
+        const key = `${plan}|${source}|${status}`;
+        if (!acc[key]) acc[key] = { plan, source, status, count: 0, revenue: 0 };
+        acc[key].count += 1;
+        acc[key].revenue += price;
+        return acc;
+      }, {});
+
+      return Object.values(rowsByPlan).sort((a, b) => b.count - a.count);
+    };
+
+    const userPlanRows = buildPlanRows("user", userPrices);
+    const partnerPlanRows = buildPlanRows("partner", partnerPrices);
+    const monthlyRevenue = [...userPlanRows, ...partnerPlanRows].reduce((sum, row) => sum + row.revenue, 0);
+
+    const usersOnly = users.filter(u => String(u.role || "") === "user");
+    const partnersOnly = users.filter(u => String(u.role || "") === "partner");
+    const usersOnlyInRange = usersInRange.filter(u => String(u.role || "") === "user");
+    const partnersOnlyInRange = usersInRange.filter(u => String(u.role || "") === "partner");
+
+    const roleStats = (roleUsers, roleUsersInRange, prices) => {
+      const paid = roleUsers.filter(u => isPaidAccount(u) && Number(prices[String(u.plan || "free").toLowerCase()] || 0) > 0);
+      const barter = roleUsers.filter(u => String(u.plan_source || "").toLowerCase() === "barter");
+      const free = roleUsers.filter(u => String(u.plan || "free").toLowerCase() === "free");
+      const mrr = roleUsers.reduce((sum, u) => {
+        const plan = String(u.plan || "free").toLowerCase();
+        return sum + (isPaidAccount(u) ? Number(prices[plan] || 0) : 0);
+      }, 0);
+      const newMrr = roleUsersInRange.reduce((sum, u) => {
+        const plan = String(u.plan || "free").toLowerCase();
+        return sum + (isPaidAccount(u) ? Number(prices[plan] || 0) : 0);
+      }, 0);
+
+      return {
+        total: roleUsers.length,
+        newCount: roleUsersInRange.length,
+        paid: paid.length,
+        barter: barter.length,
+        free: free.length,
+        mrr,
+        newMrr,
+      };
+    };
+
+    const userStats = roleStats(usersOnly, usersOnlyInRange, userPrices);
+    const partnerStats = roleStats(partnersOnly, partnersOnlyInRange, partnerPrices);
+
+    const renderRoleCards = () => `
+      <div class="adminRoleSplitGrid">
+        <div class="adminRoleCard">
+          <div class="adminRoleCardHead">
+            <span>Towarzysze</span>
+            <strong>${userStats.total}</strong>
+          </div>
+          <div class="adminRoleMetrics">
+            <div><span>Nowi w okresie</span><strong>${userStats.newCount}</strong></div>
+            <div><span>Płatni</span><strong>${userStats.paid}</strong></div>
+            <div><span>Barter</span><strong>${userStats.barter}</strong></div>
+            <div><span>Free</span><strong>${userStats.free}</strong></div>
+            <div><span>MRR</span><strong>${userStats.mrr} zł</strong></div>
+            <div><span>Nowy MRR</span><strong>${userStats.newMrr} zł</strong></div>
+          </div>
+        </div>
+
+        <div class="adminRoleCard">
+          <div class="adminRoleCardHead">
+            <span>Organizatorzy</span>
+            <strong>${partnerStats.total}</strong>
+          </div>
+          <div class="adminRoleMetrics">
+            <div><span>Nowi w okresie</span><strong>${partnerStats.newCount}</strong></div>
+            <div><span>Płatni</span><strong>${partnerStats.paid}</strong></div>
+            <div><span>Barter</span><strong>${partnerStats.barter}</strong></div>
+            <div><span>Free</span><strong>${partnerStats.free}</strong></div>
+            <div><span>MRR</span><strong>${partnerStats.mrr} zł</strong></div>
+            <div><span>Nowy MRR</span><strong>${partnerStats.newMrr} zł</strong></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const renderPlanSection = (title, rows, total) => `
+      <div class="adminMiniSectionTitle">${escapeAdmin(title)}</div>
+      ${rows.map((row) => {
+        const width = total ? Math.max(8, Math.round((row.count / total) * 100)) : 0;
+        return `
+          <div class="adminChartRow">
+            <div>
+              <strong>${escapeAdmin(row.plan)}</strong>
+              <span>${escapeAdmin(row.source)} / ${escapeAdmin(row.status)} / ${row.revenue} zł MRR</span>
+            </div>
+            <div class="adminChartBar"><i style="width:${width}%"></i></div>
+            <b>${row.count}</b>
+          </div>
+        `;
+      }).join("") || adminEmpty("Brak danych.")}
+    `;
+
+    const healthBox = document.getElementById("adminDashboardHealth");
+    const healthStatus = document.getElementById("adminDashboardHealthStatus");
+    const healthStartedAt = performance.now();
+
+    try {
+      await window.apiFetch("/healthz");
+      const latency = Math.round(performance.now() - healthStartedAt);
+      if (healthStatus) healthStatus.textContent = "Online";
+      if (healthBox) {
+        healthBox.innerHTML = `
+          <div class="adminHealthOk">Backend działa</div>
+          <div class="adminHealthRow"><span>Status API</span><strong>Online</strong></div>
+          <div class="adminHealthRow"><span>Czas odpowiedzi</span><strong>${latency} ms</strong></div>
+          <div class="adminHealthRow"><span>Ostatni odczyt</span><strong>${new Date().toLocaleString("pl-PL")}</strong></div>
+        `;
+      }
+    } catch (healthError) {
+      if (healthStatus) healthStatus.textContent = "Problem";
+      if (healthBox) {
+        healthBox.innerHTML = `
+          <div class="adminHealthBad">Backend niedostępny</div>
+          <div class="adminHealthRow"><span>Status API</span><strong>Offline / błąd</strong></div>
+          <div class="adminHealthRow"><span>Ostatnia próba</span><strong>${new Date().toLocaleString("pl-PL")}</strong></div>
+        `;
+      }
+    }
+
+    const activityBox = document.getElementById("adminDashboardActivity");
+    const activityCount = document.getElementById("adminDashboardActivityCount");
+
+    const activityItems = [
+      ...users.slice(0, 8).map(u => ({
+        type: "user",
+        title: `Nowe konto: ${u.display_name || u.email || "Użytkownik"}`,
+        meta: `${u.role || "—"} / ${u.plan || "free"} / ${u.plan_source || "manual"}`,
+        at: u.created_at,
+      })),
+      ...events.slice(0, 8).map(ev => ({
+        type: "event",
+        title: `Nowe wydarzenie: ${ev.title || "Wydarzenie"}`,
+        meta: `${ev.status || "—"} / ${ev.city || "—"} / ${ev.organizer_name || "—"}`,
+        at: ev.created_at,
+      })),
+      ...userReports.slice(0, 6).map(r => ({
+        type: "report",
+        title: `Zgłoszenie użytkownika: ${r.ticket || "UR"}`,
+        meta: `${r.status || "new"} / ${r.reason_label || r.reason || "—"}`,
+        at: r.created_at || r.updated_at,
+      })),
+      ...eventReports.slice(0, 6).map(r => ({
+        type: "report",
+        title: `Zgłoszenie wydarzenia: ${r.ticket || "ER"}`,
+        meta: `${r.status || "new"} / ${r.event_title || "—"}`,
+        at: r.created_at || r.updated_at,
+      })),
+      ...bugReports.slice(0, 6).map(r => ({
+        type: "bug",
+        title: `Bug report: ${r.ticket || r.id || "BUG"}`,
+        meta: `${r.status || "new"} / ${r.current_view || r.role || "—"}`,
+        at: r.created_at || r.createdAt || r.date,
+      })),
+    ]
+      .filter(item => item.at)
+      .sort((a, b) => {
+        const da = toDate(a.at);
+        const db = toDate(b.at);
+        return (db?.getTime() || 0) - (da?.getTime() || 0);
+      })
+      .slice(0, 12);
+
+    if (activityCount) activityCount.textContent = String(activityItems.length);
+    if (activityBox) {
+      activityBox.innerHTML = activityItems.length ? `
+        <div class="adminActivityFeed">
+          ${activityItems.map(item => `
+            <div class="adminActivityItem" data-type="${escapeAdmin(item.type)}">
+              <div>
+                <strong>${escapeAdmin(item.title)}</strong>
+                <span>${escapeAdmin(item.meta)}</span>
+              </div>
+              <time>${escapeAdmin(item.at || "—")}</time>
+            </div>
+          `).join("")}
+        </div>
+      ` : adminEmpty("Brak aktywności do wyświetlenia.");
+    }
+
+    const mrrTimelineBox = document.getElementById("adminDashboardMrrTimeline");
+
+    const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const monthLabel = (key) => {
+      const [year, month] = key.split("-");
+      return `${month}.${year}`;
+    };
+    const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+    const timelineStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const timelineMonths = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(timelineStart.getFullYear(), timelineStart.getMonth() + i, 1);
+      return monthKey(d);
+    });
+
+    const timeline = timelineMonths.reduce((acc, key) => {
+      acc[key] = { month: key, user: 0, partner: 0, total: 0 };
+      return acc;
+    }, {});
+
+    users.forEach((u) => {
+      if (!isPaidAccount(u)) return;
+
+      const created = toDate(u.created_at);
+      if (!created) return;
+
+      const role = String(u.role || "");
+      const plan = String(u.plan || "free").toLowerCase();
+      const price = role === "user"
+        ? Number(userPrices[plan] || 0)
+        : role === "partner"
+          ? Number(partnerPrices[plan] || 0)
+          : 0;
+
+      if (!price) return;
+
+      timelineMonths.forEach((key) => {
+        const [year, month] = key.split("-").map(Number);
+        const firstDay = new Date(year, month - 1, 1);
+        const lastDay = new Date(year, month, 0, 23, 59, 59);
+
+        if (created > lastDay) return;
+
+        let recognized = price;
+
+        if (created >= firstDay && created <= lastDay) {
+          const remainingDays = daysInMonth(firstDay) - created.getDate() + 1;
+          recognized = Math.round((price * remainingDays) / daysInMonth(firstDay));
+        }
+
+        if (role === "user") timeline[key].user += recognized;
+        if (role === "partner") timeline[key].partner += recognized;
+        timeline[key].total += recognized;
+      });
+    });
+
+    const timelineRows = Object.values(timeline);
+    const maxTimelineValue = Math.max(...timelineRows.map(row => row.total), 1);
+
+    if (mrrTimelineBox) {
+      mrrTimelineBox.innerHTML = `
+        <div class="adminRevenueHero">
+          <span>Estimated recognized monthly revenue</span>
+          <strong>${timelineRows[timelineRows.length - 1]?.total || 0} zł</strong>
+          <small>Estymacja lokalna: pierwszy miesiąc liczony proporcjonalnie od daty utworzenia konta. Bez realnych webhooków Apple/Google.</small>
+        </div>
+
+        <div class="adminTimelineChart">
+          ${timelineRows.map(row => {
+            const userWidth = Math.round((row.user / maxTimelineValue) * 100);
+            const partnerWidth = Math.round((row.partner / maxTimelineValue) * 100);
+            return `
+              <div class="adminTimelineRow">
+                <div class="adminTimelineMonth">${escapeAdmin(monthLabel(row.month))}</div>
+                <div class="adminTimelineBars">
+                  <div class="adminTimelineBar adminTimelineUser" style="width:${Math.max(userWidth, row.user ? 4 : 0)}%"></div>
+                  <div class="adminTimelineBar adminTimelinePartner" style="width:${Math.max(partnerWidth, row.partner ? 4 : 0)}%"></div>
+                </div>
+                <div class="adminTimelineValue">
+                  <strong>${row.total} zł</strong>
+                  <span>T: ${row.user} zł / O: ${row.partner} zł</span>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        <div class="adminTimelineAxis">
+          <span>0 zł</span>
+          <span>${Math.round(maxTimelineValue / 4)} zł</span>
+          <span>${Math.round(maxTimelineValue / 2)} zł</span>
+          <span>${Math.round((maxTimelineValue * 3) / 4)} zł</span>
+          <span>${maxTimelineValue} zł</span>
+        </div>
+
+        <div class="adminTimelineLegend">
+          <span><i class="adminTimelineDot adminTimelineUserDot"></i>Towarzysze</span>
+          <span><i class="adminTimelineDot adminTimelinePartnerDot"></i>Organizatorzy</span>
+        </div>
+      `;
+    }
+
+    if (planCount) planCount.textContent = `${monthlyRevenue} zł MRR`;
+    if (planBox) {
+      planBox.innerHTML = `
+        <div class="adminRevenueHero">
+          <span>Szacowany miesięczny przychód</span>
+          <strong>${monthlyRevenue} zł</strong>
+          <small>Barter i custom/enterprise bez ceny liczone jako 0 zł.</small>
+        </div>
+        ${renderRoleCards()}
+        ${renderPlanSection("Plany Towarzyszy", userPlanRows, usersOnly.length)}
+        ${renderPlanSection("Plany Organizatorów", partnerPlanRows, partnersOnly.length)}
+      `;
+    }
+  } catch (e) {
+    console.error("reloadAdminDashboard error", e);
+    if (summaryBox) summaryBox.innerHTML = adminEmpty("Nie udało się pobrać danych dashboardu.");
+    adminToast(e?.userMessage || "Nie udało się pobrać dashboardu.");
+  }
+}
+
+
+
 function showAdminView(view) {
+  const dashboardView = document.getElementById("adminDashboardHomeView");
   const reportsView = document.getElementById("adminReportsView");
   const usersView = document.getElementById("adminUsersView");
   const eventsView = document.getElementById("adminEventsView");
@@ -1764,10 +2274,12 @@ function showAdminView(view) {
     btn.classList.toggle("active", btn.dataset.adminView === view);
   });
 
+  if (dashboardView) dashboardView.hidden = view !== "dashboard";
   if (reportsView) reportsView.hidden = view !== "reports";
   if (usersView) usersView.hidden = view !== "users";
   if (eventsView) eventsView.hidden = view !== "events";
 
+  if (view === "dashboard" && typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
   if (view === "reports") reloadAdminReports().catch(() => {});
   if (view === "users") reloadAdminUsers().catch(() => {});
   if (view === "events") reloadAdminEvents().catch(() => {});
@@ -1783,11 +2295,92 @@ document.getElementById("adminUserSearch")?.addEventListener("input", reloadAdmi
 document.getElementById("adminUsersRoleFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersStatusFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersPlanFilter")?.addEventListener("change", reloadAdminUsers);
+
+
+function exportAdminDashboardCsv() {
+  try {
+    const rows = [];
+    const now = new Date().toLocaleString("pl-PL");
+
+    rows.push(["USLY BI DASHBOARD EXPORT"]);
+    rows.push(["Generated at", now]);
+    rows.push([]);
+
+    const cards = Array.from(document.querySelectorAll(".adminRoleCard"));
+
+    cards.forEach((card) => {
+      const title = card.querySelector(".adminRoleCardHead span")?.textContent?.trim() || "Role";
+      const total = card.querySelector(".adminRoleCardHead strong")?.textContent?.trim() || "0";
+
+      rows.push([title]);
+      rows.push(["Total", total]);
+
+      card.querySelectorAll(".adminRoleMetrics div").forEach((metric) => {
+        const label = metric.querySelector("span")?.textContent?.trim() || "";
+        const value = metric.querySelector("strong")?.textContent?.trim() || "";
+        rows.push([label, value]);
+      });
+
+      rows.push([]);
+    });
+
+    rows.push(["MRR TIMELINE"]);
+    rows.push(["Month", "Total", "Towarzysze", "Organizatorzy"]);
+
+    document.querySelectorAll(".adminTimelineRow").forEach((row) => {
+      const month = row.querySelector(".adminTimelineMonth")?.textContent?.trim() || "";
+      const total = row.querySelector(".adminTimelineValue strong")?.textContent?.trim() || "";
+      const split = row.querySelector(".adminTimelineValue span")?.textContent?.trim() || "";
+
+      rows.push([month, total, split]);
+    });
+
+    const csv = rows
+      .map(row => row.map(v => `"${String(v || "").replaceAll('"', '""')}"`).join(";"))
+      .join("\n");
+
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    const date = new Date().toISOString().slice(0,10);
+
+    a.href = url;
+    a.download = `usly-dashboard-${date}.csv`;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+
+    adminToast("Wyeksportowano dashboard CSV.");
+  } catch (e) {
+    console.error("exportAdminDashboardCsv error", e);
+    adminToast("Nie udało się wyeksportować dashboardu.");
+  }
+}
+
+
 document.getElementById("adminEventSearch")?.addEventListener("input", reloadAdminEvents);
 document.getElementById("adminEventsStatusFilter")?.addEventListener("change", reloadAdminEvents);
+document.getElementById("adminDashboardExportBtn")?.addEventListener("click", exportAdminDashboardCsv);
+document.getElementById("adminDashboardRange")?.addEventListener("change", () => {
+  if (typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
+});
 
 document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
   localStorage.removeItem("usly_token");
+
+  if (adminAutoRefreshTimer) {
+    window.clearInterval(adminAutoRefreshTimer);
+    adminAutoRefreshTimer = null;
+  }
+
+  document.getElementById("adminDashboardView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminLoginView")?.removeAttribute("hidden");
+
   adminToast("Wylogowano lokalnie.");
 });
 
@@ -1824,8 +2417,9 @@ async function adminLogin(email, password) {
   document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
+  showAdminView("dashboard");
+
   adminToast("Zalogowano do panelu administratora.");
-  await reloadAdminReports();
   startAdminAutoRefresh();
 }
 
@@ -1850,7 +2444,8 @@ document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) 
   document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
-  reloadAdminReports().catch(() => {});
+  showAdminView("dashboard");
+
   startAdminAutoRefresh();
 })();
 

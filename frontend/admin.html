@@ -31,7 +31,8 @@
     <aside class="adminSidebar">
       <div class="adminBrand"><img src="USLY logo.png" alt="USLY" /><span>Admin</span></div>
       <div class="adminSideLabel">Panel administracyjny</div>
-      <button class="adminNav active" type="button" data-admin-view="reports">Zgłoszenia</button>
+      <button class="adminNav active" type="button" data-admin-view="dashboard">Dashboard</button>
+      <button class="adminNav" type="button" data-admin-view="reports">Zgłoszenia</button>
       <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
       <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
     </aside>
@@ -46,7 +47,96 @@
         <button class="adminLogout" type="button" id="adminLogoutBtn">Wyloguj</button>
       </header>
 
-      <section id="adminReportsView">
+      <section id="adminDashboardHomeView">
+        <section class="adminFilters">
+          <label>
+            Zakres danych
+            <select id="adminDashboardRange">
+              <option value="7">Ostatnie 7 dni</option>
+              <option value="14">Ostatnie 14 dni</option>
+              <option value="30" selected>Ostatnie 30 dni</option>
+              <option value="90">Ostatnie 90 dni</option>
+              <option value="all">Cały okres</option>
+            </select>
+          </label>
+
+          <button class="adminPrimary" type="button" id="adminDashboardExportBtn">Eksport CSV</button>
+        </section>
+
+        <section class="adminGrid">
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Executive Overview</h2>
+              <span id="adminDashboardUpdatedAt">—</span>
+            </div>
+            <div id="adminDashboardSummary" class="adminTableBox">Ładowanie dashboardu...</div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Growth In Selected Period</h2>
+              <span id="adminDashboardGrowthRangeLabel">—</span>
+            </div>
+            <div id="adminDashboardGrowth" class="adminTableBox">Ładowanie...</div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>User Growth / Role Split</h2>
+              <span id="adminDashboardPlansCount">0</span>
+            </div>
+            <div id="adminDashboardPlans" class="adminTableBox">Ładowanie...</div>
+          </article>
+
+          <article class="adminPanel">
+            <div class="adminPanelHead">
+              <h2>System Health</h2>
+              <span id="adminDashboardHealthStatus">—</span>
+            </div>
+            <div id="adminDashboardHealth" class="adminTableBox">Ładowanie...</div>
+          </article>
+
+          <article class="adminPanel">
+            <div class="adminPanelHead">
+              <h2>Revenue</h2>
+              <span>MRR</span>
+            </div>
+            <div id="adminDashboardRevenue" class="adminTableBox">
+              <div class="adminEmpty">Revenue analytics w przygotowaniu.</div>
+            </div>
+          </article>
+
+          <article class="adminPanel">
+            <div class="adminPanelHead">
+              <h2>Event Marketplace</h2>
+              <span>Events</span>
+            </div>
+            <div id="adminDashboardMarketplace" class="adminTableBox">
+              <div class="adminEmpty">Marketplace analytics w przygotowaniu.</div>
+            </div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>MRR Timeline / Role Split</h2>
+              <span>Monthly</span>
+            </div>
+            <div id="adminDashboardMrrTimeline" class="adminTableBox">Ładowanie...</div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Live Activity</h2>
+              <span id="adminDashboardActivityCount">0</span>
+            </div>
+            <div id="adminDashboardActivity" class="adminTableBox">Ładowanie...</div>
+          </article>
+
+        </section>
+      </section>
+
+      <section id="adminReportsView" hidden>
       <section class="adminFilters">
         <label>
           Status
