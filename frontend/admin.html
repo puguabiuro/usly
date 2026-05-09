@@ -33,7 +33,7 @@
       <div class="adminSideLabel">Panel administracyjny</div>
       <button class="adminNav active" type="button" data-admin-view="reports">Zgłoszenia</button>
       <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
-      <button class="adminNav" type="button" disabled>Wydarzenia</button>
+      <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
     </aside>
 
     <section class="adminMain">
@@ -142,6 +142,35 @@
               <span id="adminUsersCount">0</span>
             </div>
             <div id="adminUsersList" class="adminTableBox">Ładowanie...</div>
+          </article>
+        </section>
+      </section>
+
+      <section id="adminEventsView" hidden>
+        <section class="adminFilters">
+          <label>
+            Szukaj wydarzenia
+            <input id="adminEventSearch" class="adminFieldInput" type="search" placeholder="Tytuł, organizator, miasto, ID..." />
+          </label>
+
+          <label>
+            Status
+            <select id="adminEventsStatusFilter">
+              <option value="all">Wszystkie statusy</option>
+              <option value="draft">Szkice</option>
+              <option value="published">Opublikowane</option>
+              <option value="archived">Archiwum</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Centrum wydarzeń</h2>
+              <span id="adminEventsCount">0</span>
+            </div>
+            <div id="adminEventsList" class="adminTableBox">Ładowanie...</div>
           </article>
         </section>
       </section>

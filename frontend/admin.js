@@ -5,6 +5,7 @@ const Admin = {
     bugs: [],
   },
   users: [],
+  events: [],
 };
 
 function adminToast(message) {
@@ -175,6 +176,89 @@ function renderUserReports(items) {
       </tbody>
     </table>
   `;
+}
+
+function renderAdminEvents(items) {
+  const box = document.getElementById("adminEventsList");
+  setAdminCount("adminEventsCount", items.length);
+
+  if (!box) return;
+
+  if (!items.length) {
+    box.innerHTML = adminEmpty("Brak wydarzeń.");
+    return;
+  }
+
+  box.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Wydarzenie</th>
+          <th>Organizator</th>
+          <th>Status</th>
+          <th>Termin</th>
+          <th>Miasto</th>
+          <th>Zapisani</th>
+          <th>Obserwujący</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((ev) => `
+          <tr>
+            <td><strong>#${escapeAdmin(ev.id)}</strong></td>
+            <td>${escapeAdmin(ev.title || "Wydarzenie")}<br><span>${escapeAdmin(ev.interest_tag || "—")}</span></td>
+            <td>${escapeAdmin(ev.organizer_name || "—")}<br><span>${escapeAdmin(ev.organizer_email || "—")}</span></td>
+            <td>${adminStatusBadge(ev.status || "draft")}</td>
+            <td>${escapeAdmin(ev.start_at || "—")}</td>
+            <td>${escapeAdmin([ev.city, ev.where].filter(Boolean).join(", ") || "—")}</td>
+            <td>${escapeAdmin(ev.signups_count || 0)} / ${escapeAdmin(ev.capacity || "∞")}</td>
+            <td>${escapeAdmin(ev.saves_count || 0)}</td>
+            <td>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="tableAction" type="button" onclick="openEventPreview('${escapeAdmin(ev.id)}')">Podgląd</button>
+              </div>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function reloadAdminEvents() {
+  try {
+    const res = await window.apiFetch("/admin/events");
+    const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+    const query = String(document.getElementById("adminEventSearch")?.value || "").trim().toLowerCase();
+    const statusFilter = String(document.getElementById("adminEventsStatusFilter")?.value || "all");
+
+    Admin.events = items;
+
+    const filtered = items.filter((ev) => {
+      const haystack = [
+        ev.id,
+        ev.title,
+        ev.organizer_name,
+        ev.organizer_email,
+        ev.city,
+        ev.where,
+        ev.interest_tag,
+        ev.status,
+      ].map(v => String(v || "").toLowerCase()).join(" ");
+
+      if (query && !haystack.includes(query)) return false;
+      if (statusFilter !== "all" && String(ev.status || "") !== statusFilter) return false;
+
+      return true;
+    });
+
+    renderAdminEvents(filtered);
+  } catch (e) {
+    console.error("reloadAdminEvents error", e);
+    adminToast(e?.userMessage || "Nie udało się pobrać wydarzeń.");
+  }
 }
 
 function renderAdminUsers(items) {
@@ -475,6 +559,7 @@ async function adminSetEventStatus(eventId, status) {
     adminToast(status === "archived" ? "Wydarzenie zarchiwizowane." : "Wydarzenie przywrócone.");
     await openEventPreview(eventId);
     await reloadAdminReports();
+    await reloadAdminEvents();
   } catch (e) {
     console.error("adminSetEventStatus error", e);
     adminToast(e?.userMessage || "Nie udało się zmienić statusu wydarzenia.");
@@ -849,6 +934,95 @@ async function openUserReportHistory(userId, reportTicket, reportStatus = "new")
   }
 }
 
+async function openEventFullHistory(eventId) {
+  try {
+    const res = await window.apiFetch(`/admin/events/${encodeURIComponent(eventId)}/preview`);
+    const ev = res?.data || {};
+    const history = Array.isArray(ev.event_history) ? ev.event_history : [];
+
+    openAdminDrawer(`
+      <div class="adminPreviewCard">
+        <div class="adminHistoryTop">
+          <button class="adminGhostMiniButton" type="button" onclick="openEventPreview('${escapeAdmin(eventId)}')">← Wróć do wydarzenia</button>
+          <h2>Pełna historia wydarzenia</h2>
+          <p class="adminSystemHint">${escapeAdmin(ev.title || "Wydarzenie")} • ${escapeAdmin(history.length)} wpisów</p>
+        </div>
+
+        ${
+          history.length
+            ? history.map((h) => `
+                <div class="adminHistoryCard">
+                  <div class="adminHistoryKind">${escapeAdmin(h.action || "Akcja")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.created_at || "—")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.details || "—")}</div>
+                </div>
+              `).join("")
+            : `<div class="adminHistoryCard">
+                <div class="adminHistoryTitle">Brak historii wydarzenia</div>
+              </div>`
+        }
+      </div>
+    `);
+  } catch (e) {
+    console.error("openEventFullHistory error", e);
+    adminToast("Nie udało się pobrać historii wydarzenia.");
+  }
+}
+
+async function openEventPeopleList(eventId, kind = "signups") {
+  try {
+    const res = await window.apiFetch(`/admin/events/${encodeURIComponent(eventId)}/preview`);
+    const ev = res?.data || {};
+    const list = kind === "saves" ? (ev.saves || []) : (ev.signups || []);
+    const title = kind === "saves" ? "Obserwujący wydarzenie" : "Zapisani na wydarzenie";
+
+    openAdminDrawer(`
+      <div class="adminPreviewCard">
+        <div class="adminHistoryTop">
+          <button class="adminGhostMiniButton" type="button" onclick="openEventPreview('${escapeAdmin(eventId)}')">← Wróć do wydarzenia</button>
+          <h2>${escapeAdmin(title)}</h2>
+          <p class="adminSystemHint">${escapeAdmin(ev.title || "Wydarzenie")} • ${escapeAdmin(list.length)} osób</p>
+        </div>
+
+        ${
+          list.length
+            ? `<table class="adminTable">
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Użytkownik</th>
+                    <th>Status</th>
+                    <th>Miasto</th>
+                    <th>Data</th>
+                    <th>Akcje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${list.map((person) => `
+                    <tr>
+                      <td><strong>#${escapeAdmin(person.user_id || "—")}</strong></td>
+                      <td>${escapeAdmin(person.nick || "Użytkownik")}<br><span>${escapeAdmin(person.email || "—")}</span></td>
+                      <td>${adminStatusBadge(person.status || "active")}</td>
+                      <td>${escapeAdmin(person.city || "—")}</td>
+                      <td>${escapeAdmin(person.created_at || "—")}</td>
+                      <td><button class="tableAction" type="button" onclick="openUserPreview('${escapeAdmin(person.user_id)}','','','${escapeAdmin(ev.id)}')">Podgląd</button></td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>`
+            : `<div class="adminHistoryCard">
+                <div class="adminHistoryTitle">Brak osób</div>
+                <div class="adminHistoryMeta">Ta lista jest jeszcze pusta.</div>
+              </div>`
+        }
+      </div>
+    `);
+  } catch (e) {
+    console.error("openEventPeopleList error", e);
+    adminToast("Nie udało się pobrać listy osób.");
+  }
+}
+
 async function openEventReportHistory(eventId, reportTicket, reportStatus = "new") {
   try {
     const res = await window.apiFetch(`/admin/events/${eventId}/preview${reportTicket ? `?ticket=${encodeURIComponent(reportTicket)}` : ""}`);
@@ -1109,6 +1283,7 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
           <h3>Dane wydarzenia</h3>
 
           <div class="adminInfoList">
+            <div><span>Nazwa wydarzenia</span><strong>${escapeAdmin(ev.title || "—")}</strong></div>
             <div><span>Miasto</span><strong>${escapeAdmin(ev.city || "—")}</strong></div>
             <div><span>Miejsce</span><strong>${escapeAdmin(ev.where || "—")}</strong></div>
             <div><span>Start</span><strong>${escapeAdmin(ev.start_at || "—")}</strong></div>
@@ -1131,6 +1306,59 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
       <div class="adminPreviewCard">
         <h3>Opis wydarzenia</h3>
         <div class="adminBio">${escapeAdmin(ev.description || "Brak opisu wydarzenia.")}</div>
+      </div>
+
+      <div class="adminPreviewGrid">
+        <div class="adminPreviewCard">
+          <div class="adminHistoryHeader">
+            <h3>Zapisani</h3>
+            <span class="adminHistoryCount">${escapeAdmin(ev.signups_count || 0)} osób</span>
+          </div>
+          ${(ev.signups || []).slice(0, 5).map((person) => `
+            <div class="adminHistoryCard" onclick="openUserPreview('${escapeAdmin(person.user_id)}','','','${escapeAdmin(ev.id)}')" style="cursor:pointer;">
+              <div class="adminHistoryTitle">${escapeAdmin(person.nick || "Użytkownik")} • #${escapeAdmin(person.user_id || "—")}</div>
+              <div class="adminHistoryMeta">${escapeAdmin(person.email || "—")}</div>
+              <div class="adminHistoryMeta">${escapeAdmin(person.created_at || "—")}</div>
+            </div>
+          `).join("") || `<div class="adminHistoryCard"><div class="adminHistoryTitle">Brak zapisanych</div></div>`}
+          ${(ev.signups || []).length > 5 ? `<button class="adminGhostMiniButton" type="button" onclick="openEventPeopleList('${escapeAdmin(ev.id)}','signups')">Zobacz wszystkich</button>` : ""}
+        </div>
+
+        <div class="adminPreviewCard">
+          <div class="adminHistoryHeader">
+            <h3>Obserwujący</h3>
+            <span class="adminHistoryCount">${escapeAdmin(ev.saves_count || 0)} osób</span>
+          </div>
+          ${(ev.saves || []).slice(0, 5).map((person) => `
+            <div class="adminHistoryCard" onclick="openUserPreview('${escapeAdmin(person.user_id)}','','','${escapeAdmin(ev.id)}')" style="cursor:pointer;">
+              <div class="adminHistoryTitle">${escapeAdmin(person.nick || "Użytkownik")} • #${escapeAdmin(person.user_id || "—")}</div>
+              <div class="adminHistoryMeta">${escapeAdmin(person.email || "—")}</div>
+              <div class="adminHistoryMeta">${escapeAdmin(person.created_at || "—")}</div>
+            </div>
+          `).join("") || `<div class="adminHistoryCard"><div class="adminHistoryTitle">Brak obserwujących</div></div>`}
+          ${(ev.saves || []).length > 5 ? `<button class="adminGhostMiniButton" type="button" onclick="openEventPeopleList('${escapeAdmin(ev.id)}','saves')">Zobacz wszystkich</button>` : ""}
+        </div>
+      </div>
+
+      <div class="adminPreviewCard">
+        <div class="adminHistoryHeader">
+          <h3>Historia wydarzenia</h3>
+          <span class="adminHistoryCount">${escapeAdmin((ev.event_history || []).length)} wpisów</span>
+        </div>
+        ${
+          Array.isArray(ev.event_history) && ev.event_history.length
+            ? ev.event_history.slice(0, 5).map((h) => `
+                <div class="adminHistoryCard">
+                  <div class="adminHistoryKind">${escapeAdmin(h.action || "Akcja")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.created_at || "—")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.details || "—")}</div>
+                </div>
+              `).join("")
+            : `<div class="adminHistoryCard"><div class="adminHistoryTitle">Brak historii wydarzenia</div></div>`
+        }
+        ${Array.isArray(ev.event_history) && ev.event_history.length > 5
+          ? `<button class="adminGhostMiniButton" type="button" onclick="openEventFullHistory('${escapeAdmin(ev.id)}')">Zobacz wszystko</button>`
+          : ""}
       </div>
 
       <div class="adminPreviewBottomGrid">
@@ -1217,12 +1445,22 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
 }
 
 
-async function openUserPreview(userId, reportTicket = '', reportStatus = 'new') {
+async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', returnEventId = null) {
   try {
     const res = await window.apiFetch(`/admin/users/${userId}/preview${reportTicket ? `?ticket=${encodeURIComponent(reportTicket)}` : ""}`);
     const u = res?.data || {};
 
     openAdminDrawer(`
+  ${
+    returnEventId
+      ? `<div class="adminPreviewActions">
+          <button class="adminGhostAction" type="button" onclick="openEventPreview('${escapeAdmin(returnEventId)}')">
+            ← Wróć do wydarzenia
+          </button>
+        </div>`
+      : ""
+  }
+
   <div class="adminUserHero">
     <div class="adminUserHeroLeft">
       ${
@@ -1520,6 +1758,7 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new') 
 function showAdminView(view) {
   const reportsView = document.getElementById("adminReportsView");
   const usersView = document.getElementById("adminUsersView");
+  const eventsView = document.getElementById("adminEventsView");
 
   document.querySelectorAll("[data-admin-view]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.adminView === view);
@@ -1527,9 +1766,11 @@ function showAdminView(view) {
 
   if (reportsView) reportsView.hidden = view !== "reports";
   if (usersView) usersView.hidden = view !== "users";
+  if (eventsView) eventsView.hidden = view !== "events";
 
   if (view === "reports") reloadAdminReports().catch(() => {});
   if (view === "users") reloadAdminUsers().catch(() => {});
+  if (view === "events") reloadAdminEvents().catch(() => {});
 }
 
 document.querySelectorAll("[data-admin-view]").forEach((btn) => {
@@ -1542,6 +1783,8 @@ document.getElementById("adminUserSearch")?.addEventListener("input", reloadAdmi
 document.getElementById("adminUsersRoleFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersStatusFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersPlanFilter")?.addEventListener("change", reloadAdminUsers);
+document.getElementById("adminEventSearch")?.addEventListener("input", reloadAdminEvents);
+document.getElementById("adminEventsStatusFilter")?.addEventListener("change", reloadAdminEvents);
 
 document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
   localStorage.removeItem("usly_token");

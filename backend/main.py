@@ -5096,9 +5096,20 @@ def admin_update_event_status(
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
+        previous_status = event.status
+
         event.status = new_status
         event.updated_at = datetime.utcnow()
         db.add(event)
+
+        db.add(
+            AuditLog(
+                user_id=event.partner_user_id,
+                action="admin_update_event_status",
+                details=f"admin_id={current_user.id}; event_id={event.id}; from={previous_status}; to={new_status}",
+            )
+        )
+
         db.commit()
 
         return ok({"id": event.id, "status": event.status})
@@ -5566,8 +5577,36 @@ def admin_event_preview(
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
-        signups_count = db.query(EventSignup).filter(EventSignup.event_id == event.id).count()
-        saves_count = db.query(EventSave).filter(EventSave.event_id == event.id).count()
+        signups_rows = db.query(EventSignup).filter(EventSignup.event_id == event.id).order_by(EventSignup.created_at.desc()).all()
+        saves_rows = db.query(EventSave).filter(EventSave.event_id == event.id).order_by(EventSave.created_at.desc()).all()
+
+        signups_count = len(signups_rows)
+        saves_count = len(saves_rows)
+
+        attendee_user_ids = list({row.user_id for row in signups_rows} | {row.user_id for row in saves_rows})
+        attendee_users = {
+            user.id: user
+            for user in db.query(User).filter(User.id.in_(attendee_user_ids)).all()
+        } if attendee_user_ids else {}
+        attendee_profiles = {
+            profile.user_id: profile
+            for profile in db.query(UserProfile).filter(UserProfile.user_id.in_(attendee_user_ids)).all()
+        } if attendee_user_ids else {}
+
+        def _event_user_row(row):
+            user = attendee_users.get(row.user_id)
+            profile = attendee_profiles.get(row.user_id)
+            return {
+                "user_id": row.user_id,
+                "email": getattr(user, "email", None),
+                "status": getattr(user, "status", None),
+                "nick": getattr(profile, "nick", None) if profile else None,
+                "city": getattr(profile, "miasto", None) if profile else None,
+                "created_at": str(row.created_at) if row.created_at else None,
+            }
+
+        signups = [_event_user_row(row) for row in signups_rows]
+        saves = [_event_user_row(row) for row in saves_rows]
 
         partner_profile = (
             db.query(PartnerProfile)
@@ -5575,6 +5614,17 @@ def admin_event_preview(
             .first()
         )
         organizer_user = db.query(User).filter(User.id == event.partner_user_id).first()
+
+        event_history_logs = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.details.isnot(None),
+                AuditLog.details.like(f"%event_id={event.id}%")
+            )
+            .order_by(AuditLog.created_at.desc())
+            .limit(100)
+            .all()
+        )
 
         reports_file = Path(__file__).resolve().parent / "data" / "event_reports.jsonl"
         reports_total = 0
@@ -5614,6 +5664,16 @@ def admin_event_preview(
             "status": event.status,
             "signups_count": signups_count,
             "saves_count": saves_count,
+            "signups": signups,
+            "saves": saves,
+            "event_history": [
+                {
+                    "action": log.action,
+                    "details": log.details,
+                    "created_at": str(log.created_at) if log.created_at else None,
+                }
+                for log in event_history_logs
+            ],
             "created_at": str(event.created_at) if event.created_at else None,
             "updated_at": str(event.updated_at) if event.updated_at else None,
             "event_cover_url": getattr(event, "event_cover_url", None),
@@ -5921,6 +5981,62 @@ def admin_notify_event_watchers(
             "notified_count": len(target_user_ids),
             "report": updated_report,
         })
+    finally:
+        db.close()
+
+
+@app.get("/admin/events")
+def admin_list_events(current_user: User = Depends(require_role("admin"))):
+    db = SessionLocal()
+    try:
+        events = db.query(Event).order_by(Event.created_at.desc()).all()
+
+        partner_ids = list({ev.partner_user_id for ev in events})
+        partners = {
+            user.id: user
+            for user in db.query(User).filter(User.id.in_(partner_ids)).all()
+        } if partner_ids else {}
+        partner_profiles = {
+            profile.user_id: profile
+            for profile in db.query(PartnerProfile).filter(PartnerProfile.user_id.in_(partner_ids)).all()
+        } if partner_ids else {}
+
+        items = []
+        for ev in events:
+            signups_count = db.query(EventSignup).filter(EventSignup.event_id == ev.id).count()
+            saves_count = db.query(EventSave).filter(EventSave.event_id == ev.id).count()
+
+            organizer = partners.get(ev.partner_user_id)
+            organizer_profile = partner_profiles.get(ev.partner_user_id)
+
+            items.append({
+                "id": ev.id,
+                "title": ev.title,
+                "description": ev.description,
+                "city": ev.city,
+                "where": ev.where,
+                "interest_tag": ev.interest_tag,
+                "start_at": str(ev.start_at) if ev.start_at else None,
+                "end_at": str(ev.end_at) if ev.end_at else None,
+                "capacity": ev.capacity,
+                "status": ev.status,
+                "created_at": str(ev.created_at) if ev.created_at else None,
+                "updated_at": str(ev.updated_at) if ev.updated_at else None,
+                "pricing_type": getattr(ev, "pricing_type", None),
+                "price_fixed": getattr(ev, "price_fixed", None),
+                "price_min": getattr(ev, "price_min", None),
+                "price_max": getattr(ev, "price_max", None),
+                "event_cover_url": getattr(ev, "event_cover_url", None),
+                "partner_user_id": ev.partner_user_id,
+                "organizer_email": getattr(organizer, "email", None),
+                "organizer_name": getattr(organizer_profile, "nazwa", None) or getattr(organizer, "email", None),
+                "organizer_status": getattr(organizer, "status", None),
+                "organizer_plan": getattr(organizer_profile, "plan", None) if organizer_profile else None,
+                "signups_count": signups_count,
+                "saves_count": saves_count,
+            })
+
+        return ok({"items": items, "count": len(items)})
     finally:
         db.close()
 
