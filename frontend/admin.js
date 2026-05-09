@@ -4,6 +4,7 @@ const Admin = {
     events: [],
     bugs: [],
   },
+  users: [],
 };
 
 function adminToast(message) {
@@ -37,6 +38,9 @@ function adminStatusLabel(status) {
     in_progress: "W trakcie",
     fixed: "Naprawione",
     not_reproducible: "Nie do odtworzenia",
+    active: "Aktywne",
+    blocked: "Zablokowane",
+    deleted: "Usunięte",
   };
   return labels[String(status || "new")] || String(status || "new");
 }
@@ -171,6 +175,92 @@ function renderUserReports(items) {
       </tbody>
     </table>
   `;
+}
+
+function renderAdminUsers(items) {
+  const box = document.getElementById("adminUsersList");
+  setAdminCount("adminUsersCount", items.length);
+
+  if (!box) return;
+
+  if (!items.length) {
+    box.innerHTML = adminEmpty("Brak użytkowników.");
+    return;
+  }
+
+  box.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Użytkownik</th>
+          <th>Rola</th>
+          <th>Status</th>
+          <th>Pakiet</th>
+          <th>Miasto</th>
+          <th>Data ur.</th>
+          <th>Utworzono</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((u) => `
+          <tr>
+            <td><strong>#${escapeAdmin(u.id)}</strong></td>
+            <td>${escapeAdmin(u.display_name || u.email || "—")}<br><span>${escapeAdmin(u.email || "—")}</span></td>
+            <td>${escapeAdmin(u.role || "—")}</td>
+            <td>${adminStatusBadge(u.status || "active")}</td>
+            <td>${escapeAdmin(u.plan || "free")}<br><span>${escapeAdmin(u.plan_source || "manual")}</span></td>
+            <td>${escapeAdmin(u.city || "—")}</td>
+            <td>${escapeAdmin(u.dob || "—")}</td>
+            <td>${escapeAdmin(u.created_at || "—")}</td>
+            <td>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="tableAction" type="button" onclick="openUserPreview('${escapeAdmin(u.id)}')">Podgląd</button>
+              </div>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function reloadAdminUsers() {
+  try {
+    const res = await window.apiFetch("/admin/users");
+    const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+    const query = String(document.getElementById("adminUserSearch")?.value || "").trim().toLowerCase();
+    const roleFilter = String(document.getElementById("adminUsersRoleFilter")?.value || "all");
+    const statusFilter = String(document.getElementById("adminUsersStatusFilter")?.value || "all");
+    const planFilter = String(document.getElementById("adminUsersPlanFilter")?.value || "all");
+
+    Admin.users = items;
+
+    const filtered = items.filter((u) => {
+      const haystack = [
+        u.id,
+        u.email,
+        u.display_name,
+        u.role,
+        u.status,
+        u.plan,
+        u.city,
+      ].map(v => String(v || "").toLowerCase()).join(" ");
+
+      if (query && !haystack.includes(query)) return false;
+      if (roleFilter !== "all" && String(u.role || "") !== roleFilter) return false;
+      if (statusFilter !== "all" && String(u.status || "") !== statusFilter) return false;
+      if (planFilter !== "all" && String(u.plan || "") !== planFilter) return false;
+
+      return true;
+    });
+
+    renderAdminUsers(filtered);
+  } catch (e) {
+    console.error("reloadAdminUsers error", e);
+    adminToast(e?.userMessage || "Nie udało się pobrać użytkowników.");
+  }
 }
 
 function renderEventReports(items) {
@@ -391,6 +481,95 @@ async function adminSetEventStatus(eventId, status) {
   }
 }
 
+async function adminSendUserResetLink(userId) {
+  try {
+    const res = await window.apiFetch(`/admin/users/${encodeURIComponent(userId)}/send-reset-link`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res?.data?.emailed) {
+      adminToast("Link resetu hasła wysłany.");
+    } else {
+      adminToast("Link resetu utworzony, ale mail nie został wysłany.");
+    }
+
+    await openUserPreview(userId);
+  } catch (e) {
+    console.error("adminSendUserResetLink error", e);
+    adminToast(e?.userMessage || "Nie udało się wysłać linku resetu.");
+  }
+}
+
+async function adminResetUserPassword(userId) {
+  const input = document.getElementById("adminTempPasswordInput");
+  const newPassword = String(input?.value || "").trim();
+
+  if (newPassword.length < 6) {
+    adminToast("Hasło musi mieć minimum 6 znaków.");
+    return;
+  }
+
+  try {
+    await window.apiFetch(`/admin/users/${encodeURIComponent(userId)}/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ new_password: newPassword }),
+    });
+
+    if (input) input.value = "";
+    adminToast("Hasło tymczasowe ustawione.");
+    await openUserPreview(userId);
+  } catch (e) {
+    console.error("adminResetUserPassword error", e);
+    adminToast(e?.userMessage || "Nie udało się ustawić hasła.");
+  }
+}
+
+async function adminUpdateUserPlan(userId) {
+  const plan = document.getElementById("adminUserPlanSelect")?.value || "free";
+  const planSource = document.getElementById("adminUserPlanSourceSelect")?.value || "manual";
+  const planStatus = document.getElementById("adminUserPlanStatusSelect")?.value || "active";
+
+  try {
+    await window.apiFetch(`/admin/users/${encodeURIComponent(userId)}/plan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan,
+        plan_source: planSource,
+        plan_status: planStatus,
+      }),
+    });
+
+    adminToast("Pakiet użytkownika zaktualizowany.");
+    await reloadAdminUsers();
+    await openUserPreview(userId);
+  } catch (e) {
+    console.error("adminUpdateUserPlan error", e);
+    adminToast(e?.userMessage || "Nie udało się zmienić pakietu.");
+  }
+}
+
+async function adminDeleteUserAccount(userId) {
+  const confirmed = window.confirm("Czy na pewno usunąć konto? Email zostanie zwolniony do ponownej rejestracji, a konto oznaczone jako usunięte.");
+  if (!confirmed) return;
+
+  try {
+    await window.apiFetch(`/admin/users/${encodeURIComponent(userId)}/delete-account`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    adminToast("Konto usunięte.");
+    await reloadAdminUsers();
+    await openUserPreview(userId);
+  } catch (e) {
+    console.error("adminDeleteUserAccount error", e);
+    adminToast(e?.userMessage || "Nie udało się usunąć konta.");
+  }
+}
+
 async function adminSetUserStatus(userId, status) {
   try {
     await window.apiFetch(`/admin/users/${userId}/status`, {
@@ -426,6 +605,82 @@ function closeAdminDrawer() {
 
 document.getElementById("adminDrawerClose")?.addEventListener("click", closeAdminDrawer);
 document.getElementById("adminDrawerBackdrop")?.addEventListener("click", closeAdminDrawer);
+
+
+function openCreateUserDrawer() {
+  openAdminDrawer(`
+    <div class="adminPreviewCard">
+      <h2>Utwórz konto</h2>
+      <p class="adminSystemHint">Konto utworzone z panelu admina powinno docelowo przejść potwierdzenie mailowe. Na tym etapie ustawiamy hasło tymczasowe i zapisujemy akcję w logach.</p>
+
+      <div class="adminActionStack">
+        <label class="adminFieldLabel" for="adminCreateUserEmail">Email</label>
+        <input class="adminFieldInput" id="adminCreateUserEmail" type="email" placeholder="email@domena.pl" />
+
+        <label class="adminFieldLabel" for="adminCreateUserRole">Rola</label>
+        <select class="adminFieldInput" id="adminCreateUserRole">
+          <option value="user">Towarzysz</option>
+          <option value="partner">Organizator</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <label class="adminFieldLabel" for="adminCreateUserDob">Data urodzenia</label>
+        <input class="adminFieldInput" id="adminCreateUserDob" type="date" />
+        <div class="adminWarnHint">Data urodzenia jest wymagana dla Towarzysza. Dla Organizatora/Admina może zostać pusta.</div>
+
+        <label class="adminFieldLabel" for="adminCreateUserPassword">Hasło tymczasowe</label>
+        <input class="adminFieldInput" id="adminCreateUserPassword" type="text" placeholder="Minimum 6 znaków" />
+
+        <button class="adminPrimaryAction" type="button" onclick="adminCreateUserAccount()">
+          Utwórz konto
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+async function adminCreateUserAccount() {
+  const email = String(document.getElementById("adminCreateUserEmail")?.value || "").trim();
+  const role = String(document.getElementById("adminCreateUserRole")?.value || "user");
+  const dob = String(document.getElementById("adminCreateUserDob")?.value || "").trim();
+  const password = String(document.getElementById("adminCreateUserPassword")?.value || "").trim();
+
+  if (!email || !email.includes("@")) {
+    adminToast("Podaj poprawny email.");
+    return;
+  }
+
+  if (password.length < 6) {
+    adminToast("Hasło musi mieć minimum 6 znaków.");
+    return;
+  }
+
+  if (role === "user" && !dob) {
+    adminToast("Data urodzenia jest wymagana dla Towarzysza.");
+    return;
+  }
+
+  try {
+    const res = await window.apiFetch("/admin/users/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role, dob, password }),
+    });
+
+    adminToast("Konto utworzone.");
+    await reloadAdminUsers();
+
+    const id = res?.data?.id;
+    if (id) {
+      await openUserPreview(id);
+    } else {
+      closeAdminDrawer();
+    }
+  } catch (e) {
+    console.error("adminCreateUserAccount error", e);
+    adminToast(e?.userMessage || "Nie udało się utworzyć konta.");
+  }
+}
 
 
 async function adminAddBugNote(ticket) {
@@ -529,6 +784,42 @@ function renderAdminHistory(history, limit = null) {
       </div>
     `;
   }).join("");
+}
+
+async function openUserAccountHistory(userId) {
+  try {
+    const res = await window.apiFetch(`/admin/users/${encodeURIComponent(userId)}/preview`);
+    const u = res?.data || {};
+    const history = Array.isArray(u.account_history) ? u.account_history : [];
+
+    openAdminDrawer(`
+      <div class="adminPreviewCard">
+        <div class="adminHistoryTop">
+          <button class="adminGhostMiniButton" type="button" onclick="openUserPreview('${escapeAdmin(userId)}')">← Wróć do profilu</button>
+          <h2>Pełna historia konta</h2>
+          <p class="adminSystemHint">${escapeAdmin(u.email || "—")} • ${escapeAdmin(u.role || "—")} • ${escapeAdmin(u.status || "—")}</p>
+        </div>
+
+        ${
+          history.length
+            ? history.map((h) => `
+                <div class="adminHistoryCard">
+                  <div class="adminHistoryKind">${escapeAdmin(h.action || "Akcja")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.created_at || "—")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.details || "—")}</div>
+                </div>
+              `).join("")
+            : `<div class="adminHistoryCard">
+                <div class="adminHistoryTitle">Brak historii konta</div>
+                <div class="adminHistoryMeta">Akcje administracyjne pojawią się tutaj.</div>
+              </div>`
+        }
+      </div>
+    `);
+  } catch (e) {
+    console.error("openUserAccountHistory error", e);
+    adminToast("Nie udało się pobrać historii konta.");
+  }
 }
 
 async function openUserReportHistory(userId, reportTicket, reportStatus = "new") {
@@ -948,6 +1239,12 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new') 
           ${adminStatusBadge(u.status || "active")}
           <span class="adminUserRole">${escapeAdmin(u.role || "user")}</span>
         </div>
+
+        <div class="adminHistoryCard" style="margin-top:14px;">
+          <div class="adminHistoryTitle">Zgłoszenia użytkownika</div>
+          <div class="adminHistoryMeta">Łącznie: ${escapeAdmin(u.reports_total || 0)}</div>
+          <div class="adminHistoryMeta">Otwarte: ${escapeAdmin(u.reports_open || 0)}</div>
+        </div>
       </div>
     </div>
 
@@ -1011,8 +1308,112 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new') 
       <div class="adminActionStack">
         ${String(u.status || "active") === "blocked"
           ? `<button class="adminPrimaryAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','active')">Odblokuj użytkownika</button>`
-          : `<button class="adminDangerAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','blocked')">Zablokuj użytkownika</button>`
+          : String(u.status || "active") === "deleted"
+            ? `<button class="adminGhostAction" type="button" disabled>Konto usunięte</button>`
+            : `<button class="adminDangerAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','blocked')">Zablokuj użytkownika</button>`
         }
+
+        ${
+          String(u.role || "") !== "admin" && String(u.status || "active") !== "deleted"
+            ? `<button class="adminDangerAction" type="button" onclick="adminDeleteUserAccount('${escapeAdmin(u.id)}')">Usuń konto</button>`
+            : ""
+        }
+
+        ${
+          String(u.status || "active") !== "deleted"
+            ? `<div class="adminWarnBox">
+          <label class="adminFieldLabel" for="adminUserPlanSelect">Pakiet konta</label>
+          <select class="adminFieldInput" id="adminUserPlanSelect">
+            ${(
+              String(u.role || "user") === "partner"
+                ? [["free","FREE"],["pro","PRO"],["premium","PREMIUM"],["enterprise","ENTERPRISE / wycena indywidualna"]]
+                : [["free","FREE"],["plus","PLUS"],["premium","PREMIUM"],["vip","VIP"]]
+            ).map(([plan, label]) => `<option value="${plan}" ${String(u.plan || "free") === plan ? "selected" : ""}>${label}</option>`).join("")}
+          </select>
+
+          <label class="adminFieldLabel" for="adminUserPlanSourceSelect">Źródło pakietu</label>
+          <select class="adminFieldInput" id="adminUserPlanSourceSelect">
+            ${[
+              ["manual", "Ręcznie"],
+              ["paid", "Płatny"],
+              ["barter", "Barter"],
+              ["promo", "Promo"],
+              ["test", "Test"],
+            ].map(([source, label]) => `<option value="${source}" ${String(u.plan_source || "manual") === source ? "selected" : ""}>${label}</option>`).join("")}
+          </select>
+
+          <label class="adminFieldLabel" for="adminUserPlanStatusSelect">Status pakietu</label>
+          <select class="adminFieldInput" id="adminUserPlanStatusSelect">
+            ${["active","inactive","expired","trial"].map(status => `<option value="${status}" ${String(u.plan_status || "active") === status ? "selected" : ""}>${status}</option>`).join("")}
+          </select>
+
+          <button class="adminPrimaryAction" type="button" onclick="adminUpdateUserPlan('${escapeAdmin(u.id)}')">
+            Zapisz pakiet
+          </button>
+          <div class="adminWarnHint">Użyj np. barter/promo/test, gdy pakiet jest nadany ręcznie przez administrację.</div>
+        </div>
+
+        <div class="adminWarnBox">
+          <label class="adminFieldLabel" for="adminTempPasswordInput">Hasło tymczasowe</label>
+          <input class="adminFieldInput" id="adminTempPasswordInput" type="text" placeholder="Minimum 6 znaków" />
+          <button class="adminPrimaryAction" type="button" onclick="adminResetUserPassword('${escapeAdmin(u.id)}')">
+            Ustaw hasło tymczasowe
+          </button>
+          <button class="adminGhostAction" type="button" onclick="adminSendUserResetLink('${escapeAdmin(u.id)}')">
+            Wyślij link resetu hasła
+          </button>
+          <div class="adminWarnHint">Ręczne hasło zapisze się w logach. Bezpieczniejsza opcja to wysłanie użytkownikowi linku resetu.</div>
+        </div>`
+            : `<div class="adminWarnBox">
+                <div class="adminHistoryTitle">Konto usunięte</div>
+                <div class="adminHistoryMeta">Edycja pakietu, hasła i resetu jest wyłączona dla usuniętych kont.</div>
+              </div>`
+        }
+
+        <div class="adminWarnBox">
+          <div class="adminHistoryHeader">
+            <h3>Historia pakietu</h3>
+            <span class="adminHistoryCount">${escapeAdmin((u.plan_history || []).length)} wpisów</span>
+          </div>
+          ${
+            Array.isArray(u.plan_history) && u.plan_history.length
+              ? u.plan_history.map((h) => `
+                  <div class="adminHistoryCard">
+                    <div class="adminHistoryKind">Zmiana pakietu</div>
+                    <div class="adminHistoryMeta">${escapeAdmin(h.created_at || "—")}</div>
+                    <div class="adminHistoryMeta">${escapeAdmin(h.details || "—")}</div>
+                  </div>
+                `).join("")
+              : `<div class="adminHistoryCard">
+                  <div class="adminHistoryTitle">Brak historii zmian pakietu</div>
+                  <div class="adminHistoryMeta">Zmiany wykonane przez administratora pojawią się tutaj.</div>
+                </div>`
+          }
+        </div>
+
+        <div class="adminWarnBox">
+          <div class="adminHistoryHeader">
+            <h3>Historia konta</h3>
+            <span class="adminHistoryCount">${escapeAdmin((u.account_history || []).length)} wpisów</span>
+          </div>
+          ${
+            Array.isArray(u.account_history) && u.account_history.length
+              ? `${u.account_history.slice(0, 5).map((h) => `
+                  <div class="adminHistoryCard">
+                    <div class="adminHistoryKind">${escapeAdmin(h.action || "Akcja")}</div>
+                    <div class="adminHistoryMeta">${escapeAdmin(h.created_at || "—")}</div>
+                    <div class="adminHistoryMeta">${escapeAdmin(h.details || "—")}</div>
+                  </div>
+                `).join("")}
+                ${u.account_history.length > 5
+                  ? `<button class="adminGhostMiniButton" type="button" onclick="openUserAccountHistory('${escapeAdmin(userId)}')">Zobacz wszystko</button>`
+                  : ""}`
+              : `<div class="adminHistoryCard">
+                  <div class="adminHistoryTitle">Brak historii konta</div>
+                  <div class="adminHistoryMeta">Akcje administracyjne pojawią się tutaj.</div>
+                </div>`
+          }
+        </div>
 
         ${
           reportTicket
@@ -1116,8 +1517,31 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new') 
 }
 
 
-document.getElementById("adminRefreshBtn")?.addEventListener("click", reloadAdminReports);
+function showAdminView(view) {
+  const reportsView = document.getElementById("adminReportsView");
+  const usersView = document.getElementById("adminUsersView");
+
+  document.querySelectorAll("[data-admin-view]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.adminView === view);
+  });
+
+  if (reportsView) reportsView.hidden = view !== "reports";
+  if (usersView) usersView.hidden = view !== "users";
+
+  if (view === "reports") reloadAdminReports().catch(() => {});
+  if (view === "users") reloadAdminUsers().catch(() => {});
+}
+
+document.querySelectorAll("[data-admin-view]").forEach((btn) => {
+  btn.addEventListener("click", () => showAdminView(btn.dataset.adminView || "reports"));
+});
+
 document.getElementById("adminStatusFilter")?.addEventListener("change", reloadAdminReports);
+document.getElementById("adminCreateUserBtn")?.addEventListener("click", openCreateUserDrawer);
+document.getElementById("adminUserSearch")?.addEventListener("input", reloadAdminUsers);
+document.getElementById("adminUsersRoleFilter")?.addEventListener("change", reloadAdminUsers);
+document.getElementById("adminUsersStatusFilter")?.addEventListener("change", reloadAdminUsers);
+document.getElementById("adminUsersPlanFilter")?.addEventListener("change", reloadAdminUsers);
 
 document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
   localStorage.removeItem("usly_token");

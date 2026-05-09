@@ -243,6 +243,24 @@ class PartnerProfile(Base):
         default="free",
     )
 
+    plan_source: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        default=None,
+    )
+
+    plan_status: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        default=None,
+    )
+
+    plan_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
     bio: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,

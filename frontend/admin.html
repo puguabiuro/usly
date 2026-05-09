@@ -31,8 +31,8 @@
     <aside class="adminSidebar">
       <div class="adminBrand"><img src="USLY logo.png" alt="USLY" /><span>Admin</span></div>
       <div class="adminSideLabel">Panel administracyjny</div>
-      <button class="adminNav active" type="button">Zgłoszenia</button>
-      <button class="adminNav" type="button" disabled>Użytkownicy</button>
+      <button class="adminNav active" type="button" data-admin-view="reports">Zgłoszenia</button>
+      <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
       <button class="adminNav" type="button" disabled>Wydarzenia</button>
     </aside>
 
@@ -46,6 +46,7 @@
         <button class="adminLogout" type="button" id="adminLogoutBtn">Wyloguj</button>
       </header>
 
+      <section id="adminReportsView">
       <section class="adminFilters">
         <label>
           Status
@@ -88,6 +89,61 @@
           </div>
           <div id="adminBugReports" class="adminTableBox">Ładowanie...</div>
         </article>
+      </section>
+      </section>
+
+      <section id="adminUsersView" hidden>
+        <section class="adminFilters">
+          <label>
+            Szukaj użytkownika
+            <input id="adminUserSearch" class="adminFieldInput" type="search" placeholder="Email, nazwa, nick, ID..." />
+          </label>
+
+          <label>
+            Rola
+            <select id="adminUsersRoleFilter">
+              <option value="all">Wszystkie role</option>
+              <option value="user">Towarzysz</option>
+              <option value="partner">Organizator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+
+          <label>
+            Status
+            <select id="adminUsersStatusFilter">
+              <option value="all">Wszystkie statusy</option>
+              <option value="active">Aktywne</option>
+              <option value="blocked">Zablokowane</option>
+              <option value="deleted">Usunięte</option>
+            </select>
+          </label>
+
+          <label>
+            Pakiet
+            <select id="adminUsersPlanFilter">
+              <option value="all">Wszystkie pakiety</option>
+              <option value="free">Free</option>
+              <option value="plus">Plus</option>
+              <option value="premium">Premium</option>
+              <option value="vip">VIP</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </label>
+
+          <button class="adminPrimary" type="button" id="adminCreateUserBtn">Utwórz konto</button>
+        </section>
+
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Centrum użytkowników</h2>
+              <span id="adminUsersCount">0</span>
+            </div>
+            <div id="adminUsersList" class="adminTableBox">Ładowanie...</div>
+          </article>
+        </section>
       </section>
     </section>
   </main>

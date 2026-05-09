@@ -101,6 +101,7 @@ from backend.models import (
     EventSave,
     UserNotification,
     UserStatus,
+    UserRole,
     Group,
     GroupMembership,
     Message,
@@ -731,11 +732,19 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request):
                 )
 
                 context = ssl.create_default_context()
-                with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-                    server.starttls(context=context)
-                    if smtp_user and smtp_pass:
-                        server.login(smtp_user, smtp_pass)
-                    server.send_message(msg)
+                try:
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                        server.starttls(context=context)
+                        if smtp_user and smtp_pass:
+                            server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                except ssl.SSLCertVerificationError:
+                    fallback_context = ssl._create_unverified_context()
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                        server.starttls(context=fallback_context)
+                        if smtp_user and smtp_pass:
+                            server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
 
                 emailed = True
             except Exception as e:
@@ -858,11 +867,23 @@ def delete_account(
         for g in owned_groups:
             db.delete(g)
 
+        original_email = user.email
+        safe_email = f"deleted_{user.id}_{int(datetime.utcnow().timestamp())}@deleted.usly.local"
+
+        user.email = safe_email
+        user.password_hash = None
         user.status = UserStatus.DELETED.value
+
         db.add(user)
         db.commit()
 
-        _audit(db, action="DELETE_ACCOUNT_SUCCESS", request=request, user_id=current_user.id, details=None)
+        _audit(
+            db,
+            action="DELETE_ACCOUNT_SUCCESS",
+            request=request,
+            user_id=current_user.id,
+            details=f"original_email={original_email}",
+        )
         return ok({"deleted": True})
     finally:
         db.close()
@@ -4982,6 +5003,56 @@ def admin_add_report_action(
     return ok({"ticket": ticket, "report": found})
 
 
+@app.post("/admin/users/{user_id}/delete-account")
+def admin_delete_user_account(
+    user_id: int,
+    current_user: User = Depends(require_role("admin")),
+):
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+        if user.role == "admin":
+            raise HTTPException(status_code=400, detail="CANNOT_DELETE_ADMIN")
+        if user.status == UserStatus.DELETED.value:
+            return ok({"deleted": True, "already_deleted": True})
+
+        owned_groups = (
+            db.query(Group)
+            .filter(Group.creator_id == user.id)
+            .all()
+        )
+
+        for g in owned_groups:
+            db.delete(g)
+
+        original_email = user.email
+        safe_email = f"deleted_{user.id}_{int(datetime.utcnow().timestamp())}@deleted.usly.local"
+
+        user.email = safe_email
+        user.password_hash = None
+        user.status = UserStatus.DELETED.value
+
+        db.add(user)
+        db.add(
+            AuditLog(
+                user_id=user.id,
+                action="admin_delete_user_account",
+                details=f"admin_id={current_user.id}; original_email={original_email}",
+            )
+        )
+        db.commit()
+
+        return ok({
+            "deleted": True,
+            "user_id": user.id,
+            "original_email": original_email,
+        })
+    finally:
+        db.close()
+
+
 @app.post("/admin/users/{user_id}/status")
 def admin_update_user_status(
     user_id: int,
@@ -5035,6 +5106,339 @@ def admin_update_event_status(
         db.close()
 
 
+@app.post("/admin/users/create")
+def admin_create_user_account(
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    email = str((payload or {}).get("email") or "").strip().lower()
+    role = str((payload or {}).get("role") or "user").strip().lower()
+    password = str((payload or {}).get("password") or "").strip()
+    dob_raw = str((payload or {}).get("dob") or "").strip()
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=422, detail="INVALID_EMAIL")
+    if role not in {"user", "partner", "admin"}:
+        raise HTTPException(status_code=422, detail="INVALID_ROLE")
+    if len(password) < 6:
+        raise HTTPException(status_code=422, detail="PASSWORD_TOO_SHORT")
+
+    parsed_dob = None
+    if role == "user":
+        if not dob_raw:
+            raise HTTPException(status_code=422, detail="DOB_REQUIRED_FOR_USER")
+        try:
+            parsed_dob = date.fromisoformat(dob_raw)
+        except Exception:
+            raise HTTPException(status_code=422, detail="INVALID_DOB")
+        if not _is_at_least_18(parsed_dob):
+            raise HTTPException(status_code=403, detail="AGE_TOO_LOW")
+
+    db = SessionLocal()
+    try:
+        existing = db.query(User).filter(User.email == email).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="EMAIL_ALREADY_EXISTS")
+
+        user = User(
+            email=email,
+            password_hash=hash_password(password),
+            dob=parsed_dob,
+            terms_accepted_at=datetime.utcnow(),
+            terms_version="admin-created",
+            privacy_version="admin-created",
+            role=role,
+            status=UserStatus.ACTIVE.value,
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        if role == "user":
+            db.add(UserProfile(user_id=user.id, plan="free", plan_source="manual", plan_status="active"))
+        elif role == "partner":
+            db.add(PartnerProfile(user_id=user.id, plan="free", plan_source="manual", plan_status="active"))
+
+        token = str(uuid4())
+        reset_row = PasswordResetToken(
+            user_id=user.id,
+            token=token,
+            expires_at=datetime.utcnow().replace(microsecond=0) + __import__("datetime").timedelta(hours=1),
+            used_at=None,
+        )
+        db.add(reset_row)
+        db.commit()
+
+        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", "usly://reset-password").strip() or "usly://reset-password"
+        separator = "&" if "?" in link_base else "?"
+        reset_link = f"{link_base}{separator}token={token}"
+
+        emailed = False
+        email_error = None
+
+        smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+        smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+        smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+        smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+        smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+        if smtp_host and smtp_from:
+            try:
+                import smtplib
+                import ssl
+
+                msg = EmailMessage()
+                msg["Subject"] = "USLY — utworzono konto"
+                msg["From"] = smtp_from
+                msg["To"] = user.email
+                msg.set_content(
+                    "Utworzono dla Ciebie konto w USLY.\n\n"
+                    "Aby ustawić własne hasło i rozpocząć korzystanie z aplikacji, otwórz poniższy link:\n"
+                    f"{reset_link}\n\n"
+                    "Link jest jednorazowy i będzie ważny przez 60 minut.\n"
+                    "Jeśli nie spodziewałaś/spodziewałeś się tej wiadomości, skontaktuj się z supportem USLY."
+                )
+
+                context = ssl.create_default_context()
+                try:
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                        server.starttls(context=context)
+                        if smtp_user and smtp_pass:
+                            server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                except ssl.SSLCertVerificationError:
+                    fallback_context = ssl._create_unverified_context()
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                        server.starttls(context=fallback_context)
+                        if smtp_user and smtp_pass:
+                            server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+
+                emailed = True
+            except Exception as e:
+                email_error = str(e)
+
+        db.add(
+            AuditLog(
+                user_id=user.id,
+                action="admin_create_user_account",
+                details=f"admin_id={current_user.id}; role={role}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
+            )
+        )
+        db.commit()
+
+        return ok({
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "status": user.status,
+            "emailed": emailed,
+            "email_error": email_error,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/admin/users/{user_id}/send-reset-link")
+def admin_send_user_reset_link(
+    user_id: int,
+    current_user: User = Depends(require_role("admin")),
+):
+    import smtplib
+    import ssl
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+        if user.status != UserStatus.ACTIVE.value:
+            raise HTTPException(status_code=422, detail="USER_NOT_ACTIVE")
+
+        token = str(uuid4())
+        reset_row = PasswordResetToken(
+            user_id=user.id,
+            token=token,
+            expires_at=datetime.utcnow().replace(microsecond=0) + __import__("datetime").timedelta(hours=1),
+            used_at=None,
+        )
+        db.add(reset_row)
+        db.commit()
+
+        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", "usly://reset-password").strip() or "usly://reset-password"
+        separator = "&" if "?" in link_base else "?"
+        reset_link = f"{link_base}{separator}token={token}"
+
+        smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+        smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+        smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+        smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+        smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+        emailed = False
+        email_error = None
+
+        if smtp_host and smtp_from:
+            try:
+                msg = EmailMessage()
+                msg["Subject"] = "USLY — reset hasła"
+                msg["From"] = smtp_from
+                msg["To"] = user.email
+                msg.set_content(
+                    "Otrzymujesz tę wiadomość, ponieważ poproszono o reset hasła do Twojego konta USLY.\n\n"
+                    "Kliknij lub otwórz poniższy link, aby ustawić nowe hasło:\n"
+                    f"{reset_link}\n\n"
+                    "Link jest jednorazowy i będzie ważny przez 60 minut.\n"
+                    "Jeśli nie prosiłaś/prosiłeś o reset hasła, skontaktuj się z supportem USLY."
+                )
+
+                context = ssl.create_default_context()
+                try:
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                        server.starttls(context=context)
+                        if smtp_user and smtp_pass:
+                            server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                except ssl.SSLCertVerificationError:
+                    fallback_context = ssl._create_unverified_context()
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                        server.starttls(context=fallback_context)
+                        if smtp_user and smtp_pass:
+                            server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+
+                emailed = True
+            except Exception as e:
+                email_error = str(e)
+
+        db.add(
+            AuditLog(
+                user_id=user.id,
+                action="admin_send_reset_link",
+                details=f"admin_id={current_user.id}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
+            )
+        )
+        db.commit()
+
+        return ok({
+            "user_id": user.id,
+            "email": user.email,
+            "emailed": emailed,
+            "email_error": email_error,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/admin/users/{user_id}/reset-password")
+def admin_reset_user_password(
+    user_id: int,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    new_password = str((payload or {}).get("new_password") or "").strip()
+
+    if len(new_password) < 6:
+        raise HTTPException(status_code=422, detail="PASSWORD_TOO_SHORT")
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        user.password_hash = hash_password(new_password)
+
+        db.add(
+            AuditLog(
+                user_id=user.id,
+                action="admin_reset_password",
+                details=f"admin_id={current_user.id}",
+            )
+        )
+
+        db.add(user)
+        db.commit()
+
+        return ok({
+            "user_id": user.id,
+            "password_reset": True,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/admin/users/{user_id}/plan")
+def admin_update_user_plan(
+    user_id: int,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    plan = str((payload or {}).get("plan") or "").strip().lower()
+    plan_source = str((payload or {}).get("plan_source") or "manual").strip().lower()
+    plan_status = str((payload or {}).get("plan_status") or "active").strip().lower()
+
+    allowed_plans = {"free", "plus", "premium", "vip", "pro", "enterprise"}
+    allowed_sources = {"manual", "paid", "barter", "promo", "test", "system"}
+    allowed_statuses = {"active", "inactive", "expired", "trial"}
+
+    if plan not in allowed_plans:
+        raise HTTPException(status_code=422, detail="INVALID_PLAN")
+    if plan_source not in allowed_sources:
+        raise HTTPException(status_code=422, detail="INVALID_PLAN_SOURCE")
+    if plan_status not in allowed_statuses:
+        raise HTTPException(status_code=422, detail="INVALID_PLAN_STATUS")
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        now = datetime.utcnow()
+
+        if user.role == UserRole.PARTNER.value:
+            profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == user.id).first()
+            if not profile:
+                raise HTTPException(status_code=404, detail="PARTNER_PROFILE_NOT_FOUND")
+            profile.plan = plan
+            profile.plan_source = plan_source
+            profile.plan_status = plan_status
+            profile.plan_updated_at = now
+            profile.updated_at = now
+            db.add(profile)
+        else:
+            profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+            if not profile:
+                raise HTTPException(status_code=404, detail="USER_PROFILE_NOT_FOUND")
+            profile.plan = plan
+            profile.plan_source = plan_source
+            profile.plan_status = plan_status
+            profile.plan_updated_at = now
+            profile.updated_at = now
+            db.add(profile)
+
+        db.add(
+            AuditLog(
+                user_id=user.id,
+                action="admin_update_user_plan",
+                details=f"admin_id={current_user.id}; plan={plan}; source={plan_source}; status={plan_status}",
+            )
+        )
+        db.commit()
+
+        return ok({
+            "user_id": user.id,
+            "role": user.role,
+            "plan": plan,
+            "plan_source": plan_source,
+            "plan_status": plan_status,
+        })
+    finally:
+        db.close()
+
+
 @app.get("/admin/users/{user_id}/preview")
 def admin_user_preview(
     user_id: int,
@@ -5055,6 +5459,19 @@ def admin_user_preview(
             raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
 
         user, profile = row
+        partner_profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == user.id).first()
+
+        if user.role == UserRole.PARTNER.value:
+            account_plan = getattr(partner_profile, "plan", None) or "free"
+            account_plan_source = getattr(partner_profile, "plan_source", None) or "manual"
+            account_plan_status = getattr(partner_profile, "plan_status", None) or "active"
+            account_plan_updated_at = str(partner_profile.plan_updated_at) if partner_profile and partner_profile.plan_updated_at else None
+        else:
+            account_plan = getattr(profile, "plan", None) if profile else "free"
+            account_plan_source = getattr(profile, "plan_source", None) if profile else None
+            account_plan_status = getattr(profile, "plan_status", None) if profile else None
+            account_plan_updated_at = str(profile.plan_updated_at) if profile and profile.plan_updated_at else None
+
         interests = []
         if profile and profile.zainteresowania_json:
             try:
@@ -5080,6 +5497,23 @@ def admin_user_preview(
                         if str(row.get("status") or "new") not in {"resolved", "rejected", "archived"}:
                             reports_open += 1
 
+        plan_history_logs = (
+            db.query(AuditLog)
+            .filter(AuditLog.user_id == user.id)
+            .filter(AuditLog.action == "admin_update_user_plan")
+            .order_by(AuditLog.created_at.desc())
+            .limit(10)
+            .all()
+        )
+
+        account_history_logs = (
+            db.query(AuditLog)
+            .filter(AuditLog.user_id == user.id)
+            .order_by(AuditLog.created_at.desc())
+            .limit(30)
+            .all()
+        )
+
         return ok({
             "id": user.id,
             "email": user.email,
@@ -5093,6 +5527,26 @@ def admin_user_preview(
             "bio": getattr(profile, "bio", None) if profile else None,
             "avatar_url": getattr(profile, "avatar_url", None) if profile else None,
             "interests": interests,
+            "plan": account_plan,
+            "plan_source": account_plan_source,
+            "plan_status": account_plan_status,
+            "plan_updated_at": account_plan_updated_at,
+            "plan_history": [
+                {
+                    "created_at": str(log.created_at) if log.created_at else None,
+                    "action": log.action,
+                    "details": log.details,
+                }
+                for log in plan_history_logs
+            ],
+            "account_history": [
+                {
+                    "created_at": str(log.created_at) if log.created_at else None,
+                    "action": log.action,
+                    "details": log.details,
+                }
+                for log in account_history_logs
+            ],
             "dob": str(user.dob) if getattr(user, "dob", None) else None,
             "created_at": str(user.created_at) if getattr(user, "created_at", None) else None,
         })
@@ -5269,6 +5723,77 @@ def admin_bug_reporter_context(
             ],
             "previous_bug_reports": previous_bug_reports[::-1][:10],
         })
+    finally:
+        db.close()
+
+
+@app.get("/admin/users")
+def admin_list_users(current_user: User = Depends(require_role("admin"))):
+    import json
+
+    db = SessionLocal()
+    try:
+        users = db.query(User).order_by(User.created_at.desc()).all()
+
+        user_profiles = {
+            profile.user_id: profile
+            for profile in db.query(UserProfile).all()
+        }
+        partner_profiles = {
+            profile.user_id: profile
+            for profile in db.query(PartnerProfile).all()
+        }
+
+        items = []
+        for user in users:
+            user_profile = user_profiles.get(user.id)
+            partner_profile = partner_profiles.get(user.id)
+
+            interests = []
+            if user_profile and user_profile.zainteresowania_json:
+                try:
+                    interests = json.loads(user_profile.zainteresowania_json) or []
+                except Exception:
+                    interests = []
+
+            if user.role == UserRole.PARTNER.value:
+                display_name = getattr(partner_profile, "nazwa", None) or user.email
+                city = getattr(partner_profile, "miasto", None)
+                plan = getattr(partner_profile, "plan", None) or "free"
+                plan_source = getattr(partner_profile, "plan_source", None)
+                plan_status = getattr(partner_profile, "plan_status", None)
+                plan_updated_at = str(partner_profile.plan_updated_at) if partner_profile and partner_profile.plan_updated_at else None
+                avatar_url = getattr(partner_profile, "logo_url", None)
+                bio = getattr(partner_profile, "bio", None)
+            else:
+                display_name = getattr(user_profile, "nick", None) or user.email
+                city = getattr(user_profile, "miasto", None)
+                plan = getattr(user_profile, "plan", None) or "free"
+                plan_source = getattr(user_profile, "plan_source", None) if user_profile else None
+                plan_status = getattr(user_profile, "plan_status", None) if user_profile else None
+                plan_updated_at = str(user_profile.plan_updated_at) if user_profile and user_profile.plan_updated_at else None
+                avatar_url = getattr(user_profile, "avatar_url", None)
+                bio = getattr(user_profile, "bio", None)
+
+            items.append({
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "status": user.status,
+                "display_name": display_name,
+                "city": city,
+                "dob": str(user.dob) if getattr(user, "dob", None) else None,
+                "created_at": str(user.created_at) if user.created_at else None,
+                "plan": plan,
+                "plan_source": plan_source,
+                "plan_status": plan_status,
+                "plan_updated_at": plan_updated_at,
+                "avatar_url": avatar_url,
+                "bio": bio,
+                "interests": interests,
+            })
+
+        return ok({"items": items, "count": len(items)})
     finally:
         db.close()
 

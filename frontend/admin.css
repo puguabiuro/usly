@@ -282,6 +282,24 @@ body{
 .statusBadge[data-status="rejected"],
 .statusBadge[data-status="not_reproducible"],
 .statusBadge[data-status="archived"]{ color:#fca5a5; border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.12); }
+.statusBadge[data-status="active"]{
+  color:#86efac;
+  border-color:rgba(34,197,94,.35);
+  background:rgba(34,197,94,.14);
+}
+
+.statusBadge[data-status="blocked"]{
+  color:#fca5a5;
+  border-color:rgba(239,68,68,.35);
+  background:rgba(239,68,68,.12);
+}
+
+.statusBadge[data-status="deleted"]{
+  color:#fdba74;
+  border-color:rgba(249,115,22,.35);
+  background:rgba(249,115,22,.14);
+}
+
 
 .tableAction{
   border:1px solid rgba(255,255,255,.10);
