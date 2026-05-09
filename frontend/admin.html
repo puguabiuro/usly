@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>USLY Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <section class="adminLogin" id="adminLoginView">
+    <form class="adminLoginCard" id="adminLoginForm">
+      <img src="USLY logo.png" alt="USLY" />
+      <h1>Panel administratora</h1>
+      <p>Zaloguj się kontem admina.</p>
+
+      <label>
+        Email
+        <input id="adminLoginEmail" type="email" autocomplete="email" value="admin@usly.dev" required />
+      </label>
+
+      <label>
+        Hasło
+        <input id="adminLoginPassword" type="password" autocomplete="current-password" required />
+      </label>
+
+      <button class="adminPrimary" type="submit">Zaloguj</button>
+    </form>
+  </section>
+
+  <main class="adminShell" id="adminDashboardView" hidden>
+    <aside class="adminSidebar">
+      <div class="adminBrand"><img src="USLY logo.png" alt="USLY" /><span>Admin</span></div>
+      <div class="adminSideLabel">Panel administracyjny</div>
+      <button class="adminNav active" type="button">Zgłoszenia</button>
+      <button class="adminNav" type="button" disabled>Użytkownicy</button>
+      <button class="adminNav" type="button" disabled>Wydarzenia</button>
+    </aside>
+
+    <section class="adminMain">
+      <header class="adminTop">
+        <div>
+          <div class="adminEyebrow">Moderacja / Support</div>
+          <h1>Centrum zgłoszeń</h1>
+          <p>Obsługa zgłoszeń użytkowników, wydarzeń i błędów.</p>
+        </div>
+        <button class="adminLogout" type="button" id="adminLogoutBtn">Wyloguj</button>
+      </header>
+
+      <section class="adminFilters">
+        <label>
+          Status
+          <select id="adminStatusFilter">
+            <option value="all">Wszystkie</option>
+            <option value="new">Nowe</option>
+            <option value="in_review">Do obserwacji</option>
+            <option value="resolved">Rozwiązane</option>
+            <option value="rejected">Odrzucone</option>
+            <option value="accepted">Przyjęte</option>
+            <option value="in_progress">W trakcie</option>
+            <option value="fixed">Naprawione</option>
+            <option value="archived">Archiwum</option>
+          </select>
+        </label>
+        <button class="adminPrimary" type="button" id="adminRefreshBtn">Odśwież</button>
+      </section>
+
+      <section class="adminGrid">
+        <article class="adminPanel">
+          <div class="adminPanelHead">
+            <h2>Zgłoszenia użytkowników</h2>
+            <span id="adminUserCount">0</span>
+          </div>
+          <div id="adminUserReports" class="adminTableBox">Ładowanie...</div>
+        </article>
+
+        <article class="adminPanel">
+          <div class="adminPanelHead">
+            <h2>Zgłoszenia wydarzeń</h2>
+            <span id="adminEventCount">0</span>
+          </div>
+          <div id="adminEventReports" class="adminTableBox">Ładowanie...</div>
+        </article>
+
+        <article class="adminPanel adminPanelWide">
+          <div class="adminPanelHead">
+            <h2>Zgłoszenia błędów</h2>
+            <span id="adminBugCount">0</span>
+          </div>
+          <div id="adminBugReports" class="adminTableBox">Ładowanie...</div>
+        </article>
+      </section>
+    </section>
+  </main>
+
+
+  <aside class="adminDrawer" id="adminDrawer" hidden>
+    <div class="adminDrawerBackdrop" id="adminDrawerBackdrop"></div>
+    <section class="adminDrawerPanel">
+      <button class="adminDrawerClose" type="button" id="adminDrawerClose">×</button>
+      <div id="adminDrawerContent"></div>
+    </section>
+  </aside>
+
+  <div id="adminToast" class="adminToast" hidden></div>
+
+  <script>
+    window.USLY_API_BASE_URL = window.USLY_API_BASE_URL || (
+      location.hostname.includes("onrender.com")
+        ? "https://usly-backend-v2.onrender.com"
+        : "http://127.0.0.1:8000"
+    );
+    window.API_BASE_URL = window.USLY_API_BASE_URL;
+  </script>
+  <script src="api.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

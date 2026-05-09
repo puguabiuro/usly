@@ -63,6 +63,7 @@ def _reverse_geocode_city(lat: float, lng: float) -> str | None:
         return None
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
@@ -2113,6 +2114,9 @@ def get_event_details(
             {
                 "id": event.id,
                 "partner_user_id": event.partner_user_id,
+            "organizer_name": getattr(partner_profile, "nazwa", None) if partner_profile else None,
+            "organizer_logo_url": getattr(partner_profile, "logo_url", None) if partner_profile else None,
+            "organizer_email": db.query(User).filter(User.id == event.partner_user_id).first().email if event.partner_user_id else None,
                 "title": event.title,
                 "description": event.description,
                 "city": event.city,
@@ -4725,7 +4729,10 @@ def admin_update_report_status(
     import json
 
     allowed = {"new", "in_review", "resolved", "rejected", "archived", "accepted", "in_progress", "fixed", "not_reproducible"}
-    new_status = str((payload or {}).get("status") or "").strip()
+    payload = payload or {}
+    new_status = str(payload.get("status") or "").strip()
+    moderator_note = str(payload.get("moderator_note") or "").strip()
+    moderator_message = str(payload.get("moderator_message") or "").strip()
 
     if new_status not in allowed:
         raise HTTPException(status_code=422, detail="INVALID_REPORT_STATUS")
@@ -4746,7 +4753,31 @@ def admin_update_report_status(
                 continue
 
             if str(row.get("ticket")) == str(ticket):
+                previous_status = str(row.get("status") or "new")
+                now = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M")
+
                 row["status"] = new_status
+                row["updated_at"] = now
+                row["updated_by_admin_id"] = current_user.id
+
+                if moderator_note:
+                    row["moderator_note"] = moderator_note
+                if moderator_message:
+                    row["moderator_message"] = moderator_message
+
+                history = row.get("history")
+                if not isinstance(history, list):
+                    history = []
+
+                history.append({
+                    "at": now,
+                    "admin_id": current_user.id,
+                    "from_status": previous_status,
+                    "to_status": new_status,
+                    "moderator_note": moderator_note,
+                    "moderator_message": moderator_message,
+                })
+                row["history"] = history
                 found = row
 
             rows.append(row)
@@ -4759,6 +4790,126 @@ def admin_update_report_status(
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     return ok({"ticket": ticket, "status": new_status, "report": found})
+
+
+@app.post("/admin/reports/{report_type}/{ticket}/note")
+def admin_add_report_note(
+    report_type: str,
+    ticket: str,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    import json
+
+    note = str((payload or {}).get("note") or "").strip()
+    if not note:
+        raise HTTPException(status_code=422, detail="EMPTY_NOTE")
+
+    f = _admin_reports_file(report_type)
+    if not f.exists():
+        raise HTTPException(status_code=404, detail="REPORT_FILE_NOT_FOUND")
+
+    rows = []
+    found = None
+    with f.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+
+            if str(row.get("ticket")) == str(ticket):
+                now = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M")
+                history = row.get("history")
+                if not isinstance(history, list):
+                    history = []
+
+                history.append({
+                    "type": "note",
+                    "at": now,
+                    "admin_id": current_user.id,
+                    "note": note,
+                })
+
+                row["history"] = history
+                row["updated_at"] = now
+                row["updated_by_admin_id"] = current_user.id
+                found = row
+
+            rows.append(row)
+
+    if not found:
+        raise HTTPException(status_code=404, detail="REPORT_NOT_FOUND")
+
+    with f.open("w", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    return ok({"ticket": ticket, "report": found})
+
+
+@app.post("/admin/reports/{report_type}/{ticket}/action")
+def admin_add_report_action(
+    report_type: str,
+    ticket: str,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    import json
+
+    action = str((payload or {}).get("action") or "").strip()
+    label = str((payload or {}).get("label") or "").strip()
+
+    allowed_actions = {"warning_profile", "warning_content", "warning_behavior"}
+    if action not in allowed_actions:
+        raise HTTPException(status_code=422, detail="INVALID_REPORT_ACTION")
+
+    f = _admin_reports_file(report_type)
+    if not f.exists():
+        raise HTTPException(status_code=404, detail="REPORT_FILE_NOT_FOUND")
+
+    rows = []
+    found = None
+    with f.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+
+            if str(row.get("ticket")) == str(ticket):
+                now = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M")
+                history = row.get("history")
+                if not isinstance(history, list):
+                    history = []
+
+                history.append({
+                    "type": "warning",
+                    "at": now,
+                    "admin_id": current_user.id,
+                    "action": action,
+                    "label": label or action,
+                })
+
+                row["history"] = history
+                row["updated_at"] = now
+                row["updated_by_admin_id"] = current_user.id
+                found = row
+
+            rows.append(row)
+
+    if not found:
+        raise HTTPException(status_code=404, detail="REPORT_NOT_FOUND")
+
+    with f.open("w", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    return ok({"ticket": ticket, "report": found})
 
 
 @app.post("/admin/users/{user_id}/status")
@@ -4817,6 +4968,7 @@ def admin_update_event_status(
 @app.get("/admin/users/{user_id}/preview")
 def admin_user_preview(
     user_id: int,
+    ticket: str | None = None,
     current_user: User = Depends(require_role("admin")),
 ):
     import json
@@ -4843,6 +4995,7 @@ def admin_user_preview(
         reports_file = Path(__file__).resolve().parent / "data" / "user_reports.jsonl"
         reports_total = 0
         reports_open = 0
+        selected_report = None
         if reports_file.exists():
             with reports_file.open("r", encoding="utf-8") as fh:
                 for line in fh:
@@ -4852,6 +5005,8 @@ def admin_user_preview(
                         continue
                     if int(row.get("reported_user_id") or 0) == int(user_id):
                         reports_total += 1
+                        if ticket and str(row.get("ticket") or "") == str(ticket):
+                            selected_report = row
                         if str(row.get("status") or "new") not in {"resolved", "rejected", "archived"}:
                             reports_open += 1
 
@@ -4862,6 +5017,7 @@ def admin_user_preview(
             "status": user.status,
             "reports_total": reports_total,
             "reports_open": reports_open,
+            "selected_report": selected_report,
             "nick": getattr(profile, "nick", None) if profile else None,
             "city": getattr(profile, "city", None) if profile else None,
             "bio": getattr(profile, "bio", None) if profile else None,
@@ -4877,6 +5033,7 @@ def admin_user_preview(
 @app.get("/admin/events/{event_id}/preview")
 def admin_event_preview(
     event_id: int,
+    ticket: str | None = None,
     current_user: User = Depends(require_role("admin")),
 ):
     db = SessionLocal()
@@ -4888,9 +5045,17 @@ def admin_event_preview(
         signups_count = db.query(EventSignup).filter(EventSignup.event_id == event.id).count()
         saves_count = db.query(EventSave).filter(EventSave.event_id == event.id).count()
 
+        partner_profile = (
+            db.query(PartnerProfile)
+            .filter(PartnerProfile.user_id == event.partner_user_id)
+            .first()
+        )
+        organizer_user = db.query(User).filter(User.id == event.partner_user_id).first()
+
         reports_file = Path(__file__).resolve().parent / "data" / "event_reports.jsonl"
         reports_total = 0
         reports_open = 0
+        selected_report = None
         if reports_file.exists():
             with reports_file.open("r", encoding="utf-8") as fh:
                 for line in fh:
@@ -4900,14 +5065,20 @@ def admin_event_preview(
                         continue
                     if int(row.get("event_id") or 0) == int(event_id):
                         reports_total += 1
+                        if ticket and str(row.get("ticket") or "") == str(ticket):
+                            selected_report = row
                         if str(row.get("status") or "new") not in {"resolved", "rejected", "archived"}:
                             reports_open += 1
 
         return ok({
             "id": event.id,
             "partner_user_id": event.partner_user_id,
+            "organizer_name": getattr(partner_profile, "nazwa", None),
+            "organizer_logo_url": getattr(partner_profile, "logo_url", None),
+            "organizer_email": getattr(organizer_user, "email", None),
             "reports_total": reports_total,
             "reports_open": reports_open,
+            "selected_report": selected_report,
             "title": event.title,
             "description": event.description,
             "city": event.city,
@@ -4922,6 +5093,111 @@ def admin_event_preview(
             "created_at": str(event.created_at) if event.created_at else None,
             "updated_at": str(event.updated_at) if event.updated_at else None,
             "event_cover_url": getattr(event, "event_cover_url", None),
+        })
+    finally:
+        db.close()
+
+
+@app.get("/admin/bug-reports/{ticket}/reporter-context")
+def admin_bug_reporter_context(
+    ticket: str,
+    current_user: User = Depends(require_role("admin")),
+):
+    import json
+
+    db = SessionLocal()
+    try:
+        reports_file = Path(__file__).resolve().parent / "data" / "bug_reports.jsonl"
+
+        if not reports_file.exists():
+            raise HTTPException(status_code=404, detail="BUG_REPORTS_NOT_FOUND")
+
+        report = None
+
+        with reports_file.open("r", encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    row = json.loads(line)
+                except Exception:
+                    continue
+
+                if str(row.get("ticket")) == str(ticket):
+                    report = row
+                    break
+
+        if not report:
+            raise HTTPException(status_code=404, detail="BUG_REPORT_NOT_FOUND")
+
+        user_id = int(report.get("user_id") or 0)
+
+        user_row = (
+            db.query(User, UserProfile)
+            .outerjoin(UserProfile, UserProfile.user_id == User.id)
+            .filter(User.id == user_id)
+            .first()
+        )
+
+        if not user_row:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        user, profile = user_row
+
+        interests = []
+        if profile and profile.zainteresowania_json:
+            try:
+                interests = json.loads(profile.zainteresowania_json) or []
+            except Exception:
+                interests = []
+
+        audit_logs = (
+            db.query(AuditLog)
+            .filter(AuditLog.user_id == user.id)
+            .order_by(AuditLog.created_at.desc())
+            .limit(20)
+            .all()
+        )
+
+        previous_bug_reports = []
+
+        with reports_file.open("r", encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    row = json.loads(line)
+                except Exception:
+                    continue
+
+                if int(row.get("user_id") or 0) == int(user.id):
+                    previous_bug_reports.append(row)
+
+        return ok({
+            "report": report,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "status": user.status,
+                "created_at": str(user.created_at) if user.created_at else None,
+            },
+            "profile": {
+                "nick": getattr(profile, "nick", None) if profile else None,
+                "city": getattr(profile, "city", None) if profile else None,
+                "bio": getattr(profile, "bio", None) if profile else None,
+                "avatar_url": getattr(profile, "avatar_url", None) if profile else None,
+                "location_lat": getattr(profile, "location_lat", None) if profile else None,
+                "location_lng": getattr(profile, "location_lng", None) if profile else None,
+                "interests": interests,
+                "updated_at": str(profile.updated_at) if profile and profile.updated_at else None,
+            },
+            "audit_logs": [
+                {
+                    "action": log.action,
+                    "details": log.details,
+                    "created_at": str(log.created_at) if log.created_at else None,
+                    "ip": log.ip,
+                }
+                for log in audit_logs
+            ],
+            "previous_bug_reports": previous_bug_reports[::-1][:10],
         })
     finally:
         db.close()
@@ -4946,6 +5222,112 @@ def get_admin_user_reports(current_user: User = Depends(require_role("admin"))):
                 pass
 
     return {"success": True, "count": len(items), "data": items[::-1]}
+
+
+@app.post("/admin/events/{event_id}/notify-watchers")
+def admin_notify_event_watchers(
+    event_id: int,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    import json
+
+    payload = payload or {}
+    ticket = str(payload.get("ticket") or "").strip()
+    notification_type = str(payload.get("type") or "admin_event_under_review").strip()
+
+    allowed_types = {
+        "admin_event_under_review",
+        "admin_event_archived",
+        "admin_event_safety_notice",
+    }
+    if notification_type not in allowed_types:
+        raise HTTPException(status_code=422, detail="INVALID_NOTIFICATION_TYPE")
+
+    db = SessionLocal()
+    try:
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        signup_user_ids = {
+            user_id
+            for (user_id,) in (
+                db.query(EventSignup.user_id)
+                .filter(EventSignup.event_id == event.id)
+                .all()
+            )
+        }
+        saved_user_ids = {
+            user_id
+            for (user_id,) in (
+                db.query(EventSave.user_id)
+                .filter(EventSave.event_id == event.id)
+                .all()
+            )
+        }
+        target_user_ids = signup_user_ids | saved_user_ids
+
+        for target_user_id in target_user_ids:
+            db.add(
+                UserNotification(
+                    user_id=target_user_id,
+                    event_id=event.id,
+                    partner_user_id=event.partner_user_id,
+                    type=notification_type,
+                )
+            )
+
+        reports_file = Path(__file__).resolve().parent / "data" / "event_reports.jsonl"
+        updated_report = None
+
+        if ticket and reports_file.exists():
+            rows = []
+            with reports_file.open("r", encoding="utf-8") as fh:
+                for line in fh:
+                    if not line.strip():
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except Exception:
+                        continue
+
+                    if str(row.get("ticket") or "") == ticket:
+                        now = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M")
+                        history = row.get("history")
+                        if not isinstance(history, list):
+                            history = []
+
+                        history.append({
+                            "type": "notify_watchers",
+                            "at": now,
+                            "admin_id": current_user.id,
+                            "notification_type": notification_type,
+                            "notified_count": len(target_user_ids),
+                        })
+
+                        row["history"] = history
+                        row["updated_at"] = now
+                        row["updated_by_admin_id"] = current_user.id
+                        updated_report = row
+
+                    rows.append(row)
+
+            with reports_file.open("w", encoding="utf-8") as fh:
+                for row in rows:
+                    fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+        db.commit()
+
+        return ok({
+            "event_id": event.id,
+            "ticket": ticket,
+            "notification_type": notification_type,
+            "notified_count": len(target_user_ids),
+            "report": updated_report,
+        })
+    finally:
+        db.close()
 
 
 @app.get("/admin/event-reports")
