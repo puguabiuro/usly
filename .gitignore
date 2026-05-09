@@ -32,3 +32,9 @@ backend/alembic/versions/__pycache__/
 
 # Logs
 *.log
+
+# Local backups
+backups/
+*.zip
+*.icloud
+*.bak
