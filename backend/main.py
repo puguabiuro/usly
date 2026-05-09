@@ -4719,6 +4719,25 @@ def _admin_reports_file(report_type: str):
     return Path(__file__).resolve().parent / "data" / files[report_type]
 
 
+def _admin_create_user_notification(user_id: int, notification_type: str, event_id: int | None = None, partner_user_id: int | None = None):
+    if not user_id or not notification_type:
+        return
+
+    db = SessionLocal()
+    try:
+        db.add(
+            UserNotification(
+                user_id=user_id,
+                event_id=event_id,
+                partner_user_id=partner_user_id,
+                type=notification_type,
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
 @app.post("/admin/reports/{report_type}/{ticket}/status")
 def admin_update_report_status(
     report_type: str,
@@ -4777,6 +4796,15 @@ def admin_update_report_status(
                     "moderator_note": moderator_note,
                     "moderator_message": moderator_message,
                 })
+
+                if report_type == "user" and new_status in {"in_review", "resolved", "rejected"}:
+                    reporter_user_id = int(row.get("reporter_user_id") or 0)
+                    if reporter_user_id:
+                        _admin_create_user_notification(
+                            reporter_user_id,
+                            f"admin_user_report_{new_status}",
+                        )
+
                 row["history"] = history
                 found = row
 
@@ -4894,6 +4922,14 @@ def admin_add_report_action(
                     "action": action,
                     "label": label or action,
                 })
+
+                if report_type == "user":
+                    reported_user_id = int(row.get("reported_user_id") or 0)
+                    if reported_user_id:
+                        _admin_create_user_notification(
+                            reported_user_id,
+                            f"admin_user_warning_{action}",
+                        )
 
                 row["history"] = history
                 row["updated_at"] = now

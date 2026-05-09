@@ -4700,18 +4700,52 @@ async function renderNotifications() {
       eventNotifItems.forEach((row) => {
         const notification = row?.notification || {};
         const event = row?.event || {};
+
+        const userReportTitles = {
+          admin_user_report_in_review: "Twoje zgłoszenie jest sprawdzane",
+          admin_user_report_resolved: "Twoje zgłoszenie zostało uznane",
+          admin_user_report_rejected: "Twoje zgłoszenie zostało odrzucone",
+          admin_user_warning_warning_profile: "Ostrzeżenie dotyczące profilu",
+          admin_user_warning_warning_content: "Ostrzeżenie dotyczące treści",
+          admin_user_warning_warning_behavior: "Ostrzeżenie dotyczące zachowania",
+        };
+
+        if (userReportTitles[notification.type]) {
+          const isWarning = String(notification.type || "").startsWith("admin_user_warning_");
+          items.push({
+            title: userReportTitles[notification.type],
+            body: isWarning
+              ? "Administracja wysłała ostrzeżenie dotyczące zasad USLY. Sprawdź swój profil i aktywność w aplikacji. W razie pytań możesz skontaktować się z supportem USLY."
+              : "Administracja zaktualizowała status Twojego zgłoszenia. Dziękujemy za pomoc w dbaniu o bezpieczeństwo społeczności.",
+            targetView: "S12_NOTIFICATIONS",
+            createdAt: notification?.created_at || null,
+          });
+          return;
+        }
         const isTimeAndLocationChange = notification.type === "event_time_and_location_changed";
         const isTimeChange = notification.type === "event_time_changed";
         const isLocationChange = notification.type === "event_location_changed";
         const isLegacyUpdate = notification.type === "event_updated";
+        const isAdminUnderReview = notification.type === "admin_event_under_review";
+        const isAdminSafetyNotice = notification.type === "admin_event_safety_notice";
+        const isAdminArchived = notification.type === "admin_event_archived";
 
-        if (!isTimeAndLocationChange && !isTimeChange && !isLocationChange && !isLegacyUpdate) return;
+        if (
+          !isTimeAndLocationChange &&
+          !isTimeChange &&
+          !isLocationChange &&
+          !isLegacyUpdate &&
+          !isAdminUnderReview &&
+          !isAdminSafetyNotice &&
+          !isAdminArchived
+        ) return;
 
         const title = event?.title || "Wydarzenie";
         const place = [event?.city, event?.where].filter(Boolean).join(", ");
         const when = event?.start_at
           ? String(event.start_at).trim().replace("T", " ").slice(0, 16)
           : "";
+        const eventContext = [when, place].filter(Boolean).join(" • ");
 
         items.push({
           title: isTimeAndLocationChange
@@ -4720,10 +4754,22 @@ async function renderNotifications() {
               ? "Zmiana godziny wydarzenia"
               : isLocationChange
                 ? "Zmiana miejsca wydarzenia"
-                : "Zmiana w zapisanym wydarzeniu",
-          body: place || when
-            ? `${title} — ${[when, place].filter(Boolean).join(" • ")}`
-            : `${title} zostało zaktualizowane`,
+                : isAdminUnderReview
+                  ? "Wydarzenie jest weryfikowane przez administrację"
+                  : isAdminSafetyNotice
+                    ? "Ważna informacja o wydarzeniu"
+                    : isAdminArchived
+                      ? "Wydarzenie zostało zarchiwizowane"
+                      : "Zmiana w zapisanym wydarzeniu",
+          body: isAdminUnderReview
+            ? `${title} jest aktualnie sprawdzane przez administrację. Zachowaj ostrożność i podejmij świadomą decyzję o udziale.${eventContext ? ` ${eventContext}` : ""}`
+            : isAdminSafetyNotice
+              ? `${title}: administracja otrzymała zgłoszenie dotyczące bezpieczeństwa lub zgodności z zasadami.${eventContext ? ` ${eventContext}` : ""}`
+              : isAdminArchived
+                ? `${title} zostało zarchiwizowane przez administrację.${eventContext ? ` ${eventContext}` : ""}`
+                : place || when
+                  ? `${title} — ${eventContext}`
+                  : `${title} zostało zaktualizowane`,
           targetView: "S7_EVENTS",
           createdAt: notification?.created_at || null,
         });
