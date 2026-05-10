@@ -4162,3 +4162,75 @@ button[id^="notifBtn"]:active{
   font-size:18px;
   font-weight:950;
 }
+
+
+.partnerEventRow{
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr) 34px;
+  gap:14px;
+  align-items:center;
+  padding:14px 0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  cursor:pointer;
+}
+
+.partnerEventRow:last-child{
+  border-bottom:0;
+}
+
+.partnerEventIcon{
+  width:64px;
+  height:64px;
+  border-radius:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,.30), transparent 30%),
+    linear-gradient(135deg, rgba(244,63,211,.72), rgba(66,213,255,.58));
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:
+    0 16px 34px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.18);
+  filter:saturate(1.12);
+  text-shadow:0 8px 18px rgba(0,0,0,.26);
+}
+
+.partnerEventContent{
+  min-width:0;
+}
+
+.partnerEventTitle{
+  font-size:17px;
+  line-height:1.15;
+  font-weight:1000;
+  color:#fff;
+  margin-bottom:8px;
+}
+
+.partnerEventMeta{
+  font-size:13px;
+  line-height:1.25;
+  font-weight:850;
+  color:rgba(247,251,255,.68);
+  overflow-wrap:anywhere;
+}
+
+.partnerEventMeta + .partnerEventMeta{
+  margin-top:5px;
+}
+
+.partnerEventArrow{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  line-height:1;
+  color:#f0a8ff;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+}

@@ -2689,13 +2689,18 @@ section#S11_PLANS .card[data-plan].is-current{
                     <div id="personMatchScore" class="personMatchScore">—</div>
 
                     <div class="personProfilePanel">
-                      <div class="sectionTitle">Zainteresowania</div>
+                      <div class="sectionTitle" id="personInterestsTitle">Zainteresowania</div>
                       <div class="chips" id="personInterests"></div>
                     </div>
 
                     <div class="personProfilePanel">
-                      <div class="sectionTitle">O mnie</div>
+                      <div class="sectionTitle" id="personBioTitle">O mnie</div>
                       <div class="sectionSub" id="personBio">Ta osoba nie dodała jeszcze bio.</div>
+                    </div>
+
+                    <div class="personProfilePanel" id="partnerEventsPanel" hidden>
+                      <div class="sectionTitle">Wydarzenia organizatora</div>
+                      <div id="partnerEventsList" class="mt12"></div>
                     </div>
                   </div>
 

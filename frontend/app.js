@@ -1846,6 +1846,22 @@ function resolvePersonById(userId) {
 
 
 /* ------------------------- Person Profile -------------------------- */
+
+function getEventTagIcon(tag = "") {
+  const t = normalizeTag(tag).toLowerCase();
+
+  if (["joga", "fitness", "sport", "bieganie", "medytacja"].includes(t)) return "🧘";
+  if (["muzyka", "koncerty", "koncert", "taniec"].includes(t)) return "🎵";
+  if (["kawa", "restauracje", "jedzenie", "gastro"].includes(t)) return "☕";
+  if (["kino", "film", "teatr", "sztuka"].includes(t)) return "🎭";
+  if (["książki", "czytanie", "literatura"].includes(t)) return "📚";
+  if (["planszówki", "gry", "gaming", "rpg"].includes(t)) return "🎲";
+  if (["podróże", "spacer", "natura"].includes(t)) return "📍";
+  if (["technologia", "programowanie", "biznes"].includes(t)) return "💡";
+
+  return "🎟️";
+}
+
 function openPerson(personId) {
   const p = resolvePersonById(personId);
   if (!p) return;
@@ -1865,7 +1881,16 @@ function openPerson(personId) {
   const avatar = $("personAvatar");
 
   if (isPartnerProfile) {
-    if (friendBtn) friendBtn.style.display = "none";
+    if (friendBtn) {
+      friendBtn.style.display = "none";
+      friendBtn.disabled = true;
+    }
+
+    const actionsWrap = document.querySelector("#S5_PERSON_PROFILE .personProfileActions");
+    if (actionsWrap) {
+      actionsWrap.classList.add("isSingle");
+    }
+
     if (chatBtn) {
       chatBtn.disabled = false;
       chatBtn.style.opacity = "";
@@ -1874,14 +1899,53 @@ function openPerson(personId) {
       chatBtn.textContent = "Napisz";
     }
 
+    const organizerId = String(p.id || personId);
     const displayName = p.company || p.nick || "Organizator";
+    safeSetText("personInterestsTitle", "Kategoria");
     safeSetText("personTitle", displayName);
     safeSetText("personNick", displayName);
     safeSetText("personMeta", p.city || "Organizator");
     const matchEl = $("personMatchScore");
     if (matchEl) matchEl.style.display = "none";
     safeSetText("personMatchScore", "");
-    safeSetText("personBio", p.bio || "To miejsce nie dodało jeszcze opisu.");
+    safeSetText("personBioTitle", "O organizatorze");
+    safeSetText("personBio", p.bio || "Ten organizator nie dodał jeszcze opisu.");
+
+    const partnerEventsPanel = $("partnerEventsPanel");
+    const partnerEventsList = $("partnerEventsList");
+
+    if (partnerEventsPanel && partnerEventsList) {
+      const partnerEvents = (App.events || []).filter(ev => String(ev.organizer?.id || "") === organizerId);
+      partnerEventsPanel.hidden = false;
+      partnerEventsList.innerHTML = partnerEvents.length
+        ? partnerEvents.slice(0, 4).map(ev => `
+            <div
+              class="partnerEventRow"
+              onclick="openEvent('${String(ev.id)}')"
+            >
+              <div class="partnerEventIcon">
+                ${getEventTagIcon(ev.interest)}
+              </div>
+
+              <div class="partnerEventContent">
+                <div class="partnerEventTitle">
+                  ${escapeHtml(ev.title || "Wydarzenie")}
+                </div>
+
+                <div class="partnerEventMeta">
+                  📍 ${escapeHtml([ev.city, ev.where].filter(Boolean).join(" • "))}
+                </div>
+
+                <div class="partnerEventMeta">
+                  📅 ${escapeHtml(ev.when || "Termin wkrótce")}
+                </div>
+              </div>
+
+              <div class="partnerEventArrow">›</div>
+            </div>
+          `).join("")
+        : '<div class="sectionSub">Ten organizator nie ma jeszcze widocznych wydarzeń.</div>';
+    }
 
     if (avatar) {
       const rawSrc = p.logoUrl || p.avatarUrl || "";
@@ -1901,6 +1965,11 @@ function openPerson(personId) {
     go("S5_PERSON_PROFILE");
     return;
   }
+
+  safeSetText("personInterestsTitle", "Zainteresowania");
+  safeSetText("personBioTitle", "O mnie");
+  const partnerEventsPanelDefault = $("partnerEventsPanel");
+  if (partnerEventsPanelDefault) partnerEventsPanelDefault.hidden = true;
 
   if (App.role === "partner") {
     if (friendBtn) friendBtn.style.display = "none";
@@ -7663,11 +7732,14 @@ function renderNearbyMapMarkers() {
   const baseLat = App.user?.geo?.lat ? Number(App.user.geo.lat) : 52.2297;
   const baseLng = App.user?.geo?.lng ? Number(App.user.geo.lng) : 21.0122;
 
-  const eventIcon = L.divIcon({
+  const buildEventIcon = (ev) => L.divIcon({
     className: "nearby-event-marker",
-    html: `<div style="width:28px;height:28px;border-radius:999px;background:linear-gradient(135deg,#34e6ff,#00c48c);border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 22px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#052b2f;font-size:11px;font-weight:900;letter-spacing:-0.04em;">EV</div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    html: `<div style="position:relative;width:48px;height:56px;display:flex;align-items:flex-start;justify-content:center;">
+      <div style="width:40px;height:40px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;background:radial-gradient(circle at 28% 22%, rgba(255,255,255,.32), transparent 30%),linear-gradient(135deg,rgba(244,63,211,.85),rgba(66,213,255,.72));border:3px solid rgba(255,196,87,.96);box-shadow:0 12px 28px rgba(0,0,0,.34),0 0 0 4px rgba(255,196,87,.18);text-shadow:0 8px 18px rgba(0,0,0,.25);">${getEventTagIcon(ev?.interest || "")}</div>
+      <div style="position:absolute;left:19px;top:36px;width:10px;height:10px;background:#fff;transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,.18);"></div>
+    </div>`,
+    iconSize: [48, 56],
+    iconAnchor: [24, 48],
   });
 
   const seenCoords = {};
@@ -7692,7 +7764,7 @@ function renderNearbyMapMarkers() {
     const dynamicIcon = L.divIcon({
       className: "nearby-person-marker",
       html: `<div style="position:relative;width:48px;height:56px;display:flex;align-items:flex-start;justify-content:center;">
-        <div style="width:40px;height:40px;border-radius:999px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:900;background:${personBg};border:3px solid rgba(255,255,255,.96);box-shadow:0 12px 28px rgba(0,0,0,.34);">${personAvatarSrc ? `<img src="${personAvatarSrc}" alt="${escapeHtml(person.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;" />` : personInitial}</div>
+        <div style="width:40px;height:40px;border-radius:999px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:900;background:${personBg};border:3px solid rgba(110,231,255,.96);box-shadow:0 12px 28px rgba(0,0,0,.34),0 0 0 4px rgba(110,231,255,.16);">${personAvatarSrc ? `<img src="${personAvatarSrc}" alt="${escapeHtml(person.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;" />` : personInitial}</div>
         <div style="position:absolute;left:19px;top:36px;width:10px;height:10px;background:#fff;transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,.18);"></div>
       </div>`,
       iconSize: [48, 56],
@@ -7703,6 +7775,24 @@ function renderNearbyMapMarkers() {
       .addTo(nearbyMap);
 
     marker.on("click", () => openMapMarker("person", index));
+    nearbyMarkers.push(marker);
+  });
+
+  (App.events || []).forEach((ev, index) => {
+    const lat = Number(ev.location_lat);
+    const lng = Number(ev.location_lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+    const sameCoordIndex = seenCoords[coordKey] || 0;
+    seenCoords[coordKey] = sameCoordIndex + 1;
+    const markerLat = lat + sameCoordIndex * 0.00012;
+    const markerLng = lng + sameCoordIndex * 0.00012;
+
+    const marker = L.marker([markerLat, markerLng], { icon: buildEventIcon(ev) })
+      .addTo(nearbyMap);
+
+    marker.on("click", () => openMapMarker("event", index));
     nearbyMarkers.push(marker);
   });
 
