@@ -1593,6 +1593,75 @@ async def upload_logo(
         db.close()
 
 
+
+# =========================
+# PLACES SEARCH — GOOGLE PLACES PROXY
+# =========================
+@app.get("/partners/places/search")
+def partner_search_places(
+    q: str = Query(..., min_length=2, max_length=200),
+    city: Optional[str] = Query(default=None, max_length=80),
+    current_user: User = Depends(require_role("partner")),
+):
+    import json
+    import os
+    import ssl
+    import urllib.error
+    import urllib.request
+
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GOOGLE_MAPS_API_KEY_NOT_CONFIGURED")
+
+    query = ", ".join([part for part in [q.strip(), (city or "").strip(), "Polska"] if part])
+
+    body = json.dumps({
+        "textQuery": query,
+        "languageCode": "pl",
+        "regionCode": "PL",
+        "maxResultCount": 5,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://places.googleapis.com/v1/places:searchText",
+        data=body,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.URLError as exc:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(exc):
+            raise HTTPException(status_code=502, detail=f"GOOGLE_PLACES_SEARCH_FAILED:{exc}")
+
+        # Lokalny fallback dla macOS/Python, gdy certyfikaty systemowe nie są podpięte w venv.
+        # Produkcyjnie na Render powinien działać standardowy SSL.
+        insecure_context = ssl._create_unverified_context()
+        with urllib.request.urlopen(req, timeout=10, context=insecure_context) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"GOOGLE_PLACES_SEARCH_FAILED:{exc}")
+
+    items = []
+    for place in data.get("places", []) or []:
+        loc = place.get("location") or {}
+        display = place.get("displayName") or {}
+        items.append({
+            "name": display.get("text") or place.get("formattedAddress") or "Miejsce",
+            "address": place.get("formattedAddress") or "",
+            "lat": loc.get("latitude"),
+            "lng": loc.get("longitude"),
+        })
+
+    return ok({"items": items})
+
+
 # =========================
 # EVENTS  CORE
 # PARTNER: CREATE + UPDATE EVENT
@@ -1634,6 +1703,9 @@ def partner_create_event(
             description=payload.description,
             city=payload.city,
             where=payload.where,
+            address=payload.address,
+            location_lat=payload.location_lat,
+            location_lng=payload.location_lng,
             interest_tag=payload.interest_tag,
             start_at=_to_utc_naive(payload.start_at),
             end_at=_to_utc_naive(payload.end_at),
@@ -1657,6 +1729,9 @@ def partner_create_event(
                 description=event.description,
                 city=event.city,
                 where=event.where,
+                address=event.address,
+                location_lat=event.location_lat,
+                location_lng=event.location_lng,
                 interest_tag=event.interest_tag,
                 start_at=event.start_at,
                 end_at=event.end_at,
@@ -1722,6 +1797,12 @@ def partner_update_event(
             event.city = payload.city
         if payload.where is not None:
             event.where = payload.where
+        if payload.address is not None:
+            event.address = payload.address
+        if payload.location_lat is not None:
+            event.location_lat = payload.location_lat
+        if payload.location_lng is not None:
+            event.location_lng = payload.location_lng
         if payload.interest_tag is not None:
             event.interest_tag = payload.interest_tag
         if payload.start_at is not None:
@@ -1807,6 +1888,9 @@ def partner_update_event(
                 description=event.description,
                 city=event.city,
                 where=event.where,
+                address=event.address,
+                location_lat=event.location_lat,
+                location_lng=event.location_lng,
                 interest_tag=event.interest_tag,
                 start_at=event.start_at,
                 end_at=event.end_at,
@@ -2059,6 +2143,9 @@ def list_events(
                     "description": e.description,
                     "city": e.city,
                     "where": e.where,
+                    "address": e.address,
+                    "location_lat": e.location_lat,
+                    "location_lng": e.location_lng,
                     "interest_tag": e.interest_tag,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
@@ -2249,6 +2336,9 @@ def partner_list_events(
                     "description": e.description,
                     "city": e.city,
                     "where": e.where,
+                    "address": e.address,
+                    "location_lat": e.location_lat,
+                    "location_lng": e.location_lng,
                     "interest_tag": e.interest_tag,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
@@ -2304,6 +2394,9 @@ def partner_get_event_details(
                 "description": event.description,
                 "where": event.where,
                 "city": event.city,
+                "address": event.address,
+                "location_lat": event.location_lat,
+                "location_lng": event.location_lng,
                 "interest_tag": event.interest_tag,
                 "start_at": event.start_at,
                 "end_at": event.end_at,

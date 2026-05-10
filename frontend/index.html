@@ -2847,9 +2847,9 @@ section#S11_PLANS .card[data-plan].is-current{
 
               <div class="eventSocialSection eventPlacePanel">
                 <div class="eventPanelLabel">Miejsce</div>
-                <div class="eventPlacePreview">
-                  <div class="eventPlacePin">⌖</div>
-                  <div>
+                <div class="eventPlaceMapCard">
+                  <div id="evPlaceMiniMap" class="eventPlaceMapThumb" hidden></div>
+                  <div class="eventPlaceMapText">
                     <div class="tStrong" id="evPlaceTitle">—</div>
                     <div class="sectionSub" id="evPlaceMeta">Mapa lokalizacji będzie tutaj.</div>
                   </div>
@@ -3115,13 +3115,31 @@ section#S11_PLANS .card[data-plan].is-current{
               <label class="mt12">Kiedy *</label>
               <input id="peWhen" type="datetime-local" />
   
-              <label class="mt12">Gdzie *</label>
-              <input id="peWhere" type="text" placeholder="np. Centrum" />
+              <label class="mt12">Gdzie odbywa się wydarzenie? *</label>
+              <input id="peAddress" type="text" placeholder="np. Padma Joga Kobyłka albo ul. Nadmeńska 5C" />
+
+              <input id="peWhere" type="hidden" />
+              <input id="peResolvedAddress" type="hidden" />
+
+              <div class="row mt10" style="gap:10px;align-items:center;flex-wrap:wrap;">
+                <button class="btn secondary small" id="peFindPlaceBtn" type="button">Znajdź miejsce na mapie</button>
+                <span class="hintText" id="peSelectedPlaceHint" hidden></span>
+              </div>
+
+              <div id="pePlaceResults" class="mt10"></div>
+
+              <input id="peLocationLat" type="hidden" />
+              <input id="peLocationLng" type="hidden" />
   
               <label class="mt12">Zainteresowanie / hashtag *</label>
-              <div class="hashRow">
+              <div class="hashRow" id="peInterestInputWrap">
                 <span class="hashPrefix">#</span>
                 <input id="peInterest" type="text" placeholder="np. muzyka" list="interestsDatalist" />
+              </div>
+
+              <div id="peInterestSelected" class="eventSelectedTag" hidden>
+                <span id="peInterestSelectedText"></span>
+                <button type="button" id="peInterestRemoveBtn" aria-label="Usuń hashtag">×</button>
               </div>
   
               <label class="mt12">Opis</label>

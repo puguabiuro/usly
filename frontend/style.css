@@ -3916,7 +3916,7 @@ button[id^="notifBtn"]:active{
 }
 
 .adminDashboardSection{
-  border-radius:24px;
+  border-radius:18px;
   padding:18px;
   background:
     linear-gradient(180deg, rgba(16,20,34,.94), rgba(10,12,24,.96));
@@ -3951,3 +3951,214 @@ button[id^="notifBtn"]:active{
   font-weight:900;
 }
 
+
+
+.eventPlacePreviewMap{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.eventPlaceContent{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+}
+
+.eventPlaceContent .tStrong{
+  line-height:1.15;
+  margin-bottom:6px;
+  word-break:break-word;
+}
+
+.eventPlaceContent .sectionSub{
+  line-height:1.25;
+  word-break:break-word;
+}
+
+.eventMiniMap{
+  flex:0 0 76px;
+  width:76px;
+  min-width:76px;
+  height:76px;
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+
+.eventMiniMap .leaflet-control-container{
+  display:none;
+}
+
+.eventMiniMap .leaflet-marker-icon{
+  margin-top:-38px !important;
+}
+
+
+.eventPlacePreview.eventPlacePreviewMap{
+  display:grid !important;
+  grid-template-columns:82px minmax(0, 1fr) !important;
+  align-items:center !important;
+  column-gap:18px !important;
+}
+
+.eventPlacePreview.eventPlacePreviewMap .eventMiniMap{
+  grid-column:1 !important;
+  grid-row:1 !important;
+  width:82px !important;
+  min-width:82px !important;
+  height:82px !important;
+  border-radius:18px !important;
+  margin:0 !important;
+  position:relative !important;
+  z-index:1 !important;
+}
+
+.eventPlacePreview.eventPlacePreviewMap .eventPlaceContent{
+  grid-column:2 !important;
+  grid-row:1 !important;
+  min-width:0 !important;
+  overflow:visible !important;
+  position:relative !important;
+  z-index:2 !important;
+}
+
+.eventPlacePreview.eventPlacePreviewMap .eventPlaceContent .tStrong,
+.eventPlacePreview.eventPlacePreviewMap .eventPlaceContent .sectionSub{
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+}
+
+
+.eventPlaceMapCard{
+  display:grid;
+  grid-template-columns:82px minmax(0, 1fr);
+  gap:18px;
+  align-items:center;
+  padding:14px;
+  border-radius:22px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.10);
+}
+
+.eventPlaceMapThumb{
+  width:82px;
+  height:82px;
+  min-width:82px;
+  border-radius:18px;
+  overflow:hidden;
+  background:rgba(255,255,255,.06);
+  box-shadow:0 10px 26px rgba(0,0,0,.24);
+}
+
+.eventPlaceMapThumb .leaflet-control-container{
+  display:none;
+}
+
+.eventPlaceMapText{
+  min-width:0;
+}
+
+.eventPlaceMapText .tStrong{
+  line-height:1.15;
+  margin-bottom:6px;
+  overflow-wrap:anywhere;
+}
+
+.eventPlaceMapText .sectionSub{
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+
+
+#S7B_EVENT_DETAIL .eventSocialHeader{
+  padding:18px 16px 20px;
+  border-radius:24px;
+  background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.035));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 18px 44px rgba(0,0,0,.18);
+}
+
+#S7B_EVENT_DETAIL .eventSocialKicker{
+  color:#6ee7ff !important;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:11px;
+  font-weight:1000;
+  margin-bottom:10px;
+}
+
+#S7B_EVENT_DETAIL #evTitle{
+  color:#fff !important;
+  text-shadow:0 8px 26px rgba(0,0,0,.26);
+}
+
+#S7B_EVENT_DETAIL #evMeta{
+  color:rgba(247,251,255,.88) !important;
+  font-weight:850 !important;
+}
+
+#S7B_EVENT_DETAIL .eventDetailChips{
+  margin-top:16px !important;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid .btn{
+  min-height:58px;
+  border-radius:26px;
+  font-size:16px;
+  font-weight:1000;
+  box-shadow:0 16px 36px rgba(0,0,0,.22);
+  transform:translateZ(0);
+  transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid .btn:first-child{
+  background:linear-gradient(135deg,#f044d4 0%,#65d9ff 100%) !important;
+  color:#0b1020 !important;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid .btn.secondary{
+  background:linear-gradient(135deg,rgba(139,92,246,.92),rgba(72,34,130,.92)) !important;
+  border:1px solid rgba(255,255,255,.15) !important;
+  color:#fff !important;
+}
+
+#S7B_EVENT_DETAIL .eventActionsGrid .btn:active{
+  transform:scale(.975);
+  filter:brightness(1.08);
+}
+
+
+#S7B_EVENT_DETAIL #evMeta{
+  white-space:pre-line !important;
+}
+
+
+.eventSelectedTag{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.14);
+  font-weight:950;
+}
+
+.eventSelectedTag[hidden]{
+  display:none !important;
+}
+
+.eventSelectedTag button{
+  width:26px;
+  height:26px;
+  border:0;
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font-size:18px;
+  font-weight:950;
+}

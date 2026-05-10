@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, date
 from enum import StrEnum
 
-from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint, Boolean
+from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint, Boolean, Float
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.database import Base
@@ -362,6 +362,24 @@ class Event(Base):
         String(120),
         nullable=False,
         default="",
+    )
+
+    address: Mapped[str | None] = mapped_column(
+        String(240),
+        nullable=True,
+        default=None,
+    )
+
+    location_lat: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        default=None,
+    )
+
+    location_lng: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        default=None,
     )
 
     interest_tag: Mapped[str] = mapped_column(

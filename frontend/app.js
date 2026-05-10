@@ -2909,9 +2909,24 @@ function openEvent(eventId) {
 
   safeSetText("eventTitleTop", ev.title);
   safeSetText("evTitle", ev.title);
-  safeSetText("evMeta", `${ev.city} • ${ev.where} • ${ev.when}`);
-  safeSetText("evPlaceTitle", ev.where || "Miejsce wydarzenia");
-  safeSetText("evPlaceMeta", ev.city ? `${ev.city} • mapa lokalizacji w przygotowaniu` : "Mapa lokalizacji w przygotowaniu");
+  const eventPlaceName = ev.where || ev.address || "Miejsce wydarzenia";
+  const eventPlaceAddress = ev.address || "";
+  const hasEventCoords = ev.location_lat != null && ev.location_lng != null;
+
+  safeSetText(
+    "evMeta",
+    [
+      [ev.city, eventPlaceName].filter(Boolean).join(" • "),
+      ev.when || ""
+    ].filter(Boolean).join("\n")
+  );
+  safeSetText("evPlaceTitle", eventPlaceName);
+  safeSetText(
+    "evPlaceMeta",
+    eventPlaceAddress
+      ? eventPlaceAddress
+      : (hasEventCoords ? "Lokalizacja wydarzenia zapisana na mapie" : "Dokładna lokalizacja nie została jeszcze wybrana")
+  );
 
   const chips = $("evInterestChips");
   if (chips) {
@@ -2928,6 +2943,52 @@ function openEvent(eventId) {
   ].filter(Boolean).join(" • ") || "Organizator wydarzenia";
 
   safeSetText("evOrganizerName", organizerName);
+  const miniMapEl = $("evPlaceMiniMap");
+
+  if (miniMapEl) {
+    if (window.evPlaceMiniMapInstance) {
+      window.evPlaceMiniMapInstance.remove();
+      window.evPlaceMiniMapInstance = null;
+    }
+
+    const lat = Number(ev.location_lat);
+    const lng = Number(ev.location_lng);
+
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      miniMapEl.hidden = false;
+
+      setTimeout(() => {
+        try {
+          const map = L.map(miniMapEl, {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            boxZoom: false,
+            keyboard: false,
+            tap: false,
+            touchZoom: false,
+          }).setView([lat, lng], 15);
+
+          window.evPlaceMiniMapInstance = map;
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+          }).addTo(map);
+
+          L.marker([lat, lng]).addTo(map);
+
+          setTimeout(() => map.invalidateSize(), 120);
+        } catch (e) {
+          console.error("event mini map render error", e);
+        }
+      }, 50);
+    } else {
+      miniMapEl.hidden = true;
+    }
+  }
+
   safeSetText("evOrganizerMeta", organizerMeta);
 
   const organizerLogo = $("evOrganizerLogo");
@@ -4221,6 +4282,180 @@ function openPartnerEventParticipantsView(eventId) {
 }
 
 
+
+
+async function searchPartnerEventPlace() {
+  const address = $("peAddress")?.value?.trim() || "";
+  const city = $("peCity")?.value?.trim() || "";
+  const query = [address, city].filter(Boolean).join(", ");
+
+  if (!query) {
+    toast("Wpisz nazwę miejsca lub adres");
+    return;
+  }
+
+  const btn = $("peFindPlaceBtn");
+  if (btn) btn.disabled = true;
+
+  try {
+    const data = await apiFetch(`/partners/places/search?q=${encodeURIComponent(address)}&city=${encodeURIComponent(city)}`);
+    const results = Array.isArray(data?.data?.items)
+      ? data.data.items.filter(item => item.lat != null && item.lng != null)
+      : [];
+
+    if (!results.length) {
+      renderPartnerPlaceResults([]);
+      toast("Nie znaleziono miejsca. Doprecyzuj adres lub nazwę.");
+      return;
+    }
+
+    renderPartnerPlaceResults(results);
+  } catch (e) {
+    console.error("searchPartnerEventPlace error", e);
+    toast("Nie udało się wyszukać miejsca.");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+
+function renderPartnerPlaceResults(results = []) {
+  const box = $("pePlaceResults");
+  if (!box) return;
+
+  if (!results.length) {
+    box.innerHTML = "";
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="card" style="padding:10px;display:flex;flex-direction:column;gap:10px;">
+      ${results.map((place, idx) => `
+        <button
+          type="button"
+          class="btn secondary"
+          data-place-index="${idx}"
+          style="justify-content:flex-start;text-align:left;"
+        >
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <strong>${escapeHtml(place.name || "Miejsce")}</strong>
+            <span style="font-size:12px;opacity:.75;">
+              ${escapeHtml(place.address || "")}
+            </span>
+          </div>
+        </button>
+      `).join("")}
+    </div>
+  `;
+
+  box.querySelectorAll("[data-place-index]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const place = results[Number(btn.dataset.placeIndex)];
+      if (!place) return;
+
+      const typedPlaceName = $("peAddress")?.value?.trim() || place.name || place.address || "";
+
+      if ($("peAddress")) $("peAddress").value = place.name || typedPlaceName;
+      if ($("peWhere")) $("peWhere").value = place.name || typedPlaceName;
+      if ($("peResolvedAddress")) $("peResolvedAddress").value = place.address || "";
+      if ($("peLocationLat")) $("peLocationLat").value = place.lat || "";
+      if ($("peLocationLng")) $("peLocationLng").value = place.lng || "";
+
+      const hint = $("peSelectedPlaceHint");
+      if (hint) {
+        hint.hidden = false;
+        hint.innerHTML = `
+          <span style="display:block;font-weight:900;">Wybrano: ${escapeHtml(place.name || place.address || "miejsce")}</span>
+          ${place.address ? `<span style="display:block;font-size:12px;opacity:.75;margin-top:4px;">${escapeHtml(place.address)}</span>` : ""}
+        `;
+      }
+
+      if (box) box.innerHTML = "";
+      toast("Miejsce wydarzenia zostało wybrane");
+    });
+  });
+}
+
+
+
+
+
+function getSingleEventTagValue() {
+  const input = $("peInterest");
+  if (!input) return "";
+
+  return String(input.value || "")
+    .replaceAll("#", " ")
+    .split(/[\s,;]+/)
+    .map(x => normalizeTag(x))
+    .find(Boolean) || "";
+}
+
+function commitSingleEventTag() {
+  const input = $("peInterest");
+  const selected = $("peInterestSelected");
+  const selectedText = $("peInterestSelectedText");
+  const wrap = $("peInterestInputWrap");
+
+  if (!input || !selected || !selectedText || !wrap) return;
+
+  const tag = getSingleEventTagValue();
+  if (!tag) return;
+
+  input.value = tag;
+  input.disabled = true;
+  wrap.style.display = "none";
+
+  selected.hidden = false;
+  selectedText.textContent = `#${tag}`;
+}
+
+function resetSingleEventTag() {
+  const input = $("peInterest");
+  const selected = $("peInterestSelected");
+  const wrap = $("peInterestInputWrap");
+
+  if (!input || !selected || !wrap) return;
+
+  input.disabled = false;
+  input.value = "";
+  wrap.style.display = "";
+
+  selected.hidden = true;
+
+  setTimeout(() => input.focus(), 50);
+}
+
+function normalizeSingleEventTagInput() {
+  const input = $("peInterest");
+  if (!input) return;
+
+  const tag = getSingleEventTagValue();
+  input.value = tag;
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.target?.id !== "peInterest") return;
+
+  if (e.key === "Enter") {
+    e.preventDefault();
+    e.stopPropagation();
+    commitSingleEventTag();
+  }
+});
+
+document.addEventListener("change", (e) => {
+  if (e.target?.id !== "peInterest") return;
+  commitSingleEventTag();
+});
+
+document.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.("#peFindPlaceBtn");
+  if (!btn) return;
+  e.preventDefault();
+  searchPartnerEventPlace();
+});
+
 function openPartnerEventEditor(eventId) {
   const ev = (App.partnerEvents || []).find(x => String(x.id) === String(eventId));
   if (!ev) return;
@@ -4242,6 +4477,10 @@ function openPartnerEventEditor(eventId) {
     }
   }
   if ($("peWhere")) $("peWhere").value = ev.where || ev.location || "";
+  if ($("peAddress")) $("peAddress").value = ev.where || ev.address || ev.location || "";
+  if ($("peResolvedAddress")) $("peResolvedAddress").value = ev.address || "";
+  if ($("peLocationLat")) $("peLocationLat").value = ev.location_lat ?? "";
+  if ($("peLocationLng")) $("peLocationLng").value = ev.location_lng ?? "";
   if ($("peInterest")) $("peInterest").value = ev.interest_tag || ev.interest || "";
   if ($("peDesc")) $("peDesc").value = ev.description || "";
 
@@ -4276,6 +4515,9 @@ async function savePartnerEventDraft() {
   const city = normalizeCity($("peCity")?.value);
   const when = $("peWhen")?.value?.trim();
   const where = $("peWhere")?.value?.trim();
+  const address = $("peResolvedAddress")?.value?.trim() || $("peAddress")?.value?.trim() || null;
+  const locationLat = $("peLocationLat")?.value ? Number($("peLocationLat")?.value) : null;
+  const locationLng = $("peLocationLng")?.value ? Number($("peLocationLng")?.value) : null;
   const interest = normalizeTag($("peInterest")?.value?.trim());
   const desc = $("peDesc")?.value?.trim();
 
@@ -4345,6 +4587,9 @@ async function savePartnerEventDraft() {
     description: desc || "",
     city,
     where,
+    address,
+    location_lat: locationLat,
+    location_lng: locationLng,
     interest_tag: interest,
     start_at: toLocalApiDateTime(when),
     end_at: addHourToLocalDateTime(when),
@@ -4434,6 +4679,9 @@ async function publishPartnerEvent() {
   const city = normalizeCity($("peCity")?.value);
   const when = $("peWhen")?.value?.trim();
   const where = $("peWhere")?.value?.trim();
+  const address = $("peResolvedAddress")?.value?.trim() || $("peAddress")?.value?.trim() || null;
+  const locationLat = $("peLocationLat")?.value ? Number($("peLocationLat")?.value) : null;
+  const locationLng = $("peLocationLng")?.value ? Number($("peLocationLng")?.value) : null;
   const interest = normalizeTag($("peInterest")?.value?.trim());
   const desc = $("peDesc")?.value?.trim();
 
@@ -4510,6 +4758,9 @@ async function publishPartnerEvent() {
     description: desc || "",
     city,
     where,
+    address,
+    location_lat: locationLat,
+    location_lng: locationLng,
     interest_tag: interest,
     start_at: toLocalApiDateTime(when),
     end_at: addHourToLocalDateTime(when),
@@ -5976,10 +6227,16 @@ function initInterestInputs() {
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === "," ) {
         e.preventDefault();
+
+        if (cfg.target === "event") {
+          commitSingleEventTag();
+          return;
+        }
+
         const val = input.value.trim();
         const cleaned = normalizeTag(val);
         if (!cleaned) return;
-        if (cfg.target === "user") addUserInterest(cleaned, cfg.chipsId);
+        addUserInterest(cleaned, cfg.chipsId);
         input.value = "";
         hideTypeahead(cfg.taId);
         renderAll();
@@ -6656,6 +6913,9 @@ function mapApiEventToViewModel(e) {
     city: e.city || "",
     when: when,
     where: e.where || e.location || "",
+    address: e.address || "",
+    location_lat: e.location_lat ?? null,
+    location_lng: e.location_lng ?? null,
     interest: normalizeTag(
       e.interest_tag ||
       e.interest ||
@@ -8167,3 +8427,11 @@ async function adminSetEventStatus(eventId, status) {
 window.adminSetEventStatus = adminSetEventStatus;
 
 window.reloadAdminReports = reloadAdminReports;
+
+
+document.addEventListener("click", (e) => {
+  const removeBtn = e.target?.closest?.("#peInterestRemoveBtn");
+  if (!removeBtn) return;
+
+  resetSingleEventTag();
+});
