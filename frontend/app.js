@@ -4934,6 +4934,55 @@ async function publishPartnerEvent() {
 }
 
 /* ------------------------- Notifications -------------------------- */
+
+let notificationsVisibleLimit = 10;
+
+function getNotificationIcon(title = "", body = "") {
+  const text = `${title} ${body}`.toLowerCase();
+
+  const icons = {
+    check: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7.5"/></svg>`,
+    eye: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 12s3.5-6 9.2-6 9.2 6 9.2 6-3.5 6-9.2 6-9.2-6-9.2-6z"/><circle cx="12" cy="12" r="2.8"/></svg>`,
+    calendar: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v4M17 3v4M4.5 9h15M6 5.5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2z"/></svg>`,
+    shield: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l7 3v5.2c0 4.4-2.8 8.3-7 9.8-4.2-1.5-7-5.4-7-9.8V6.5l7-3z"/></svg>`,
+    info: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6M12 7.5h.01"/></svg>`,
+    userPlus: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3.5 20c.8-3.3 3.2-5 6.5-5 1.7 0 3.1.4 4.2 1.2M18 8v6M15 11h6"/></svg>`,
+    users: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.8 20c.7-3.2 2.9-4.8 6.2-4.8 3.2 0 5.4 1.6 6.2 4.8M16.5 11a3 3 0 1 0 0-6M17 15.2c2.5.3 4.1 1.9 4.7 4.8"/></svg>`,
+  };
+
+  if (text.includes("zapis")) return { icon: icons.check, className: "notifIconSuccess" };
+  if (text.includes("obserw")) return { icon: icons.eye, className: "notifIconObserve" };
+  if (text.includes("grup")) return { icon: icons.users, className: "notifIconGroup" };
+  if (text.includes("znajom")) return { icon: icons.userPlus, className: "notifIconFriend" };
+
+  if (
+    text.includes("godziny") ||
+    text.includes("miejsce") ||
+    text.includes("wydarzenia")
+  ) return { icon: icons.calendar, className: "notifIconEvent" };
+
+  if (
+    text.includes("weryfik") ||
+    text.includes("bezpieczeń") ||
+    text.includes("ostrzeż")
+  ) return { icon: icons.shield, className: "notifIconWarning" };
+
+  if (
+    text.includes("zgłoszen") ||
+    text.includes("pracujemy") ||
+    text.includes("błąd")
+  ) return { icon: icons.info, className: "notifIconInfo" };
+
+  return { icon: icons.info, className: "notifIconDefault" };
+}
+
+
+
+function showMoreNotifications() {
+  notificationsVisibleLimit += 10;
+  renderNotifications();
+}
+
 async function renderNotifications() {
   const list = $("notifList");
   if (!list) return;
@@ -4987,7 +5036,7 @@ async function renderNotifications() {
           const bd = parseUslyTimestamp(b?.createdAt);
           return bd - ad;
         })
-        .slice(0, 20)
+        .slice(0, 50)
         .map((item) => ({
           title: item.type === "observer" ? "Nowe obserwowanie wydarzenia" : "Nowy zapis na wydarzenie",
           body: item.type === "observer"
@@ -5140,7 +5189,9 @@ async function renderNotifications() {
     return;
   }
 
-  list.innerHTML = items.map(n => {
+  const visibleItems = items.slice(0, notificationsVisibleLimit);
+
+  list.innerHTML = visibleItems.map(n => {
     const isNew = parseUslyTimestamp(n?.createdAt) > seenAt;
     const ts = n?.createdAt
       ? new Date(parseUslyTimestamp(n.createdAt)).toLocaleString("pl-PL", {
@@ -5151,15 +5202,32 @@ async function renderNotifications() {
         })
       : "";
     return `
-    <div class="listItem ${isNew ? 'notifNew' : ''}" style="cursor:pointer;" onclick="go('${n.targetView}')">
-      <div class="row" style="align-items:flex-start;justify-content:space-between;gap:12px;">
-        <div class="listTitle" style="flex:1;min-width:0;">${n.title}</div>
-        <div class="sectionSub" style="white-space:nowrap;flex-shrink:0;">${ts}</div>
+    <div class="notificationItem ${isNew ? 'notifNew' : ''}" onclick="go('${n.targetView}')">
+
+      <div class="notificationIcon ${getNotificationIcon(n.title, n.body).className}">
+        ${getNotificationIcon(n.title, n.body).icon}
       </div>
-      <div class="listBody">${n.body}</div>
+
+      <div class="notificationContent">
+        <div class="notificationTop">
+          <div class="notificationTitle">
+            ${isNew ? '<span class="notificationNewDot"></span>' : ''}
+            ${escapeHtml(n.title)}
+          </div>
+
+          <div class="notificationTime">${escapeHtml(ts)}</div>
+        </div>
+
+        <div class="notificationBody">${escapeHtml(n.body)}</div>
+      </div>
+
     </div>
   `;
-  }).join("");
+  }).join("") + (
+    items.length > notificationsVisibleLimit
+      ? `<button class="btn secondary mt12" type="button" onclick="showMoreNotifications()">Wczytaj więcej (${items.length - notificationsVisibleLimit})</button>`
+      : ""
+  );
 
   if (App.role === "partner") {
     localStorage.setItem("usly_partner_notifications_seen_at", new Date().toISOString());
