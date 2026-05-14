@@ -38,3 +38,4 @@ backups/
 *.zip
 *.icloud
 *.bak
+node_modules/

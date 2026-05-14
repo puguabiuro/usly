@@ -3127,6 +3127,74 @@ function openEvent(eventId) {
   syncEventDetailButtons();
 }
 
+
+function formatIcsDate(dateValue) {
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function escapeIcsText(value = "") {
+  return String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function addSelectedEventToCalendar() {
+  const ev = App.events.find(e => e.id === App.selectedEventId);
+  if (!ev) return;
+
+  if (!ev.start_at) {
+    toast("To wydarzenie nie ma jeszcze daty.");
+    return;
+  }
+
+  const start = formatIcsDate(ev.start_at);
+  const end = formatIcsDate(ev.end_at || new Date(new Date(ev.start_at).getTime() + 60 * 60 * 1000));
+
+  const location = [ev.where, ev.address, ev.city].filter(Boolean).join(", ");
+  const description = [
+    ev.desc || "",
+    "",
+    ev.organizer?.name ? `Organizator: ${ev.organizer.name}` : "",
+    "Dodano z aplikacji USLY."
+  ].filter(Boolean).join("\n");
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//USLY//Events//PL",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:usly-event-${escapeIcsText(ev.id)}@uslyapp.pl`,
+    `DTSTAMP:${formatIcsDate(new Date())}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${escapeIcsText(ev.title || "Wydarzenie USLY")}`,
+    `LOCATION:${escapeIcsText(location)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const safeName = String(ev.title || "wydarzenie-usly").toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/gi, "-").replace(/^-+|-+$/g, "") || "wydarzenie-usly";
+
+  a.href = url;
+  a.download = `${safeName}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  toast("Pobrano plik kalendarza.");
+}
+
 async function toggleSaveEvent() {
   const ev = App.events.find(e => e.id === App.selectedEventId);
   if (!ev) return;
