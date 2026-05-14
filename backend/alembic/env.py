@@ -12,17 +12,14 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from backend.models import Base  # noqa
+from backend.db.database import get_database_url  # noqa
 
 target_metadata = Base.metadata
 
 
 def _get_db_url() -> str:
-    # Prefer DATABASE_URL from environment (.env loaded by reset.sh/dev.sh)
-    url = os.getenv("DATABASE_URL")
-    if url and url.strip():
-        return url.strip()
-    # Fallback for local dev
-    return "sqlite:///./usly.db"
+    # Use the same database URL resolution as the app.
+    return get_database_url()
 
 
 def run_migrations_offline() -> None:

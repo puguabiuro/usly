@@ -34,6 +34,8 @@ import math
 import requests
 from openai import OpenAI
 
+_openai_client = OpenAI(api_key=_OPENAI_API_KEY) if _OPENAI_API_KEY else None
+
 def _reverse_geocode_city(lat: float, lng: float) -> str | None:
     try:
         url = "https://nominatim.openstreetmap.org/reverse"

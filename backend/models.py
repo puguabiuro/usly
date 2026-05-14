@@ -203,6 +203,47 @@ class UserProfile(Base):
 
 
 # =====================
+# AI USAGE LOG
+# limity kosztowych funkcji AI, np. avatarów
+# =====================
+
+class AiUsageLog(Base):
+    __tablename__ = "ai_usage_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    feature: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+    )
+
+    plan: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="free",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        Index("ix_ai_usage_user_feature_created", "user_id", "feature", "created_at"),
+    )
+
+
+
+# =====================
 # PROFILE — PARTNER
 # tabela 1:1 z users (unikalny user_id)
 # =====================
