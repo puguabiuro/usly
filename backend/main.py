@@ -19,6 +19,7 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 _SENTRY_DSN = os.getenv("SENTRY_DSN")
 _ENV = os.getenv("ENV", "local")
+_OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 if _SENTRY_DSN:
     sentry_sdk.init(
         dsn=_SENTRY_DSN,
@@ -31,6 +32,7 @@ import json
 import math
 
 import requests
+from openai import OpenAI
 
 def _reverse_geocode_city(lat: float, lng: float) -> str | None:
     try:
