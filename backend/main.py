@@ -629,7 +629,7 @@ def logout(request: Request, current_user: User = Depends(get_current_user)):
 def auth_me(current_user: User = Depends(get_current_user)):
     return {
         "id": current_user.id,
-        "email": current_user.email,
+        "email": account_email,
         "role": current_user.role,
     }
 
@@ -903,8 +903,8 @@ def delete_account(
 def protected_route(current_user: User = Depends(get_current_user)):
     return {
         "ok": True,
-        "user_id": current_user.id,
-        "email": current_user.email,
+        "user_id": user_id,
+        "email": account_email,
         "role": current_user.role,
     }
 
@@ -922,7 +922,7 @@ def admin_only(current_user: User = Depends(require_role("admin"))):
 # =========================
 @app.get("/partner-or-admin")
 def partner_or_admin(current_user: User = Depends(require_role("partner", "admin"))):
-    return {"ok": True, "msg": "Witaj partner/admin!", "user_id": current_user.id, "role": current_user.role}
+    return {"ok": True, "msg": "Witaj partner/admin!", "user_id": user_id, "role": current_user.role}
 
 
 # =========================
@@ -953,7 +953,7 @@ def users_me(current_user: User = Depends(require_role("user"))):
 
         return ok(
             {
-                "user_id": current_user.id,
+                "user_id": user_id,
                 "nick": profile.nick,
                 "miasto": profile.miasto,
                 "bio": profile.bio,
@@ -1355,7 +1355,7 @@ def users_me_patch(
 
         return ok(
             {
-                "user_id": current_user.id,
+                "user_id": user_id,
                 "nick": profile.nick,
                 "miasto": profile.miasto,
                 "bio": profile.bio,
@@ -1397,7 +1397,7 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
 
         return ok(
             {
-                "user_id": current_user.id,
+                "user_id": user_id,
                 "nazwa": profile.nazwa,
                 "miasto": profile.miasto,
                 "kategoria": profile.kategoria,
@@ -1467,7 +1467,7 @@ def partners_me_patch(
 
         return ok(
             {
-                "user_id": current_user.id,
+                "user_id": user_id,
                 "nazwa": profile.nazwa,
                 "miasto": profile.miasto,
                 "kategoria": profile.kategoria,
@@ -4593,22 +4593,116 @@ def get_terms_en():
 
 async def send_bug_email(subject: str, body: str):
     try:
+        import smtplib
+        import ssl
+
+        smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+        smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+        smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+        smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+        smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+        if not smtp_host or not smtp_user or not smtp_pass:
+            print("MAIL ERROR: missing USLY SMTP config")
+            return False
+
         msg = EmailMessage()
-        msg["From"] = os.getenv("BUG_EMAIL_FROM")
+        msg["From"] = smtp_from
         msg["To"] = "kontakt@uslyapp.pl"
         msg["Subject"] = subject
         msg.set_content(body)
 
-        await aiosmtplib.send(
-            msg,
-            hostname=os.getenv("SMTP_HOST"),
-            port=int(os.getenv("SMTP_PORT", 587)),
-            start_tls=True,
-            username=os.getenv("SMTP_USER"),
-            password=os.getenv("SMTP_PASS"),
-        )
+        context = ssl.create_default_context()
+        try:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls(context=context)
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        except ssl.SSLCertVerificationError:
+            context = ssl._create_unverified_context()
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls(context=context)
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+
+        return True
     except Exception as e:
         print("MAIL ERROR:", e)
+        return False
+
+# ENTERPRISE CONTACT LEADS
+# =========================
+@app.post("/enterprise/contact")
+async def submit_enterprise_contact(payload: dict):
+    from pathlib import Path
+    from datetime import datetime
+    import json
+
+    company = str((payload or {}).get("company") or "").strip()
+    city = str((payload or {}).get("city") or "").strip()
+    contact = str((payload or {}).get("contact") or "").strip()
+    locations = str((payload or {}).get("locations") or "").strip()
+    needs = str((payload or {}).get("needs") or "").strip()
+    extra = str((payload or {}).get("extra") or "").strip()
+
+    if not contact:
+        raise HTTPException(status_code=422, detail="enterprise_contact_required")
+
+    account_email = str((payload or {}).get("account_email") or "").strip()
+    user_id = (payload or {}).get("user_id")
+
+    now = datetime.utcnow()
+    ticket = f"ENT-{now.strftime('%Y%m%d%H%M%S')}"
+
+    lead = {
+        "ticket": ticket,
+        "created_at": now.isoformat(),
+        "user_id": user_id,
+        "email": account_email,
+        "company": company,
+        "city": city,
+        "contact": contact,
+        "locations": locations,
+        "needs": needs,
+        "extra": extra,
+    }
+
+    data_dir = Path(__file__).resolve().parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    lead_file = data_dir / "enterprise_leads.jsonl"
+    with lead_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(lead, ensure_ascii=False) + "\n")
+
+    subject = f"[USLY Enterprise] Nowe zapytanie {ticket}"
+    body = f"""Nowe zapytanie o plan Enterprise
+
+Ticket: {ticket}
+ID użytkownika: {user_id or "—"}
+Email konta: {account_email or "—"}
+
+Firma / organizator: {company or "—"}
+Miasto: {city or "—"}
+Kontakt zwrotny: {contact or "—"}
+Liczba lokalizacji / skala: {locations or "—"}
+
+Potrzeby:
+{needs or "—"}
+
+Dodatkowe informacje:
+{extra or "—"}
+"""
+
+    import asyncio
+
+    try:
+        asyncio.create_task(send_bug_email(subject, body))
+        emailed = "queued"
+    except Exception as e:
+        emailed = False
+        print("ENTERPRISE LEAD EMAIL QUEUE ERROR:", e)
+
+    return ok({"ticket": ticket, "saved": True, "emailed": emailed})
+
 
 # FEEDBACK / BUG REPORTS
 # =========================

@@ -1070,7 +1070,10 @@ async function setPartnerPlan(plan, silent = false) {
     const isCurrent = String(card.dataset.plan || "").toLowerCase() === plan;
     card.classList.toggle("is-current", isCurrent);
     const btn = card.querySelector(".btn");
-    if (btn) btn.textContent = isCurrent ? "Aktualny plan" : "Wybierz";
+    if (btn) {
+      const cardPlan = String(card.dataset.plan || "").toLowerCase();
+      btn.textContent = cardPlan === "enterprise" ? "Napisz do nas" : (isCurrent ? "Aktualny plan" : "Wybierz");
+    }
   });
 
   document.querySelectorAll("#partnerPlanPill").forEach((el) => {
@@ -1113,6 +1116,81 @@ async function setPartnerPlan(plan, silent = false) {
   }
 
   renderAll();
+}
+
+
+async function submitEnterpriseContact() {
+  const btn = $("enterpriseContactSubmitBtn");
+  const payload = {
+    company: $("enterpriseContactCompany")?.value?.trim() || "",
+    city: $("enterpriseContactCity")?.value?.trim() || "",
+    contact: $("enterpriseContactContact")?.value?.trim() || "",
+    locations: $("enterpriseContactLocations")?.value?.trim() || "",
+    needs: $("enterpriseContactNeeds")?.value?.trim() || "",
+    extra: $("enterpriseContactExtra")?.value?.trim() || "",
+    user_id: App.user?.id || App.partner?.id || null,
+    account_email: App.partner?.email || App.user?.email || "",
+  };
+
+  if (!payload.contact) {
+    toast("Podaj email lub telefon do kontaktu");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Wysyłam...";
+  }
+
+  try {
+    const data = await apiFetch("/enterprise/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!data?.success) {
+      toast(data?.error?.message || "Nie udało się wysłać zapytania");
+      return;
+    }
+
+    toast("Zapytanie wysłane. Odezwę się do Ciebie z wyceną.");
+    closeModal();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wysłać zapytania");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Wyślij zapytanie";
+    }
+  }
+}
+
+function contactEnterprisePlan() {
+  openModal("Plan Enterprise", `
+    <div class="tStrong">Poproś o indywidualną wycenę</div>
+    <div class="sectionSub mt10">Napisz, czego potrzebuje Twoje miejsce lub marka. Przygotujemy zakres i propozycję dopasowaną do skali działania.</div>
+
+    <label class="mt12">Nazwa firmy / organizatora</label>
+    <input id="enterpriseContactCompany" type="text" placeholder="np. Klub, restauracja, sieć miejsc" />
+
+    <label class="mt12">Miasto / obszar działania</label>
+    <input id="enterpriseContactCity" type="text" placeholder="np. Warszawa, kilka miast, cała Polska" />
+
+    <label class="mt12">Email lub telefon do kontaktu</label>
+    <input id="enterpriseContactContact" type="text" placeholder="np. kontakt@firma.pl lub numer telefonu" />
+
+    <label class="mt12">Skala działania</label>
+    <input id="enterpriseContactLocations" type="text" placeholder="np. 3 lokalizacje, 20 wydarzeń miesięcznie, sieć klubów" />
+
+    <label class="mt12">Czego potrzebujesz ponad standardowe pakiety?</label>
+    <textarea id="enterpriseContactNeeds" rows="4" placeholder="np. więcej raportów, wiele lokalizacji, dedykowane wyróżnienia, wsparcie kampanii, większa komunikacja z uczestnikami"></textarea>
+
+    <label class="mt12">Dodatkowe informacje</label>
+    <textarea id="enterpriseContactExtra" rows="3" placeholder="Termin wdrożenia, budżet, specjalne potrzeby, osoba kontaktowa"></textarea>
+
+    <button id="enterpriseContactSubmitBtn" class="btn mt16" type="button" onclick="submitEnterpriseContact()">Wyślij zapytanie</button>
+  `);
 }
 
 
@@ -7417,7 +7495,10 @@ function renderAll() {
     const isCurrent = String(card.dataset.plan || "").toLowerCase() === currentPlan;
     card.classList.toggle("is-current", isCurrent);
     const btn = card.querySelector(".btn");
-    if (btn) btn.textContent = isCurrent ? "Aktualny plan" : "Wybierz";
+    if (btn) {
+      const cardPlan = String(card.dataset.plan || "").toLowerCase();
+      btn.textContent = cardPlan === "enterprise" ? "Napisz do nas" : (isCurrent ? "Aktualny plan" : "Wybierz");
+    }
   });
 
   if (App.currentView === "S3_PROFILE_SETUP") {
