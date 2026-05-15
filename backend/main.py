@@ -6,6 +6,7 @@ from backend.request_id_middleware import RequestIdMiddleware
 # -*- coding: utf-8 -*-
 
 import os
+import base64
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -112,6 +113,7 @@ from backend.models import (
     Friendship,
     GroupInvitation,
     PasswordResetToken,
+    AiUsageLog,
 )
 from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, GroupMessageCreate, MessageOut
 from backend.security import (
@@ -1537,6 +1539,159 @@ async def upload_avatar(
         return ok({"avatar_url": avatar_url})
     finally:
         db.close()
+
+class AiAvatarGenerateRequest(BaseModel):
+    prompt: str = Field(default="", max_length=240)
+
+
+AI_AVATAR_PLAN_LIMITS = {
+    "free": 1,
+    "plus": 5,
+    "premium": 15,
+    "vip": 30,
+}
+
+
+def _get_ai_avatar_usage(db, user_id: int, plan: str) -> dict:
+    safe_plan = (plan or "free").lower()
+    limit = AI_AVATAR_PLAN_LIMITS.get(safe_plan, AI_AVATAR_PLAN_LIMITS["free"])
+
+    now = datetime.now(timezone.utc)
+    month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+
+    used = (
+        db.query(AiUsageLog)
+        .filter(AiUsageLog.user_id == user_id)
+        .filter(AiUsageLog.feature == "avatar")
+        .filter(AiUsageLog.created_at >= month_start)
+        .count()
+    )
+
+    return {
+        "plan": safe_plan,
+        "limit": limit,
+        "used": used,
+        "remaining": max(limit - used, 0),
+        "period": "monthly",
+    }
+
+
+@app.get("/ai/avatar/status")
+def get_ai_avatar_status(
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+        plan = (profile.plan if profile else "free") or "free"
+        return ok(_get_ai_avatar_usage(db, current_user.id, plan))
+    finally:
+        db.close()
+
+
+
+@app.post("/ai/avatar/generate")
+async def generate_ai_avatar(
+    payload: AiAvatarGenerateRequest,
+    current_user: User = Depends(require_role("user")),
+):
+    if not _openai_client:
+        raise HTTPException(status_code=503, detail="ai_avatar_not_configured")
+
+    user_prompt = (payload.prompt or "").strip()
+    if len(user_prompt) < 3:
+        raise HTTPException(status_code=422, detail="avatar_prompt_required")
+
+    db = SessionLocal()
+    try:
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+        if not profile:
+            profile = UserProfile(user_id=current_user.id, plan="free")
+            db.add(profile)
+            db.commit()
+            db.refresh(profile)
+
+        usage = _get_ai_avatar_usage(db, current_user.id, profile.plan)
+        plan = usage["plan"]
+        limit = usage["limit"]
+        used = usage["used"]
+
+        if used >= limit:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "ai_avatar_limit_reached",
+                    "message": "Limit generowania awatarów AI w tym planie został wykorzystany.",
+                    "plan": plan,
+                    "limit": limit,
+                    "used": used,
+                },
+            )
+
+        final_prompt = (
+            "Create a square illustrated profile avatar for a social/event app. "
+            "Friendly, modern, polished, premium mobile app style. "
+            "Do not create a realistic portrait of a real person. "
+            "No text, no logo, no watermark. "
+            f"User style request: {user_prompt}"
+        )
+
+        result = _openai_client.images.generate(
+            model=os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1"),
+            prompt=final_prompt,
+            size=os.getenv("OPENAI_IMAGE_SIZE", "1024x1024"),
+            quality=os.getenv("OPENAI_IMAGE_QUALITY", "low"),
+            n=1,
+        )
+
+        b64_image = result.data[0].b64_json
+        if not b64_image:
+            raise HTTPException(status_code=502, detail="ai_avatar_empty_response")
+
+        content = base64.b64decode(b64_image)
+        filename = f"ai_{current_user.id}_{uuid4().hex}.png"
+        path = AVATARS_DIR / filename
+
+        with open(path, "wb") as f:
+            f.write(content)
+
+        avatar_url = f"/uploads/static/avatars/{filename}"
+
+        profile.avatar_url = avatar_url
+        profile.updated_at = datetime.utcnow()
+        db.add(profile)
+
+        db.add(
+            AiUsageLog(
+                user_id=current_user.id,
+                feature="avatar",
+                plan=plan,
+                created_at=datetime.utcnow(),
+            )
+        )
+
+        db.commit()
+
+        return ok(
+            {
+                "avatar_url": avatar_url,
+                "plan": plan,
+                "limit": limit,
+                "used": used + 1,
+                "remaining": max(limit - used - 1, 0),
+            }
+        )
+    finally:
+        db.close()
+
 
 
 # =========================

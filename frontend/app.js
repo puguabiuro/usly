@@ -1622,14 +1622,98 @@ function openAddPhoto() {
   }, 0);
 }
 
+async function generateAiAvatar() {
+  const input = $("aiAvatarPrompt");
+  const btn = $("aiAvatarGenerateBtn");
+  const prompt = input?.value?.trim() || "";
+
+  if (prompt.length < 3) {
+    toast("Opisz krótko styl awatara");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Generuję...";
+  }
+
+  try {
+    const data = await apiFetch("/ai/avatar/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!data?.success || !data?.data?.avatar_url) {
+      const detail = data?.error?.detail || data?.error?.message || data?.detail;
+      const code = detail?.code || data?.error?.code;
+
+      if (code === "ai_avatar_limit_reached") {
+        toast("Limit awatarów AI w Twoim planie został wykorzystany");
+      } else {
+        toast(data?.error?.message || "Nie udało się wygenerować awatara");
+      }
+      return;
+    }
+
+    App.user.avatarUrl = data.data.avatar_url;
+    const remaining = Number(data.data.remaining ?? 0);
+    toast(remaining > 0 ? `Awatar gotowy. Pozostało: ${remaining}` : "Awatar gotowy");
+    renderAll();
+    closeModal();
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się wygenerować awatara");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Generuj awatar";
+    }
+  }
+}
+
+async function refreshAiAvatarStatus() {
+  const box = $("aiAvatarStatusBox");
+  const btn = $("aiAvatarGenerateBtn");
+  if (box) box.textContent = "Sprawdzam limit...";
+
+  try {
+    const data = await apiFetch("/ai/avatar/status");
+    if (!data?.success || !data?.data) {
+      if (box) box.textContent = "Nie udało się sprawdzić limitu awatarów AI.";
+      return;
+    }
+
+    const status = data.data;
+    const plan = String(status.plan || "free").toUpperCase();
+    const used = Number(status.used || 0);
+    const limit = Number(status.limit || 0);
+    const remaining = Number(status.remaining || 0);
+
+    if (box) {
+      box.innerHTML = remaining > 0
+        ? `Twój plan: <b>${plan}</b> • Awatary AI: <b>${used}/${limit}</b> w tym miesiącu • Pozostało: <b>${remaining}</b>`
+        : `Twój plan: <b>${plan}</b> • Wykorzystałaś limit <b>${used}/${limit}</b> awatarów AI w tym miesiącu. Zmień plan, aby wygenerować więcej.`;
+    }
+
+    if (btn) {
+      btn.disabled = remaining <= 0;
+      btn.textContent = remaining > 0 ? "Generuj awatar" : "Limit wykorzystany";
+    }
+  } catch (err) {
+    if (box) box.textContent = "Nie udało się sprawdzić limitu awatarów AI.";
+  }
+}
+
 function openAvatarAI() {
-  openModal("Stwórz awatar", `
+  openModal("Stwórz awatar AI", `
     <div class="tStrong">Awatar AI</div>
-    <div class="sectionSub mt10">UI. Backend: prompt → generator → zapis awatara.</div>
-    <label class="mt12">Opis awatara</label>
-    <input id="aiAvatarPrompt" type="text" placeholder="np. neonowy, minimalistyczny, uśmiechnięty" />
-    <button class="btn mt16" type="button" onclick="toast('Awatar utworzony '); closeModal();">Generuj</button>
+    <div class="sectionSub mt10">Opisz styl, a USLY wygeneruje ilustracyjny awatar profilowy. Generowanie może chwilę potrwać.</div>
+    <div id="aiAvatarStatusBox" class="sectionSub mt10">Sprawdzam limit...</div>
+    <label class="mt12">Styl awatara</label>
+    <input id="aiAvatarPrompt" type="text" maxlength="240" placeholder="np. minimalistyczny, ciepły, elegancki, pastelowy" />
+    <button id="aiAvatarGenerateBtn" class="btn mt16" type="button" onclick="generateAiAvatar()">Generuj awatar</button>
   `);
+  setTimeout(() => refreshAiAvatarStatus(), 0);
 }
 
 function updateOrgLogoFallback() {
