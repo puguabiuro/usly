@@ -4630,6 +4630,50 @@ async def send_bug_email(subject: str, body: str):
         print("MAIL ERROR:", e)
         return False
 
+async def send_user_email(to_email: str, subject: str, body: str):
+    try:
+        import smtplib
+        import ssl
+
+        to_email = str(to_email or "").strip()
+        if not to_email or "@" not in to_email:
+            return False
+
+        smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
+        smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
+        smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
+        smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
+        smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+
+        if not smtp_host or not smtp_user or not smtp_pass:
+            print("USER MAIL ERROR: missing USLY SMTP config")
+            return False
+
+        msg = EmailMessage()
+        msg["From"] = smtp_from
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.set_content(body)
+
+        context = ssl.create_default_context()
+        try:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls(context=context)
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        except ssl.SSLCertVerificationError:
+            context = ssl._create_unverified_context()
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls(context=context)
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+
+        return True
+    except Exception as e:
+        print("USER MAIL ERROR:", e)
+        return False
+
+
 # ENTERPRISE CONTACT LEADS
 # =========================
 @app.post("/enterprise/contact")
@@ -4715,8 +4759,38 @@ WIADOMOŚĆ
 
     import asyncio
 
+    autoresponder_subject = "USLY — otrzymaliśmy Twoje zapytanie Enterprise"
+    autoresponder_body = f"""Dziękujemy za kontakt z USLY.
+
+Otrzymaliśmy Twoje zapytanie dotyczące pakietu Enterprise i wrócimy do Ciebie z propozycją po analizie potrzeb.
+
+Numer zgłoszenia:
+{ticket}
+
+Wybrane obszary:
+{selected_areas}
+
+Wiadomość:
+{needs or "—"}
+
+Pozdrawiamy,
+Zespół USLY
+kontakt@uslyapp.pl
+"""
+
     try:
         asyncio.create_task(send_bug_email(subject, body))
+
+        responder_email = account_email if "@" in account_email else contact if "@" in contact else ""
+        if responder_email:
+            asyncio.create_task(
+                send_user_email(
+                    responder_email,
+                    autoresponder_subject,
+                    autoresponder_body,
+                )
+            )
+
         emailed = "queued"
     except Exception as e:
         emailed = False
