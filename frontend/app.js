@@ -1121,13 +1121,17 @@ async function setPartnerPlan(plan, silent = false) {
 
 async function submitEnterpriseContact() {
   const btn = $("enterpriseContactSubmitBtn");
+  const selectedNeeds = Array.from(document.querySelectorAll(".enterpriseNeedOption:checked"))
+    .map((item) => item.value)
+    .filter(Boolean);
+
   const payload = {
     company: $("enterpriseContactCompany")?.value?.trim() || "",
     city: $("enterpriseContactCity")?.value?.trim() || "",
     contact: $("enterpriseContactContact")?.value?.trim() || "",
-    locations: $("enterpriseContactLocations")?.value?.trim() || "",
+    locations: selectedNeeds.join(", "),
     needs: $("enterpriseContactNeeds")?.value?.trim() || "",
-    extra: $("enterpriseContactExtra")?.value?.trim() || "",
+    extra: "",
     user_id: App.user?.id || App.partner?.id || null,
     account_email: App.partner?.email || App.user?.email || "",
   };
@@ -1154,7 +1158,7 @@ async function submitEnterpriseContact() {
       return;
     }
 
-    toast("Zapytanie wysłane. Odezwę się do Ciebie z wyceną.");
+    toast("Zapytanie wysłane. Odezwę się do Ciebie z propozycją.");
     closeModal();
   } catch (err) {
     toast(err?.userMessage || "Nie udało się wysłać zapytania");
@@ -1168,26 +1172,30 @@ async function submitEnterpriseContact() {
 
 function contactEnterprisePlan() {
   openModal("Plan Enterprise", `
-    <div class="tStrong">Poproś o indywidualną wycenę</div>
-    <div class="sectionSub mt10">Napisz, czego potrzebuje Twoje miejsce lub marka. Przygotujemy zakres i propozycję dopasowaną do skali działania.</div>
+    <div class="tStrong">Porozmawiajmy o pakiecie dla Twojej marki</div>
+    <div class="sectionSub mt10">Zostaw kontakt i zaznacz, czego potrzebujesz. Przygotujemy indywidualną propozycję dla Twojego miejsca, wydarzeń lub sieci lokalizacji.</div>
 
-    <label class="mt12">Nazwa firmy / organizatora</label>
-    <input id="enterpriseContactCompany" type="text" placeholder="np. Klub, restauracja, sieć miejsc" />
+    <label class="mt12">Nazwa firmy / marki</label>
+    <input id="enterpriseContactCompany" type="text" placeholder="np. klub, restauracja, sieć miejsc" />
 
-    <label class="mt12">Miasto / obszar działania</label>
+    <label class="mt12">Miasto / zasięg działania</label>
     <input id="enterpriseContactCity" type="text" placeholder="np. Warszawa, kilka miast, cała Polska" />
 
     <label class="mt12">Email lub telefon do kontaktu</label>
     <input id="enterpriseContactContact" type="text" placeholder="np. kontakt@firma.pl lub numer telefonu" />
 
-    <label class="mt12">Skala działania</label>
-    <input id="enterpriseContactLocations" type="text" placeholder="np. 3 lokalizacje, 20 wydarzeń miesięcznie, sieć klubów" />
+    <label class="mt12">Czym jesteście zainteresowani?</label>
+    <div class="mt8" style="display:grid;gap:8px">
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Większa widoczność wydarzeń" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Większa widoczność wydarzeń</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Promocja kilku lokalizacji" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Promocja kilku lokalizacji</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Kampania lub event specjalny" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Kampania lub event specjalny</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Współpraca długoterminowa" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Współpraca długoterminowa</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Oferta dla sieci lub franczyzy" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Oferta dla sieci lub franczyzy</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Inne" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Inne</span></label>
+    </div>
 
-    <label class="mt12">Czego potrzebujesz ponad standardowe pakiety?</label>
-    <textarea id="enterpriseContactNeeds" rows="4" placeholder="np. więcej raportów, wiele lokalizacji, dedykowane wyróżnienia, wsparcie kampanii, większa komunikacja z uczestnikami"></textarea>
-
-    <label class="mt12">Dodatkowe informacje</label>
-    <textarea id="enterpriseContactExtra" rows="3" placeholder="Termin wdrożenia, budżet, specjalne potrzeby, osoba kontaktowa"></textarea>
+    <label class="mt12">Krótka wiadomość</label>
+    <textarea id="enterpriseContactNeeds" rows="4" placeholder="Napisz krótko, czego potrzebujesz albo jaki efekt chcesz osiągnąć."></textarea>
 
     <button id="enterpriseContactSubmitBtn" class="btn mt16" type="button" onclick="submitEnterpriseContact()">Wyślij zapytanie</button>
   `);

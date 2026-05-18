@@ -4674,22 +4674,43 @@ async def submit_enterprise_contact(payload: dict):
         f.write(json.dumps(lead, ensure_ascii=False) + "\n")
 
     subject = f"[USLY Enterprise] Nowe zapytanie {ticket}"
-    body = f"""Nowe zapytanie o plan Enterprise
+    selected_areas = locations or "—"
+
+    body = f"""🔥 NOWE ZAPYTANIE ENTERPRISE — USLY
 
 Ticket: {ticket}
-ID użytkownika: {user_id or "—"}
-Email konta: {account_email or "—"}
+Data: {now.strftime("%Y-%m-%d %H:%M UTC")}
 
-Firma / organizator: {company or "—"}
-Miasto: {city or "—"}
-Kontakt zwrotny: {contact or "—"}
-Liczba lokalizacji / skala: {locations or "—"}
+━━━━━━━━━━━━━━━━━━
+DANE KONTAKTOWE
+━━━━━━━━━━━━━━━━━━
 
-Potrzeby:
+Firma / marka:
+{company or "—"}
+
+Miasto / zasięg:
+{city or "—"}
+
+Kontakt:
+{contact or "—"}
+
+Email konta USLY:
+{account_email or "—"}
+
+ID użytkownika:
+{user_id or "—"}
+
+━━━━━━━━━━━━━━━━━━
+OBSZAR ZAINTERESOWANIA
+━━━━━━━━━━━━━━━━━━
+
+{selected_areas}
+
+━━━━━━━━━━━━━━━━━━
+WIADOMOŚĆ
+━━━━━━━━━━━━━━━━━━
+
 {needs or "—"}
-
-Dodatkowe informacje:
-{extra or "—"}
 """
 
     import asyncio
