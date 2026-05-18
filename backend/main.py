@@ -723,8 +723,9 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request):
             reset_body = (
                 "Otrzymaliśmy prośbę o reset hasła do konta USLY.\n\n"
                 f"Otwórz ten link w aplikacji:\n{reset_link}\n\n"
-                "Link jest jednorazowy i ważny przez 60 minut.\n"
-                "Jeśli to nie Ty, zignoruj tę wiadomość."
+                "Link jest jednorazowy i ważny przez 60 minut.\n\n"
+                "Jeśli to nie Ty lub działanie wygląda podejrzanie, "
+                "skontaktuj się z nami: kontakt@uslyapp.pl"
             )
 
             try:
