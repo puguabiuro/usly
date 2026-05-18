@@ -494,22 +494,31 @@ def register(request: Request, payload: RegisterRequest):
             import asyncio
 
             if role_value == "partner":
-                welcome_subject = "Witaj w USLY dla Organizatorów"
+                welcome_subject = "Witaj w USLY ✨"
                 welcome_body = (
-                    "Dziękujemy za rejestrację w USLY.\n\n"
-                    "Twoje konto Organizatora zostało utworzone. "
-                    "Możesz teraz uzupełnić profil marki, przygotować wydarzenie i sprawdzić dostępne plany promocji.\n\n"
-                    "Jeśli potrzebujesz pomocy lub chcesz porozmawiać o pakiecie Enterprise, napisz do nas: kontakt@uslyapp.pl\n\n"
-                    "Zespół USLY"
+                    "Cieszymy się, że Twoje miejsce dołączyło do USLY.\n\n"
+                    "Od teraz możesz tworzyć wydarzenia, budować społeczność wokół swojej marki i docierać do nowych osób w okolicy.\n\n"
+                    "Na dobry start:\n"
+                    "• uzupełnij profil miejsca\n"
+                    "• dodaj pierwsze wydarzenie\n"
+                    "• sprawdź możliwości promocji i planów\n\n"
+                    "Jeśli potrzebujesz pomocy lub chcesz porozmawiać o pakiecie Enterprise, napisz do nas:\n"
+                    "kontakt@uslyapp.pl\n\n"
+                    "Do zobaczenia w USLY ✨"
                 )
             else:
-                welcome_subject = "Witaj w USLY"
+                welcome_subject = "Witaj w USLY ✨"
                 welcome_body = (
-                    "Dziękujemy za rejestrację w USLY.\n\n"
-                    "Twoje konto Towarzysza zostało utworzone. "
-                    "Możesz teraz uzupełnić profil, dodać zdjęcie lub AI Avatar i odkrywać wydarzenia oraz osoby w okolicy.\n\n"
-                    "Jeśli potrzebujesz pomocy, napisz do nas: kontakt@uslyapp.pl\n\n"
-                    "Zespół USLY"
+                    "Super, że jesteś z nami.\n\n"
+                    "USLY pomaga poznawać ludzi, wydarzenia i miejsca dopasowane do Twoich zainteresowań.\n\n"
+                    "Na dobry start:\n"
+                    "• dodaj zainteresowania\n"
+                    "• uzupełnij profil\n"
+                    "• stwórz swój AI Avatar\n"
+                    "• odkrywaj wydarzenia i osoby w okolicy\n\n"
+                    "Jeśli potrzebujesz pomocy, napisz do nas:\n"
+                    "kontakt@uslyapp.pl\n\n"
+                    "Miło Cię widzieć w USLY ✨"
                 )
 
             try:
@@ -893,6 +902,28 @@ def delete_account(
 
         db.add(user)
         db.commit()
+
+        try:
+            import asyncio
+
+            goodbye_subject = "USLY — Twoje konto zostało usunięte"
+            goodbye_body = (
+                "Potwierdzamy, że Twoje konto USLY zostało usunięte.\n\n"
+                "Przykro nam, że się rozstajemy — dziękujemy, że byłaś/byłeś częścią USLY.\n\n"
+                "Jeśli kiedyś zechcesz wrócić, będziemy tu dla Ciebie. "
+                "A jeśli chcesz podzielić się opinią lub coś poszło nie tak, napisz do nas:\n"
+                "kontakt@uslyapp.pl\n\n"
+                "Do zobaczenia,\n"
+                "Zespół USLY"
+            )
+
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(send_user_email(original_email, goodbye_subject, goodbye_body))
+            except RuntimeError:
+                asyncio.run(send_user_email(original_email, goodbye_subject, goodbye_body))
+        except Exception as mail_error:
+            print("GOODBYE MAIL ERROR:", mail_error)
 
         _audit(
             db,
