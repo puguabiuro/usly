@@ -715,46 +715,26 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request):
         emailed = False
         email_error = None
 
-        smtp_host = os.getenv("USLY_SMTP_HOST", "").strip()
-        smtp_port = int(os.getenv("USLY_SMTP_PORT", "587"))
-        smtp_user = os.getenv("USLY_SMTP_USER", "").strip()
-        smtp_pass = os.getenv("USLY_SMTP_PASS", "").strip()
-        smtp_from = os.getenv("USLY_SMTP_FROM", "").strip() or smtp_user
+        try:
+            emailed = None
+            import asyncio
 
-        if smtp_host and smtp_from:
+            reset_subject = "USLY — reset hasła"
+            reset_body = (
+                "Otrzymaliśmy prośbę o reset hasła do konta USLY.\n\n"
+                f"Otwórz ten link w aplikacji:\n{reset_link}\n\n"
+                "Link jest jednorazowy i ważny przez 60 minut.\n"
+                "Jeśli to nie Ty, zignoruj tę wiadomość."
+            )
+
             try:
-                import smtplib
-                import ssl
-
-                msg = EmailMessage()
-                msg["Subject"] = "USLY — reset hasła"
-                msg["From"] = smtp_from
-                msg["To"] = user.email
-                msg.set_content(
-                    "Otrzymaliśmy prośbę o reset hasła do konta USLY.\n\n"
-                    f"Otwórz ten link w aplikacji:\n{reset_link}\n\n"
-                    "Link jest jednorazowy i ważny przez 60 minut.\n"
-                    "Jeśli to nie Ty, zignoruj tę wiadomość."
-                )
-
-                context = ssl.create_default_context()
-                try:
-                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-                        server.starttls(context=context)
-                        if smtp_user and smtp_pass:
-                            server.login(smtp_user, smtp_pass)
-                        server.send_message(msg)
-                except ssl.SSLCertVerificationError:
-                    fallback_context = ssl._create_unverified_context()
-                    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-                        server.starttls(context=fallback_context)
-                        if smtp_user and smtp_pass:
-                            server.login(smtp_user, smtp_pass)
-                        server.send_message(msg)
-
-                emailed = True
-            except Exception as e:
-                email_error = str(e)
+                loop = asyncio.get_running_loop()
+                loop.create_task(send_user_email(user.email, reset_subject, reset_body))
+                emailed = "queued"
+            except RuntimeError:
+                emailed = asyncio.run(send_user_email(user.email, reset_subject, reset_body))
+        except Exception as e:
+            email_error = str(e)
 
         _audit(
             db,
