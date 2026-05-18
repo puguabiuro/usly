@@ -490,6 +490,36 @@ def register(request: Request, payload: RegisterRequest):
         db.commit()
         db.refresh(user)
 
+        try:
+            import asyncio
+
+            if role_value == "partner":
+                welcome_subject = "Witaj w USLY dla Organizatorów"
+                welcome_body = (
+                    "Dziękujemy za rejestrację w USLY.\n\n"
+                    "Twoje konto Organizatora zostało utworzone. "
+                    "Możesz teraz uzupełnić profil marki, przygotować wydarzenie i sprawdzić dostępne plany promocji.\n\n"
+                    "Jeśli potrzebujesz pomocy lub chcesz porozmawiać o pakiecie Enterprise, napisz do nas: kontakt@uslyapp.pl\n\n"
+                    "Zespół USLY"
+                )
+            else:
+                welcome_subject = "Witaj w USLY"
+                welcome_body = (
+                    "Dziękujemy za rejestrację w USLY.\n\n"
+                    "Twoje konto Towarzysza zostało utworzone. "
+                    "Możesz teraz uzupełnić profil, dodać zdjęcie lub AI Avatar i odkrywać wydarzenia oraz osoby w okolicy.\n\n"
+                    "Jeśli potrzebujesz pomocy, napisz do nas: kontakt@uslyapp.pl\n\n"
+                    "Zespół USLY"
+                )
+
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(send_user_email(user.email, welcome_subject, welcome_body))
+            except RuntimeError:
+                asyncio.run(send_user_email(user.email, welcome_subject, welcome_body))
+        except Exception as mail_error:
+            print("WELCOME MAIL ERROR:", mail_error)
+
         return ok(
             RegisterResponse(
                 id=user.id,
@@ -629,7 +659,7 @@ def logout(request: Request, current_user: User = Depends(get_current_user)):
 def auth_me(current_user: User = Depends(get_current_user)):
     return {
         "id": current_user.id,
-        "email": account_email,
+        "email": current_user.email,
         "role": current_user.role,
     }
 
@@ -934,7 +964,7 @@ def users_me(current_user: User = Depends(require_role("user"))):
 
         return ok(
             {
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "nick": profile.nick,
                 "miasto": profile.miasto,
                 "bio": profile.bio,

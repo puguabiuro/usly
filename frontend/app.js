@@ -6008,6 +6008,8 @@ async function renderGroups() {
     suggestedGroups = suggestedGroups.filter(g =>
       myInterestTags.includes(normalizeTag(String(g.interestTag || "")))
     );
+  } else {
+    suggestedGroups = [];
   }
 
   if (q) {
@@ -8089,7 +8091,10 @@ function renderNearbyMapMarkers() {
     nearbyMarkers.push(marker);
   });
 
-  (App.events || []).forEach((ev, index) => {
+  const nearbyEventsForMap = (App.events || [])
+    .filter(ev => matchesUserEventInterest(ev) && isEventInMyCity(ev));
+
+  nearbyEventsForMap.forEach((ev, index) => {
     const lat = Number(ev.location_lat);
     const lng = Number(ev.location_lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
