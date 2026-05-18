@@ -113,6 +113,7 @@ from backend.models import (
     Friendship,
     GroupInvitation,
     PasswordResetToken,
+    EmailVerificationToken,
     AiUsageLog,
 )
 from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, GroupMessageCreate, MessageOut
