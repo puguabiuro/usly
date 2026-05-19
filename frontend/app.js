@@ -282,6 +282,13 @@ function go(viewId) {
     reloadAdminReports().catch(() => {});
   }
 
+  if (viewId === "S9_PARTNER_EVENTS") {
+    renderPartnerEvents();
+    loadPartnerEvents().then(() => {
+      if (App.currentView === "S9_PARTNER_EVENTS") renderPartnerEvents();
+    }).catch(() => {});
+  }
+
   if (viewId === "S2_REGISTER" && App.role === "user") {
     useCurrentLocationForCity();
   }
@@ -2897,11 +2904,30 @@ async function openChat(chatId) {
   go("S6B_CHAT_THREAD");
 }
 
+function getBlockedChatMessagesKey(recipientUserId = App.selectedChatUserId) {
+  return `usly_blocked_messages_${App.currentUserId || "guest"}_${String(recipientUserId || "unknown")}`;
+}
+
+function loadBlockedChatMessages(recipientUserId = App.selectedChatUserId) {
+  try {
+    return JSON.parse(localStorage.getItem(getBlockedChatMessagesKey(recipientUserId)) || "[]");
+  } catch (_) {
+    return [];
+  }
+}
+
+function saveBlockedChatMessages(recipientUserId, items) {
+  try {
+    localStorage.setItem(getBlockedChatMessagesKey(recipientUserId), JSON.stringify((items || []).slice(-30)));
+  } catch (_) {}
+}
+
+
 async function renderChatThread() {
   const box = $("chatBubbles");
   if (!box || !App.selectedChatUserId) return;
 
-  const renderMessageRow = ({ from, text, senderUserId, createdAt, isRead }) => {
+  const renderMessageRow = ({ from, text, senderUserId, createdAt, isRead, pending = false, blockedReason = "" }) => {
     const row = document.createElement("div");
     row.style.display = "flex";
     row.style.alignItems = "flex-end";
@@ -2966,6 +2992,17 @@ async function renderChatThread() {
     bubble.style.wordBreak = "break-word";
     bubble.style.boxShadow = "0 4px 14px rgba(16,24,40,0.06)";
 
+    if (pending) {
+      bubble.style.opacity = "0.72";
+      bubble.style.filter = "grayscale(.12)";
+    }
+
+    if (blockedReason) {
+      bubble.style.opacity = "0.58";
+      bubble.style.background = "rgba(120,120,120,.14)";
+      bubble.style.border = "1px dashed rgba(255,120,120,.45)";
+    }
+
     const rawText = String(text || "");
     const ts = parseUslyTimestamp(createdAt);
     const timeLabel = ts
@@ -2996,7 +3033,14 @@ async function renderChatThread() {
     } else {
       bubble.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <div style="line-height:1.45;">${escapeHtml(rawText)}</div>
+          <div style="line-height:1.45;">
+            ${blockedReason
+              ? `⚠️ ${escapeHtml(blockedReason)}`
+              : pending
+                ? `${escapeHtml(rawText)}<div style="margin-top:6px;font-size:11px;opacity:.72;">Sprawdzamy treść wiadomości…</div>`
+                : escapeHtml(rawText)
+            }
+          </div>
           ${metaLabel ? `<div style="font-size:11px;opacity:.65;text-align:right;">${metaLabel.includes("✓✓") ? escapeHtml(metaLabel).replace("✓✓", '<span style="color:#6EE7FF;font-weight:700;">✓✓</span>') : metaLabel.includes("✓") ? escapeHtml(metaLabel).replace("✓", '<span style="opacity:0.4;">✓</span>') : escapeHtml(metaLabel)}</div>` : ``}
         </div>
       `;
@@ -3024,8 +3068,47 @@ async function renderChatThread() {
     let newDividerInserted = false;
     let incomingIndex = 0;
 
-    items.forEach(m => {
-      const from = String(m.sender_user_id) === String(App.currentUserId) ? "me" : "them";
+    const savedBlockedMessages = loadBlockedChatMessages(App.selectedChatUserId);
+    const localPendingMessages = (renderChatThread.__localPending || [])
+      .filter(m => String(m.recipientUserId || "") === String(App.selectedChatUserId));
+
+    const timelineItems = [
+      ...items.map(m => ({
+        kind: "remote",
+        from: String(m.sender_user_id) === String(App.currentUserId) ? "me" : "them",
+        text: m.content || "",
+        senderUserId: m.sender_user_id,
+        createdAt: m.created_at || null,
+        isRead: !!m.is_read,
+      })),
+      ...savedBlockedMessages.map(m => ({
+        kind: "local",
+        from: "me",
+        text: m.text || "",
+        senderUserId: App.currentUserId,
+        createdAt: m.createdAt || null,
+        isRead: false,
+        pending: false,
+        blockedReason: m.blockedReason || "Wiadomość została zablokowana przez moderację USLY i nie została dostarczona.",
+      })),
+      ...localPendingMessages.map(m => ({
+        kind: "local",
+        from: "me",
+        text: m.text || "",
+        senderUserId: App.currentUserId,
+        createdAt: m.createdAt || null,
+        isRead: false,
+        pending: m.state === "pending",
+        blockedReason: "",
+      })),
+    ].sort((a, b) => {
+      const at = parseUslyTimestamp(a.createdAt) || 0;
+      const bt = parseUslyTimestamp(b.createdAt) || 0;
+      return at - bt;
+    });
+
+    timelineItems.forEach(m => {
+      const from = m.from;
 
       if (from === "them") {
         if (!newDividerInserted && dividerIncomingIndex >= 0 && incomingIndex === dividerIncomingIndex) {
@@ -3047,10 +3130,12 @@ async function renderChatThread() {
 
       renderMessageRow({
         from,
-        text: m.content || "",
-        senderUserId: m.sender_user_id,
-        createdAt: m.created_at || null,
-        isRead: !!m.is_read,
+        text: m.text || "",
+        senderUserId: m.senderUserId,
+        createdAt: m.createdAt || null,
+        isRead: !!m.isRead,
+        pending: !!m.pending,
+        blockedReason: m.blockedReason || "",
       });
     });
 
@@ -3095,6 +3180,17 @@ async function sendChat() {
   const text = inp?.value?.trim();
   if (!text || !App.selectedChatUserId) return;
 
+  if (inp) inp.value = "";
+
+  const box = $("chatBubbles");
+  const pendingId = `pending-${Date.now()}`;
+  const localCreatedAt = new Date().toISOString();
+  if (box) {
+    renderChatThread.__localPending = renderChatThread.__localPending || [];
+    renderChatThread.__localPending.push({ id: pendingId, text, state: "pending", recipientUserId: String(App.selectedChatUserId), createdAt: localCreatedAt });
+    await renderChatThread();
+  }
+
   try {
     await apiFetch("/messages/private", {
       method: "POST",
@@ -3105,14 +3201,46 @@ async function sendChat() {
       }),
     });
 
+    renderChatThread.__localPending = (renderChatThread.__localPending || []).filter(m => m.id !== pendingId);
+
     const chat = App.chats.find(c => c.id === App.selectedChatId);
     if (chat) chat.last = text;
-    inp.value = "";
 
     await renderChatThread();
     renderChatList();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+    const rawMessage = String(err?.userMessage || err?.message || err?.detail || "");
+    const rawStatus = String(err?.status || err?.statusCode || err?.response?.status || "");
+    const isModerated =
+      rawStatus === "422" ||
+      rawMessage.includes("message_blocked") ||
+      rawMessage.includes("message_empty") ||
+      rawMessage.includes("422") ||
+      rawMessage.toLowerCase().includes("moderac");
+
+    const blockedReason = rawMessage.includes("message_blocked_link")
+      ? "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona."
+      : "Treść została zablokowana przez moderację USLY i nie została dostarczona.";
+
+    const blockedItem = {
+      id: pendingId,
+      text,
+      state: "blocked",
+      blockedReason,
+      recipientUserId: String(App.selectedChatUserId),
+      createdAt: localCreatedAt,
+    };
+
+    renderChatThread.__localPending = (renderChatThread.__localPending || []).filter(m => m.id !== pendingId);
+
+    const savedBlocked = loadBlockedChatMessages(App.selectedChatUserId);
+    saveBlockedChatMessages(App.selectedChatUserId, [...savedBlocked, blockedItem]);
+
+    await renderChatThread();
+
+    if (!isModerated) {
+      toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+    }
   }
 }
 
@@ -3723,7 +3851,46 @@ async function openGroup(groupId) {
       const data = await apiFetch(`/messages/group/${groupId}`);
       const items = Array.isArray(data?.data?.items) ? data.data.items : [];
 
-      if (!items.length) {
+      const savedBlockedGroupMessages = loadBlockedGroupMessages(groupId);
+      const localPendingGroupMessages = (openGroup.__localPending || [])
+        .filter(m => String(m.groupId || "") === String(groupId));
+
+      const timelineItems = [
+        ...items.map(m => ({
+          kind: "remote",
+          from: String(m.sender_user_id) === String(App.currentUserId) ? "me" : "them",
+          text: m.content || "",
+          senderUserId: m.sender_user_id,
+          createdAt: m.created_at || null,
+          isRead: !!m.is_read,
+        })),
+        ...savedBlockedGroupMessages.map(m => ({
+          kind: "local",
+          from: "me",
+          text: m.text || "",
+          senderUserId: App.currentUserId,
+          createdAt: m.createdAt || null,
+          isRead: false,
+          pending: false,
+          blockedReason: m.blockedReason || "Wiadomość została zablokowana przez moderację USLY i nie została dostarczona.",
+        })),
+        ...localPendingGroupMessages.map(m => ({
+          kind: "local",
+          from: "me",
+          text: m.text || "",
+          senderUserId: App.currentUserId,
+          createdAt: m.createdAt || null,
+          isRead: false,
+          pending: m.state === "pending",
+          blockedReason: "",
+        })),
+      ].sort((a, b) => {
+        const at = parseUslyTimestamp(a.createdAt) || 0;
+        const bt = parseUslyTimestamp(b.createdAt) || 0;
+        return at - bt;
+      });
+
+      if (!timelineItems.length) {
         box.innerHTML = `
           <div class="tMuted" style="padding:16px; text-align:center;">
             Nie ma jeszcze wiadomości w tej grupie. Napisz jako pierwsza osoba.
@@ -3731,10 +3898,13 @@ async function openGroup(groupId) {
         `;
       } else {
         let newDividerInserted = false;
-        box.innerHTML = items.map(m => {
-          const from = String(m.sender_user_id) === String(App.currentUserId) ? "me" : "them";
-          const person = resolvePersonById(m.sender_user_id);
-          const ts = parseUslyTimestamp(m.created_at);
+        box.innerHTML = timelineItems.map(m => {
+          const from = m.from;
+          const isLocal = m.kind === "local";
+          const isBlocked = !!m.blockedReason;
+          const isPending = !!m.pending;
+          const person = isLocal ? null : resolvePersonById(m.senderUserId);
+          const ts = parseUslyTimestamp(m.createdAt);
           const isNewForCurrentUser = !newDividerInserted && from !== "me" && ts > seenAt;
           const timeLabel = ts
             ? new Date(ts).toLocaleString("pl-PL", {
@@ -3752,33 +3922,42 @@ async function openGroup(groupId) {
           const avatarButton = `
             <button
               type="button"
-              onclick="openPerson('${String(m.sender_user_id)}')"
+              onclick="openPerson('${String(m.senderUserId)}')"
               title="Otwórz profil"
               style="width:32px;height:32px;min-width:32px;border-radius:999px;border:${from === "me" ? "0" : "1px solid rgba(16,24,40,0.08)"};padding:0;display:inline-flex;align-items:center;justify-content:center;background:#f2f4f7;overflow:hidden;box-shadow:${from === "me" ? "none" : "0 2px 8px rgba(16,24,40,0.08)"};cursor:pointer;flex-shrink:0;"
             >${avatarHtml}</button>
           `;
 
-          const senderLabel = from === "me" ? "Ty" : escapeHtml(person?.nick || `Użytkownik #${String(m.sender_user_id)}`);
+          const senderLabel = from === "me" ? "Ty" : escapeHtml(person?.nick || `Użytkownik #${String(m.senderUserId)}`);
           const dividerHtml = isNewForCurrentUser
             ? `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;"><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div><div class="sectionSub" style="white-space:nowrap;">Nowe wiadomości</div><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div></div>`
             : ``;
 
           if (isNewForCurrentUser) newDividerInserted = true;
 
+          const contentHtml = isBlocked
+            ? `⚠️ ${escapeHtml(m.blockedReason)}`
+            : `${escapeHtml(m.text || "")}${isPending ? `<div style="margin-top:6px;font-size:11px;opacity:.72;">Sprawdzamy treść wiadomości…</div>` : ""}`;
+
           return `
             ${dividerHtml}
             <div style="display:flex; align-items:flex-end; gap:10px; justify-content:${from === "me" ? "flex-end" : "flex-start"}; margin:10px 0;">
               ${from === "me" ? "" : avatarButton}
-              <div class="bubble ${from === "me" ? "me" : "them"}" style="max-width:78%; word-break:break-word;">
+              <div class="bubble ${from === "me" ? "me" : "them"}" style="max-width:78%; word-break:break-word; opacity:${isBlocked ? ".58" : isPending ? ".72" : "1"}; ${isBlocked ? "background:rgba(120,120,120,.14);border:1px dashed rgba(255,120,120,.45);" : ""}">
                 <div style="font-size:12px; opacity:.72; margin-bottom:4px; font-weight:800;">${senderLabel}</div>
-                <div style="line-height:1.45;">${escapeHtml(m.content || "")}</div>
+                <div style="line-height:1.45;">${contentHtml}</div>
                 ${timeLabel ? `<div style="font-size:11px; opacity:.65; text-align:right; margin-top:6px;">${escapeHtml(timeLabel)}</div>` : ``}
               </div>
               ${from === "me" ? avatarButton : ""}
             </div>
           `;
         }).join("");
+
         markGroupAsSeen(groupId);
+
+        setTimeout(() => {
+          box.parentElement?.scrollTo({ top: box.parentElement.scrollHeight, behavior: "auto" });
+        }, 0);
       }
     } catch (err) {
       console.error("load group messages failed", err);
@@ -3787,6 +3966,25 @@ async function openGroup(groupId) {
   }
 
   go("S8B_GROUP_THREAD");
+}
+
+
+function getBlockedGroupMessagesKey(groupId = App.selectedGroupId) {
+  return `usly_blocked_group_messages_${App.currentUserId || "guest"}_${String(groupId || "unknown")}`;
+}
+
+function loadBlockedGroupMessages(groupId = App.selectedGroupId) {
+  try {
+    return JSON.parse(localStorage.getItem(getBlockedGroupMessagesKey(groupId)) || "[]");
+  } catch (_) {
+    return [];
+  }
+}
+
+function saveBlockedGroupMessages(groupId, items) {
+  try {
+    localStorage.setItem(getBlockedGroupMessagesKey(groupId), JSON.stringify((items || []).slice(-30)));
+  } catch (_) {}
 }
 
 
@@ -3835,6 +4033,14 @@ async function sendGroup() {
   const text = inp?.value?.trim();
   if (!text) return;
 
+  if (inp) inp.value = "";
+
+  const pendingId = `group-pending-${Date.now()}`;
+  const localCreatedAt = new Date().toISOString();
+  openGroup.__localPending = openGroup.__localPending || [];
+  openGroup.__localPending.push({ id: pendingId, text, state: "pending", groupId: String(groupId), createdAt: localCreatedAt });
+  await openGroup(groupId);
+
   try {
     const res = await apiFetch("/messages/group", {
       method: "POST",
@@ -3846,15 +4052,46 @@ async function sendGroup() {
     });
 
     if (!res?.success) {
-      toast(res?.error?.message || "Nie udało się wysłać wiadomości");
-      return;
+      throw new Error(res?.error?.message || "Nie udało się wysłać wiadomości");
     }
 
-    if (inp) inp.value = "";
+    openGroup.__localPending = (openGroup.__localPending || []).filter(m => m.id !== pendingId);
     await openGroup(groupId);
   } catch (err) {
     console.error("sendGroup failed", err);
-    toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+
+    const rawMessage = String(err?.userMessage || err?.message || err?.detail || "");
+    const rawStatus = String(err?.status || err?.statusCode || err?.response?.status || "");
+    const isModerated =
+      rawStatus === "422" ||
+      rawMessage.includes("message_blocked") ||
+      rawMessage.includes("message_empty") ||
+      rawMessage.includes("422") ||
+      rawMessage.toLowerCase().includes("moderac");
+
+    const blockedReason = rawMessage.includes("message_blocked_link")
+      ? "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona."
+      : "Treść została zablokowana przez moderację USLY i nie została dostarczona.";
+
+    const blockedItem = {
+      id: pendingId,
+      text,
+      state: "blocked",
+      blockedReason,
+      groupId: String(groupId),
+      createdAt: localCreatedAt,
+    };
+
+    openGroup.__localPending = (openGroup.__localPending || []).filter(m => m.id !== pendingId);
+
+    const savedBlocked = loadBlockedGroupMessages(groupId);
+    saveBlockedGroupMessages(groupId, [...savedBlocked, blockedItem]);
+
+    await openGroup(groupId);
+
+    if (!isModerated) {
+      toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+    }
   }
 }
 
@@ -4488,6 +4725,7 @@ function openPartnerParticipantMessageModal(userId, userName) {
   openModal("Napisz do uczestnika", `
     <div class="sectionSub">Rozmowa z: <strong>${userName || "Uczestnik"}</strong></div>
     <textarea id="partnerParticipantMessageInput" class="mt12" maxlength="1000" placeholder="Napisz wiadomość..."></textarea>
+    <div id="partnerParticipantMessageStatus" class="sectionSub mt10" style="display:none;"></div>
     <div class="row mt16">
       <button class="btn" type="button" onclick="sendPartnerParticipantMessage('${userId}')">Wyślij</button>
       <button class="btn secondary" type="button" onclick="closeModal()">Anuluj</button>
@@ -4497,8 +4735,18 @@ function openPartnerParticipantMessageModal(userId, userName) {
 
 async function sendPartnerParticipantMessage(userId) {
   const input = $("partnerParticipantMessageInput");
+  const status = $("partnerParticipantMessageStatus");
   const text = input?.value?.trim();
   if (!text || !userId) return;
+
+  if (status) {
+    status.style.display = "block";
+    status.style.opacity = ".82";
+    status.style.border = "0";
+    status.style.padding = "0";
+    status.textContent = "Sprawdzamy treść wiadomości…";
+  }
+  if (input) input.disabled = true;
 
   try {
     await apiFetch("/messages/private", {
@@ -4513,7 +4761,32 @@ async function sendPartnerParticipantMessage(userId) {
     closeModal();
     toast("Wiadomość została wysłana");
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+    const rawMessage = String(err?.userMessage || err?.message || err?.detail || "");
+    const rawStatus = String(err?.status || err?.statusCode || err?.response?.status || "");
+    const isModerated =
+      rawStatus === "422" ||
+      rawMessage.includes("message_blocked") ||
+      rawMessage.includes("message_empty") ||
+      rawMessage.includes("422") ||
+      rawMessage.toLowerCase().includes("moderac");
+
+    const blockedReason = rawMessage.includes("message_blocked_link")
+      ? "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona."
+      : "Treść została zablokowana przez moderację USLY i nie została dostarczona.";
+
+    if (status && isModerated) {
+      status.style.display = "block";
+      status.style.opacity = ".72";
+      status.style.border = "1px dashed rgba(255,120,120,.45)";
+      status.style.borderRadius = "14px";
+      status.style.padding = "10px 12px";
+      status.textContent = `⚠️ ${blockedReason}`;
+    } else {
+      toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+      if (status) status.style.display = "none";
+    }
+
+    if (input) input.disabled = false;
   }
 }
 

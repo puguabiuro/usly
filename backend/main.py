@@ -494,6 +494,29 @@ def register(request: Request, payload: RegisterRequest):
         try:
             import asyncio
 
+            verify_token = str(uuid4())
+            verify_row = EmailVerificationToken(
+                user_id=user.id,
+                token=verify_token,
+                expires_at=datetime.utcnow().replace(microsecond=0) + __import__("datetime").timedelta(hours=24),
+                used_at=None,
+            )
+            db.add(verify_row)
+            db.commit()
+
+            verify_link_base = os.getenv("EMAIL_VERIFY_LINK_BASE", "usly://verify-email").strip() or "usly://verify-email"
+            verify_separator = "&" if "?" in verify_link_base else "?"
+            verify_link = f"{verify_link_base}{verify_separator}token={verify_token}"
+
+            verify_subject = "USLY — potwierdź adres email"
+            verify_body = (
+                "Potwierdź swój adres email, aby zabezpieczyć konto USLY.\n\n"
+                f"Otwórz ten link:\n{verify_link}\n\n"
+                "Link jest jednorazowy i ważny przez 24 godziny.\n\n"
+                "Jeśli to nie Ty zakładałaś/zakładałeś konto w USLY, zignoruj tę wiadomość albo napisz do nas:\n"
+                "kontakt@uslyapp.pl"
+            )
+
             if role_value == "partner":
                 welcome_subject = "Witaj w USLY ✨"
                 welcome_body = (
@@ -525,8 +548,10 @@ def register(request: Request, payload: RegisterRequest):
             try:
                 loop = asyncio.get_running_loop()
                 loop.create_task(send_user_email(user.email, welcome_subject, welcome_body))
+                loop.create_task(send_user_email(user.email, verify_subject, verify_body))
             except RuntimeError:
                 asyncio.run(send_user_email(user.email, welcome_subject, welcome_body))
+                asyncio.run(send_user_email(user.email, verify_subject, verify_body))
         except Exception as mail_error:
             print("WELCOME MAIL ERROR:", mail_error)
 
@@ -541,6 +566,46 @@ def register(request: Request, payload: RegisterRequest):
     except Exception as e:
         print("REGISTER ERROR:", e)
         raise
+    finally:
+        db.close()
+
+
+# =========================
+# AUTH  VERIFY EMAIL
+# =========================
+@app.get("/auth/verify-email")
+def verify_email(token: str):
+    db = SessionLocal()
+    try:
+        token_value = str(token or "").strip()
+        if not token_value:
+            raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_REQUIRED")
+
+        verify_row = (
+            db.query(EmailVerificationToken)
+            .filter(EmailVerificationToken.token == token_value)
+            .first()
+        )
+
+        if not verify_row or verify_row.used_at is not None:
+            raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_INVALID")
+
+        if verify_row.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_EXPIRED")
+
+        user = db.query(User).filter(User.id == verify_row.user_id).first()
+        if not user or user.status == UserStatus.DELETED.value:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        now = datetime.utcnow().replace(microsecond=0)
+        user.email_verified_at = user.email_verified_at or now
+        verify_row.used_at = now
+
+        db.add(user)
+        db.add(verify_row)
+        db.commit()
+
+        return ok({"verified": True})
     finally:
         db.close()
 
@@ -1398,7 +1463,7 @@ def users_me_patch(
 
         return ok(
             {
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "nick": profile.nick,
                 "miasto": profile.miasto,
                 "bio": profile.bio,
@@ -1440,7 +1505,7 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
 
         return ok(
             {
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "nazwa": profile.nazwa,
                 "miasto": profile.miasto,
                 "kategoria": profile.kategoria,
@@ -3202,6 +3267,50 @@ def create_user_block(
 
 
 # =========================
+# AI MODERATION — TEXT MESSAGES
+# =========================
+def moderate_message_text_or_raise(content: str):
+    text = str(content or "").strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="message_empty")
+
+    lowered = text.lower()
+    blocked_link_markers = ["http://", "https://", "www.", ".pl", ".com", ".net", ".org"]
+    if any(marker in lowered for marker in blocked_link_markers):
+        raise HTTPException(status_code=422, detail="message_blocked_link")
+
+    if not _openai_client:
+        return
+
+    try:
+        response = _openai_client.responses.create(
+            model=os.getenv("OPENAI_MODERATION_MODEL", "gpt-4.1-mini"),
+            input=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You moderate short Polish messages in a social/event app. "
+                        "Return only JSON with keys: allowed:boolean, reason:string. "
+                        "Block harassment, hate, sexual solicitation, threats, scams, spam, attempts to move users off-platform, and explicit content. "
+                        "Allow normal friendly conversation, event planning, logistics, and mild casual language."
+                    ),
+                },
+                {"role": "user", "content": text[:2000]},
+            ],
+        )
+        raw = getattr(response, "output_text", "") or ""
+        import json
+        data = json.loads(raw)
+        if data.get("allowed") is False:
+            raise HTTPException(status_code=422, detail=f"message_blocked_ai:{data.get('reason') or 'policy'}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("AI MESSAGE MODERATION ERROR:", e)
+        return
+
+
+# =========================
 # MESSAGES — PRIVATE (MVP TESTERSKI)
 # =========================
 @app.post("/messages/private")
@@ -3229,10 +3338,13 @@ def send_private_message(
         if block_exists:
             raise HTTPException(status_code=403, detail="USER_BLOCKED")
 
+        moderated_content = payload.content.strip()
+        moderate_message_text_or_raise(moderated_content)
+
         msg = Message(
             sender_user_id=current_user.id,
             recipient_user_id=payload.recipient_user_id,
-            content=payload.content.strip(),
+            content=moderated_content,
             is_read=False,
         )
         db.add(msg)
@@ -3360,10 +3472,13 @@ def send_group_message(
         if not membership:
             raise HTTPException(status_code=403, detail="GROUP_MEMBERSHIP_REQUIRED")
 
+        moderated_content = payload.content.strip()
+        moderate_message_text_or_raise(moderated_content)
+
         msg = Message(
             sender_user_id=current_user.id,
             group_id=payload.group_id,
-            content=payload.content.strip(),
+            content=moderated_content,
             is_read=False,
         )
         db.add(msg)
