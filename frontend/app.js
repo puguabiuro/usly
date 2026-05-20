@@ -3176,9 +3176,13 @@ async function renderChatThread() {
 }
 
 async function sendChat() {
+  if (sendChat.__busy) return;
   const inp = $("chatInput");
+  const sendBtn = $("chatSendBtn");
   const text = inp?.value?.trim();
   if (!text || !App.selectedChatUserId) return;
+  sendChat.__busy = true;
+  if (sendBtn) sendBtn.disabled = true;
 
   if (inp) inp.value = "";
 
@@ -3241,6 +3245,9 @@ async function sendChat() {
     if (!isModerated) {
       toast(err?.userMessage || "Nie udało się wysłać wiadomości");
     }
+  } finally {
+    sendChat.__busy = false;
+    if (sendBtn) sendBtn.disabled = false;
   }
 }
 
@@ -4023,6 +4030,8 @@ function bindMessageInputs() {
 }
 
 async function sendGroup() {
+  if (sendGroup.__busy) return;
+  sendGroup.__busy = true;
   const groupId = App.selectedGroupId;
   if (!isUserInGroup(groupId)) {
     toast("Dołącz do grupy, aby pisać wiadomości");
@@ -4030,9 +4039,14 @@ async function sendGroup() {
   }
 
   const inp = $("groupInput");
+  const sendBtn = $("groupSendBtn");
   const text = inp?.value?.trim();
-  if (!text) return;
+  if (!text) {
+    sendGroup.__busy = false;
+    return;
+  }
 
+  if (sendBtn) sendBtn.disabled = true;
   if (inp) inp.value = "";
 
   const pendingId = `group-pending-${Date.now()}`;
@@ -4092,6 +4106,9 @@ async function sendGroup() {
     if (!isModerated) {
       toast(err?.userMessage || "Nie udało się wysłać wiadomości");
     }
+  } finally {
+    sendGroup.__busy = false;
+    if (sendBtn) sendBtn.disabled = false;
   }
 }
 
@@ -4734,10 +4751,16 @@ function openPartnerParticipantMessageModal(userId, userName) {
 }
 
 async function sendPartnerParticipantMessage(userId) {
+  if (sendPartnerParticipantMessage.__busy) return;
+
   const input = $("partnerParticipantMessageInput");
   const status = $("partnerParticipantMessageStatus");
+  const sendBtn = document.querySelector('[onclick*="sendPartnerParticipantMessage"]');
   const text = input?.value?.trim();
+
   if (!text || !userId) return;
+
+  sendPartnerParticipantMessage.__busy = true;
 
   if (status) {
     status.style.display = "block";
@@ -4747,6 +4770,7 @@ async function sendPartnerParticipantMessage(userId) {
     status.textContent = "Sprawdzamy treść wiadomości…";
   }
   if (input) input.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
 
   try {
     await apiFetch("/messages/private", {
@@ -4787,6 +4811,9 @@ async function sendPartnerParticipantMessage(userId) {
     }
 
     if (input) input.disabled = false;
+  } finally {
+    sendPartnerParticipantMessage.__busy = false;
+    if (sendBtn) sendBtn.disabled = false;
   }
 }
 
