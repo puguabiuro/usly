@@ -2091,7 +2091,7 @@ function openPerson(personId) {
     safeSetText("personBio", p.bio || "Ten organizator nie dodał jeszcze opisu.");
 
     const partnerEventsPanel = $("partnerEventsPanel");
-    const partnerEventsList = $("partnerEventsList");
+    const partnerEventsList = $("personPartnerEventsList");
 
     if (partnerEventsPanel && partnerEventsList) {
       const partnerEvents = (App.events || []).filter(ev => String(ev.organizer?.id || "") === organizerId);
@@ -2129,10 +2129,10 @@ function openPerson(personId) {
     if (avatar) {
       const rawSrc = p.logoUrl || p.avatarUrl || "";
       const src = rawSrc && String(rawSrc).trim() !== "" ? rawSrc : "";
-      avatar.style.display = src ? "" : "none";
+      avatar.style.display = "";
       avatar.innerHTML = src
         ? `<img src="${String(src).startsWith("http") ? src : `${API_BASE_URL}${src}`}" alt="${displayName}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
-        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;">${displayName.trim().charAt(0).toUpperCase()}</div>`;
+        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f8fbff,#dce7f7);color:#111827;font-weight:1000;font-size:30px;border-radius:inherit;">${avatarInitial(displayName)}</div>`;
     }
 
     if (chips) {
@@ -2953,24 +2953,33 @@ async function renderChatThread() {
     avatar.style.flexShrink = "0";
 
     if (from === "me") {
-      if (App.user.avatarUrl) {
-        const src = String(App.user.avatarUrl).startsWith("http")
-          ? App.user.avatarUrl
-          : `${API_BASE_URL}${App.user.avatarUrl}`;
+      const meName = App.role === "partner"
+        ? (App.partner.company || App.partner.nazwa || "Organizator")
+        : (App.user.nick || "U");
+      const meAvatar = App.role === "partner"
+        ? (App.partner.logoUrl || App.partner.logo_url || "")
+        : (App.user.avatarUrl || "");
+
+      if (meAvatar) {
+        const src = String(meAvatar).startsWith("http")
+          ? meAvatar
+          : `${API_BASE_URL}${meAvatar}`;
         avatar.innerHTML = `<img src="${src}" alt="Twój awatar" style="width:100%;height:100%;object-fit:cover;" />`;
       } else {
-        avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${getAvatarGradient(App.user.nick || "U")}">${avatarInitial(App.user.nick || "U")}</div>`;
+        avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f8fbff,#dce7f7);color:#111827;font-weight:900;border:1px solid rgba(255,255,255,.75);">${avatarInitial(meName)}</div>`;
       }
       avatar.disabled = true;
     } else {
       const other = getChatOtherPerson();
-      if (other?.avatarUrl) {
-        const src = String(other.avatarUrl).startsWith("http")
-          ? other.avatarUrl
-          : `${API_BASE_URL}${other.avatarUrl}`;
-        avatar.innerHTML = `<img src="${src}" alt="${escapeHtml(other.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;" />`;
+      const otherAvatar = other?.avatarUrl || other?.logoUrl || other?.logo_url || "";
+      const otherName = other?.nick || other?.company || other?.name || "Użytkownik";
+      if (otherAvatar) {
+        const src = String(otherAvatar).startsWith("http")
+          ? otherAvatar
+          : `${API_BASE_URL}${otherAvatar}`;
+        avatar.innerHTML = `<img src="${src}" alt="${escapeHtml(otherName)}" style="width:100%;height:100%;object-fit:cover;" />`;
       } else {
-        avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${getAvatarGradient(other?.nick || "U")}">${avatarInitial(other?.nick || "U")}</div>`;
+        avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f8fbff,#dce7f7);color:#111827;font-weight:900;border:1px solid rgba(255,255,255,.75);">${avatarInitial(otherName)}</div>`;
       }
       avatar.title = "Otwórz profil";
       avatar.addEventListener("mouseenter", () => {
