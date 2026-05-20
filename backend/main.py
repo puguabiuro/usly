@@ -3650,6 +3650,7 @@ def list_private_conversations(
                 PartnerProfile.nazwa,
                 PartnerProfile.bio,
                 PartnerProfile.logo_url,
+                PartnerProfile.kategoria,
             )
             .filter(PartnerProfile.user_id.in_(other_user_ids))
             .all()
@@ -3663,6 +3664,7 @@ def list_private_conversations(
                 "nazwa": row.nazwa,
                 "bio": row.bio,
                 "logo_url": row.logo_url,
+                "kategoria": row.kategoria,
             }
             for row in partner_profiles
         }
