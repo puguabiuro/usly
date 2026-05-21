@@ -4321,6 +4321,10 @@ button[id^="notifBtn"]:active{
 .notificationItem.notifNew{
   background:linear-gradient(135deg,rgba(110,231,255,.16),rgba(244,63,211,.10));
   border-color:rgba(110,231,255,.28);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.18),
+    0 0 0 1px rgba(110,231,255,.08) inset,
+    0 0 22px rgba(110,231,255,.08);
 }
 
 .notificationTop{
