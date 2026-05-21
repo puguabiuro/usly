@@ -4763,6 +4763,22 @@ button[id^="notifBtn"]:active{
   padding: 0 14px 14px !important;
 }
 
+.partnerEventSection,
+.partnerEventSectionHeader,
+.partnerEventSectionIcon,
+.partnerEventSectionChevron{
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+
+.partnerEventSectionHeader:hover .partnerEventSectionChevron{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.10) !important;
+}
+
+.partnerEventSectionHeader:active{
+  transform: scale(.995);
+}
+
 .partnerEventArchiveIcon{
   width: 25px;
   height: 25px;
