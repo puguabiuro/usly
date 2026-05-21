@@ -61,9 +61,69 @@ const API_BASE_URL =
 window.API_BASE_URL = API_BASE_URL;
 
 
+/* ------------------------- i18n -------------------------- */
+const I18N = {
+  pl: {
+    "login.title": "Zaloguj się",
+    "login.subtitle": "Zaloguj się, aby wejść do swojego konta.",
+    "login.mode": "Tryb",
+    "login.user": "Towarzysz",
+    "login.partner": "Organizator",
+    "login.email": "Email / nick",
+    "login.password": "Hasło",
+    "login.submit": "Zaloguj się",
+    "login.or": "albo",
+    "login.apple": "Kontynuuj z Apple",
+    "login.google": "Kontynuuj z Google",
+    "login.facebook": "Kontynuuj z Facebook",
+    "login.email_placeholder": "np. ola_88 / ola@email.com",
+  },
+  en: {
+    "login.title": "Log in",
+    "login.subtitle": "Log in to access your account.",
+    "login.mode": "Mode",
+    "login.user": "Companion",
+    "login.partner": "Organizer",
+    "login.email": "Email / nickname",
+    "login.password": "Password",
+    "login.submit": "Log in",
+    "login.or": "or",
+    "login.apple": "Continue with Apple",
+    "login.google": "Continue with Google",
+    "login.facebook": "Continue with Facebook",
+    "login.email_placeholder": "e.g. ola_88 / ola@email.com",
+  },
+};
+
+function t(key, fallback = "") {
+  const lang = App?.lang || "pl";
+  return I18N?.[lang]?.[key] || I18N?.pl?.[key] || fallback || key;
+}
+
+function setLanguage(lang) {
+  App.lang = lang === "en" ? "en" : "pl";
+  localStorage.setItem("usly_lang", App.lang);
+  renderAll();
+}
+
+function applyI18n(root = document) {
+  if (!root) return;
+  root.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.dataset.i18n;
+    if (!key) return;
+    el.textContent = t(key, el.textContent || "");
+  });
+  root.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.dataset.i18nPlaceholder;
+    if (!key) return;
+    el.setAttribute("placeholder", t(key, el.getAttribute("placeholder") || ""));
+  });
+}
+
+
 /* ------------------------- App State -------------------------- */
 const App = {
-  lang: "pl", // PL only (zgodnie z wymaganiem "brak wersji angielskiej")
+  lang: localStorage.getItem("usly_lang") || "pl", // pl | en
   role: "user", // 'user' | 'partner'
   isLoggedIn: false,
   history: ["S0_WELCOME"],
@@ -7863,9 +7923,11 @@ async function loadPartnerEvents() {
 
 /* ------------------------- Render All -------------------------- */
 function renderAll() {
+  applyI18n();
+
   // Keep role labels consistent
-  safeSetText("roleLabelLogin", App.role === "user" ? "Towarzysz" : "Organizator");
-  safeSetText("roleLabelRegister", App.role === "user" ? "Towarzysz" : "Organizator");
+  safeSetText("roleLabelLogin", App.role === "user" ? t("login.user", "Towarzysz") : t("login.partner", "Organizator"));
+  safeSetText("roleLabelRegister", App.role === "user" ? t("login.user", "Towarzysz") : t("login.partner", "Organizator"));
 
   // Plan pills
   safeSetText("planPillSetup", App.user.plan.toUpperCase());

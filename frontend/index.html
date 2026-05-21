@@ -2032,6 +2032,12 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="brandText">
                   <div class="brandName">USLY</div>
                   <div class="brandTagline" id="roleLabelLogin">Towarzysz</div>
+
+                  <div class="langSwitch" style="margin-top:6px; display:flex; gap:6px;">
+                    <button class="segBtn small" type="button" onclick="setLanguage('pl')">PL</button>
+                    <button class="segBtn small" type="button" onclick="setLanguage('en')">EN</button>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -2040,33 +2046,33 @@ section#S11_PLANS .card[data-plan].is-current{
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Zaloguj się</div>
-              <div class="sectionSub">Zaloguj się, aby wejść do swojego konta.</div>
+              <div class="sectionTitle" data-i18n="login.title">Zaloguj się</div>
+              <div class="sectionSub" data-i18n="login.subtitle">Zaloguj się, aby wejść do swojego konta.</div>
   
-              <label class="mt12">Tryb</label>
+              <label class="mt12" data-i18n="login.mode">Tryb</label>
               <div class="seg wide">
-                <button class="segBtn on" id="roleUserBtnLogin" type="button" onclick="selectRole('user')">Towarzysz</button>
-                <button class="segBtn" id="rolePartnerBtnLogin" type="button" onclick="selectRole('partner')">Organizator</button>
+                <button class="segBtn on" id="roleUserBtnLogin" type="button" onclick="selectRole('user')" data-i18n="login.user">Towarzysz</button>
+                <button class="segBtn" id="rolePartnerBtnLogin" type="button" onclick="selectRole('partner')" data-i18n="login.partner">Organizator</button>
               </div>
   
-              <label class="mt12">Email / nick</label>
-              <input id="loginId" type="text" placeholder="np. ola_88 / ola@email.com" autocomplete="username" />
+              <label class="mt12" data-i18n="login.email">Email / nick</label>
+              <input id="loginId" type="text" placeholder="np. ola_88 / ola@email.com" data-i18n-placeholder="login.email_placeholder" autocomplete="username" />
   
-              <label>Hasło</label>
+              <label data-i18n="login.password">Hasło</label>
               <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
   
-              <button class="btn mt12" type="button" onclick="loginPrimary()">Zaloguj się</button>
+              <button class="btn mt12" type="button" onclick="loginPrimary()" data-i18n="login.submit">Zaloguj się</button>
   
-              <div class="divider mt16"><span>albo</span></div>
+              <div class="divider mt16"><span data-i18n="login.or">albo</span></div>
   
               <button class="btn social apple mt12" type="button" onclick="loginSocial('apple')">
-                <span class="sIco"></span> <span>Kontynuuj z Apple</span>
+                <span class="sIco"></span> <span data-i18n="login.apple">Kontynuuj z Apple</span>
               </button>
               <button class="btn social google mt10" type="button" onclick="loginSocial('google')">
-                <span class="sIco">G</span> <span>Kontynuuj z Google</span>
+                <span class="sIco">G</span> <span data-i18n="login.google">Kontynuuj z Google</span>
               </button>
               <button class="btn social fb mt10" type="button" onclick="loginSocial('facebook')">
-                <span class="sIco">f</span> <span>Kontynuuj z Facebook</span>
+                <span class="sIco">f</span> <span data-i18n="login.facebook">Kontynuuj z Facebook</span>
               </button>
   
               <div class="mt16 center">
