@@ -66,8 +66,79 @@ def _reverse_geocode_city(lat: float, lng: float) -> str | None:
         )
     except Exception:
         return None
+
+
+def ensure_event_reminder_notifications(db, current_time=None):
+    now = current_time or datetime.utcnow()
+
+    reminder_rules = [
+        ("event_reminder_2d", timedelta(days=2)),
+        ("event_reminder_1d", timedelta(days=1)),
+    ]
+
+    published_events = (
+        db.query(Event)
+        .filter(
+            Event.status == "published",
+            Event.start_at > now,
+        )
+        .all()
+    )
+
+    for event in published_events:
+        signup_user_ids = {
+            user_id
+            for (user_id,) in (
+                db.query(EventSignup.user_id)
+                .filter(EventSignup.event_id == event.id)
+                .all()
+            )
+        }
+
+        saved_user_ids = {
+            user_id
+            for (user_id,) in (
+                db.query(EventSave.user_id)
+                .filter(EventSave.event_id == event.id)
+                .all()
+            )
+        }
+
+        target_user_ids = signup_user_ids | saved_user_ids
+
+        for notif_type, delta in reminder_rules:
+            target_from = event.start_at - delta
+            target_to = target_from + timedelta(hours=24)
+
+            if not (target_from <= now < target_to):
+                continue
+
+            for target_user_id in target_user_ids:
+                exists = (
+                    db.query(UserNotification.id)
+                    .filter(
+                        UserNotification.user_id == target_user_id,
+                        UserNotification.event_id == event.id,
+                        UserNotification.type == notif_type,
+                    )
+                    .first()
+                )
+
+                if exists:
+                    continue
+
+                db.add(
+                    UserNotification(
+                        user_id=target_user_id,
+                        event_id=event.id,
+                        partner_user_id=event.partner_user_id,
+                        type=notif_type,
+                    )
+                )
+
+
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import List, Optional
@@ -6695,6 +6766,9 @@ def my_notifications(
 ):
     db = SessionLocal()
     try:
+        ensure_event_reminder_notifications(db)
+        db.commit()
+
         q = (
             db.query(UserNotification, Event)
             .outerjoin(Event, Event.id == UserNotification.event_id)

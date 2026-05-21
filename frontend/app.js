@@ -5516,6 +5516,12 @@ function getNotificationIcon(title = "", body = "") {
   if (text.includes("znajom")) return { icon: icons.userPlus, className: "notifIconFriend" };
 
   if (
+    text.includes("jutro") ||
+    text.includes("za 2 dni") ||
+    text.includes("przypominamy")
+  ) return { icon: icons.calendar, className: "notifIconEvent" };
+
+  if (
     text.includes("godziny") ||
     text.includes("miejsce") ||
     text.includes("wydarzenia")
@@ -5666,6 +5672,8 @@ async function renderNotifications() {
         const isAdminUnderReview = notification.type === "admin_event_under_review";
         const isAdminSafetyNotice = notification.type === "admin_event_safety_notice";
         const isAdminArchived = notification.type === "admin_event_archived";
+        const isReminder2d = notification.type === "event_reminder_2d";
+        const isReminder1d = notification.type === "event_reminder_1d";
 
         if (
           !isTimeAndLocationChange &&
@@ -5674,7 +5682,9 @@ async function renderNotifications() {
           !isLegacyUpdate &&
           !isAdminUnderReview &&
           !isAdminSafetyNotice &&
-          !isAdminArchived
+          !isAdminArchived &&
+          !isReminder2d &&
+          !isReminder1d
         ) return;
 
         const title = event?.title || "Wydarzenie";
@@ -5685,9 +5695,13 @@ async function renderNotifications() {
         const eventContext = [when, place].filter(Boolean).join(" • ");
 
         items.push({
-          title: isTimeAndLocationChange
-            ? "Zmiana godziny i miejsca wydarzenia"
-            : isTimeChange
+          title: isReminder2d
+            ? "Wydarzenie już za 2 dni"
+            : isReminder1d
+              ? "Wydarzenie już jutro"
+              : isTimeAndLocationChange
+                ? "Zmiana godziny i miejsca wydarzenia"
+                : isTimeChange
               ? "Zmiana godziny wydarzenia"
               : isLocationChange
                 ? "Zmiana miejsca wydarzenia"
@@ -5698,9 +5712,13 @@ async function renderNotifications() {
                     : isAdminArchived
                       ? "Wydarzenie zostało zarchiwizowane"
                       : "Zmiana w zapisanym wydarzeniu",
-          body: isAdminUnderReview
-            ? `${title} jest aktualnie sprawdzane przez administrację. Zachowaj ostrożność i podejmij świadomą decyzję o udziale.${eventContext ? ` ${eventContext}` : ""}`
-            : isAdminSafetyNotice
+          body: isReminder2d
+            ? `Przypominamy: ${title} odbędzie się za 2 dni.${eventContext ? ` ${eventContext}` : ""}`
+            : isReminder1d
+              ? `Przypominamy: ${title} odbędzie się jutro.${eventContext ? ` ${eventContext}` : ""}`
+              : isAdminUnderReview
+                ? `${title} jest aktualnie sprawdzane przez administrację. Zachowaj ostrożność i podejmij świadomą decyzję o udziale.${eventContext ? ` ${eventContext}` : ""}`
+                : isAdminSafetyNotice
               ? `${title}: administracja otrzymała zgłoszenie dotyczące bezpieczeństwa lub zgodności z zasadami.${eventContext ? ` ${eventContext}` : ""}`
               : isAdminArchived
                 ? `${title} zostało zarchiwizowane przez administrację.${eventContext ? ` ${eventContext}` : ""}`
