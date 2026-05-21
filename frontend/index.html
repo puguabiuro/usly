@@ -2091,7 +2091,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S3 RESET PASSWORD (PL ONLY)
         ========================================================== -->
-        <section class="view" id="S3_RESET_PASSWORD" aria-label="Reset hasła">
+        <section class="view" id="S3_RESET_PASSWORD" aria-label="Reset password">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
             <div class="brandCenter small">
@@ -2099,7 +2099,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Reset hasła</div>
+                  <div class="brandTagline" data-i18n="reset.title">Reset hasła</div>
                 </div>
               </div>
             </div>
@@ -2108,19 +2108,19 @@ section#S11_PLANS .card[data-plan].is-current{
 
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Ustaw nowe hasło</div>
-              <div class="sectionSub">Potwierdź konto i ustaw nowe hasło do aplikacji.</div>
+              <div class="sectionTitle" data-i18n="reset.heading">Ustaw nowe hasło</div>
+              <div class="sectionSub" data-i18n="reset.subtitle">Potwierdź konto i ustaw nowe hasło do aplikacji.</div>
 
-              <label class="mt12">Email</label>
-              <input id="resetPasswordEmail" type="email" placeholder="Adres e-mail" disabled />
+              <label class="mt12" data-i18n="reset.email">Email</label>
+              <input id="resetPasswordEmail" type="email" placeholder="Adres e-mail" data-i18n-placeholder="reset.email_placeholder" disabled />
 
-              <label class="mt12">Nowe hasło</label>
-              <input id="resetPasswordNew" type="password" placeholder="Wpisz nowe hasło" autocomplete="new-password" />
+              <label class="mt12" data-i18n="reset.new_password">Nowe hasło</label>
+              <input id="resetPasswordNew" type="password" placeholder="Wpisz nowe hasło" data-i18n-placeholder="reset.new_password_placeholder" autocomplete="new-password" />
 
-              <label class="mt12">Powtórz nowe hasło</label>
-              <input id="resetPasswordRepeat" type="password" placeholder="Powtórz nowe hasło" autocomplete="new-password" />
+              <label class="mt12" data-i18n="reset.repeat_password">Powtórz nowe hasło</label>
+              <input id="resetPasswordRepeat" type="password" placeholder="Powtórz nowe hasło" data-i18n-placeholder="reset.repeat_password_placeholder" autocomplete="new-password" />
 
-              <button class="btn mt16" type="button" onclick="submitResetPassword()">Zapisz nowe hasło</button>
+              <button class="btn mt16" type="button" onclick="submitResetPassword()" data-i18n="reset.submit">Zapisz nowe hasło</button>
             </div>
           </div>
         </section>
@@ -2145,57 +2145,57 @@ section#S11_PLANS .card[data-plan].is-current{
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Załóż konto</div>
-              <div class="sectionSub" id="regSubLine">Utwórz konto i przejdź do profilu.</div>
+              <div class="sectionTitle" data-i18n="register.title">Załóż konto</div>
+              <div class="sectionSub" id="regSubLine" data-i18n="register.subtitle">Utwórz konto i przejdź do profilu.</div>
 
-              <label class="mt12">Tryb</label>
+              <label class="mt12" data-i18n="login.mode">Tryb</label>
               <div class="seg wide">
-                <button class="segBtn on" id="roleUserBtn2" type="button" onclick="selectRole('user')">Towarzysz</button>
-                <button class="segBtn" id="rolePartnerBtn2" type="button" onclick="selectRole('partner')">Organizator</button>
+                <button class="segBtn on" id="roleUserBtn2" type="button" onclick="selectRole('user')" data-i18n="login.user">Towarzysz</button>
+                <button class="segBtn" id="rolePartnerBtn2" type="button" onclick="selectRole('partner')" data-i18n="login.partner">Organizator</button>
               </div>
 
               <div class="card mt16">
-                <div class="sectionTitle">Konto</div>
+                <div class="sectionTitle" data-i18n="register.account.title">Konto</div>
                 
 
-                <label class="mt12">Email *</label>
-                <input id="regEmail" type="email" placeholder="np. ola@email.com" autocomplete="email" />
+                <label class="mt12" data-i18n="register.email">Email *</label>
+                <input id="regEmail" type="email" placeholder="np. ola@email.com" data-i18n-placeholder="register.email_placeholder" autocomplete="email" />
 
                 <div id="regUserAccountFields">
-                  <label class="mt12">Nick / imię (publiczne) *</label>
-                  <input id="regNick" type="text" placeholder="np. Ola / ola_88" />
+                  <label class="mt12" data-i18n="register.nick">Nick / imię (publiczne) *</label>
+                  <input id="regNick" type="text" placeholder="np. Ola / ola_88" data-i18n-placeholder="register.nick_placeholder" />
                 </div>
 
                 <div id="regPartnerAccountFields" style="display:none;">
-                  <label class="mt12">Oficjalna nazwa miejsca / firmy *</label>
-                  <input id="regCompany" type="text" placeholder="np. Kawiarnia Aurora" />
+                  <label class="mt12" data-i18n="register.company">Oficjalna nazwa miejsca / firmy *</label>
+                  <input id="regCompany" type="text" placeholder="np. Kawiarnia Aurora" data-i18n-placeholder="register.company_placeholder" />
                 </div>
 
-                <label class="mt12">Hasło *</label>
-                <input id="regPass" type="password" placeholder="Minimum 8 znaków" autocomplete="new-password" />
+                <label class="mt12" data-i18n="register.password">Hasło *</label>
+                <input id="regPass" type="password" placeholder="Minimum 8 znaków" data-i18n-placeholder="register.password_placeholder" autocomplete="new-password" />
 
-                <label class="mt12">Powtórz hasło *</label>
-                <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" autocomplete="new-password" />
+                <label class="mt12" data-i18n="register.repeat_password">Powtórz hasło *</label>
+                <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" data-i18n-placeholder="register.repeat_password_placeholder" autocomplete="new-password" />
               </div>
 
               <div id="regUserBox">
   
                 <div class="card mt16">
-                  <div class="sectionTitle">Wiek i lokalizacja</div>
+                  <div class="sectionTitle" data-i18n="register.user.location_title">Wiek i lokalizacja</div>
                   
 
-                  <label class="mt12">Data urodzenia *</label>
+                  <label class="mt12" data-i18n="register.birthdate">Data urodzenia *</label>
                   <input id="regBirthDate" type="date" required />
                   <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
                    Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
                   </div>
-                  <div class="tMuted mt10" style="text-align:left;">Wymagane 18+.</div>
+                  <div class="tMuted mt10" style="text-align:left;" data-i18n="register.age_required">Wymagane 18+.</div>
 
-                  <label class="mt12">Lokalizacja *</label>
-                  <input id="regCity" type="text" placeholder="Pobieramy miasto..." readonly />
+                  <label class="mt12" data-i18n="register.location">Lokalizacja *</label>
+                  <input id="regCity" type="text" placeholder="Pobieramy miasto..." data-i18n-placeholder="register.location_placeholder" readonly />
                   <input id="regGeoLat" type="hidden" value="" />
                   <input id="regGeoLng" type="hidden" value="" />
-                  <div class="locationConsentNote mt12">📍 Twoja okolica, lepsze dopasowania.</div>
+                  <div class="locationConsentNote mt12" data-i18n="register.location_note">📍 Twoja okolica, lepsze dopasowania.</div>
 
                   
                 </div>
@@ -2203,62 +2203,62 @@ section#S11_PLANS .card[data-plan].is-current{
 
               <div id="regPartnerBox" style="display:none;">
                 <div class="card mt16">
-                  <div class="sectionTitle">Twoje miejsce</div>
+                  <div class="sectionTitle" data-i18n="register.partner.place_title">Twoje miejsce</div>
 
-                  <label class="mt12">Miasto *</label>
-                  <input id="regCityPartner" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+                  <label class="mt12" data-i18n="register.partner.city">Miasto *</label>
+                  <input id="regCityPartner" type="text" placeholder="np. Warszawa" data-i18n-placeholder="register.partner.city_placeholder" list="citiesDatalist" />
                 </div>
 
                 <div class="card mt16">
-                  <div class="sectionTitle">Plan organizatora</div>
-                  <div class="sectionSub">Wybierz dostęp dla miejsca.</div>
+                  <div class="sectionTitle" data-i18n="register.partner.plan_title">Plan organizatora</div>
+                  <div class="sectionSub" data-i18n="register.partner.plan_subtitle">Wybierz dostęp dla miejsca.</div>
 
                   <div class="seg wide mt12">
-                    <button class="segBtn on" id="pplan_free" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓">FREE • 0 zł / mies.</button>
-                    <button class="segBtn" id="pplan_pro" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼">PRO • 129 zł / mies.</button>
+                    <button class="segBtn on" id="pplan_free" type="button" onclick="setPartnerPlan('free')" data-plan="free" data-plan-icon="🆓" data-i18n="register.partner.plan.free">FREE • 0 zł / mies.</button>
+                    <button class="segBtn" id="pplan_pro" type="button" onclick="setPartnerPlan('pro')" data-plan="pro" data-plan-icon="💼" data-i18n="register.partner.plan.pro">PRO • 129 zł / mies.</button>
                   </div>
                   <div class="seg wide mt10">
-                    <button class="segBtn" id="pplan_premium" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎">PREMIUM • 259 zł / mies.</button>
-                    <button class="segBtn" id="pplan_enterprise" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆">ENTERPRISE • indywidualnie</button>
+                    <button class="segBtn" id="pplan_premium" type="button" onclick="setPartnerPlan('premium')" data-plan="premium" data-plan-icon="💎" data-i18n="register.partner.plan.premium">PREMIUM • 259 zł / mies.</button>
+                    <button class="segBtn" id="pplan_enterprise" type="button" onclick="setPartnerPlan('enterprise')" data-plan="enterprise" data-plan-icon="🏆" data-i18n="register.partner.plan.enterprise">ENTERPRISE • indywidualnie</button>
                   </div>
 
-                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
+                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')" data-i18n="register.plan_details">Zobacz szczegóły planów</button>
                 </div>
               </div>
 
               <div class="card mt16" id="regUserPlanBox">
-                  <div class="sectionTitle">Plan</div>
-                  <div class="sectionSub">Wybierz startowy dostęp.</div>
+                  <div class="sectionTitle" data-i18n="register.user.plan_title">Plan</div>
+                  <div class="sectionSub" data-i18n="register.user.plan_subtitle">Wybierz startowy dostęp.</div>
 
                   <div class="seg wide mt12">
-                    <button class="segBtn on" id="uplan_free" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓">FREE • 0 zł / mies.</button>
-                    <button class="segBtn" id="uplan_plus" type="button" onclick="setUserPlan('plus')" data-plan="plus" data-plan-icon="💙">PLUS • 29 zł / mies.</button>
+                    <button class="segBtn on" id="uplan_free" type="button" onclick="setUserPlan('free')" data-plan="free" data-plan-icon="🆓" data-i18n="register.user.plan.free">FREE • 0 zł / mies.</button>
+                    <button class="segBtn" id="uplan_plus" type="button" onclick="setUserPlan('plus')" data-plan="plus" data-plan-icon="💙" data-i18n="register.user.plan.plus">PLUS • 29 zł / mies.</button>
                   </div>
                   <div class="seg wide mt10">
-                    <button class="segBtn" id="uplan_premium" type="button" onclick="setUserPlan('premium')" data-plan="premium" data-plan-icon="💜">PREMIUM • 49 zł / mies.</button>
-                    <button class="segBtn" id="uplan_vip" type="button" onclick="setUserPlan('vip')" data-plan="vip" data-plan-icon="🖤">VIP • 89 zł / mies.</button>
+                    <button class="segBtn" id="uplan_premium" type="button" onclick="setUserPlan('premium')" data-plan="premium" data-plan-icon="💜" data-i18n="register.user.plan.premium">PREMIUM • 49 zł / mies.</button>
+                    <button class="segBtn" id="uplan_vip" type="button" onclick="setUserPlan('vip')" data-plan="vip" data-plan-icon="🖤" data-i18n="register.user.plan.vip">VIP • 89 zł / mies.</button>
                   </div>
 
-                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')">Zobacz szczegóły planów</button>
+                  <button class="btn secondary mt12" type="button" onclick="go('S11_PLANS')" data-i18n="register.plan_details">Zobacz szczegóły planów</button>
                 </div>
 
 
               <div class="card mt16">
-                <div class="sectionTitle">Zgody</div>
+                <div class="sectionTitle" data-i18n="register.legal.title">Zgody</div>
                 
 
                 <div class="mt16 legalBox">
                   <label class="checkRow">
                     <input id="acceptTerms" type="checkbox" />
-                    <span>Akceptuję <span class="link" onclick="openTerms()">Regulamin*</span></span>
+                    <span><span data-i18n="register.accept_terms_prefix">Akceptuję</span> <span class="link" onclick="openTerms()" data-i18n="register.terms_link">Regulamin*</span></span>
                   </label>
                   <label class="checkRow mt10">
                     <input id="acceptRodo" type="checkbox" />
-                    <span>Akceptuję <span class="link" onclick="openRodo()">Politykę prywatności*</span></span>
+                    <span><span data-i18n="register.accept_privacy_prefix">Akceptuję</span> <span class="link" onclick="openRodo()" data-i18n="register.privacy_link">Politykę prywatności*</span></span>
                   </label>
                 </div>
 
-                <button class="btn mt16" type="button" onclick="registerPrimary()">Zarejestruj</button>
+                <button class="btn mt16" type="button" onclick="registerPrimary()" data-i18n="register.submit">Zarejestruj</button>
               </div>
             </div>
           </div>

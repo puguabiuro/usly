@@ -165,6 +165,78 @@ const I18N = {
     "forgot.toast.email_required": "Podaj adres e-mail",
     "forgot.toast.success": "Jeśli konto istnieje, wyślemy link do ustawienia nowego hasła.",
     "forgot.toast.error": "Nie udało się wysłać linku. Spróbuj ponownie.",
+    "reset.title": "Reset hasła",
+    "reset.heading": "Ustaw nowe hasło",
+    "reset.subtitle": "Potwierdź konto i ustaw nowe hasło do aplikacji.",
+    "reset.email": "Email",
+    "reset.email_placeholder": "Adres e-mail",
+    "reset.new_password": "Nowe hasło",
+    "reset.new_password_placeholder": "Wpisz nowe hasło",
+    "reset.repeat_password": "Powtórz nowe hasło",
+    "reset.repeat_password_placeholder": "Powtórz nowe hasło",
+    "reset.submit": "Zapisz nowe hasło",
+    "reset.toast.fill_passwords": "Uzupełnij wszystkie pola hasła",
+    "reset.toast.passwords_mismatch": "Hasła nie są takie same",
+    "reset.toast.password_too_short": "Hasło musi mieć co najmniej 8 znaków",
+    "reset.toast.missing_token": "Brak tokenu resetu hasła",
+    "reset.toast.success": "Hasło zostało zmienione",
+    "reset.toast.change_error": "Nie udało się zmienić hasła",
+    "reset.toast.generic_error": "Błąd resetu hasła",
+    "reset.toast.missing_link": "Brak linku do resetu hasła",
+    "reset.toast.invalid_link": "Link do resetu hasła jest nieprawidłowy",
+    "register.title": "Załóż konto",
+    "register.subtitle": "Utwórz konto i przejdź do profilu.",
+    "register.account.title": "Konto",
+    "register.email": "Email *",
+    "register.email_placeholder": "np. ola@email.com",
+    "register.nick": "Nick / imię (publiczne) *",
+    "register.nick_placeholder": "np. Ola / ola_88",
+    "register.company": "Oficjalna nazwa miejsca / firmy *",
+    "register.company_placeholder": "np. Kawiarnia Aurora",
+    "register.password": "Hasło *",
+    "register.password_placeholder": "Minimum 8 znaków",
+    "register.repeat_password": "Powtórz hasło *",
+    "register.repeat_password_placeholder": "Powtórz hasło",
+    "register.user.location_title": "Wiek i lokalizacja",
+    "register.birthdate": "Data urodzenia *",
+    "register.age_required": "Wymagane 18+.",
+    "register.location": "Lokalizacja *",
+    "register.location_placeholder": "Pobieramy miasto...",
+    "register.location_note": "📍 Twoja okolica, lepsze dopasowania.",
+    "register.partner.place_title": "Twoje miejsce",
+    "register.partner.city": "Miasto *",
+    "register.partner.city_placeholder": "np. Warszawa",
+    "register.partner.plan_title": "Plan organizatora",
+    "register.partner.plan_subtitle": "Wybierz dostęp dla miejsca.",
+    "register.partner.plan.free": "FREE • 0 zł / mies.",
+    "register.partner.plan.pro": "PRO • 129 zł / mies.",
+    "register.partner.plan.premium": "PREMIUM • 259 zł / mies.",
+    "register.partner.plan.enterprise": "ENTERPRISE • indywidualnie",
+    "register.user.plan_title": "Plan",
+    "register.user.plan_subtitle": "Wybierz startowy dostęp.",
+    "register.user.plan.free": "FREE • 0 zł / mies.",
+    "register.user.plan.plus": "PLUS • 29 zł / mies.",
+    "register.user.plan.premium": "PREMIUM • 49 zł / mies.",
+    "register.user.plan.vip": "VIP • 89 zł / mies.",
+    "register.plan_details": "Zobacz szczegóły planów",
+    "register.accept_terms": "Akceptuję Regulamin*",
+    "register.accept_privacy": "Akceptuję Politykę prywatności*",
+    "register.submit": "Zarejestruj",
+    "register.legal.title": "Zgody",
+    "register.accept_terms_prefix": "Akceptuję",
+    "register.terms_link": "Regulamin*",
+    "register.accept_privacy_prefix": "Akceptuję",
+    "register.privacy_link": "Politykę prywatności*",
+    "register.toast.consents_required": "Zaznacz wymagane zgody (*)",
+    "register.toast.account_required": "Uzupełnij email, hasło i powtórzenie hasła (min. 8 znaków)",
+    "register.toast.birthdate_required": "Podaj datę urodzenia.",
+    "register.toast.birthdate_invalid": "Nieprawidłowa data urodzenia.",
+    "register.toast.age_under_18": "Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.",
+    "register.toast.nick_required": "Uzupełnij datę urodzenia i nick",
+    "register.toast.location_required": "Włącz lokalizację, aby kontynuować",
+    "register.toast.partner_required": "Uzupełnij nazwę i miasto organizatora",
+    "register.toast.create_error": "Nie udało się utworzyć konta",
+    "register.toast.auto_login_error": "Konto utworzone, ale nie udało się zalogować automatycznie",
     "plans.user.plus.price": "29 zł / miesiąc",
     "plans.user.premium.price": "49 zł / miesiąc",
     "plans.user.vip.price": "89 zł / miesiąc",
@@ -285,6 +357,78 @@ const I18N = {
     "forgot.toast.email_required": "Enter your email address",
     "forgot.toast.success": "If the account exists, we will send a link to set a new password.",
     "forgot.toast.error": "Could not send the link. Please try again.",
+    "reset.title": "Password reset",
+    "reset.heading": "Set a new password",
+    "reset.subtitle": "Confirm your account and set a new password for the app.",
+    "reset.email": "Email",
+    "reset.email_placeholder": "Email address",
+    "reset.new_password": "New password",
+    "reset.new_password_placeholder": "Enter a new password",
+    "reset.repeat_password": "Repeat new password",
+    "reset.repeat_password_placeholder": "Repeat new password",
+    "reset.submit": "Save new password",
+    "reset.toast.fill_passwords": "Fill in all password fields",
+    "reset.toast.passwords_mismatch": "Passwords do not match",
+    "reset.toast.password_too_short": "Password must be at least 8 characters",
+    "reset.toast.missing_token": "Missing password reset token",
+    "reset.toast.success": "Password has been changed",
+    "reset.toast.change_error": "Could not change the password",
+    "reset.toast.generic_error": "Password reset error",
+    "reset.toast.missing_link": "Missing password reset link",
+    "reset.toast.invalid_link": "Password reset link is invalid",
+    "register.title": "Create account",
+    "register.subtitle": "Create an account and continue to your profile.",
+    "register.account.title": "Account",
+    "register.email": "Email *",
+    "register.email_placeholder": "e.g. ola@email.com",
+    "register.nick": "Nickname / public name *",
+    "register.nick_placeholder": "e.g. Ola / ola_88",
+    "register.company": "Official venue / company name *",
+    "register.company_placeholder": "e.g. Aurora Café",
+    "register.password": "Password *",
+    "register.password_placeholder": "Minimum 8 characters",
+    "register.repeat_password": "Repeat password *",
+    "register.repeat_password_placeholder": "Repeat password",
+    "register.user.location_title": "Age and location",
+    "register.birthdate": "Date of birth *",
+    "register.age_required": "18+ required.",
+    "register.location": "Location *",
+    "register.location_placeholder": "Getting your city...",
+    "register.location_note": "📍 Your area, better matches.",
+    "register.partner.place_title": "Your place",
+    "register.partner.city": "City *",
+    "register.partner.city_placeholder": "e.g. Warsaw",
+    "register.partner.plan_title": "Organizer plan",
+    "register.partner.plan_subtitle": "Choose access for your place.",
+    "register.partner.plan.free": "FREE • 0 PLN / mo.",
+    "register.partner.plan.pro": "PRO • 129 PLN / mo.",
+    "register.partner.plan.premium": "PREMIUM • 259 PLN / mo.",
+    "register.partner.plan.enterprise": "ENTERPRISE • custom",
+    "register.user.plan_title": "Plan",
+    "register.user.plan_subtitle": "Choose your starting access.",
+    "register.user.plan.free": "FREE • 0 PLN / mo.",
+    "register.user.plan.plus": "PLUS • 29 PLN / mo.",
+    "register.user.plan.premium": "PREMIUM • 49 PLN / mo.",
+    "register.user.plan.vip": "VIP • 89 PLN / mo.",
+    "register.plan_details": "See plan details",
+    "register.accept_terms": "I accept the Terms & Conditions*",
+    "register.accept_privacy": "I accept the Privacy Policy*",
+    "register.submit": "Register",
+    "register.legal.title": "Consents",
+    "register.accept_terms_prefix": "I accept",
+    "register.terms_link": "Terms & Conditions*",
+    "register.accept_privacy_prefix": "I accept",
+    "register.privacy_link": "Privacy Policy*",
+    "register.toast.consents_required": "Accept the required consents (*)",
+    "register.toast.account_required": "Fill in email, password and repeated password (min. 8 characters)",
+    "register.toast.birthdate_required": "Enter your date of birth.",
+    "register.toast.birthdate_invalid": "Invalid date of birth.",
+    "register.toast.age_under_18": "You cannot register — you must be at least 18 years old.",
+    "register.toast.nick_required": "Fill in date of birth and nickname",
+    "register.toast.location_required": "Enable location to continue",
+    "register.toast.partner_required": "Fill in organizer name and city",
+    "register.toast.create_error": "Could not create account",
+    "register.toast.auto_login_error": "Account created, but automatic login failed",
     "plans.user.plus.price": "29 PLN / month",
     "plans.user.premium.price": "49 PLN / month",
     "plans.user.vip.price": "89 PLN / month",
@@ -1053,7 +1197,7 @@ async function registerPrimary() {
   const terms = $("acceptTerms")?.checked;
   const rodo = $("acceptRodo")?.checked;
   if (!terms || !rodo) {
-    toast("Zaznacz wymagane zgody (*)");
+    toast(t("register.toast.consents_required", "Zaznacz wymagane zgody (*)"));
     return;
   }
 
@@ -1062,12 +1206,12 @@ async function registerPrimary() {
   const passRepeat = $("regPassRepeat")?.value?.trim();
 
   if (!email || !pass || !passRepeat || pass.length < 8) {
-    toast("Uzupełnij email, hasło i powtórzenie hasła (min. 8 znaków)");
+    toast(t("register.toast.account_required", "Uzupełnij email, hasło i powtórzenie hasła (min. 8 znaków)"));
     return;
   }
 
   if (pass !== passRepeat) {
-    toast("Hasła nie są takie same");
+    toast(t("reset.toast.passwords_mismatch", "Hasła nie są takie same"));
     return;
   }
 
@@ -1094,13 +1238,13 @@ async function registerPrimary() {
     }
 
     if (!dob) {
-      showAgeError("Podaj datę urodzenia.");
+      showAgeError(t("register.toast.birthdate_required", "Podaj datę urodzenia."));
       return;
     }
 
     const birth = new Date(dob);
     if (Number.isNaN(birth.getTime())) {
-      showAgeError("Nieprawidłowa data urodzenia.");
+      showAgeError(t("register.toast.birthdate_invalid", "Nieprawidłowa data urodzenia."));
       return;
     }
 
@@ -1110,19 +1254,19 @@ async function registerPrimary() {
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
 
     if (age < 18) {
-      showAgeError("Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.");
+      showAgeError(t("register.toast.age_under_18", "Nie możesz się zarejestrować – wymagane jest ukończone 18 lat."));
       return;
     }
 
     hideAgeError();
 
     if (!nick) {
-      toast("Uzupełnij datę urodzenia i nick");
+      toast(t("register.toast.nick_required", "Uzupełnij datę urodzenia i nick"));
       return;
     }
 
     if (!App.user?.geo?.lat || !App.user?.geo?.lng) {
-      toast("Włącz lokalizację, aby kontynuować");
+      toast(t("register.toast.location_required", "Włącz lokalizację, aby kontynuować"));
       return;
     }
 
@@ -1137,7 +1281,7 @@ async function registerPrimary() {
     dob = null;
 
     if (!company || !city) {
-      toast("Uzupełnij nazwę i miasto organizatora");
+      toast(t("register.toast.partner_required", "Uzupełnij nazwę i miasto organizatora"));
       return;
     }
 
@@ -1161,7 +1305,7 @@ async function registerPrimary() {
     });
 
     if (!data?.success || !data?.data?.id) {
-      toast(data?.error?.message || "Nie udało się utworzyć konta");
+      toast(data?.error?.message || t("register.toast.create_error", "Nie udało się utworzyć konta"));
       return;
     }
 
@@ -1172,7 +1316,7 @@ async function registerPrimary() {
     });
 
     if (!loginData?.success || !loginData?.data?.access_token) {
-      toast("Konto utworzone, ale nie udało się zalogować automatycznie");
+      toast(t("register.toast.auto_login_error", "Konto utworzone, ale nie udało się zalogować automatycznie"));
       go("S1_LOGIN");
       return;
     }
@@ -8874,7 +9018,7 @@ async function submitChangePassword() {
   const repeatPassword = $("changePasswordRepeat")?.value?.trim() || "";
 
   if (!currentPassword || !newPassword || !repeatPassword) {
-    toast("Uzupełnij wszystkie pola hasła");
+    toast(t("reset.toast.fill_passwords", "Uzupełnij wszystkie pola hasła"));
     return;
   }
 
@@ -8899,12 +9043,12 @@ async function submitChangePassword() {
     });
 
     if (res?.success) {
-      toast("Hasło zostało zmienione");
+      toast(t("reset.toast.success", "Hasło zostało zmienione"));
       closeModal();
       return;
     }
 
-    toast(res?.error?.message || "Nie udało się zmienić hasła");
+    toast(res?.error?.message || t("reset.toast.change_error", "Nie udało się zmienić hasła"));
   } catch (err) {
     const msg =
       err?.data?.detail === "CURRENT_PASSWORD_INVALID"
@@ -9012,22 +9156,22 @@ async function submitResetPassword() {
   const repeatPassword = $("resetPasswordRepeat")?.value?.trim() || "";
 
   if (!newPassword || !repeatPassword) {
-    toast("Uzupełnij wszystkie pola hasła");
+    toast(t("reset.toast.fill_passwords", "Uzupełnij wszystkie pola hasła"));
     return;
   }
 
   if (newPassword !== repeatPassword) {
-    toast("Hasła nie są takie same");
+    toast(t("reset.toast.passwords_mismatch", "Hasła nie są takie same"));
     return;
   }
 
   if (newPassword.length < 8) {
-    toast("Hasło musi mieć co najmniej 8 znaków");
+    toast(t("reset.toast.password_too_short", "Hasło musi mieć co najmniej 8 znaków"));
     return;
   }
 
   if (!App.resetToken) {
-    toast("Brak tokenu resetu hasła");
+    toast(t("reset.toast.missing_token", "Brak tokenu resetu hasła"));
     return;
   }
 
@@ -9049,7 +9193,7 @@ async function submitResetPassword() {
 
     toast(res?.error?.message || "Nie udało się zmienić hasła");
   } catch (err) {
-    toast(err?.userMessage || "Błąd resetu hasła");
+    toast(err?.userMessage || t("reset.toast.generic_error", "Błąd resetu hasła"));
   }
 }
 
@@ -9057,7 +9201,7 @@ async function loadResetPasswordScreen(token) {
   const tokenValue = String(token || "").trim();
 
   if (!tokenValue) {
-    toast("Brak linku do resetu hasła");
+    toast(t("reset.toast.missing_link", "Brak linku do resetu hasła"));
     return false;
   }
 
@@ -9069,7 +9213,7 @@ async function loadResetPasswordScreen(token) {
     });
 
     if (!res?.success || !res?.data?.email) {
-      toast("Link do resetu hasła jest nieprawidłowy");
+      toast(t("reset.toast.invalid_link", "Link do resetu hasła jest nieprawidłowy"));
       return false;
     }
 
