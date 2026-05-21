@@ -959,6 +959,11 @@ def delete_account(
         for g in owned_groups:
             db.delete(g)
 
+        db.query(Friendship).filter(
+            (Friendship.requester_user_id == current_user.id)
+            | (Friendship.addressee_user_id == current_user.id)
+        ).delete(synchronize_session=False)
+
         original_email = user.email
         safe_email = f"deleted_{user.id}_{int(datetime.utcnow().timestamp())}@deleted.usly.local"
 
