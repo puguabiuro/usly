@@ -77,6 +77,111 @@ const I18N = {
     "login.google": "Kontynuuj z Google",
     "login.facebook": "Kontynuuj z Facebook",
     "login.email_placeholder": "np. ola_88 / ola@email.com",
+    "login.no_account": "Nie masz konta? Zarejestruj się",
+    "login.forgot_password": "Nie pamiętasz hasła?",
+    "plans.title": "Plany",
+    "plans.user.title": "Plany Towarzysza",
+    "plans.user.subtitle": "Wybierz poziom dostępu dopasowany do tego, jak chcesz korzystać z USLY.",
+    "plans.partner.title": "Plany Organizatora",
+    "plans.partner.subtitle": "Wybierz poziom widoczności, raportów i narzędzi dla swojego miejsca lub marki.",
+    "plans.choose": "Wybierz",
+    "plans.contact_us": "Napisz do nas",
+    "plans.current": "Aktualny plan",
+    "plans.user.free.desc": "Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.",
+    "plans.user.plus.desc": "Większa swoboda w poznawaniu ludzi i korzystaniu z grup.",
+    "plans.user.premium.desc": "Pełniejsze korzystanie z USLY i rozwijanie swojej sieci znajomości.",
+    "plans.user.vip.desc": "Maksymalne możliwości i pełna swoboda w USLY.",
+    "plans.partner.free.desc": "Plan na start dla organizatorów, którzy chcą sprawdzić USLY i uruchomić pierwsze działania bez kosztu stałego.",
+    "plans.partner.pro.desc": "Dla organizatorów, którzy prowadzą wydarzenia regularnie i chcą sprawniej zarządzać relacją z uczestnikami.",
+    "plans.partner.premium.desc": "Dla organizatorów, którzy chcą skalować działania, pracować na pełnych danych i mocniej promować swoje wydarzenia.",
+    "plans.partner.enterprise.desc": "Dla większych partnerów, sieci i marek, które potrzebują indywidualnego zakresu działań, raportowania i wdrożenia.",
+    "plans.user.free.feature1": "Rozmowy 1:1 ze znajomymi",
+    "plans.user.free.feature2": "Dołączanie do 1 grupy jednocześnie",
+    "plans.user.free.feature3": "Brak możliwości tworzenia własnych grup",
+    "plans.user.free.feature4": "Do 5 zainteresowań w profilu",
+    "plans.user.free.feature5": "1 awatar AI miesięcznie",
+    "plans.user.plus.feature1": "Tworzenie 1 własnej grupy",
+    "plans.user.plus.feature2": "Dołączanie do maks. 3 grup",
+    "plans.user.plus.feature3": "Do 10 zainteresowań w profilu",
+    "plans.user.plus.feature4": "Lepsza swoboda korzystania z aplikacji na co dzień",
+    "plans.user.plus.feature5": "5 awatarów AI miesięcznie",
+    "plans.user.premium.feature1": "Tworzenie do 3 własnych grup",
+    "plans.user.premium.feature2": "Brak limitu dołączania do grup",
+    "plans.user.premium.feature3": "Dodawanie znajomych do grup",
+    "plans.user.premium.feature4": "Do 20 zainteresowań w profilu",
+    "plans.user.premium.feature5": "15 awatarów AI miesięcznie",
+    "plans.user.vip.feature1": "Tworzenie grup bez limitu",
+    "plans.user.vip.feature2": "Brak limitów w grupach i kontaktach",
+    "plans.user.vip.feature3": "Dodawanie znajomych do grup",
+    "plans.user.vip.feature4": "Nieograniczona liczba zainteresowań",
+    "plans.user.vip.feature5": "30 awatarów AI miesięcznie",
+    "plans.price.free": "0 zł",
+    "plans.partner.free.price": "0 zł",
+    "plans.partner.pro.price": "129 zł / miesiąc",
+    "plans.partner.premium.price": "259 zł / miesiąc",
+    "plans.partner.enterprise.price": "Indywidualnie",
+    "plans.partner.free.feature1": "Maksymalnie 2 aktywne wydarzenia jednocześnie",
+    "plans.partner.free.feature2": "Podstawowy podgląd panelu: aktywne wydarzenia",
+    "plans.partner.free.feature3": "Brak wiadomości do uczestników",
+    "plans.partner.free.feature4": "Brak broadcastu i brak wyróżnienia wydarzeń",
+    "plans.partner.pro.feature1": "Maksymalnie 5 aktywnych wydarzeń jednocześnie",
+    "plans.partner.pro.feature2": "Rozszerzony podgląd panelu: aktywne, szkice i zapisy łącznie",
+    "plans.partner.pro.feature3": "Możliwość pisania do uczestników",
+    "plans.partner.pro.feature4": "Bez broadcastu i bez wyróżnienia wydarzeń",
+    "plans.partner.premium.feature1": "Nielimitowana liczba aktywnych wydarzeń",
+    "plans.partner.premium.feature2": "Pełny podgląd panelu: aktywne, szkice, zapisy łącznie i frekwencja",
+    "plans.partner.premium.feature3": "Możliwość wysyłki broadcastu do uczestników",
+    "plans.partner.premium.feature4": "Wyróżnienie wydarzeń w aplikacji",
+    "plans.partner.enterprise.feature1": "Wszystko z planu PREMIUM",
+    "plans.partner.enterprise.feature2": "Obsługa wielu scenariuszy i działań niestandardowych",
+    "plans.partner.enterprise.feature3": "Najpełniejszy zakres raportowania i komunikacji",
+    "plans.partner.enterprise.feature4": "Zakres wdrożenia ustalany indywidualnie",
+    "enterprise.modal.title": "Plan Enterprise",
+    "enterprise.modal.heading": "Porozmawiajmy o pakiecie dla Twojej marki",
+    "enterprise.modal.subtitle": "Zostaw kontakt i zaznacz, czego potrzebujesz. Przygotujemy indywidualną propozycję dla Twojego miejsca, wydarzeń lub sieci lokalizacji.",
+    "enterprise.company.label": "Nazwa firmy / marki",
+    "enterprise.company.placeholder": "np. klub, restauracja, sieć miejsc",
+    "enterprise.city.label": "Miasto / zasięg działania",
+    "enterprise.city.placeholder": "np. Warszawa, kilka miast, cała Polska",
+    "enterprise.contact.label": "Email lub telefon do kontaktu",
+    "enterprise.contact.placeholder": "np. kontakt@firma.pl lub numer telefonu",
+    "enterprise.interests.label": "Czym jesteście zainteresowani?",
+    "enterprise.message.label": "Krótka wiadomość",
+    "enterprise.message.placeholder": "Napisz krótko, czego potrzebujesz albo jaki efekt chcesz osiągnąć.",
+    "enterprise.submit": "Wyślij zapytanie",
+    "enterprise.need.visibility": "Większa widoczność wydarzeń",
+    "enterprise.need.locations": "Promocja kilku lokalizacji",
+    "enterprise.need.campaign": "Kampania lub event specjalny",
+    "enterprise.need.long_term": "Współpraca długoterminowa",
+    "enterprise.need.network": "Oferta dla sieci lub franczyzy",
+    "enterprise.need.other": "Inne",
+    "common.back": "Wróć",
+    "forgot.modal.title": "Odzyskiwanie hasła",
+    "forgot.heading": "Reset hasła",
+    "forgot.subtitle": "Podaj adres e-mail przypisany do konta. Wyślemy link do ustawienia nowego hasła.",
+    "forgot.email.label": "Email",
+    "forgot.email.placeholder": "np. ola@email.com",
+    "forgot.submit": "Wyślij link",
+    "forgot.toast.email_required": "Podaj adres e-mail",
+    "forgot.toast.success": "Jeśli konto istnieje, wyślemy link do ustawienia nowego hasła.",
+    "forgot.toast.error": "Nie udało się wysłać linku. Spróbuj ponownie.",
+    "plans.user.plus.price": "29 zł / miesiąc",
+    "plans.user.premium.price": "49 zł / miesiąc",
+    "plans.user.vip.price": "89 zł / miesiąc",
+    "plans.subtitle": "Zobacz różnice funkcji przed zalogowaniem.",
+    "plans.preview": "Podgląd planów",
+    "login.no_account": "Nie masz konta? Zarejestruj się",
+    "login.forgot_password": "Nie pamiętasz hasła?",
+    "welcome.title": "Twoje miasto. Twoi ludzie.",
+    "welcome.subtitle": "Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.",
+    "welcome.choose_account": "Wybierz konto",
+    "welcome.user": "Poznaj ludzi",
+    "welcome.partner": "Twórz wydarzenia",
+    "welcome.start": "Zacznij",
+    "welcome.have_account": "Mam konto",
+    "welcome.promo": "Poznawaj miasto przez ludzi, z którymi naprawdę masz flow.",
+    "welcome.plans_subtitle": "Wybierz tryb, który najlepiej pasuje do Ciebie.",
+    "welcome.see_plans": "Zobacz plany",
   },
   en: {
     "login.title": "Log in",
@@ -92,6 +197,111 @@ const I18N = {
     "login.google": "Continue with Google",
     "login.facebook": "Continue with Facebook",
     "login.email_placeholder": "e.g. ola_88 / ola@email.com",
+    "login.no_account": "Don’t have an account? Register",
+    "login.forgot_password": "Forgot password?",
+    "plans.title": "Plans",
+    "plans.user.title": "Companion Plans",
+    "plans.user.subtitle": "Choose the access level that matches how you want to use USLY.",
+    "plans.partner.title": "Organizer Plans",
+    "plans.partner.subtitle": "Choose the visibility, reporting and tools level for your venue or brand.",
+    "plans.choose": "Choose",
+    "plans.contact_us": "Contact us",
+    "plans.current": "Current plan",
+    "plans.user.free.desc": "Basic access to USLY and meeting people in your area.",
+    "plans.user.plus.desc": "More freedom to meet people and use groups.",
+    "plans.user.premium.desc": "A fuller USLY experience and growing your network of connections.",
+    "plans.user.vip.desc": "Maximum possibilities and complete freedom in USLY.",
+    "plans.partner.free.desc": "A starter plan for organizers who want to try USLY and launch their first activities without fixed costs.",
+    "plans.partner.pro.desc": "For organizers who run events regularly and want to manage participant relationships more efficiently.",
+    "plans.partner.premium.desc": "For organizers who want to scale operations, work with full analytics and promote their events more strongly.",
+    "plans.partner.enterprise.desc": "For larger partners, networks and brands that require a custom scope of operations, reporting and implementation.",
+    "plans.user.free.feature1": "1:1 conversations with friends",
+    "plans.user.free.feature2": "Join up to 1 group at a time",
+    "plans.user.free.feature3": "No option to create your own groups",
+    "plans.user.free.feature4": "Up to 5 interests in your profile",
+    "plans.user.free.feature5": "1 AI avatar per month",
+    "plans.user.plus.feature1": "Create 1 private group",
+    "plans.user.plus.feature2": "Join up to 3 groups",
+    "plans.user.plus.feature3": "Up to 10 interests in your profile",
+    "plans.user.plus.feature4": "More freedom to use the app daily",
+    "plans.user.plus.feature5": "5 AI avatars per month",
+    "plans.user.premium.feature1": "Create up to 3 private groups",
+    "plans.user.premium.feature2": "Unlimited group joining",
+    "plans.user.premium.feature3": "Add friends to groups",
+    "plans.user.premium.feature4": "Up to 20 interests in your profile",
+    "plans.user.premium.feature5": "15 AI avatars per month",
+    "plans.user.vip.feature1": "Unlimited group creation",
+    "plans.user.vip.feature2": "No limits in groups and contacts",
+    "plans.user.vip.feature3": "Add friends to groups",
+    "plans.user.vip.feature4": "Unlimited number of interests",
+    "plans.user.vip.feature5": "30 AI avatars per month",
+    "plans.price.free": "0 PLN",
+    "plans.partner.free.price": "0 PLN",
+    "plans.partner.pro.price": "129 PLN / month",
+    "plans.partner.premium.price": "259 PLN / month",
+    "plans.partner.enterprise.price": "Custom",
+    "plans.partner.free.feature1": "Up to 2 active events at the same time",
+    "plans.partner.free.feature2": "Basic dashboard view: active events",
+    "plans.partner.free.feature3": "No participant messaging",
+    "plans.partner.free.feature4": "No broadcast and no event highlighting",
+    "plans.partner.pro.feature1": "Up to 5 active events at the same time",
+    "plans.partner.pro.feature2": "Extended dashboard view: active events, drafts and signups combined",
+    "plans.partner.pro.feature3": "Ability to message participants",
+    "plans.partner.pro.feature4": "No broadcast and no event highlighting",
+    "plans.partner.premium.feature1": "Unlimited active events",
+    "plans.partner.premium.feature2": "Full dashboard view: active events, drafts, signups and attendance",
+    "plans.partner.premium.feature3": "Ability to send broadcasts to participants",
+    "plans.partner.premium.feature4": "Event highlighting in the app",
+    "plans.partner.enterprise.feature1": "Everything in the PREMIUM plan",
+    "plans.partner.enterprise.feature2": "Support for multiple scenarios and custom activities",
+    "plans.partner.enterprise.feature3": "The fullest scope of reporting and communication",
+    "plans.partner.enterprise.feature4": "Implementation scope agreed individually",
+    "enterprise.modal.title": "Enterprise Plan",
+    "enterprise.modal.heading": "Let’s talk about a package for your brand",
+    "enterprise.modal.subtitle": "Leave your contact details and select what you need. We will prepare a custom proposal for your venue, events or location network.",
+    "enterprise.company.label": "Company / brand name",
+    "enterprise.company.placeholder": "e.g. club, restaurant, venue network",
+    "enterprise.city.label": "City / operating area",
+    "enterprise.city.placeholder": "e.g. Warsaw, several cities, all of Poland",
+    "enterprise.contact.label": "Email or phone for contact",
+    "enterprise.contact.placeholder": "e.g. contact@company.com or phone number",
+    "enterprise.interests.label": "What are you interested in?",
+    "enterprise.message.label": "Short message",
+    "enterprise.message.placeholder": "Briefly describe what you need or what result you want to achieve.",
+    "enterprise.submit": "Send inquiry",
+    "enterprise.need.visibility": "Greater event visibility",
+    "enterprise.need.locations": "Promotion for multiple locations",
+    "enterprise.need.campaign": "Campaign or special event",
+    "enterprise.need.long_term": "Long-term cooperation",
+    "enterprise.need.network": "Offer for a network or franchise",
+    "enterprise.need.other": "Other",
+    "common.back": "Back",
+    "forgot.modal.title": "Password recovery",
+    "forgot.heading": "Reset password",
+    "forgot.subtitle": "Enter the email address assigned to your account. We will send you a link to set a new password.",
+    "forgot.email.label": "Email",
+    "forgot.email.placeholder": "e.g. ola@email.com",
+    "forgot.submit": "Send link",
+    "forgot.toast.email_required": "Enter your email address",
+    "forgot.toast.success": "If the account exists, we will send a link to set a new password.",
+    "forgot.toast.error": "Could not send the link. Please try again.",
+    "plans.user.plus.price": "29 PLN / month",
+    "plans.user.premium.price": "49 PLN / month",
+    "plans.user.vip.price": "89 PLN / month",
+    "plans.subtitle": "See feature differences before logging in.",
+    "plans.preview": "Preview plans",
+    "login.no_account": "Don’t have an account? Register",
+    "login.forgot_password": "Forgot password?",
+    "welcome.title": "Your city. Your people.",
+    "welcome.subtitle": "People, conversations and events built around interests — not chance.",
+    "welcome.choose_account": "Choose account",
+    "welcome.user": "Meet people",
+    "welcome.partner": "Create events",
+    "welcome.start": "Start",
+    "welcome.have_account": "I have an account",
+    "welcome.promo": "Discover your city through people you genuinely connect with.",
+    "welcome.plans_subtitle": "Choose the mode that fits you best.",
+    "welcome.see_plans": "See plans",
   },
 };
 
@@ -108,6 +318,11 @@ function setLanguage(lang) {
 
 function applyI18n(root = document) {
   if (!root) return;
+
+  root.querySelectorAll("[data-lang-choice]").forEach((el) => {
+    el.classList.toggle("active", String(el.dataset.langChoice || "pl") === String(App.lang || "pl"));
+  });
+
   root.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.dataset.i18n;
     if (!key) return;
@@ -123,7 +338,7 @@ function applyI18n(root = document) {
 
 /* ------------------------- App State -------------------------- */
 const App = {
-  lang: localStorage.getItem("usly_lang") || "pl", // pl | en
+  lang: localStorage.getItem("usly_lang") === "en" ? "en" : "pl", // default: pl
   role: "user", // 'user' | 'partner'
   isLoggedIn: false,
   history: ["S0_WELCOME"],
@@ -802,12 +1017,12 @@ function logout() {
   go("S0_WELCOME");
 }
 function openForgot() {
-  openModal("Odzyskiwanie hasła", `
-    <div class="tStrong">Reset hasła</div>
-    <div class="sectionSub">Podaj adres e-mail przypisany do konta. Wyślemy link do ustawienia nowego hasła.</div>
-    <label class="mt12">Email</label>
-    <input id="forgotEmail" type="email" placeholder="np. ola@email.com" />
-    <button class="btn mt16" type="button" onclick="submitForgotPassword()">Wyślij link</button>
+  openModal(t("forgot.modal.title", "Odzyskiwanie hasła"), `
+    <div class="tStrong">${t("forgot.heading", "Reset hasła")}</div>
+    <div class="sectionSub">${t("forgot.subtitle", "Podaj adres e-mail przypisany do konta. Wyślemy link do ustawienia nowego hasła.")}</div>
+    <label class="mt12">${t("forgot.email.label", "Email")}</label>
+    <input id="forgotEmail" type="email" placeholder="${t("forgot.email.placeholder", "np. ola@email.com")}" />
+    <button class="btn mt16" type="button" onclick="submitForgotPassword()">${t("forgot.submit", "Wyślij link")}</button>
   `);
 }
 
@@ -815,7 +1030,7 @@ async function submitForgotPassword() {
   const email = ($("forgotEmail")?.value || "").trim().toLowerCase();
 
   if (!email) {
-    toast("Podaj adres e-mail");
+    toast(t("forgot.toast.email_required", "Podaj adres e-mail"));
     return;
   }
 
@@ -827,9 +1042,9 @@ async function submitForgotPassword() {
     });
 
     closeModal();
-    toast("Jeśli konto istnieje, wyślemy link do ustawienia nowego hasła.");
+    toast(t("forgot.toast.success", "Jeśli konto istnieje, wyślemy link do ustawienia nowego hasła."));
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wysłać linku. Spróbuj ponownie.");
+    toast(err?.userMessage || t("forgot.toast.error", "Nie udało się wysłać linku. Spróbuj ponownie."));
   }
 }
 
@@ -1032,7 +1247,7 @@ function refreshUserPlanCardsUi() {
     card.classList.toggle("is-current", plan === current);
 
     if (btn) {
-      btn.textContent = plan === current ? "Aktualny plan" : "Wybierz";
+      btn.textContent = plan === current ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz");
     }
   });
 
@@ -1139,7 +1354,7 @@ async function setPartnerPlan(plan, silent = false) {
     const btn = card.querySelector(".btn");
     if (btn) {
       const cardPlan = String(card.dataset.plan || "").toLowerCase();
-      btn.textContent = cardPlan === "enterprise" ? "Napisz do nas" : (isCurrent ? "Aktualny plan" : "Wybierz");
+      btn.textContent = cardPlan === "enterprise" ? t("plans.contact_us", "Napisz do nas") : (isCurrent ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz"));
     }
   });
 
@@ -1238,33 +1453,33 @@ async function submitEnterpriseContact() {
 }
 
 function contactEnterprisePlan() {
-  openModal("Plan Enterprise", `
-    <div class="tStrong">Porozmawiajmy o pakiecie dla Twojej marki</div>
-    <div class="sectionSub mt10">Zostaw kontakt i zaznacz, czego potrzebujesz. Przygotujemy indywidualną propozycję dla Twojego miejsca, wydarzeń lub sieci lokalizacji.</div>
+  openModal(t("enterprise.modal.title", "Plan Enterprise"), `
+    <div class="tStrong">${t("enterprise.modal.heading", "Porozmawiajmy o pakiecie dla Twojej marki")}</div>
+    <div class="sectionSub mt10">${t("enterprise.modal.subtitle", "Zostaw kontakt i zaznacz, czego potrzebujesz. Przygotujemy indywidualną propozycję dla Twojego miejsca, wydarzeń lub sieci lokalizacji.")}</div>
 
-    <label class="mt12">Nazwa firmy / marki</label>
-    <input id="enterpriseContactCompany" type="text" placeholder="np. klub, restauracja, sieć miejsc" />
+    <label class="mt12">${t("enterprise.company.label", "Nazwa firmy / marki")}</label>
+    <input id="enterpriseContactCompany" type="text" placeholder="${t("enterprise.company.placeholder", "np. klub, restauracja, sieć miejsc")}" />
 
-    <label class="mt12">Miasto / zasięg działania</label>
-    <input id="enterpriseContactCity" type="text" placeholder="np. Warszawa, kilka miast, cała Polska" />
+    <label class="mt12">${t("enterprise.city.label", "Miasto / zasięg działania")}</label>
+    <input id="enterpriseContactCity" type="text" placeholder="${t("enterprise.city.placeholder", "np. Warszawa, kilka miast, cała Polska")}" />
 
-    <label class="mt12">Email lub telefon do kontaktu</label>
-    <input id="enterpriseContactContact" type="text" placeholder="np. kontakt@firma.pl lub numer telefonu" />
+    <label class="mt12">${t("enterprise.contact.label", "Email lub telefon do kontaktu")}</label>
+    <input id="enterpriseContactContact" type="text" placeholder="${t("enterprise.contact.placeholder", "np. kontakt@firma.pl lub numer telefonu")}" />
 
-    <label class="mt12">Czym jesteście zainteresowani?</label>
+    <label class="mt12">${t("enterprise.interests.label", "Czym jesteście zainteresowani?")}</label>
     <div class="mt8" style="display:grid;gap:8px">
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Większa widoczność wydarzeń" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Większa widoczność wydarzeń</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Promocja kilku lokalizacji" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Promocja kilku lokalizacji</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Kampania lub event specjalny" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Kampania lub event specjalny</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Współpraca długoterminowa" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Współpraca długoterminowa</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Oferta dla sieci lub franczyzy" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Oferta dla sieci lub franczyzy</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="Inne" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>Inne</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.visibility", "Większa widoczność wydarzeń")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.visibility", "Większa widoczność wydarzeń")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.locations", "Promocja kilku lokalizacji")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.locations", "Promocja kilku lokalizacji")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.campaign", "Kampania lub event specjalny")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.campaign", "Kampania lub event specjalny")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.long_term", "Współpraca długoterminowa")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.long_term", "Współpraca długoterminowa")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.network", "Oferta dla sieci lub franczyzy")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.network", "Oferta dla sieci lub franczyzy")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.other", "Inne")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.other", "Inne")}</span></label>
     </div>
 
-    <label class="mt12">Krótka wiadomość</label>
-    <textarea id="enterpriseContactNeeds" rows="4" placeholder="Napisz krótko, czego potrzebujesz albo jaki efekt chcesz osiągnąć."></textarea>
+    <label class="mt12">${t("enterprise.message.label", "Krótka wiadomość")}</label>
+    <textarea id="enterpriseContactNeeds" rows="4" placeholder="${t("enterprise.message.placeholder", "Napisz krótko, czego potrzebujesz albo jaki efekt chcesz osiągnąć.")}"></textarea>
 
-    <button id="enterpriseContactSubmitBtn" class="btn mt16" type="button" onclick="submitEnterpriseContact()">Wyślij zapytanie</button>
+    <button id="enterpriseContactSubmitBtn" class="btn mt16" type="button" onclick="submitEnterpriseContact()">${t("enterprise.submit", "Wyślij zapytanie")}</button>
   `);
 }
 
@@ -7966,7 +8181,7 @@ function renderAll() {
     const btn = card.querySelector(".btn");
     if (btn) {
       const cardPlan = String(card.dataset.plan || "").toLowerCase();
-      btn.textContent = cardPlan === "enterprise" ? "Napisz do nas" : (isCurrent ? "Aktualny plan" : "Wybierz");
+      btn.textContent = cardPlan === "enterprise" ? t("plans.contact_us", "Napisz do nas") : (isCurrent ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz"));
     }
   });
 

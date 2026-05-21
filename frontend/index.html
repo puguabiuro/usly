@@ -1894,7 +1894,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <div id="modalBody"></div>
             </div>
             <div class="modalFooter">
-              <button class="btn secondary" type="button" onclick="closeModal()">Wróć</button>
+              <button class="btn secondary" type="button" onclick="closeModal()" data-i18n="common.back">Wróć</button>
             </div>
           </div>
         </div>
@@ -1986,14 +1986,18 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content hero">
             <div class="heroCard">
               <div class="heroHeader">
-                <div class="heroHello">Twoje miasto. Twoi ludzie.</div>
-                <div class="heroSub">Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.</div>
+                <div class="heroHello" data-i18n="welcome.title">Twoje miasto. Twoi ludzie.</div>
+                <div class="heroSub" data-i18n="welcome.subtitle">Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.</div>
+                <div class="langSwitchWelcome" aria-label="Wybór języka">
+                  <button class="langBtn" data-lang-choice="pl" type="button" onclick="setLanguage('pl')">PL</button>
+                  <button class="langBtn" data-lang-choice="en" type="button" onclick="setLanguage('en')">EN</button>
+                </div>
               </div>
   
-              <div class="segLabel">Wybierz konto</div>
+              <div class="segLabel" data-i18n="welcome.choose_account">Wybierz konto</div>
               <div class="seg wide" role="tablist" aria-label="Tryb konta">
-                <button class="segBtn on" id="roleUserBtn" type="button" onclick="selectRole('user')">Poznaj ludzi</button>
-                <button class="segBtn" id="rolePartnerBtn" type="button" onclick="selectRole('partner')">Twórz wydarzenia</button>
+                <button class="segBtn on" id="roleUserBtn" type="button" onclick="selectRole('user')" data-i18n="welcome.user">Poznaj ludzi</button>
+                <button class="segBtn" id="rolePartnerBtn" type="button" onclick="selectRole('partner')" data-i18n="welcome.partner">Twórz wydarzenia</button>
               </div>
   
               <div class="heroBadges" aria-hidden="true" style="display:none;">
@@ -2003,19 +2007,19 @@ section#S11_PLANS .card[data-plan].is-current{
               </div>
   
               <div class="row mt12">
-                <button class="btn" type="button" onclick="go('S2_REGISTER')">Zacznij</button>
-                <button class="btn secondary" type="button" onclick="go('S1_LOGIN')">Mam konto</button>
+                <button class="btn" type="button" onclick="go('S2_REGISTER')" data-i18n="welcome.start">Zacznij</button>
+                <button class="btn secondary" type="button" onclick="go('S1_LOGIN')" data-i18n="welcome.have_account">Mam konto</button>
               </div>
   
               <div class="mt12 center promoLine">
-                Poznawaj miasto przez ludzi, z którymi naprawdę masz flow.
+                <span data-i18n="welcome.promo">Poznawaj miasto przez ludzi, z którymi naprawdę masz flow.</span>
               </div>
             </div>
   
             <div class="card mt16">
-              <div class="sectionTitle">Plany</div>
-              <div class="sectionSub">Wybierz tryb, który najlepiej pasuje do Ciebie.</div>
-              <button class="btn secondary" type="button" onclick="go('S11_PLANS')">Zobacz plany</button>
+              <div class="sectionTitle" data-i18n="plans.title">Plany</div>
+              <div class="sectionSub" data-i18n="welcome.plans_subtitle">Wybierz tryb, który najlepiej pasuje do Ciebie.</div>
+              <button class="btn secondary" type="button" onclick="go('S11_PLANS')" data-i18n="welcome.see_plans">Zobacz plany</button>
             </div>
           </div>
         </section>
@@ -2032,12 +2036,6 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="brandText">
                   <div class="brandName">USLY</div>
                   <div class="brandTagline" id="roleLabelLogin">Towarzysz</div>
-
-                  <div class="langSwitch" style="margin-top:6px; display:flex; gap:6px;">
-                    <button class="segBtn small" type="button" onclick="setLanguage('pl')">PL</button>
-                    <button class="segBtn small" type="button" onclick="setLanguage('en')">EN</button>
-                  </div>
-
                 </div>
               </div>
             </div>
@@ -2076,16 +2074,16 @@ section#S11_PLANS .card[data-plan].is-current{
               </button>
   
               <div class="mt16 center">
-                <span class="link" onclick="go('S2_REGISTER')">Nie masz konta? Zarejestruj się</span>
+                <span class="link" onclick="go('S2_REGISTER')" data-i18n="login.no_account">Nie masz konta? Zarejestruj się</span>
                 <span class="dotSep"> · </span>
-                <span class="link" onclick="openForgot()">Nie pamiętasz hasła?</span>
+                <span class="link" onclick="openForgot()" data-i18n="login.forgot_password">Nie pamiętasz hasła?</span>
               </div>
             </div>
   
             <div class="card mt16">
-              <div class="sectionTitle">Plany</div>
-              <div class="sectionSub">Zobacz różnice funkcji przed zalogowaniem.</div>
-              <button class="btn secondary" type="button" onclick="go('S11_PLANS')">Podgląd planów</button>
+              <div class="sectionTitle" data-i18n="plans.title">Plany</div>
+              <div class="sectionSub" data-i18n="plans.subtitle">Zobacz różnice funkcji przed zalogowaniem.</div>
+              <button class="btn secondary" type="button" onclick="go('S11_PLANS')" data-i18n="plans.preview">Podgląd planów</button>
             </div>
           </div>
         </section>
@@ -3499,7 +3497,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Plany</div>
+                  <div class="brandTagline" data-i18n="plans.title">Plany</div>
                 </div>
               </div>
             </div>
@@ -3510,24 +3508,24 @@ section#S11_PLANS .card[data-plan].is-current{
             <!-- ===================== Towarzysz ===================== -->
             <div id="plansUserOnly">
               <div class="heroCard profileSummaryCard">
-                <div class="sectionTitle">Plany Towarzysza</div>
-                <div class="sectionSub">Wybierz poziom dostępu dopasowany do tego, jak chcesz korzystać z USLY.</div>
+                <div class="sectionTitle" data-i18n="plans.user.title">Plany Towarzysza</div>
+                <div class="sectionSub" data-i18n="plans.user.subtitle">Wybierz poziom dostępu dopasowany do tego, jak chcesz korzystać z USLY.</div>
               </div>
 
               <div class="card mt16" data-plan="free" data-plan-icon="FREE">
                 <div class="row" style="align-items:center;justify-content:space-between;">
                   <div class="sectionTitle">FREE</div>
-                  <div class="planPill">0 zł</div>
+                  <div class="planPill" data-i18n="plans.price.free">0 zł</div>
                 </div>
-                <p class="mt12">Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.</p>
+                <p class="mt12" data-i18n="plans.user.free.desc">Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.</p>
                 <ul class="planList">
-                  <li>Rozmowy 1:1 ze znajomymi</li>
-                  <li>Dołączanie do 1 grupy jednocześnie</li>
-                  <li>Brak możliwości tworzenia własnych grup</li>
-                  <li>Do 5 zainteresowań w profilu</li>
-                  <li>1 awatar AI miesięcznie</li>
+                  <li data-i18n="plans.user.free.feature1">Rozmowy 1:1 ze znajomymi</li>
+                  <li data-i18n="plans.user.free.feature2">Dołączanie do 1 grupy jednocześnie</li>
+                  <li data-i18n="plans.user.free.feature3">Brak możliwości tworzenia własnych grup</li>
+                  <li data-i18n="plans.user.free.feature4">Do 5 zainteresowań w profilu</li>
+                  <li data-i18n="plans.user.free.feature5">1 awatar AI miesięcznie</li>
                 </ul>
-                <button class="btn secondary mt16" type="button" onclick="setUserPlan('free')">Wybierz</button>
+                <button class="btn secondary mt16" type="button" onclick="setUserPlan('free')" data-i18n="plans.choose">Wybierz</button>
               </div>
 
               <div class="card mt16" data-plan="plus" data-plan-icon="PLUS">
@@ -3536,17 +3534,17 @@ section#S11_PLANS .card[data-plan].is-current{
                     <div class="sectionTitle">PLUS</div>
                     <div class="aiPlanBadge mt8">AI AVATAR</div>
                   </div>
-                  <div class="planPill">29 zł / miesiąc</div>
+                  <div class="planPill" data-i18n="plans.user.plus.price">29 zł / miesiąc</div>
                 </div>
-                <p class="mt12">Większa swoboda w poznawaniu ludzi i korzystaniu z grup.</p>
+                <p class="mt12" data-i18n="plans.user.plus.desc">Większa swoboda w poznawaniu ludzi i korzystaniu z grup.</p>
                 <ul class="planList">
-                  <li>Tworzenie 1 własnej grupy</li>
-                  <li>Dołączanie do maks. 3 grup</li>
-                  <li>Do 10 zainteresowań w profilu</li>
-                  <li>Lepsza swoboda korzystania z aplikacji na co dzień</li>
-                  <li>5 awatarów AI miesięcznie</li>
+                  <li data-i18n="plans.user.plus.feature1">Tworzenie 1 własnej grupy</li>
+                  <li data-i18n="plans.user.plus.feature2">Dołączanie do maks. 3 grup</li>
+                  <li data-i18n="plans.user.plus.feature3">Do 10 zainteresowań w profilu</li>
+                  <li data-i18n="plans.user.plus.feature4">Lepsza swoboda korzystania z aplikacji na co dzień</li>
+                  <li data-i18n="plans.user.plus.feature5">5 awatarów AI miesięcznie</li>
                 </ul>
-                <button class="btn secondary mt16" type="button" onclick="setUserPlan('plus')">Wybierz</button>
+                <button class="btn secondary mt16" type="button" onclick="setUserPlan('plus')" data-i18n="plans.choose">Wybierz</button>
               </div>
 
               <div class="card mt16" data-plan="premium" data-plan-icon="PREMIUM">
@@ -3555,17 +3553,17 @@ section#S11_PLANS .card[data-plan].is-current{
                     <div class="sectionTitle">PREMIUM</div>
                     <div class="aiPlanBadge mt8">AI AVATAR</div>
                   </div>
-                  <div class="planPill">49 zł / miesiąc</div>
+                  <div class="planPill" data-i18n="plans.user.premium.price">49 zł / miesiąc</div>
                 </div>
-                <p class="mt12">Pełniejsze korzystanie z USLY i rozwijanie swojej sieci znajomości.</p>
+                <p class="mt12" data-i18n="plans.user.premium.desc">Pełniejsze korzystanie z USLY i rozwijanie swojej sieci znajomości.</p>
                 <ul class="planList">
-                  <li>Tworzenie do 3 własnych grup</li>
-                  <li>Brak limitu dołączania do grup</li>
-                  <li>Dodawanie znajomych do grup</li>
-                  <li>Do 20 zainteresowań w profilu</li>
-                  <li>15 awatarów AI miesięcznie</li>
+                  <li data-i18n="plans.user.premium.feature1">Tworzenie do 3 własnych grup</li>
+                  <li data-i18n="plans.user.premium.feature2">Brak limitu dołączania do grup</li>
+                  <li data-i18n="plans.user.premium.feature3">Dodawanie znajomych do grup</li>
+                  <li data-i18n="plans.user.premium.feature4">Do 20 zainteresowań w profilu</li>
+                  <li data-i18n="plans.user.premium.feature5">15 awatarów AI miesięcznie</li>
                 </ul>
-                <button class="btn secondary mt16" type="button" onclick="setUserPlan('premium')">Wybierz</button>
+                <button class="btn secondary mt16" type="button" onclick="setUserPlan('premium')" data-i18n="plans.choose">Wybierz</button>
               </div>
 
               <div class="card mt16" data-plan="vip" data-plan-icon="VIP">
@@ -3574,83 +3572,83 @@ section#S11_PLANS .card[data-plan].is-current{
                     <div class="sectionTitle">VIP</div>
                     <div class="aiPlanBadge mt8">AI AVATAR</div>
                   </div>
-                  <div class="planPill">89 zł / miesiąc</div>
+                  <div class="planPill" data-i18n="plans.user.vip.price">89 zł / miesiąc</div>
                 </div>
-                <p class="mt12">Maksymalne możliwości i pełna swoboda w USLY.</p>
+                <p class="mt12" data-i18n="plans.user.vip.desc">Maksymalne możliwości i pełna swoboda w USLY.</p>
                 <ul class="planList">
-                  <li>Tworzenie grup bez limitu</li>
-                  <li>Brak limitów w grupach i kontaktach</li>
-                  <li>Dodawanie znajomych do grup</li>
-                  <li>Nieograniczona liczba zainteresowań</li>
-                  <li>30 awatarów AI miesięcznie</li>
+                  <li data-i18n="plans.user.vip.feature1">Tworzenie grup bez limitu</li>
+                  <li data-i18n="plans.user.vip.feature2">Brak limitów w grupach i kontaktach</li>
+                  <li data-i18n="plans.user.vip.feature3">Dodawanie znajomych do grup</li>
+                  <li data-i18n="plans.user.vip.feature4">Nieograniczona liczba zainteresowań</li>
+                  <li data-i18n="plans.user.vip.feature5">30 awatarów AI miesięcznie</li>
                 </ul>
-                <button class="btn secondary mt16" type="button" onclick="setUserPlan('vip')">Wybierz</button>
+                <button class="btn secondary mt16" type="button" onclick="setUserPlan('vip')" data-i18n="plans.choose">Wybierz</button>
                 </div>
               </div>
               <div id="plansPartnerOnly">
                 <div class="card mt24">
-                  <div class="sectionTitle">Plany Organizatora</div>
-                  <div class="sectionSub">Wybierz poziom widoczności, raportów i narzędzi dla swojego miejsca lub marki.</div>
+                  <div class="sectionTitle" data-i18n="plans.partner.title">Plany Organizatora</div>
+                  <div class="sectionSub" data-i18n="plans.partner.subtitle">Wybierz poziom widoczności, raportów i narzędzi dla swojego miejsca lub marki.</div>
                 </div>
 
                 <div class="card mt16" data-plan="free" data-plan-icon="FREE">
                   <div class="row" style="align-items:center;justify-content:space-between;">
                     <div class="sectionTitle">FREE</div>
-                    <div class="planPill">0 zł</div>
+                    <div class="planPill" data-i18n="plans.partner.free.price">0 zł</div>
                   </div>
-                  <p class="mt12">Plan na start dla organizatorów, którzy chcą sprawdzić USLY i uruchomić pierwsze działania bez kosztu stałego.</p>
+                  <p class="mt12" data-i18n="plans.partner.free.desc">Plan na start dla organizatorów, którzy chcą sprawdzić USLY i uruchomić pierwsze działania bez kosztu stałego.</p>
                   <ul class="planList">
-                    <li>Maksymalnie 2 aktywne wydarzenia jednocześnie</li>
-                    <li>Podstawowy podgląd panelu: aktywne wydarzenia</li>
-                    <li>Brak wiadomości do uczestników</li>
-                    <li>Brak broadcastu i brak wyróżnienia wydarzeń</li>
+                    <li data-i18n="plans.partner.free.feature1">Maksymalnie 2 aktywne wydarzenia jednocześnie</li>
+                    <li data-i18n="plans.partner.free.feature2">Podstawowy podgląd panelu: aktywne wydarzenia</li>
+                    <li data-i18n="plans.partner.free.feature3">Brak wiadomości do uczestników</li>
+                    <li data-i18n="plans.partner.free.feature4">Brak broadcastu i brak wyróżnienia wydarzeń</li>
                   </ul>
-                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('free')">Wybierz</button>
+                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('free')" data-i18n="plans.choose">Wybierz</button>
                 </div>
 
                 <div class="card mt16" data-plan="pro" data-plan-icon="PRO">
                   <div class="row" style="align-items:center;justify-content:space-between;">
                     <div class="sectionTitle">PRO</div>
-                    <div class="planPill">129 zł / miesiąc</div>
+                    <div class="planPill" data-i18n="plans.partner.pro.price">129 zł / miesiąc</div>
                   </div>
-                  <p class="mt12">Dla organizatorów, którzy prowadzą wydarzenia regularnie i chcą sprawniej zarządzać relacją z uczestnikami.</p>
+                  <p class="mt12" data-i18n="plans.partner.pro.desc">Dla organizatorów, którzy prowadzą wydarzenia regularnie i chcą sprawniej zarządzać relacją z uczestnikami.</p>
                   <ul class="planList">
-                    <li>Maksymalnie 5 aktywnych wydarzeń jednocześnie</li>
-                    <li>Rozszerzony podgląd panelu: aktywne, szkice i zapisy łącznie</li>
-                    <li>Możliwość pisania do uczestników</li>
-                    <li>Bez broadcastu i bez wyróżnienia wydarzeń</li>
+                    <li data-i18n="plans.partner.pro.feature1">Maksymalnie 5 aktywnych wydarzeń jednocześnie</li>
+                    <li data-i18n="plans.partner.pro.feature2">Rozszerzony podgląd panelu: aktywne, szkice i zapisy łącznie</li>
+                    <li data-i18n="plans.partner.pro.feature3">Możliwość pisania do uczestników</li>
+                    <li data-i18n="plans.partner.pro.feature4">Bez broadcastu i bez wyróżnienia wydarzeń</li>
                   </ul>
-                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('pro')">Wybierz</button>
+                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('pro')" data-i18n="plans.choose">Wybierz</button>
                 </div>
 
                 <div class="card mt16" data-plan="premium" data-plan-icon="PREMIUM">
                   <div class="row" style="align-items:center;justify-content:space-between;">
                     <div class="sectionTitle">PREMIUM</div>
-                    <div class="planPill">259 zł / miesiąc</div>
+                    <div class="planPill" data-i18n="plans.partner.premium.price">259 zł / miesiąc</div>
                   </div>
-                  <p class="mt12">Dla organizatorów, którzy chcą skalować działania, pracować na pełnych danych i mocniej promować swoje wydarzenia.</p>
+                  <p class="mt12" data-i18n="plans.partner.premium.desc">Dla organizatorów, którzy chcą skalować działania, pracować na pełnych danych i mocniej promować swoje wydarzenia.</p>
                   <ul class="planList">
-                    <li>Nielimitowana liczba aktywnych wydarzeń</li>
-                    <li>Pełny podgląd panelu: aktywne, szkice, zapisy łącznie i frekwencja</li>
-                    <li>Możliwość wysyłki broadcastu do uczestników</li>
-                    <li>Wyróżnienie wydarzeń w aplikacji</li>
+                    <li data-i18n="plans.partner.premium.feature1">Nielimitowana liczba aktywnych wydarzeń</li>
+                    <li data-i18n="plans.partner.premium.feature2">Pełny podgląd panelu: aktywne, szkice, zapisy łącznie i frekwencja</li>
+                    <li data-i18n="plans.partner.premium.feature3">Możliwość wysyłki broadcastu do uczestników</li>
+                    <li data-i18n="plans.partner.premium.feature4">Wyróżnienie wydarzeń w aplikacji</li>
                   </ul>
-                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('premium')">Wybierz</button>
+                  <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('premium')" data-i18n="plans.choose">Wybierz</button>
                 </div>
 
                 <div class="card mt16" data-plan="enterprise" data-plan-icon="ENTERPRISE">
                   <div class="row" style="align-items:center;justify-content:space-between;">
                     <div class="sectionTitle">ENTERPRISE</div>
-                    <div class="planPill">Indywidualnie</div>
+                    <div class="planPill" data-i18n="plans.partner.enterprise.price">Indywidualnie</div>
                   </div>
-                  <p class="mt12">Dla większych partnerów, sieci i marek, które potrzebują indywidualnego zakresu działań, raportowania i wdrożenia.</p>
+                  <p class="mt12" data-i18n="plans.partner.enterprise.desc">Dla większych partnerów, sieci i marek, które potrzebują indywidualnego zakresu działań, raportowania i wdrożenia.</p>
                   <ul class="planList">
-                    <li>Wszystko z planu PREMIUM</li>
-                    <li>Obsługa wielu scenariuszy i działań niestandardowych</li>
-                    <li>Najpełniejszy zakres raportowania i komunikacji</li>
-                    <li>Zakres wdrożenia ustalany indywidualnie</li>
+                    <li data-i18n="plans.partner.enterprise.feature1">Wszystko z planu PREMIUM</li>
+                    <li data-i18n="plans.partner.enterprise.feature2">Obsługa wielu scenariuszy i działań niestandardowych</li>
+                    <li data-i18n="plans.partner.enterprise.feature3">Najpełniejszy zakres raportowania i komunikacji</li>
+                    <li data-i18n="plans.partner.enterprise.feature4">Zakres wdrożenia ustalany indywidualnie</li>
                   </ul>
-                  <button class="btn secondary mt16" type="button" onclick="contactEnterprisePlan()">Napisz do nas</button>
+                  <button class="btn secondary mt16" type="button" onclick="contactEnterprisePlan()" data-i18n="plans.contact_us">Napisz do nas</button>
                 </div>
               </div>
             </div>

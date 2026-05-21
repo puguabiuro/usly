@@ -4791,3 +4791,58 @@ button[id^="notifBtn"]:active{
   -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h16'/><path d='M6 7v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7'/><path d='M8 4h8a1 1 0 0 1 1 1v2H7V5a1 1 0 0 1 1-1z'/><path d='M10 12h4'/></svg>") center / contain no-repeat;
   mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h16'/><path d='M6 7v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7'/><path d='M8 4h8a1 1 0 0 1 1 1v2H7V5a1 1 0 0 1 1-1z'/><path d='M10 12h4'/></svg>") center / contain no-repeat;
 }
+
+.langSwitchWelcome{
+  margin-top:14px;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:4px;
+  border-radius:999px;
+  background:rgba(12,18,38,.58);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 10px 30px rgba(0,0,0,.20);
+  backdrop-filter:blur(12px);
+}
+
+.langBtn{
+  min-width:48px;
+  height:34px;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  color:rgba(247,251,255,.72);
+  font-weight:1000;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:.18s ease;
+}
+
+.langBtn.active{
+  background:linear-gradient(135deg,#f44fd3,#55d6ff);
+  color:#081120;
+  box-shadow:0 6px 18px rgba(85,214,255,.22);
+}
+
+/* Auth topbar restore after global compact header override */
+#S1_LOGIN .brandCenter.small .brandRow,
+#S2_REGISTER .brandCenter.small .brandRow{
+  flex-direction: row !important;
+  gap: 12px !important;
+  max-width: none !important;
+  text-align: left !important;
+}
+
+#S1_LOGIN .brandCenter.small .brandText,
+#S2_REGISTER .brandCenter.small .brandText{
+  width: auto !important;
+  text-align: left !important;
+}
+
+#S1_LOGIN .brandCenter.small .brandTagline,
+#S2_REGISTER .brandCenter.small .brandTagline{
+  display: inline-flex !important;
+  max-width: none !important;
+  font-weight: 1100 !important;
+  letter-spacing: .04em !important;
+}
