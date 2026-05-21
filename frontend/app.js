@@ -3161,6 +3161,17 @@ async function renderChatThread() {
     }
 
     markChatAsSeen(App.selectedChatId);
+
+    if (chat) {
+      chat.unread = 0;
+      chat.rawUnread = 0;
+    }
+
+    if (App.role === "partner") {
+      refreshPartnerMsgBadgeCount().catch(() => {});
+    } else {
+      renderChatList().catch(() => {});
+    }
   } catch (err) {
     console.error("renderChatThread failed", err);
 
@@ -6473,7 +6484,8 @@ async function renderChatList() {
 
         const rawUnread = Number(c.unread_count || 0);
         const muted = isChatMuted(chatId);
-        const finalUnread = muted ? 0 : rawUnread;
+        const visualUnread = rawUnread;
+        const badgeUnread = muted ? 0 : rawUnread;
 
         return {
           id: chatId,
@@ -6491,7 +6503,9 @@ async function renderChatList() {
             emoji: isPartner ? "" : (existing?.with?.emoji || ""),
           },
           last: c.last_message || "",
-          unread: finalUnread,
+          unread: visualUnread,
+          badgeUnread,
+          rawUnread,
         };
       });
 
@@ -6531,7 +6545,7 @@ async function renderChatList() {
 
     const badge = $("badgeChats");
     if (badge) {
-      const unreadTotal = (finalChats || []).reduce((sum, c) => sum + Number(c.unread || 0), 0);
+      const unreadTotal = (finalChats || []).reduce((sum, c) => sum + Number(c.badgeUnread || 0), 0);
       if (unreadTotal > 0) {
         badge.textContent = String(unreadTotal);
         badge.style.display = "inline-flex";
@@ -6686,28 +6700,80 @@ function renderPartnerEvents() {
     }
   });
 
-  const renderSection = (title, sub, items) => {
+  App.partnerEventSectionsOpen = App.partnerEventSectionsOpen || {};
+
+  const eventCountLabel = (count) => {
+    const n = Math.abs(Number(count || 0));
+    if (n === 1) return "1 wydarzenie";
+    if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return `${n} wydarzenia`;
+    return `${n} wydarzeń`;
+  };
+
+  const sectionCopy = {
+    active: {
+      title: "Aktywne",
+      desc: "Wydarzenia, które są teraz widoczne dla użytkowników.",
+      icon: "📅",
+    },
+    drafts: {
+      title: "Szkice",
+      desc: "Robocze wydarzenia przed publikacją.",
+      icon: "✎",
+    },
+    finished: {
+      title: "Zakończone",
+      desc: "Wydarzenia, których termin już minął.",
+      icon: "✓",
+    },
+    archived: {
+      title: "Archiwalne",
+      desc: "Zamknięte lub przeniesione do archiwum.",
+      icon: '<span class="partnerEventArchiveIcon" aria-hidden="true"></span>',
+    },
+  };
+
+  const renderSection = (key, items, defaultOpen = false) => {
     const count = items.length;
-    const titleWithCount = `${title} (${count})`;
+    const isOpen = App.partnerEventSectionsOpen[key] ?? defaultOpen;
+    const copy = sectionCopy[key];
+
     return `
-      <div class="card mt16">
-        <div class="sectionTitle">${titleWithCount}</div>
-        <div class="sectionSub">${sub}</div>
-        <div class="col mt12">
-          ${items.length
-            ? items.map(renderEventCard).join("")
-            : '<div class="tMuted">Brak wydarzeń w tej sekcji</div>'}
-        </div>
+      <div class="card mt16 partnerEventSection ${isOpen ? "isOpen" : "isCollapsed"}" data-section="${key}">
+        <button class="partnerEventSectionHeader" type="button" onclick="togglePartnerEventSection('${key}')">
+          <div>
+            <div class="partnerEventSectionIcon">${copy.icon}</div>
+            <div class="partnerEventSectionText">
+              <div class="partnerEventSectionTitle">${copy.title}</div>
+              <div class="partnerEventSectionDesc">${copy.desc}</div>
+              <div class="partnerEventSectionMeta">${eventCountLabel(count)}</div>
+            </div>
+          </div>
+          <div class="partnerEventSectionChevron">${isOpen ? "−" : "+"}</div>
+        </button>
+
+        ${isOpen ? `
+          <div class="col mt12">
+            ${items.length
+              ? items.map(renderEventCard).join("")
+              : '<div class="tMuted">Brak wydarzeń w tej sekcji</div>'}
+          </div>
+        ` : ""}
       </div>
     `;
   };
 
   list.innerHTML = [
-    renderSection("Aktywne", "Opublikowane wydarzenia, które jeszcze się nie zakończyły.", active),
-    renderSection("Szkice", "Wydarzenia zapisane roboczo przed publikacją.", drafts),
-    renderSection("Zakończone", "Wydarzenia, których czas już minął.", finished),
-    renderSection("Archiwalne", "Wydarzenia ręcznie przeniesione do archiwum.", archived),
+    renderSection("active", active, true),
+    renderSection("drafts", drafts, drafts.length > 0),
+    renderSection("finished", finished, false),
+    renderSection("archived", archived, false),
   ].join("");
+}
+
+function togglePartnerEventSection(key) {
+  App.partnerEventSectionsOpen = App.partnerEventSectionsOpen || {};
+  App.partnerEventSectionsOpen[key] = !(App.partnerEventSectionsOpen[key] ?? false);
+  renderPartnerEvents();
 }
 
 async function quickPublishPartnerEvent(eventId) {
@@ -6777,7 +6843,8 @@ async function renderPartnerMsgList() {
         const existing = App.chats.find(x => String(x.with?.id) === String(c.other_user_id));
         const chatId = existing?.id || `pm_${c.other_user_id}`;
         const muted = isChatMuted(chatId);
-        const unread = muted ? 0 : rawUnread;
+        const unread = rawUnread;
+        const badgeUnread = muted ? 0 : rawUnread;
 
         if (!existing) {
           App.chats.unshift({
@@ -6793,6 +6860,7 @@ async function renderPartnerMsgList() {
             },
             last: c.last_message || "",
             unread,
+            badgeUnread,
             rawUnread,
             messages: [],
           });
@@ -6809,6 +6877,7 @@ async function renderPartnerMsgList() {
           };
           existing.last = c.last_message || existing.last || "";
           existing.unread = unread;
+          existing.badgeUnread = badgeUnread;
           existing.rawUnread = rawUnread;
         }
 
@@ -6825,6 +6894,7 @@ async function renderPartnerMsgList() {
           },
           last: c.last_message || "",
           unread,
+          badgeUnread,
           rawUnread,
         };
       });
@@ -6855,7 +6925,7 @@ async function renderPartnerMsgList() {
 
     const badge = $("badgePartnerMsgs");
     if (badge) {
-      const totalUnread = (finalChats || []).reduce((sum, c) => sum + Number(c.unread || 0), 0);
+      const totalUnread = (finalChats || []).reduce((sum, c) => sum + Number(c.badgeUnread || 0), 0);
       badge.textContent = String(totalUnread);
       badge.style.display = totalUnread > 0 ? "inline-flex" : "none";
     }

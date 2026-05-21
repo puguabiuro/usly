@@ -974,11 +974,45 @@ input[type="range"]::-moz-range-thumb{
 
 /* Unread chat row (JS adds .unread to .listItem) */
 .unread{
-  border-color: rgba(52,230,255,.22) !important;
-  box-shadow: 0 18px 44px rgba(0,0,0,.38), 0 0 0 1px rgba(52,230,255,.10) inset !important;
+  position: relative;
+  border-color: rgba(110,231,255,.42) !important;
+  background:
+    linear-gradient(90deg, rgba(110,231,255,.10) 0%, rgba(110,231,255,0) 22%),
+    rgba(255,255,255,.072) !important;
+  box-shadow:
+    0 20px 54px rgba(0,0,0,.42),
+    0 0 0 1px rgba(110,231,255,.14) inset,
+    0 0 26px rgba(110,231,255,.08) !important;
 }
-.unread .listMeta{ color: rgba(233,240,255,.88); }
-.unread .listTitle{ color:#fff; }
+
+.unread::before{
+  content:"";
+  position:absolute;
+  left:-1px;
+  top:14px;
+  bottom:14px;
+  width:4px;
+  border-radius:999px;
+  background:linear-gradient(180deg,#6EE7FF,#8B5CF6);
+  box-shadow:0 0 14px rgba(110,231,255,.55);
+}
+
+.unread .listTitle{
+  color:#fff;
+  font-weight:1200;
+}
+
+.unread .listMeta{
+  color:#F4F8FF;
+  font-weight:950;
+}
+
+.unread .listAvatar{
+  box-shadow:
+    0 0 0 2px rgba(110,231,255,.22),
+    0 16px 40px rgba(0,0,0,.32),
+    0 0 20px rgba(110,231,255,.12);
+}
 
 /* Small number badge inside list items */
 .badgeMini{
@@ -992,11 +1026,22 @@ input[type="range"]::-moz-range-thumb{
   font-weight:1100;
   font-size:13px;
   color:#f7fbff;
-  background: rgba(6, 8, 18, .96);
+  background: linear-gradient(135deg,#111827,#0b1220);
   border: 1px solid rgba(255,255,255,.22);
   box-shadow:
     0 6px 14px rgba(0,0,0,.26),
+    0 0 18px rgba(110,231,255,.16),
     0 0 0 1px rgba(255,255,255,.04) inset;
+}
+
+.unread .badgeMini{
+  animation: unreadPulse 2s ease-in-out infinite;
+}
+
+@keyframes unreadPulse{
+  0%{ transform:scale(1); }
+  50%{ transform:scale(1.08); }
+  100%{ transform:scale(1); }
 }
 
 
@@ -4371,4 +4416,358 @@ button[id^="notifBtn"]:active{
 
 .notificationIcon svg circle{
   vector-effect:non-scaling-stroke;
+}
+
+
+/* ===== STORE READY TOPBAR — CENTERED PREMIUM BRAND ===== */
+.topbar{
+  min-height: 82px !important;
+  padding: 10px 16px 12px !important;
+  background:
+    linear-gradient(180deg, rgba(7,9,22,.92) 0%, rgba(7,9,22,.72) 62%, rgba(7,9,22,0) 100%) !important;
+  border-bottom: 1px solid rgba(255,255,255,.055) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+
+.brandCenter.small{
+  min-width:0 !important;
+  padding:0 8px !important;
+}
+
+.brandCenter.small .brandRow{
+  flex-direction: column !important;
+  gap: 3px !important;
+  max-width: 54vw !important;
+  min-width:0 !important;
+  text-align:center !important;
+}
+
+.brandCenter.small .brandLogo.sm{
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 13px !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,.24) !important;
+}
+
+.brandCenter.small .brandText{
+  transform:none !important;
+  text-align:center !important;
+  min-width:0 !important;
+  width:100% !important;
+}
+
+.brandCenter.small .brandName{
+  display:none !important;
+}
+
+.brandCenter.small .brandTagline{
+  display:block !important;
+  max-width: 54vw !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  font-size: 12.5px !important;
+  line-height:1.12 !important;
+  font-weight: 850 !important;
+  letter-spacing: -.01em !important;
+  color: rgba(247,251,255,.94) !important;
+  opacity: .96 !important;
+}
+
+.backBtn,
+.ghostBtn,
+.topIconBtn{
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.075) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow: 0 12px 26px rgba(0,0,0,.22) !important;
+}
+
+.backBtn::after{
+  display:none !important;
+}
+
+/* ===== Partner event sections: collapsible store-ready list ===== */
+.partnerEventSection{
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.partnerEventSectionHeader{
+  width:100%;
+  border:0;
+  background:
+    linear-gradient(90deg, rgba(255,75,212,.10), rgba(52,230,255,.08));
+  color:#f7fbff;
+  padding:16px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  text-align:left;
+  cursor:pointer;
+}
+
+.partnerEventSectionTitle{
+  font-size:17px;
+  line-height:1.05;
+  font-weight:1200;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+}
+
+.partnerEventSectionMeta{
+  margin-top:5px;
+  font-size:12px;
+  font-weight:900;
+  color:rgba(233,240,255,.72);
+}
+
+.partnerEventSectionChevron{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  font-size:22px;
+  font-weight:900;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+}
+
+.partnerEventSection > .col{
+  padding:0 14px 14px;
+}
+
+
+/* ===== Partner events sections — soft USLY premium ===== */
+.partnerEventSection{
+  padding:0 !important;
+  overflow:hidden;
+  border-radius:30px !important;
+  background:
+    radial-gradient(130% 150% at 0% 0%, rgba(255,75,212,.13), rgba(255,75,212,0) 58%),
+    radial-gradient(130% 150% at 100% 0%, rgba(52,230,255,.11), rgba(52,230,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:
+    0 22px 54px rgba(0,0,0,.30),
+    0 0 0 1px rgba(255,255,255,.025) inset !important;
+}
+
+.partnerEventSectionHeader{
+  width:100%;
+  min-height:132px;
+  padding:22px 20px !important;
+  border:0;
+  background:transparent !important;
+  color:#f8fbff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  text-align:left;
+  cursor:pointer;
+}
+
+.partnerEventSectionHeader::before{
+  display:none !important;
+}
+
+.partnerEventSectionHeader > div:first-child{
+  display:flex !important;
+  align-items:center !important;
+  gap:16px !important;
+  min-width:0 !important;
+}
+
+.partnerEventSectionIcon{
+  width:58px;
+  height:58px;
+  border-radius:20px;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  font-size:26px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.045));
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.24),
+    0 0 22px rgba(255,75,212,.10);
+}
+
+.partnerEventSectionText{
+  min-width:0;
+}
+
+.partnerEventSectionTitle{
+  font-size:24px !important;
+  line-height:1.05 !important;
+  font-weight:1050 !important;
+  letter-spacing:-.035em !important;
+  text-transform:none !important;
+  color:#F8FBFF !important;
+}
+
+.partnerEventSectionDesc{
+  margin-top:7px;
+  font-size:13.5px;
+  line-height:1.25;
+  font-weight:800;
+  color:rgba(233,240,255,.72);
+}
+
+.partnerEventSectionMeta{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  width:max-content;
+  margin-top:12px !important;
+  padding:7px 11px;
+  border-radius:999px;
+  font-size:13px !important;
+  line-height:1;
+  font-weight:950 !important;
+  color:rgba(247,251,255,.92) !important;
+  background:rgba(255,255,255,.075);
+  border:1px solid rgba(255,255,255,.10);
+}
+
+.partnerEventSectionMeta::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#6EE7FF;
+  box-shadow:0 0 12px rgba(110,231,255,.55);
+}
+
+.partnerEventSectionChevron{
+  width:44px !important;
+  height:44px !important;
+  border-radius:999px !important;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  font-size:25px !important;
+  font-weight:850 !important;
+  color:#f7fbff;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 12px 26px rgba(0,0,0,.22) !important;
+}
+
+.partnerEventSection > .col{
+  padding:0 16px 16px;
+}
+
+.partnerEventSection.isOpen{
+  border-color:rgba(52,230,255,.18) !important;
+}
+
+.partnerEventSection.isOpen .partnerEventSectionChevron{
+  opacity:.78;
+}
+
+.partnerEventSection.isCollapsed .partnerEventSectionHeader{
+  min-height:118px;
+}
+
+.partnerEventSection.isCollapsed .partnerEventSectionChevron{
+  opacity:.92;
+}
+
+/* section accents in USLY palette */
+.partnerEventSection[data-section="drafts"] .partnerEventSectionMeta::before{
+  background:#F472B6;
+  box-shadow:0 0 12px rgba(244,114,182,.50);
+}
+
+.partnerEventSection[data-section="finished"] .partnerEventSectionMeta::before{
+  background:#A78BFA;
+  box-shadow:0 0 12px rgba(167,139,250,.48);
+}
+
+.partnerEventSection[data-section="archived"] .partnerEventSectionMeta::before{
+  background:#94A3B8;
+  box-shadow:0 0 12px rgba(148,163,184,.38);
+}
+
+.partnerEventSection[data-section="drafts"] .partnerEventSectionIcon{
+  box-shadow:0 14px 30px rgba(0,0,0,.24), 0 0 20px rgba(244,114,182,.10);
+}
+
+.partnerEventSection[data-section="finished"] .partnerEventSectionIcon{
+  box-shadow:0 14px 30px rgba(0,0,0,.24), 0 0 20px rgba(167,139,250,.10);
+}
+
+.partnerEventSection[data-section="archived"] .partnerEventSectionIcon{
+  box-shadow:0 14px 30px rgba(0,0,0,.24), 0 0 20px rgba(148,163,184,.08);
+}
+
+
+/* ===== Partner events sections — compact premium correction ===== */
+.partnerEventSectionHeader{
+  min-height: 96px !important;
+  padding: 16px 18px !important;
+  gap: 12px !important;
+}
+
+.partnerEventSection.isCollapsed .partnerEventSectionHeader{
+  min-height: 92px !important;
+}
+
+.partnerEventSectionHeader > div:first-child{
+  gap: 13px !important;
+}
+
+.partnerEventSectionIcon{
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 16px !important;
+  font-size: 22px !important;
+}
+
+.partnerEventSectionTitle{
+  font-size: 19.5px !important;
+  line-height: 1.04 !important;
+  font-weight: 1050 !important;
+  letter-spacing: -.02em !important;
+  color:#F8FBFF !important;
+  text-shadow: 0 2px 10px rgba(0,0,0,.18);
+}
+
+.partnerEventSectionDesc{
+  margin-top: 5px !important;
+  font-size: 12.5px !important;
+  line-height: 1.22 !important;
+}
+
+.partnerEventSectionMeta{
+  margin-top: 9px !important;
+  padding: 6px 10px !important;
+  font-size: 12.5px !important;
+}
+
+.partnerEventSectionChevron{
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 22px !important;
+}
+
+.partnerEventSection > .col{
+  padding: 0 14px 14px !important;
+}
+
+.partnerEventArchiveIcon{
+  width: 25px;
+  height: 25px;
+  display:block;
+  background:#f7fbff;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h16'/><path d='M6 7v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7'/><path d='M8 4h8a1 1 0 0 1 1 1v2H7V5a1 1 0 0 1 1-1z'/><path d='M10 12h4'/></svg>") center / contain no-repeat;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h16'/><path d='M6 7v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7'/><path d='M8 4h8a1 1 0 0 1 1 1v2H7V5a1 1 0 0 1 1-1z'/><path d='M10 12h4'/></svg>") center / contain no-repeat;
 }

@@ -2783,15 +2783,6 @@ section#S11_PLANS .card[data-plan].is-current{
   
             <div class="col mt16" id="chatList"></div>
   
-            <div class="card mt16">
-              <div class="sectionTitle">Moderacja treści</div>
-              <div class="sectionSub">
-                USLY rozwija system automatycznego wykrywania nieodpowiednich treści, aby zapewnić bezpieczne rozmowy.
-              </div>
-              <div class="tMuted mt10" style="text-align:left;">
-                Funkcja będzie dostępna w kolejnych aktualizacjach.
-              </div>
-            </div>
           </div>
         </section>
   
@@ -2843,9 +2834,6 @@ section#S11_PLANS .card[data-plan].is-current{
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Wydarzenia</div>
-              <div class="sectionSub">Przeglądaj i zapisuj się — płatności są poza aplikacją.</div>
-  
               <!-- jeśli w JS są taby: "Okolica" / "Obserwowane" -->
               <div class="seg wide mt12" role="tablist" aria-label="Filtr wydarzeń">
                 <button class="segBtn on" id="eventsTabNearby" type="button" onclick="setEventsTab('for_you')">Dla Ciebie</button>
@@ -2971,8 +2959,7 @@ section#S11_PLANS .card[data-plan].is-current{
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Grupy według Twoich zainteresowań</div>
-              <div class="sectionSub">Lista budowana na bazie # ustawionych w profilu.</div>
+              
               <div class="mt12">
                 <input id="groupSearch" type="text" placeholder="Szukaj grupy (np. #kino)" />
               </div>
@@ -3153,10 +3140,7 @@ section#S11_PLANS .card[data-plan].is-current{
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Utwórz wydarzenie</div>
-              <div class="sectionSub">UI — backend doda walidację, limity planu i publikację.</div>
-  
-              <label class="mt12">Nazwa *</label>
+              <label>Nazwa *</label>
               <input id="peTitle" type="text" placeholder="np. Koncert na żywo" />
   
               <label class="mt12">Miasto *</label>
@@ -3269,10 +3253,6 @@ section#S11_PLANS .card[data-plan].is-current{
           </header>
   
           <div class="content">
-            <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Twoje wydarzenia</div>
-              <div class="sectionSub">Edytuj, podglądaj zainteresowanych, sprawdzaj statystyki (wg planu).</div>
-            </div>
             <div class="col mt16" id="partnerEventsList"></div>
   
 
@@ -3336,8 +3316,7 @@ section#S11_PLANS .card[data-plan].is-current{
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Skrzynka</div>
-              <div class="sectionSub">Wiadomości od użytkowników .</div>
+              
               <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." class="mt12" />
             </div>
   
@@ -3366,10 +3345,7 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <!-- ===================== SETTINGS: Towarzysz ===================== -->
             <div class="card premiumProfileScope" id="settingsUserBox">
-              <div class="sectionTitle">Profil</div>
-              <div class="sectionSub">Twoje miejsce w USLY — premium hub profilu, relacji i planu.</div>
-
-              <div class="heroCard mt16 profileHubCard">
+              <div class="heroCard profileHubCard">
                 <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
                   <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
                     <div class="avatar big" id="settingsUserAvatarPreview"></div>
@@ -3392,7 +3368,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
                   <div style="text-align:left;flex:1;min-width:0;">
                     <div class="sectionTitle">Znajomi</div>
-                    <div class="sectionSub">Twoja sieć kontaktów i wejście do prywatnych rozmów.</div>
+                    <div class="sectionSub">Lista kontaktów</div>
                   </div>
                   <div class="pill">Otwórz</div>
                 </div>
@@ -3402,7 +3378,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
                   <div style="text-align:left;flex:1;min-width:0;">
                     <div class="sectionTitle">Zaproszenia</div>
-                    <div class="sectionSub">Przychodzące i wysłane zaproszenia do znajomych.</div>
+                    <div class="sectionSub">Zaproszenia</div>
                   </div>
                   <div class="pill">Otwórz</div>
                 </div>
@@ -3410,7 +3386,6 @@ section#S11_PLANS .card[data-plan].is-current{
 
               <div class="card mt16 profileSummaryCard">
                 <div class="sectionTitle">Konto i pomoc</div>
-                <div class="sectionSub">Najważniejsze ustawienia techniczne i dokumenty.</div>
 
                 <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
                   <button class="btn secondary" type="button" onclick="openBugReport()">Zgłoś błąd</button>
@@ -3421,10 +3396,7 @@ section#S11_PLANS .card[data-plan].is-current{
             </div>
             <!-- ===================== SETTINGS: Organizator ===================== -->
             <div class="card premiumProfileScope" id="settingsPartnerBox" style="display:none;">
-              <div class="sectionTitle">Profil organizatora</div>
-              <div class="sectionSub">Zadbaj o markę, dane miejsca i ustawienia konta.</div>
-
-              <div class="heroCard mt16 profileHubCard">
+              <div class="heroCard profileHubCard">
                 <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
                   <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
                     <div class="avatar big" id="setOrgLogoPreview"></div>
