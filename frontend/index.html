@@ -3241,7 +3241,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S9_PARTNER_EVENTS — lista wydarzeń organizatora
         ========================================================== -->
-        <section class="view" id="S9_PARTNER_EVENTS" aria-label="Wydarzenia organizatora">
+        <section class="view" id="S9_PARTNER_EVENTS" aria-label="Organizer events">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -3249,7 +3249,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Twoje wydarzenia</div>
+                  <div class="brandTagline" data-i18n="partnerEvents.title">Twoje wydarzenia</div>
                 </div>
               </div>
             </div>
@@ -3266,7 +3266,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S9_PARTNER_EVENT_PARTICIPANTS — uczestnicy wydarzenia
         ========================================================== -->
-        <section class="view" id="S9_PARTNER_EVENT_PARTICIPANTS" aria-label="Uczestnicy wydarzenia">
+        <section class="view" id="S9_PARTNER_EVENT_PARTICIPANTS" aria-label="Event participants">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -3274,7 +3274,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Uczestnicy wydarzenia</div>
+                  <div class="brandTagline" data-i18n="partnerParticipants.title">Uczestnicy wydarzenia</div>
                 </div>
               </div>
             </div>
@@ -3284,16 +3284,16 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <div class="heroCard profileSummaryCard" id="partnerEventParticipantsCard">
               <div id="partnerEventBroadcastBox" class="hintCard" style="display:none;">
-                <div class="hintTitle">Powiadom wszystkich uczestników</div>
-                <div class="hintText">Wyślij jedną wiadomość do wszystkich zapisanych osób. Idealne na przypomnienia i ważne informacje.</div>
-                <textarea id="partnerEventBroadcastInput" class="mt12" maxlength="1000" placeholder="Napisz wiadomość do uczestników..."></textarea>
+                <div class="hintTitle" data-i18n="partnerParticipants.notifyAll">Powiadom wszystkich uczestników</div>
+                <div class="hintText" data-i18n="partnerParticipants.notifyText">Wyślij jedną wiadomość do wszystkich zapisanych osób. Idealne na przypomnienia i ważne informacje.</div>
+                <textarea id="partnerEventBroadcastInput" class="mt12" maxlength="1000" placeholder="Napisz wiadomość do uczestników..." data-i18n-placeholder="partnerParticipants.messagePlaceholder"></textarea>
                 <div class="row mt16">
-                  <button class="btn" type="button" id="partnerEventBroadcastSendBtn">Wyślij do uczestników</button>
+                  <button class="btn" type="button" id="partnerEventBroadcastSendBtn" data-i18n="partnerParticipants.send">Wyślij do uczestników</button>
                 </div>
               </div>
 
-              <div class="sectionTitle mt16">Zapisani uczestnicy</div>
-              <div class="sectionSub">Osoby, które kliknęły „wezmę udział” dla tego wydarzenia.</div>
+              <div class="sectionTitle mt16" data-i18n="partnerParticipants.savedUsers">Zapisani uczestnicy</div>
+              <div class="sectionSub" data-i18n="partnerParticipants.savedUsersSub">Osoby, które kliknęły „wezmę udział” dla tego wydarzenia.</div>
               <div class="col mt16" id="partnerEventParticipantsList"></div>
             </div>
           </div>
@@ -3339,7 +3339,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Ustawienia</div>
+                  <div class="brandTagline" data-i18n="settings.title">Ustawienia</div>
                 </div>
               </div>
             </div>
@@ -3354,47 +3354,47 @@ section#S11_PLANS .card[data-plan].is-current{
                   <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
                     <div class="avatar big" id="settingsUserAvatarPreview"></div>
                     <div style="text-align:left;min-width:0;flex:1;">
-                      <div class="sectionTitle" id="settingsProfileHeroNick" style="margin:0;">Twój profil</div>
-                      <div class="sectionSub" id="settingsProfileHeroMeta">Uzupełnij profil, aby poprawić dopasowania.</div>
+                      <div class="sectionTitle" id="settingsProfileHeroNick" style="margin:0;" data-i18n="settings.profile">Twój profil</div>
+                      <div class="sectionSub" id="settingsProfileHeroMeta" data-i18n="settings.profileSub">Uzupełnij profil, aby poprawić dopasowania.</div>
                     </div>
                   </div>
                   <div class="planPill" id="settingsProfilePlanPill">FREE</div>
                 </div>
 
                 <div class="row mt16 profileActionRow">
-                  <button class="btn small profileHeroBtnPrimary" type="button" onclick="openProfileEdit()">Edytuj profil</button>
-                  <button class="btn secondary small profileHeroBtnSecondary" type="button" onclick="openProfileInterests()">Zainteresowania</button>
-                  <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="go('S11_PLANS')">Twój plan</button>
+                  <button class="btn small profileHeroBtnPrimary" type="button" onclick="openProfileEdit()" data-i18n="profileEdit.title">Edytuj profil</button>
+                  <button class="btn secondary small profileHeroBtnSecondary" type="button" onclick="openProfileInterests()" data-i18n="settings.interests">Zainteresowania</button>
+                  <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="go('S11_PLANS')" data-i18n="partnerDash.yourPlan">Twój plan</button>
                 </div>
               </div>
 
               <div class="card mt16 profileSummaryCard friendsCard" onclick="go('S10D_PROFILE_FRIENDS')">
                 <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
                   <div style="text-align:left;flex:1;min-width:0;">
-                    <div class="sectionTitle">Znajomi</div>
-                    <div class="sectionSub">Lista kontaktów</div>
+                    <div class="sectionTitle" data-i18n="profileFriends.title">Znajomi</div>
+                    <div class="sectionSub" data-i18n="settings.friendsSub">Lista kontaktów</div>
                   </div>
-                  <div class="pill">Otwórz</div>
+                  <div class="pill" data-i18n="settings.open">Otwórz</div>
                 </div>
               </div>
 
               <div class="card mt16 profileSummaryCard invitesCard" onclick="go('S10E_PROFILE_INVITES')">
                 <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
                   <div style="text-align:left;flex:1;min-width:0;">
-                    <div class="sectionTitle">Zaproszenia</div>
-                    <div class="sectionSub">Zaproszenia</div>
+                    <div class="sectionTitle" data-i18n="profileInvites.title">Zaproszenia</div>
+                    <div class="sectionSub" data-i18n="settings.invitesSub">Zaproszenia</div>
                   </div>
-                  <div class="pill">Otwórz</div>
+                  <div class="pill" data-i18n="settings.open">Otwórz</div>
                 </div>
               </div>
 
               <div class="card mt16 profileSummaryCard">
-                <div class="sectionTitle">Konto i pomoc</div>
+                <div class="sectionTitle" data-i18n="settings.accountHelp">Konto i pomoc</div>
 
                 <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
-                  <button class="btn secondary" type="button" onclick="openBugReport()">Zgłoś błąd</button>
-                  <button class="btn secondary" type="button" onclick="openChangePassword()">Zmień hasło</button>
-                  <button class="btn danger" type="button" onclick="openDeleteAccount()">Usuń konto</button>
+                  <button class="btn secondary" type="button" onclick="openBugReport()" data-i18n="settings.reportBug">Zgłoś błąd</button>
+                  <button class="btn secondary" type="button" onclick="openChangePassword()" data-i18n="settings.changePassword">Zmień hasło</button>
+                  <button class="btn danger" type="button" onclick="openDeleteAccount()" data-i18n="settings.deleteAccount">Usuń konto</button>
                 </div>
               </div>
             </div>
@@ -3405,8 +3405,8 @@ section#S11_PLANS .card[data-plan].is-current{
                   <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
                     <div class="avatar big" id="setOrgLogoPreview"></div>
                     <div style="text-align:left;min-width:0;flex:1;">
-                      <div class="sectionTitle" id="settingsPartnerHubName" style="margin:0;">Twoje miejsce</div>
-                      <div class="sectionSub" id="settingsPartnerHubMeta">Uzupełnij profil organizatora.</div>
+                      <div class="sectionTitle" id="settingsPartnerHubName" style="margin:0;" data-i18n="partnerDash.yourPlace">Twoje miejsce</div>
+                      <div class="sectionSub" id="settingsPartnerHubMeta" data-i18n="settings.partnerProfileSub">Uzupełnij profil organizatora.</div>
                     </div>
                   </div>
                   <div class="planPill" id="partnerPlanPill">FREE</div>
@@ -3415,34 +3415,34 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="card mt16 orgLogoManageCard">
                   <input id="setOrgLogo" type="file" accept="image/*" style="display:none;" />
                   <div style="text-align:left;">
-                    <div style="font-size:15px;font-weight:1000;line-height:1.15;color:#f4f8ff;">Logo miejsca</div>
-                    <div class="tMuted" style="margin-top:4px;text-align:left;">Dodaj, podmień albo usuń logo organizatora.</div>
+                    <div style="font-size:15px;font-weight:1000;line-height:1.15;color:#f4f8ff;" data-i18n="settings.logoTitle">Logo miejsca</div>
+                    <div class="tMuted" style="margin-top:4px;text-align:left;" data-i18n="settings.logoSub">Dodaj, podmień albo usuń logo organizatora.</div>
                   </div>
                   <div class="orgLogoManageActions">
-                    <button class="btn secondary small" type="button" onclick="document.getElementById('setOrgLogo').click()">Dodaj logo</button>
-                    <button class="btn secondary small" type="button" onclick="removePartnerLogo()">Usuń logo</button>
+                    <button class="btn secondary small" type="button" onclick="document.getElementById('setOrgLogo').click()" data-i18n="partnerSetup.addLogo">Dodaj logo</button>
+                    <button class="btn secondary small" type="button" onclick="removePartnerLogo()" data-i18n="settings.removeLogo">Usuń logo</button>
                   </div>
                 </div>
 
                 <div class="row mt16 profileActionRow">
-                  <button class="btn secondary small" type="button" onclick="go('S11_PLANS')">Twój plan</button>
-                  <button class="btn secondary small" type="button" onclick="go('S9_PARTNER')">Panel</button>
+                  <button class="btn secondary small" type="button" onclick="go('S11_PLANS')" data-i18n="partnerDash.yourPlan">Twój plan</button>
+                  <button class="btn secondary small" type="button" onclick="go('S9_PARTNER')" data-i18n="settings.dashboard">Panel</button>
                 </div>
               </div>
 
               <div class="card mt16">
-                <div class="sectionTitle">Dane miejsca</div>
+                <div class="sectionTitle" data-i18n="settings.placeData">Dane miejsca</div>
 
-                <label class="mt12">Email</label>
+                <label class="mt12" data-i18n="common.email">Email</label>
                 <input id="setOrgEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
 
-                <label class="mt12">Oficjalna nazwa miejsca / firmy</label>
-                <input id="setOrgCompany" type="text" placeholder="np. Kawiarnia Aurora" />
+                <label class="mt12" data-i18n="register.company">Oficjalna nazwa miejsca / firmy</label>
+                <input id="setOrgCompany" type="text" placeholder="np. Kawiarnia Aurora" data-i18n-placeholder="register.company_placeholder" />
 
-                <label class="mt12">Miasto</label>
-                <input id="setOrgCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+                <label class="mt12" data-i18n="partnerCreate.city">Miasto *</label>
+                <input id="setOrgCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" list="citiesDatalist" />
 
-                <label class="mt12">Branża</label>
+                <label class="mt12" data-i18n="settings.industry">Branża</label>
                 <select id="setOrgCategory">
                   <option value="gastro">Gastro / restauracja / kawiarnia</option>
                   <option value="bar_nocne">Bar / klub / nightlife</option>
@@ -3458,35 +3458,35 @@ section#S11_PLANS .card[data-plan].is-current{
                   <option value="inne">Inne / trudno powiedzieć</option>
                 </select>
 
-                <label class="mt12">Opis</label>
-                <textarea id="setOrgAbout" maxlength="500" placeholder="Krótko opisz miejsce, klimat i ofertę."></textarea>
+                <label class="mt12" data-i18n="partnerCreate.description">Opis</label>
+                <textarea id="setOrgAbout" maxlength="500" placeholder="Krótko opisz miejsce, klimat i ofertę." data-i18n-placeholder="settings.orgAboutPlaceholder"></textarea>
                 <div class="charHint"><span id="setOrgAboutCount">0</span>/500</div>
               </div>
 
-              <button class="btn mt16" type="button" onclick="savePartnerSettings()">Zapisz zmiany</button>
+              <button class="btn mt16" type="button" onclick="savePartnerSettings()" data-i18n="profileEdit.save">Zapisz zmiany</button>
 
               <div class="card mt16 profileSummaryCard">
-                <div class="sectionTitle">Konto i pomoc</div>
-                <div class="sectionSub">Najważniejsze akcje konta Organizatora.</div>
+                <div class="sectionTitle" data-i18n="settings.accountHelp">Konto i pomoc</div>
+                <div class="sectionSub" data-i18n="settings.partnerAccountSub">Najważniejsze akcje konta Organizatora.</div>
 
                 <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
-                  <button class="btn secondary" type="button" onclick="openBugReport()">Zgłoś błąd</button>
-                  <button class="btn secondary" type="button" onclick="openChangePassword()">Zmień hasło</button>
-                  <button class="btn danger" type="button" onclick="openDeleteAccount()">Usuń konto</button>
+                  <button class="btn secondary" type="button" onclick="openBugReport()" data-i18n="settings.reportBug">Zgłoś błąd</button>
+                  <button class="btn secondary" type="button" onclick="openChangePassword()" data-i18n="settings.changePassword">Zmień hasło</button>
+                  <button class="btn danger" type="button" onclick="openDeleteAccount()" data-i18n="settings.deleteAccount">Usuń konto</button>
                 </div>
               </div>
             </div>
 
             <div class="card mt16">
-              <div class="sectionTitle">Dokumenty</div>
-              <div class="sectionSub">Regulamin i Polityka prywatności.</div>
+              <div class="sectionTitle" data-i18n="settings.documents">Dokumenty</div>
+              <div class="sectionSub" data-i18n="settings.documentsSub">Regulamin i Polityka prywatności.</div>
               <div class="row mt16">
-                <button class="btn secondary" type="button" onclick="openTerms()">Regulamin</button>
-                <button class="btn secondary" type="button" onclick="openRodo()">Polityka prywatności</button>
+                <button class="btn secondary" type="button" onclick="openTerms()" data-i18n="register.terms_link">Regulamin</button>
+                <button class="btn secondary" type="button" onclick="openRodo()" data-i18n="register.privacy_link">Polityka prywatności</button>
               </div>
             </div>
 
-            <button class="btn danger mt16 logoutBtn" type="button" onclick="logout()">Wyloguj</button>
+            <button class="btn danger mt16 logoutBtn" type="button" onclick="logout()" data-i18n="settings.logout">Wyloguj</button>
           </div>
         </section>
           <section class="view premiumPlansScope" id="S11_PLANS" aria-label="Plany">
