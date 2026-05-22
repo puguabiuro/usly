@@ -207,6 +207,25 @@ const I18N = {
     "partnerSetup.category": "Kategoria",
     "partnerSetup.about": "Krótki opis",
     "partnerSetup.aboutPlaceholder": "Co warto wiedzieć o tym miejscu?",
+    "nearby.title": "W okolicy",
+    "nearby.mapSub": "Kliknij znacznik, aby podejrzeć osobę lub wydarzenie.",
+    "nearby.peopleTitle": "Ludzie w okolicy",
+    "nearby.peopleSub": "Lista na podstawie lokalizacji.",
+    "nearby.peoplePlaceholder": "np. Alex / Maja",
+    "nearby.eventsTitle": "Wydarzenia w okolicy",
+    "nearby.eventsSub": "Kliknij kartę, aby wejść w szczegóły.",
+    "nearby.emptyPeople": "Nie widzimy jeszcze osób z wspólnymi zainteresowaniami w Twojej okolicy.",
+    "nearby.emptyEvents": "Nie widzimy jeszcze wydarzeń zgodnych z Twoimi zainteresowaniami w Twojej okolicy.",
+    "personProfile.bioTitle": "O mnie",
+    "personProfile.emptyBio": "Ta osoba nie dodała jeszcze bio.",
+    "personProfile.organizerEvents": "Wydarzenia organizatora",
+    "personProfile.write": "Napisz",
+    "personProfile.addFriend": "Dodaj do znajomych",
+    "chats.title": "Czaty",
+    "chats.searchTitle": "Szukaj czatów",
+    "chats.searchSub": "Po nazwie rozmowy",
+    "chats.searchPlaceholder": "np. Alex",
+    "chatThread.placeholder": "Napisz wiadomość.",
     "common.back": "Wróć",
     "forgot.modal.title": "Odzyskiwanie hasła",
     "forgot.heading": "Reset hasła",
@@ -451,6 +470,25 @@ const I18N = {
     "partnerSetup.category": "Category",
     "partnerSetup.about": "Short description",
     "partnerSetup.aboutPlaceholder": "What should people know about this place?",
+    "nearby.title": "Nearby",
+    "nearby.mapSub": "Tap a marker to preview a person or event.",
+    "nearby.peopleTitle": "People nearby",
+    "nearby.peopleSub": "A list based on your location.",
+    "nearby.peoplePlaceholder": "e.g. Alex / Maja",
+    "nearby.eventsTitle": "Events nearby",
+    "nearby.eventsSub": "Tap a card to open details.",
+    "nearby.emptyPeople": "We do not see any people with shared interests in your area yet.",
+    "nearby.emptyEvents": "We do not see any events matching your interests in your area yet.",
+    "personProfile.bioTitle": "About me",
+    "personProfile.emptyBio": "This person has not added a bio yet.",
+    "personProfile.organizerEvents": "Organizer events",
+    "personProfile.write": "Message",
+    "personProfile.addFriend": "Add friend",
+    "chats.title": "Chats",
+    "chats.searchTitle": "Search chats",
+    "chats.searchSub": "By conversation name",
+    "chats.searchPlaceholder": "e.g. Alex",
+    "chatThread.placeholder": "Write a message.",
     "common.back": "Back",
     "forgot.modal.title": "Password recovery",
     "forgot.heading": "Reset password",
@@ -6729,7 +6767,7 @@ function renderNearby() {
     const people = getNearbyPeopleForView();
 
     if (!people.length) {
-      pList.innerHTML = '<div class="tMuted">Nie widzimy jeszcze osób z wspólnymi zainteresowaniami w Twojej okolicy.</div>';
+      pList.innerHTML = `<div class="tMuted">${t("nearby.emptyPeople", "Nie widzimy jeszcze osób z wspólnymi zainteresowaniami w Twojej okolicy.")}</div>`;
     } else {
       pList.innerHTML = people.map(p => `
       <div class="listItem nearbyPersonCard" onclick="openPerson('${p.id}')">
@@ -6759,7 +6797,7 @@ function renderNearby() {
       .slice(0, 8);
 
     if (!events.length) {
-      eList.innerHTML = '<div class="tMuted">Nie widzimy jeszcze wydarzeń zgodnych z Twoimi zainteresowaniami w Twojej okolicy.</div>';
+      eList.innerHTML = `<div class="tMuted">${t("nearby.emptyEvents", "Nie widzimy jeszcze wydarzeń zgodnych z Twoimi zainteresowaniami w Twojej okolicy.")}</div>`;
       return;
     }
 

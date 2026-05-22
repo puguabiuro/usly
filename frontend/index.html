@@ -2662,37 +2662,37 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">W okolicy</div>
+                  <div class="brandTagline" data-i18n="nearby.title">W okolicy</div>
                 </div>
               </div>
             </div>
             <!-- dzwonek = jedyna ikona -->
-            <button class="topIconBtn" id="notifBtnNearby" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnNearby" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
             <div class="mapCard">
               <!-- Mapa -->
-              <div class="mapReal" id="nearbyMap" aria-label="Mapa okolicy"></div>
+              <div class="mapReal" id="nearbyMap" aria-label="Nearby map"></div>
 
               <div class="mapMeta">
-                <div class="mapTitle">W okolicy</div>
-                <div class="mapSub">Kliknij znacznik, aby podejrzeć osobę lub wydarzenie.</div>
+                <div class="mapTitle" data-i18n="nearby.title">W okolicy</div>
+                <div class="mapSub" data-i18n="nearby.mapSub">Kliknij znacznik, aby podejrzeć osobę lub wydarzenie.</div>
               </div>
             </div>
   
             <div class="card mt16">
-              <div class="sectionTitle">Ludzie w okolicy</div>
-              <div class="sectionSub">Lista na podstawie lokalizacji .</div>
+              <div class="sectionTitle" data-i18n="nearby.peopleTitle">Ludzie w okolicy</div>
+              <div class="sectionSub" data-i18n="nearby.peopleSub">Lista na podstawie lokalizacji.</div>
               <div class="mt12">
-                <input id="nearbyPeopleSearch" type="text" placeholder="np. Alex / Maja" />
+                <input id="nearbyPeopleSearch" type="text" placeholder="np. Alex / Maja" data-i18n-placeholder="nearby.peoplePlaceholder" />
               </div>
               <div class="col mt16" id="nearbyPeopleList"></div>
             </div>
   
             <div class="card mt16">
-              <div class="sectionTitle">Wydarzenia w okolicy</div>
-              <div class="sectionSub">Kliknij kartę, aby wejść w szczegóły.</div>
+              <div class="sectionTitle" data-i18n="nearby.eventsTitle">Wydarzenia w okolicy</div>
+              <div class="sectionSub" data-i18n="nearby.eventsSub">Kliknij kartę, aby wejść w szczegóły.</div>
               <div class="col mt16" id="nearbyEventsList"></div>
             </div>
           </div>
@@ -2701,7 +2701,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S5 PERSON PROFILE
         ========================================================== -->
-        <section class="view" id="S5_PERSON_PROFILE" aria-label="Profil osoby">
+        <section class="view" id="S5_PERSON_PROFILE" aria-label="Person profile">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2713,7 +2713,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnPerson" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnPerson" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
             <div class="content">
@@ -2736,24 +2736,24 @@ section#S11_PLANS .card[data-plan].is-current{
                     <div id="personMatchScore" class="personMatchScore">—</div>
 
                     <div class="personProfilePanel">
-                      <div class="sectionTitle" id="personInterestsTitle">Zainteresowania</div>
+                      <div class="sectionTitle" id="personInterestsTitle" data-i18n="profileInterests.title">Zainteresowania</div>
                       <div class="chips" id="personInterests"></div>
                     </div>
 
                     <div class="personProfilePanel">
-                      <div class="sectionTitle" id="personBioTitle">O mnie</div>
-                      <div class="sectionSub" id="personBio">Ta osoba nie dodała jeszcze bio.</div>
+                      <div class="sectionTitle" id="personBioTitle" data-i18n="personProfile.bioTitle">O mnie</div>
+                      <div class="sectionSub" id="personBio" data-i18n="personProfile.emptyBio">Ta osoba nie dodała jeszcze bio.</div>
                     </div>
 
                     <div class="personProfilePanel" id="partnerEventsPanel" hidden>
-                      <div class="sectionTitle">Wydarzenia organizatora</div>
+                      <div class="sectionTitle" data-i18n="personProfile.organizerEvents">Wydarzenia organizatora</div>
                       <div id="personPartnerEventsList" class="mt12"></div>
                     </div>
                   </div>
 
                 <div class="row mt16 personProfileActions">
-                  <button class="btn" id="personChatBtn" type="button" onclick="startChatFromProfile()">Napisz</button>
-                  <button class="btn secondary" id="personFriendBtn" type="button" onclick="addFriendFromProfile()">Dodaj do znajomych</button>
+                  <button class="btn" id="personChatBtn" type="button" onclick="startChatFromProfile()" data-i18n="personProfile.write">Napisz</button>
+                  <button class="btn secondary" id="personFriendBtn" type="button" onclick="addFriendFromProfile()" data-i18n="personProfile.addFriend">Dodaj do znajomych</button>
                 </div>
               </div>
             </div>
@@ -2763,7 +2763,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S6 CHATS LIST
         ========================================================== -->
-        <section class="view" id="S6_CHATS_LIST" aria-label="Czaty">
+        <section class="view" id="S6_CHATS_LIST" aria-label="Chats">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2771,18 +2771,18 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Czaty</div>
+                  <div class="brandTagline" data-i18n="chats.title">Czaty</div>
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnChats" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnChats" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle">Szukaj czatów</div>
-              <div class="sectionSub">Po nazwie rozmowy</div>
-              <input id="chatSearch" type="text" placeholder="np. Alex" />
+              <div class="sectionTitle" data-i18n="chats.searchTitle">Szukaj czatów</div>
+              <div class="sectionSub" data-i18n="chats.searchSub">Po nazwie rozmowy</div>
+              <input id="chatSearch" type="text" placeholder="np. Alex" data-i18n-placeholder="chats.searchPlaceholder" />
             </div>
   
             <div class="col mt16" id="chatList"></div>
@@ -2793,7 +2793,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S6B CHAT THREAD
         ========================================================== -->
-        <section class="view" id="S6B_CHAT_THREAD" aria-label="Wątek czatu">
+        <section class="view" id="S6B_CHAT_THREAD" aria-label="Chat thread">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2813,8 +2813,8 @@ section#S11_PLANS .card[data-plan].is-current{
           </div>
   
           <div class="inputDock">
-            <input id="chatInput" type="text" placeholder="Napisz wiadomość." />
-            <button class="btn small" id="chatSendBtn" type="button" aria-label="Wyślij wiadomość">➜</button>
+            <input id="chatInput" type="text" placeholder="Napisz wiadomość." data-i18n-placeholder="chatThread.placeholder" />
+            <button class="btn small" id="chatSendBtn" type="button" aria-label="Send message">➜</button>
           </div>
         </section>
   
@@ -2833,7 +2833,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnEvents" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnEvents" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
@@ -2958,7 +2958,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnGroups" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnGroups" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
@@ -3053,7 +3053,7 @@ section#S11_PLANS .card[data-plan].is-current{
               </div>
             </div>
             <!-- dzwonek -->
-            <button class="topIconBtn" id="notifBtnPartner" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnPartner" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
@@ -3139,7 +3139,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnPartnerCreate" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnPartnerCreate" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
@@ -3253,7 +3253,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnPartnerEvents" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnPartnerEvents" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
@@ -3278,7 +3278,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnPartnerParticipants" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnPartnerParticipants" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
 
           <div class="content">
@@ -3315,7 +3315,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnPartnerMsgs" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnPartnerMsgs" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
@@ -3343,7 +3343,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
               </div>
             </div>
-            <button class="topIconBtn" id="notifBtnSettings" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnSettings" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
           <div class="content">
@@ -3657,7 +3657,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S12 NOTIFICATIONS (bell-only UI)
         ========================================================== -->
-        <section class="view" id="S12_NOTIFICATIONS" aria-label="Powiadomienia">
+        <section class="view" id="S12_NOTIFICATIONS" aria-label="Notifications">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
