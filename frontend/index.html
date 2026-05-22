@@ -2029,7 +2029,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S1_LOGIN" aria-label="Logowanie">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2093,7 +2093,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S3_RESET_PASSWORD" aria-label="Reset password">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2130,7 +2130,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
                 <section class="view" id="S2_REGISTER" aria-label="Rejestracja">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2264,15 +2264,15 @@ section#S11_PLANS .card[data-plan].is-current{
           </div>
         </section>
   
-<section class="view" id="S10B_PROFILE_EDIT" aria-label="Edytuj profil">
+<section class="view" id="S10B_PROFILE_EDIT" aria-label="Edit profile">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Edytuj profil</div>
+                  <div class="brandTagline" data-i18n="profileEdit.title">Edytuj profil</div>
                 </div>
               </div>
             </div>
@@ -2281,32 +2281,32 @@ section#S11_PLANS .card[data-plan].is-current{
 
           <div class="content">
             <div class="card mt16">
-              <label>Email</label>
+              <label data-i18n="common.email">Email</label>
               <input id="setEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
 
 <div class="mt16" style="padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
-                <div style="font-weight:900;font-size:14px;">Zdjęcie profilowe</div>
-                <div class="tMuted" style="margin-top:4px;">Dodaj swoje zdjęcie albo wygeneruj awatar AI.</div>
+                <div style="font-weight:900;font-size:14px;" data-i18n="profileEdit.photoTitle">Zdjęcie profilowe</div>
+                <div class="tMuted" style="margin-top:4px;" data-i18n="profileEdit.photoSubtitle">Dodaj swoje zdjęcie albo wygeneruj awatar AI.</div>
                 <div class="mt12 avatarCardActions">
-                  <button class="btn small iosCardBtn" type="button" onclick="openAddPhoto()">Zdjęcie</button>
-                  <button class="btn small iosCardBtn ai" type="button" onclick="openAvatarAI()">Awatar AI</button>
-                  <button class="btn small iosCardBtn" type="button" onclick="removeUserAvatar()">Usuń</button>
+                  <button class="btn small iosCardBtn" type="button" onclick="openAddPhoto()" data-i18n="profileEdit.photoBtn">Zdjęcie</button>
+                  <button class="btn small iosCardBtn ai" type="button" onclick="openAvatarAI()" data-i18n="profileEdit.aiAvatarBtn">Awatar AI</button>
+                  <button class="btn small iosCardBtn" type="button" onclick="removeUserAvatar()" data-i18n="common.remove">Usuń</button>
                 </div>
               </div>
 
-              <label class="mt12">Nick</label>
-              <input id="setNick" class="iosInput" type="text" placeholder="np. Ola_88" />
+              <label class="mt12" data-i18n="profileEdit.nick">Nick</label>
+              <input id="setNick" class="iosInput" type="text" placeholder="np. Ola_88" data-i18n-placeholder="profileEdit.nick_placeholder" />
 
-              <label class="mt12">BIO</label>
-              <textarea id="setBio" class="iosInput" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
+              <label class="mt12" data-i18n="profileEdit.bio">BIO</label>
+              <textarea id="setBio" class="iosInput" maxlength="250" placeholder="Krótko, lekko, z charakterem" data-i18n-placeholder="profileEdit.bio_placeholder"></textarea>
               <div class="charHint"><span id="setBioCount">0</span>/250</div>
 
 
 
-              <label class="mt12">Aktualna lokalizacja</label>
+              <label class="mt12" data-i18n="profileEdit.location">Aktualna lokalizacja</label>
               <input id="setCity" type="text" placeholder="—" readonly />
 
-              <label class="mt12">Zasięg okolicy</label>
+              <label class="mt12" data-i18n="profileEdit.radius">Zasięg okolicy</label>
               <select id="setNearbyRadiusKm">
                 <option value="5">Do 5 km</option>
                 <option value="10">Do 10 km</option>
@@ -2316,12 +2316,12 @@ section#S11_PLANS .card[data-plan].is-current{
               </select>
 
               <div class="hintCard mt16">
-                <div class="hintTitle">Preferowany zakres wieku</div>
-                <div class="hintText">Dopasuj preferowany wiek osób, które chcesz widzieć.</div>
+                <div class="hintTitle" data-i18n="profileEdit.ageRangeTitle">Preferowany zakres wieku</div>
+                <div class="hintText" data-i18n="profileEdit.ageRangeText">Dopasuj preferowany wiek osób, które chcesz widzieć.</div>
 
                 <div class="row mt12">
                   <div style="flex:1;">
-                    <label class="tMuted">Od</label>
+                    <label class="tMuted" data-i18n="profileEdit.ageFrom">Od</label>
                     <select id="setPrefAgeFrom">
                       <option value="18">18</option><option value="19">19</option><option value="20">20</option>
                       <option value="21">21</option><option value="22">22</option><option value="23">23</option>
@@ -2338,7 +2338,7 @@ section#S11_PLANS .card[data-plan].is-current{
                     </select>
                   </div>
                   <div style="flex:1;">
-                    <label class="tMuted">Do</label>
+                    <label class="tMuted" data-i18n="profileEdit.ageTo">Do</label>
                     <select id="setPrefAgeTo">
                       <option value="18">18</option><option value="19">19</option><option value="20">20</option>
                       <option value="21">21</option><option value="22">22</option><option value="23">23</option>
@@ -2357,27 +2357,27 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
                 <div class="partnerCapacityToggle mt12">
                   <label class="partnerCapacityToggleRow" for="setAgeAny">
-                    <span class="tStrong">Wiek bez znaczenia</span>
+                    <span class="tStrong" data-i18n="profileEdit.ageAny">Wiek bez znaczenia</span>
                     <input id="setAgeAny" type="checkbox" />
                   </label>
                 </div>
               </div>
 
 
-              <button class="btn mt16" type="button" onclick="saveSettings()">Zapisz zmiany</button>
+              <button class="btn mt16" type="button" onclick="saveSettings()" data-i18n="profileEdit.save">Zapisz zmiany</button>
             </div>
           </div>
         </section>
 
-        <section class="view" id="S10C_PROFILE_INTERESTS" aria-label="Zainteresowania">
+        <section class="view" id="S10C_PROFILE_INTERESTS" aria-label="Interests">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Zainteresowania</div>
+                  <div class="brandTagline" data-i18n="profileInterests.title">Zainteresowania</div>
                 </div>
               </div>
             </div>
@@ -2386,16 +2386,16 @@ section#S11_PLANS .card[data-plan].is-current{
 
           <div class="content">
             <div class="heroCard">
-              <div class="sectionTitle">Zainteresowania</div>
+              <div class="sectionTitle" data-i18n="profileInterests.title">Zainteresowania</div>
               <div class="sectionSub" id="interestLimitHint">—</div>
-              <div class="sectionSub">Jedna wspólna baza tagów dla profilu, grup i wydarzeń.</div>
+              <div class="sectionSub" data-i18n="profileInterests.subtitle">Jedna wspólna baza tagów dla profilu, grup i wydarzeń.</div>
             </div>
 
             <div class="card mt16">
-              <label>Twoje tagi</label>
+              <label data-i18n="profileInterests.tags">Twoje tagi</label>
               <div class="hashRow">
                 <span class="hashPrefix">#</span>
-                <input id="setInterestInput" type="text" placeholder="np. kawa, joga, koncerty..." list="interestsDatalist" />
+                <input id="setInterestInput" type="text" placeholder="np. kawa, joga, koncerty..." data-i18n-placeholder="profileInterests.placeholder" list="interestsDatalist" />
               </div>
               <div class="typeahead" id="setInterestTypeahead"></div>
               <div class="chips mt12" id="setInterestChips"></div>
@@ -2403,15 +2403,15 @@ section#S11_PLANS .card[data-plan].is-current{
           </div>
         </section>
 
-        <section class="view" id="S10D_PROFILE_FRIENDS" aria-label="Znajomi">
+        <section class="view" id="S10D_PROFILE_FRIENDS" aria-label="Friends">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Znajomi</div>
+                  <div class="brandTagline" data-i18n="profileFriends.title">Znajomi</div>
                 </div>
               </div>
             </div>
@@ -2424,7 +2424,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 type="text"
                 id="friendsSearchInput"
                 class="input"
-                placeholder="Szukaj znajomego..."
+                placeholder="Szukaj znajomego..." data-i18n-placeholder="profileFriends.search_placeholder"
                 oninput="filterFriendsList(this.value)"
               />
             </div>
@@ -2433,15 +2433,15 @@ section#S11_PLANS .card[data-plan].is-current{
           </div>
         </section>
 
-        <section class="view" id="S10E_PROFILE_INVITES" aria-label="Zaproszenia">
+        <section class="view" id="S10E_PROFILE_INVITES" aria-label="Invitations">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Zaproszenia</div>
+                  <div class="brandTagline" data-i18n="profileInvites.title">Zaproszenia</div>
                 </div>
               </div>
             </div>
@@ -2450,8 +2450,8 @@ section#S11_PLANS .card[data-plan].is-current{
 
           <div class="content">
             <div class="heroCard">
-              <div class="sectionTitle">Zaproszenia</div>
-              <div class="sectionSub">Przychodzące i wysłane zaproszenia w czytelnym układzie.</div>
+              <div class="sectionTitle" data-i18n="profileInvites.title">Zaproszenia</div>
+              <div class="sectionSub" data-i18n="profileInvites.subtitle">Przychodzące i wysłane zaproszenia w czytelnym układzie.</div>
             </div>
             <div class="col mt16" id="profileFriendRequestsList"></div>
           </div>
@@ -2462,7 +2462,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S3_PROFILE_SETUP" aria-label="Ustawienia profilu (start)">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src= "./USLY logo.png" alt="USLY logo" />
@@ -2499,10 +2499,10 @@ section#S11_PLANS .card[data-plan].is-current{
                 <label class="mt16">Nick</label>
                 <input id="setupNick" type="text" placeholder="Twój nick" />
 
-                <label class="mt12">Aktualna lokalizacja</label>
+                <label class="mt12" data-i18n="profileEdit.location">Aktualna lokalizacja</label>
                 <input id="setupCity" type="text" placeholder="—" readonly />
 
-                <label class="mt12">Zasięg okolicy</label>
+                <label class="mt12" data-i18n="profileEdit.radius">Zasięg okolicy</label>
                 <select id="setupNearbyRadiusKm">
                   <option value="5">Do 5 km</option>
                   <option value="10">Do 10 km</option>
@@ -2527,7 +2527,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
 
                 <label class="mt12">BIO (max 250)</label>
-                <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem"></textarea>
+                <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem" data-i18n-placeholder="profileEdit.bio_placeholder"></textarea>
                 <div class="charHint"><span id="bioCount">0</span>/250</div>
 
                 <div class="hintCard mt16">
@@ -2585,7 +2585,7 @@ section#S11_PLANS .card[data-plan].is-current{
 
         <section class="view" id="S3B_PARTNER_SETUP" aria-label="Ustawienia profilu organizatora">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2656,7 +2656,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S4_NEARBY" aria-label="W okolicy">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2703,7 +2703,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S5_PERSON_PROFILE" aria-label="Profil osoby">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2765,7 +2765,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S6_CHATS_LIST" aria-label="Czaty">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2795,7 +2795,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S6B_CHAT_THREAD" aria-label="Wątek czatu">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2823,7 +2823,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S7_EVENTS" aria-label="Wydarzenia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2858,7 +2858,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S7B_EVENT_DETAIL" aria-label="Szczegóły wydarzenia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2948,7 +2948,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S8_GROUPS" aria-label="Grupy">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -2988,7 +2988,7 @@ section#S11_PLANS .card[data-plan].is-current{
   
         <section class="view" id="S8B_GROUP_THREAD" aria-label="Wątek grupy">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3016,7 +3016,7 @@ section#S11_PLANS .card[data-plan].is-current{
 
         <section class="view" id="S8C_GROUP_PEOPLE" aria-label="Ludzie w grupie">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3042,7 +3042,7 @@ section#S11_PLANS .card[data-plan].is-current{
 
         <section class="view" id="S9_PARTNER" aria-label="Panel organizatora">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3129,7 +3129,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S9_PARTNER_CREATE" aria-label="Nowe wydarzenie">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3243,7 +3243,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S9_PARTNER_EVENTS" aria-label="Wydarzenia organizatora">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3268,7 +3268,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S9_PARTNER_EVENT_PARTICIPANTS" aria-label="Uczestnicy wydarzenia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3305,7 +3305,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S9_PARTNER_MESSAGES" aria-label="Wiadomości organizatora">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3333,7 +3333,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S10_SETTINGS" aria-label="Ustawienia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3491,7 +3491,7 @@ section#S11_PLANS .card[data-plan].is-current{
         </section>
           <section class="view premiumPlansScope" id="S11_PLANS" aria-label="Plany">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3659,7 +3659,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         <section class="view" id="S12_NOTIFICATIONS" aria-label="Powiadomienia">
           <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Wróć"></button>
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
