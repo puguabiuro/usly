@@ -3127,7 +3127,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S9_PARTNER_CREATE — tworzenie wydarzenia (organizator)
         ========================================================== -->
-        <section class="view" id="S9_PARTNER_CREATE" aria-label="Nowe wydarzenie">
+        <section class="view" id="S9_PARTNER_CREATE" aria-label="New event">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -3135,7 +3135,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Nowe wydarzenie</div>
+                  <div class="brandTagline" data-i18n="partnerCreate.title">Nowe wydarzenie</div>
                 </div>
               </div>
             </div>
@@ -3144,23 +3144,23 @@ section#S11_PLANS .card[data-plan].is-current{
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <label>Nazwa *</label>
-              <input id="peTitle" type="text" placeholder="np. Koncert na żywo" />
+              <label data-i18n="partnerCreate.name">Nazwa *</label>
+              <input id="peTitle" type="text" placeholder="np. Koncert na żywo" data-i18n-placeholder="partnerCreate.namePlaceholder" />
   
-              <label class="mt12">Miasto *</label>
-              <input id="peCity" type="text" placeholder="np. Warszawa" />
+              <label class="mt12" data-i18n="partnerCreate.city">Miasto *</label>
+              <input id="peCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" />
   
-              <label class="mt12">Kiedy *</label>
+              <label class="mt12" data-i18n="partnerCreate.when">Kiedy *</label>
               <input id="peWhen" type="datetime-local" />
   
-              <label class="mt12">Gdzie odbywa się wydarzenie? *</label>
-              <input id="peAddress" type="text" placeholder="np. Padma Joga Kobyłka albo ul. Nadmeńska 5C" />
+              <label class="mt12" data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>
+              <input id="peAddress" type="text" placeholder="np. Padma Joga Kobyłka albo ul. Nadmeńska 5C" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
 
               <input id="peWhere" type="hidden" />
               <input id="peResolvedAddress" type="hidden" />
 
               <div class="row mt10" style="gap:10px;align-items:center;flex-wrap:wrap;">
-                <button class="btn secondary small" id="peFindPlaceBtn" type="button">Znajdź miejsce na mapie</button>
+                <button class="btn secondary small" id="peFindPlaceBtn" type="button" data-i18n="partnerCreate.findPlace">Znajdź miejsce na mapie</button>
                 <span class="hintText" id="peSelectedPlaceHint" hidden></span>
               </div>
 
@@ -3169,70 +3169,70 @@ section#S11_PLANS .card[data-plan].is-current{
               <input id="peLocationLat" type="hidden" />
               <input id="peLocationLng" type="hidden" />
   
-              <label class="mt12">Zainteresowanie / hashtag *</label>
+              <label class="mt12" data-i18n="partnerCreate.interest">Zainteresowanie / hashtag *</label>
               <div class="hashRow" id="peInterestInputWrap">
                 <span class="hashPrefix">#</span>
-                <input id="peInterest" type="text" placeholder="np. muzyka" list="interestsDatalist" />
+                <input id="peInterest" type="text" placeholder="np. muzyka" data-i18n-placeholder="partnerCreate.interestPlaceholder" list="interestsDatalist" />
               </div>
 
               <div id="peInterestSelected" class="eventSelectedTag" hidden>
                 <span id="peInterestSelectedText"></span>
-                <button type="button" id="peInterestRemoveBtn" aria-label="Usuń hashtag">×</button>
+                <button type="button" id="peInterestRemoveBtn" aria-label="Remove hashtag">×</button>
               </div>
   
-              <label class="mt12">Opis</label>
-              <textarea id="peDesc" maxlength="600" placeholder="Krótki opis wydarzenia (max 600)"></textarea>
+              <label class="mt12" data-i18n="partnerCreate.description">Opis</label>
+              <textarea id="peDesc" maxlength="600" placeholder="Krótki opis wydarzenia (max 600)" data-i18n-placeholder="partnerCreate.descriptionPlaceholder"></textarea>
 
               <div class="hintCard mt16">
-                <div class="hintTitle">Liczba miejsc</div>
-                <div class="hintText">Możesz zostawić wydarzenie bez limitu albo podać maksymalną liczbę uczestników.</div>
+                <div class="hintTitle" data-i18n="partnerCreate.capacityTitle">Liczba miejsc</div>
+                <div class="hintText" data-i18n="partnerCreate.capacityText">Możesz zostawić wydarzenie bez limitu albo podać maksymalną liczbę uczestników.</div>
 
                 <div class="partnerCapacityToggle mt12">
                   <label class="partnerCapacityToggleRow" for="peUnlimitedCapacity">
-                    <span class="tStrong">Bez limitu miejsc</span>
+                    <span class="tStrong" data-i18n="partnerCreate.unlimitedCapacity">Bez limitu miejsc</span>
                     <input id="peUnlimitedCapacity" type="checkbox" checked />
                   </label>
                 </div>
 
                 <div id="peCapacityBox" class="mt12 partnerCapacityBox">
-                  <label>Maksymalna liczba miejsc</label>
+                  <label data-i18n="partnerCreate.maxCapacity">Maksymalna liczba miejsc</label>
                   <input id="peCapacity" type="number" min="1" inputmode="numeric" placeholder="np. 20" />
                 </div>
               </div>
   
               <!-- ticketing -->
               <div class="hintCard mt16">
-                <div class="hintTitle">Bilety (opcjonalnie)</div>
-                <div class="hintText">USLY nie sprzedaje biletów — podajesz link do zewnętrznej sprzedaży / rezerwacji.</div>
+                <div class="hintTitle" data-i18n="partnerCreate.ticketsTitle">Bilety (opcjonalnie)</div>
+                <div class="hintText" data-i18n="partnerCreate.ticketsText">USLY nie sprzedaje biletów — podajesz link do zewnętrznej sprzedaży / rezerwacji.</div>
   
-                <label class="mt12">Rodzaj</label>
+                <label class="mt12" data-i18n="partnerCreate.ticketType">Rodzaj</label>
                 <select id="pePaidMode">
-                  <option value="free">Bezpłatne</option>
-                  <option value="paid_fixed">Płatne — cena stała</option>
-                  <option value="paid_range">Płatne — przedział</option>
+                  <option value="free" data-i18n="partnerCreate.ticketFree">Bezpłatne</option>
+                  <option value="paid_fixed" data-i18n="partnerCreate.ticketFixed">Płatne — cena stała</option>
+                  <option value="paid_range" data-i18n="partnerCreate.ticketRange">Płatne — przedział</option>
                 </select>
   
                 <div class="row mt12">
                   <div style="flex:1;">
-                    <label class="tMuted">Cena (zł)</label>
+                    <label class="tMuted" data-i18n="partnerCreate.price">Cena (zł)</label>
                     <input id="pePrice" type="number" min="0" placeholder="np. 49" />
                   </div>
                   <div style="flex:1;">
-                    <label class="tMuted">Od (zł)</label>
+                    <label class="tMuted" data-i18n="partnerCreate.priceFrom">Od (zł)</label>
                     <input id="pePriceFrom" type="number" min="0" placeholder="np. 29" />
                   </div>
                 </div>
   
-                <label class="mt12">Do (zł)</label>
+                <label class="mt12" data-i18n="partnerCreate.priceTo">Do (zł)</label>
                 <input id="pePriceTo" type="number" min="0" placeholder="np. 79" />
   
-                <label class="mt12">Link do biletów / rezerwacji</label>
+                <label class="mt12" data-i18n="partnerCreate.ticketLink">Link do biletów / rezerwacji</label>
                 <input id="peTicketLink" type="url" placeholder="https://..." />
               </div>
   
               <div class="row mt16">
-                <button class="btn secondary" type="button" onclick="savePartnerEventDraft()">Zapisz szkic</button>
-                <button class="btn" type="button" onclick="publishPartnerEvent()">Utwórz wydarzenie</button>
+                <button class="btn secondary" type="button" onclick="savePartnerEventDraft()" data-i18n="partnerCreate.saveDraft">Zapisz szkic</button>
+                <button class="btn" type="button" onclick="publishPartnerEvent()" data-i18n="partnerCreate.publish">Utwórz wydarzenie</button>
               </div>
             </div>
           </div>
