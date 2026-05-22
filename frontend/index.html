@@ -2206,7 +2206,7 @@ section#S11_PLANS .card[data-plan].is-current{
                   <div class="sectionTitle" data-i18n="register.partner.place_title">Twoje miejsce</div>
 
                   <label class="mt12" data-i18n="register.partner.city">Miasto *</label>
-                  <input id="regCityPartner" type="text" placeholder="np. Warszawa" data-i18n-placeholder="register.partner.city_placeholder" list="citiesDatalist" />
+                  <input id="regCityPartner" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerSetup.cityPlaceholder" data-i18n-placeholder="register.partner.city_placeholder" list="citiesDatalist" />
                 </div>
 
                 <div class="card mt16">
@@ -2583,7 +2583,7 @@ section#S11_PLANS .card[data-plan].is-current{
             </div>
         </section>
 
-        <section class="view" id="S3B_PARTNER_SETUP" aria-label="Ustawienia profilu organizatora">
+        <section class="view" id="S3B_PARTNER_SETUP" aria-label="Organizer profile setup">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2591,7 +2591,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Profil organizatora</div>
+                  <div class="brandTagline" data-i18n="partnerSetup.topbar">Profil organizatora</div>
                 </div>
               </div>
             </div>
@@ -2600,30 +2600,30 @@ section#S11_PLANS .card[data-plan].is-current{
 
           <div class="content">
             <div class="heroCard profileHubCard">
-              <div class="sectionTitle" id="setupPartnerCompanyName" style="margin:0;">Uzupełnij profil</div>
-              <div class="sectionSub mt10">Logo, miasto i charakter miejsca.</div>
+              <div class="sectionTitle" id="setupPartnerCompanyName" style="margin:0;" data-i18n="partnerSetup.title">Uzupełnij profil</div>
+              <div class="sectionSub mt10" data-i18n="partnerSetup.subtitle">Logo, miasto i charakter miejsca.</div>
             </div>
 
             <div class="card mt16 setupOrgIdentityCard">
-              <div class="sectionTitle">Tożsamość miejsca</div>
+              <div class="sectionTitle" data-i18n="partnerSetup.identityTitle">Tożsamość miejsca</div>
 
               <div class="row mt12" style="align-items:center;gap:14px;">
                 <div class="avatar big setupOrgLogoPreview" id="setupOrgLogoPreview"></div>
                 <div style="flex:1;text-align:left;">
-                  <button class="btn small mt10" type="button" onclick="document.getElementById('setupOrgLogo').click()">Dodaj logo</button>
+                  <button class="btn small mt10" type="button" onclick="document.getElementById('setupOrgLogo').click()" data-i18n="partnerSetup.addLogo">Dodaj logo</button>
                   <input id="setupOrgLogo" type="file" accept="image/*" style="display:none;" />
                 </div>
               </div>
 
-              <label class="mt16">Miasto działania</label>
-              <input id="setupOrgCity" type="text" placeholder="np. Warszawa" list="citiesDatalist" />
+              <label class="mt16" data-i18n="partnerSetup.city">Miasto działania</label>
+              <input id="setupOrgCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerSetup.cityPlaceholder" list="citiesDatalist" />
             </div>
 
             <div class="card mt16">
-              <div class="sectionTitle">Klimat miejsca</div>
-              <div class="sectionSub mt6">Pokaż użytkownikom, czego mogą się spodziewać.</div>
+              <div class="sectionTitle" data-i18n="partnerSetup.vibeTitle">Klimat miejsca</div>
+              <div class="sectionSub mt6" data-i18n="partnerSetup.vibeSubtitle">Pokaż użytkownikom, czego mogą się spodziewać.</div>
 
-              <label class="mt12">Kategoria</label>
+              <label class="mt12" data-i18n="partnerSetup.category">Kategoria</label>
               <select id="setupOrgCategory">
                 <option value="gastro">Gastro / restauracja / kawiarnia</option>
                 <option value="bar_nocne">Bar / klub / nightlife</option>
@@ -2640,12 +2640,12 @@ section#S11_PLANS .card[data-plan].is-current{
               </select>
               
 
-              <label class="mt12">Krótki opis</label>
-              <textarea id="setupOrgAbout" maxlength="500" placeholder="Co warto wiedzieć o tym miejscu?"></textarea>
+              <label class="mt12" data-i18n="partnerSetup.about">Krótki opis</label>
+              <textarea id="setupOrgAbout" maxlength="500" placeholder="Co warto wiedzieć o tym miejscu?" data-i18n-placeholder="partnerSetup.aboutPlaceholder"></textarea>
               <div class="charHint"><span id="setupOrgAboutCount">0</span>/500</div>
             </div>
 
-            <button class="btn mt16" type="button" onclick="finishPartnerSetup()">Zapisz i przejdź dalej</button>
+            <button class="btn mt16" type="button" onclick="finishPartnerSetup()" data-i18n="profileSetup.finish">Zapisz i przejdź dalej</button>
           </div>
         </section>
 
