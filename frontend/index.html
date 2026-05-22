@@ -2965,17 +2965,17 @@ section#S11_PLANS .card[data-plan].is-current{
             <div class="heroCard profileSummaryCard">
               
               <div class="mt12">
-                <input id="groupSearch" type="text" placeholder="Szukaj grupy (np. #kino)" />
+                <input id="groupSearch" type="text" placeholder="Szukaj grupy (np. #kino)" data-i18n-placeholder="groups.searchPlaceholder" />
               </div>
             </div>
 
               <div class="card mt16">
                 <div class="row" style="align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                   <div style="text-align:left;flex:1;min-width:220px;">
-                    <div class="sectionTitle" style="margin:0;">Twoje grupy</div>
+                    <div class="sectionTitle" style="margin:0;" data-i18n="groups.yourGroups">Twoje grupy</div>
                     <div class="sectionSub" id="groupCreateHint">—</div>
                   </div>
-                  <button class="btn" id="btnCreateGroup" type="button" onclick="openCreateGroupModal()">Utwórz grupę</button>
+                  <button class="btn" id="btnCreateGroup" type="button" onclick="openCreateGroupModal()" data-i18n="groups.create">Utwórz grupę</button>
                 </div>
               </div>
 
@@ -2986,7 +2986,7 @@ section#S11_PLANS .card[data-plan].is-current{
           </div>
         </section>
   
-        <section class="view" id="S8B_GROUP_THREAD" aria-label="Wątek grupy">
+        <section class="view" id="S8B_GROUP_THREAD" aria-label="Group thread">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -3009,12 +3009,12 @@ section#S11_PLANS .card[data-plan].is-current{
           </div>
 
           <div class="inputDock" id="groupInputDock">
-            <input id="groupInput" type="text" placeholder="Napisz w grupie." />
-            <button class="btn small" id="groupSendBtn" type="button" onclick="sendGroup()" aria-label="Wyślij wiadomość do grupy">➜</button>
+            <input id="groupInput" type="text" placeholder="Napisz w grupie." data-i18n-placeholder="groupThread.placeholder" />
+            <button class="btn small" id="groupSendBtn" type="button" onclick="sendGroup()" aria-label="Send group message">➜</button>
           </div>
         </section>
 
-        <section class="view" id="S8C_GROUP_PEOPLE" aria-label="Ludzie w grupie">
+        <section class="view" id="S8C_GROUP_PEOPLE" aria-label="People in group">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -3022,7 +3022,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline" id="groupPeopleTitle">Ludzie w grupie</div>
+                  <div class="brandTagline" id="groupPeopleTitle" data-i18n="groupPeople.title">Ludzie w grupie</div>
                   <div class="sectionSub" id="groupPeopleTagline"></div>
                 </div>
               </div>
