@@ -2821,7 +2821,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S7 EVENTS (lista) — osobna zakładka zostaje bez zmian
         ========================================================== -->
-        <section class="view" id="S7_EVENTS" aria-label="Wydarzenia">
+        <section class="view" id="S7_EVENTS" aria-label="Events">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2829,7 +2829,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Wydarzenia</div>
+                  <div class="brandTagline" data-i18n="events.title">Wydarzenia</div>
                 </div>
               </div>
             </div>
@@ -2839,13 +2839,13 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <div class="heroCard profileSummaryCard">
               <!-- jeśli w JS są taby: "Okolica" / "Obserwowane" -->
-              <div class="seg wide mt12" role="tablist" aria-label="Filtr wydarzeń">
-                <button class="segBtn on" id="eventsTabNearby" type="button" onclick="setEventsTab('for_you')">Dla Ciebie</button>
-                <button class="segBtn" id="eventsTabFollowed" type="button" onclick="setEventsTab('followed')">Moje wydarzenia</button>
+              <div class="seg wide mt12" role="tablist" aria-label="Events filter">
+                <button class="segBtn on" id="eventsTabNearby" type="button" onclick="setEventsTab('for_you')" data-i18n="events.forYou">Dla Ciebie</button>
+                <button class="segBtn" id="eventsTabFollowed" type="button" onclick="setEventsTab('followed')" data-i18n="events.myEvents">Moje wydarzenia</button>
               </div>
   
               <div class="mt12">
-                <input id="eventsSearch" type="text" placeholder="Szukaj po nazwie / # (np. muzyka)" />
+                <input id="eventsSearch" type="text" placeholder="Szukaj po nazwie / # (np. muzyka)" data-i18n-placeholder="events.searchPlaceholder" />
               </div>
             </div>
   
@@ -2856,7 +2856,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S7B EVENT DETAIL
         ========================================================== -->
-        <section class="view" id="S7B_EVENT_DETAIL" aria-label="Szczegóły wydarzenia">
+        <section class="view" id="S7B_EVENT_DETAIL" aria-label="Event details">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2874,30 +2874,30 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <div class="heroCard profileSummaryCard eventDetailCard eventSocialCard">
               <div class="eventSocialHeader">
-                <div class="eventSocialKicker">Wydarzenie</div>
+                <div class="eventSocialKicker" data-i18n="eventDetail.kicker">Wydarzenie</div>
                 <div class="sectionTitle" id="evTitle">—</div>
                 <div class="sectionSub" id="evMeta">—</div>
                 <div class="eventDetailChips" id="evInterestChips"></div>
               </div>
 
               <div class="eventSocialSection">
-                <div class="eventPanelLabel">Opis wydarzenia</div>
+                <div class="eventPanelLabel" data-i18n="eventDetail.description">Opis wydarzenia</div>
                 <div class="eventCaption" id="evDesc">—</div>
               </div>
 
               <div class="eventSocialSection eventPlacePanel">
-                <div class="eventPanelLabel">Miejsce</div>
+                <div class="eventPanelLabel" data-i18n="eventDetail.place">Miejsce</div>
                 <div class="eventPlaceMapCard">
                   <div id="evPlaceMiniMap" class="eventPlaceMapThumb" hidden></div>
                   <div class="eventPlaceMapText">
                     <div class="tStrong" id="evPlaceTitle">—</div>
-                    <div class="sectionSub" id="evPlaceMeta">Mapa lokalizacji będzie tutaj.</div>
+                    <div class="sectionSub" id="evPlaceMeta" data-i18n="eventDetail.mapPlaceholder">Mapa lokalizacji będzie tutaj.</div>
                   </div>
                 </div>
               </div>
 
               <div class="eventSocialSection eventOrganizerPanel" id="evOrganizerBox" onclick="openEventOrganizerProfile()">
-                <div class="eventPanelLabel">Organizator</div>
+                <div class="eventPanelLabel" data-i18n="eventDetail.organizer">Organizator</div>
                 <div class="eventOrganizerRow">
                   <div id="evOrganizerLogo" class="eventOrganizerLogo"></div>
                   <div class="eventOrganizerText">
@@ -2908,17 +2908,17 @@ section#S11_PLANS .card[data-plan].is-current{
               </div>
 
               <div class="eventSocialSection" id="evTicketBox">
-                <div class="eventPanelLabel">Bilety</div>
+                <div class="eventPanelLabel" data-i18n="eventDetail.tickets">Bilety</div>
                 <div class="eventTicketRow">
                   <div class="tStrong" id="evTicketType">Bezpłatne</div>
                   <div class="planPill" id="evTicketPricePill">0 zł</div>
                 </div>
                 <div class="sectionSub mt10" id="evTicketPriceLine">—</div>
                 <a class="btn mt12" id="evTicketLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
-                  Przejdź do zakupu / rezerwacji
+                  <span data-i18n="eventDetail.ticketLink">Przejdź do zakupu / rezerwacji</span>
                 </a>
                 <div class="legalBox mt16" id="evTicketLegalBox" style="display:none;">
-                  <div class="sectionSub">
+                  <div class="sectionSub" data-i18n="eventDetail.ticketLegal">
                     USLY nie sprzedaje biletów i nie jest organizatorem tego wydarzenia. Link przenosi do zewnętrznej strony,
                     na której organizator prowadzi sprzedaż lub rezerwacje.
                   </div>
@@ -2926,19 +2926,19 @@ section#S11_PLANS .card[data-plan].is-current{
               </div>
 
               <div class="eventActionsGrid">
-                <button class="btn" type="button" onclick="toggleSaveEvent()">Obserwuj</button>
-                <button class="btn secondary" type="button" onclick="toggleInterestedEvent()">Wezmę udział</button>
+                <button class="btn" type="button" onclick="toggleSaveEvent()" data-i18n="eventDetail.observe">Obserwuj</button>
+                <button class="btn secondary" type="button" onclick="toggleInterestedEvent()" data-i18n="eventDetail.interested">Wezmę udział</button>
               </div>
 
-              <button class="btn secondary eventWideBtn" type="button" onclick="addSelectedEventToCalendar()">Dodaj do kalendarza</button>
+              <button class="btn secondary eventWideBtn" type="button" onclick="addSelectedEventToCalendar()" data-i18n="eventDetail.addCalendar">Dodaj do kalendarza</button>
 
-              <button class="btn secondary eventWideBtn" type="button" onclick="openShare()">Udostępnij</button>
+              <button class="btn secondary eventWideBtn" type="button" onclick="openShare()" data-i18n="eventDetail.share">Udostępnij</button>
 
               <div class="eventDetailNote" id="interestedNote">
-                Jeśli zaznaczysz „Wezmę udział”, organizator zobaczy Cię na liście zainteresowanych.
+                <span data-i18n="eventDetail.interestedNote">Jeśli zaznaczysz „Wezmę udział”, organizator zobaczy Cię na liście zainteresowanych.</span>
               </div>
 
-              <button class="btn secondary eventWideBtn" type="button" onclick="openChatWithOrganizer()">Napisz do organizatora</button>
+              <button class="btn secondary eventWideBtn" type="button" onclick="openChatWithOrganizer()" data-i18n="eventDetail.writeOrganizer">Napisz do organizatora</button>
             </div>
           </div>
         </section>
