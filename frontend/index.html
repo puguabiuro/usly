@@ -3040,7 +3040,7 @@ section#S11_PLANS .card[data-plan].is-current{
         ========================================================== -->
         
 
-        <section class="view" id="S9_PARTNER" aria-label="Panel organizatora">
+        <section class="view" id="S9_PARTNER" aria-label="Organizer dashboard">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -3048,7 +3048,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Panel organizatora</div>
+                  <div class="brandTagline" data-i18n="partnerDash.title">Panel organizatora</div>
                 </div>
               </div>
             </div>
@@ -3062,35 +3062,35 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
                   <div class="avatar big" id="partnerHubLogoPreview"></div>
                   <div style="text-align:left;min-width:0;flex:1;">
-                    <div class="sectionTitle" id="partnerHubName" style="margin:0;">Twoje miejsce</div>
-                    <div class="sectionSub" id="partnerHubMeta">Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.</div>
+                    <div class="sectionTitle" id="partnerHubName" style="margin:0;" data-i18n="partnerDash.yourPlace">Twoje miejsce</div>
+                    <div class="sectionSub" id="partnerHubMeta" data-i18n="partnerDash.meta">Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.</div>
                   </div>
                 </div>
                 <div class="planPill" id="partnerPlanPill">FREE</div>
               </div>
 
               <div class="row mt16 profileActionRow">
-                <button class="btn small profileHeroBtnPrimary" type="button" onclick="go('S10_SETTINGS')">Edytuj profil</button>
-                <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="go('S11_PLANS')">Twój plan</button>
+                <button class="btn small profileHeroBtnPrimary" type="button" onclick="go('S10_SETTINGS')" data-i18n="profileEdit.title">Edytuj profil</button>
+                <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="go('S11_PLANS')" data-i18n="partnerDash.yourPlan">Twój plan</button>
               </div>
 
               <div class="tMuted mt10" style="text-align:left;">
-                Zwiększ zasięg swoich wydarzeń i odblokuj dodatkowe możliwości z wyższym planem.
+                <span data-i18n="partnerDash.upgradeHint">Zwiększ zasięg swoich wydarzeń i odblokuj dodatkowe możliwości z wyższym planem.</span>
               </div>
             </div>
   
             <div class="analyticsGrid mt16" id="partnerStatsGrid" data-plan-scope="partner">
               <div class="metricCard" data-min-plan="free">
                 <div class="metricTop">
-                  <div class="metricLabel">Wydarzenia</div><div class="metricDot"></div>
+                  <div class="metricLabel" data-i18n="partnerDash.metricEvents">Wydarzenia</div><div class="metricDot"></div>
                 </div>
                 <div class="metricVal" id="m_events_val">2</div>
-                <div class="metricSub">Łącznie</div>
+                <div class="metricSub" data-i18n="partnerDash.metricTotal">Łącznie</div>
               </div>
   
               <div class="metricCard" data-min-plan="pro">
                 <div class="metricTop">
-                  <div class="metricLabel">Wyświetlenia profilu</div><div class="metricDot"></div>
+                  <div class="metricLabel" data-i18n="partnerDash.metricViews">Wyświetlenia profilu</div><div class="metricDot"></div>
                 </div>
                 <div class="metricVal" id="m_views_val">—</div>
                 <div class="metricSub">Pro+</div>
@@ -3098,7 +3098,7 @@ section#S11_PLANS .card[data-plan].is-current{
   
               <div class="metricCard" data-min-plan="pro">
                 <div class="metricTop">
-                  <div class="metricLabel">Kliknięcia</div><div class="metricDot"></div>
+                  <div class="metricLabel" data-i18n="partnerDash.metricClicks">Kliknięcia</div><div class="metricDot"></div>
                 </div>
                 <div class="metricVal" id="m_clicks_val">—</div>
                 <div class="metricSub">Pro+</div>
@@ -3106,7 +3106,7 @@ section#S11_PLANS .card[data-plan].is-current{
   
               <div class="metricCard" data-min-plan="premium">
                 <div class="metricTop">
-                  <div class="metricLabel">Konwersje</div><div class="metricDot"></div>
+                  <div class="metricLabel" data-i18n="partnerDash.metricConversions">Konwersje</div><div class="metricDot"></div>
                 </div>
                 <div class="metricVal" id="m_conv_val">—</div>
                 <div class="metricSub">Premium+</div>
@@ -3114,11 +3114,11 @@ section#S11_PLANS .card[data-plan].is-current{
             </div>
   
             <div class="card mt16">
-              <div class="sectionTitle">Skróty</div>
-              <div class="sectionSub">Najczęściej używane akcje.</div>
+              <div class="sectionTitle" data-i18n="partnerDash.shortcuts">Skróty</div>
+              <div class="sectionSub" data-i18n="partnerDash.shortcutsSub">Najczęściej używane akcje.</div>
               <div class="row mt16">
-                <button class="btn" type="button" onclick="go('S9_PARTNER_CREATE')">Dodaj wydarzenie</button>
-                <button class="btn secondary" type="button" onclick="go('S9_PARTNER_EVENTS')">Moje wydarzenia</button>
+                <button class="btn" type="button" onclick="go('S9_PARTNER_CREATE')" data-i18n="partnerDash.addEvent">Dodaj wydarzenie</button>
+                <button class="btn secondary" type="button" onclick="go('S9_PARTNER_EVENTS')" data-i18n="partnerDash.myEvents">Moje wydarzenia</button>
               </div>
             </div>
           </div>
