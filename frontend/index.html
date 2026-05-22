@@ -2468,36 +2468,36 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src= "./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Profil</div>
+                  <div class="brandTagline" data-i18n="profileSetup.topbar">Profil</div>
                 </div>
               </div>
             </div>
             <!-- dzwonek -->
-            <button class="topIconBtn" id="notifBtnSetup" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Powiadomienia"></button>
+            <button class="topIconBtn" id="notifBtnSetup" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
             <div class="content">
               <div class="heroCard profileSummaryCard">
-                <div class="sectionTitle">Uzupełnij profil</div>
-                <div class="sectionSub">To ostatni krok po rejestracji. Sprawdź dane startowe i dodaj brakujące informacje do dopasowań.</div>
+                <div class="sectionTitle" data-i18n="profileSetup.title">Uzupełnij profil</div>
+                <div class="sectionSub" data-i18n="profileSetup.subtitle">To ostatni krok po rejestracji. Sprawdź dane startowe i dodaj brakujące informacje do dopasowań.</div>
 
                 <div class="row mt16" style="align-items:center;gap:14px;">
                   <div class="avatar big" id="userAvatar"></div>
                   <div style="text-align:left;flex:1;">
-                    <div style="font-weight:950;">Twój profil startowy</div>
+                    <div style="font-weight:950;" data-i18n="profileSetup.startProfile">Twój profil startowy</div>
                     <div class="sectionSub" id="setupAgeDisplay">Wiek: — lat</div>
                   </div>
                   <div class="planPill" id="planPillSetup">FREE</div>
                 </div>
 
                 <div class="row mt12">
-                  <button class="btn secondary small" type="button" onclick="openAddPhoto()">Dodaj zdjęcie</button>
-                  <button class="btn small" type="button" onclick="openAvatarAI()">Stwórz awatar</button>
-                  <button class="btn secondary small" type="button" onclick="removeUserAvatar()">Usuń zdjęcie</button>
+                  <button class="btn secondary small" type="button" onclick="openAddPhoto()" data-i18n="profileSetup.addPhoto">Dodaj zdjęcie</button>
+                  <button class="btn small" type="button" onclick="openAvatarAI()" data-i18n="profileSetup.createAvatar">Stwórz awatar</button>
+                  <button class="btn secondary small" type="button" onclick="removeUserAvatar()" data-i18n="profileSetup.removePhoto">Usuń zdjęcie</button>
                 </div>
 
-                <label class="mt16">Nick</label>
-                <input id="setupNick" type="text" placeholder="Twój nick" />
+                <label class="mt16" data-i18n="profileEdit.nick">Nick</label>
+                <input id="setupNick" type="text" placeholder="Twój nick" data-i18n-placeholder="profileSetup.nickPlaceholder" />
 
                 <label class="mt12" data-i18n="profileEdit.location">Aktualna lokalizacja</label>
                 <input id="setupCity" type="text" placeholder="—" readonly />
@@ -2513,30 +2513,30 @@ section#S11_PLANS .card[data-plan].is-current{
 
                 <div class="setupInterestCard mt16">
                   <div class="setupInterestHeader">
-                    <div class="setupInterestTitle">Zainteresowania</div>
+                    <div class="setupInterestTitle" data-i18n="profileInterests.title">Zainteresowania</div>
                     <div class="sectionSub" id="setupInterestLimitHint">—</div>
                   </div>
 
                   <div class="hashRow mt12">
                     <span class="hashPrefix">#</span>
-                    <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." list="interestsDatalist" />
-                    <button class="btn secondary small hashAddBtn" id="interestAddBtn" type="button" aria-label="Dodaj zainteresowanie">Dodaj</button>
+                    <input id="interestInput" type="text" placeholder="np. kawa, koncerty..." data-i18n-placeholder="profileSetup.interestsPlaceholder" list="interestsDatalist" />
+                    <button class="btn secondary small hashAddBtn" id="interestAddBtn" type="button" aria-label="Add interest" data-i18n="profileSetup.addInterest">Dodaj</button>
                   </div>
                   <div class="chips" id="interestChips"></div>
                   <div class="typeahead" id="interestTypeahead"></div>
                 </div>
 
-                <label class="mt12">BIO (max 250)</label>
+                <label class="mt12" data-i18n="profileSetup.bioLabel">BIO (max 250)</label>
                 <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem" data-i18n-placeholder="profileEdit.bio_placeholder"></textarea>
                 <div class="charHint"><span id="bioCount">0</span>/250</div>
 
                 <div class="hintCard mt16">
-                  <div class="hintTitle">Preferowany zakres wieku</div>
-                  <div class="hintText">Ustaw, w jakim wieku mają być osoby sugerowane przez aplikację. Możesz to później zmienić w ustawieniach.</div>
+                  <div class="hintTitle" data-i18n="profileEdit.ageRangeTitle">Preferowany zakres wieku</div>
+                  <div class="hintText" data-i18n="profileSetup.ageRangeText">Ustaw, w jakim wieku mają być osoby sugerowane przez aplikację. Możesz to później zmienić w ustawieniach.</div>
 
                   <div class="row mt12">
                     <div style="flex:1;">
-                      <label class="tMuted">Od</label>
+                      <label class="tMuted" data-i18n="profileEdit.ageFrom">Od</label>
                       <select id="setupPrefAgeFrom">
                         <option value="18">18</option><option value="19">19</option><option value="20">20</option>
                         <option value="21">21</option><option value="22">22</option><option value="23">23</option>
@@ -2553,7 +2553,7 @@ section#S11_PLANS .card[data-plan].is-current{
                       </select>
                     </div>
                     <div style="flex:1;">
-                      <label class="tMuted">Do</label>
+                      <label class="tMuted" data-i18n="profileEdit.ageTo">Do</label>
                       <select id="setupPrefAgeTo">
                         <option value="18">18</option><option value="19">19</option><option value="20">20</option>
                         <option value="21">21</option><option value="22">22</option><option value="23">23</option>
@@ -2572,13 +2572,13 @@ section#S11_PLANS .card[data-plan].is-current{
                   </div>
                   <div class="partnerCapacityToggle mt12">
                     <label class="partnerCapacityToggleRow" for="setupAgeAny">
-                      <span class="tStrong">Wiek bez znaczenia</span>
+                      <span class="tStrong" data-i18n="profileEdit.ageAny">Wiek bez znaczenia</span>
                       <input id="setupAgeAny" type="checkbox" />
                     </label>
                   </div>
                 </div>
 
-                <button class="btn mt16" type="button" onclick="finishProfileSetup()">Zapisz i przejdź dalej</button>
+                <button class="btn mt16" type="button" onclick="finishProfileSetup()" data-i18n="profileSetup.finish">Zapisz i przejdź dalej</button>
               </div>
             </div>
         </section>
