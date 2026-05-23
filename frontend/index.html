@@ -1845,7 +1845,14 @@ section#S11_PLANS .card[data-plan].is-current{
   text-align:left !important;
 }
 
-</style>
+
+    .groupPeopleSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 12px}
+    .groupPeopleStat{border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:10px 10px;background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.035));box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+    .groupPeopleStat span{display:block;font-size:20px;font-weight:950;letter-spacing:-.03em;line-height:1}
+    .groupPeopleStat small{display:block;margin-top:6px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.66);line-height:1.15}
+    .groupPeopleNotice{margin:0 0 12px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.76);font-size:12px;font-weight:750;line-height:1.25}
+
+  </style>
 
 </head>
 <body>
@@ -1902,65 +1909,65 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         USER TABBAR (Nearby / Chats / Events / Groups / Settings)
         ========================================================== -->
-        <nav class="tabbar" id="tabbarUser" aria-label="Dolna nawigacja — Towarzysz">
+        <nav class="tabbar" id="tabbarUser" aria-label="Dolna nawigacja — Towarzysz" data-i18n-aria-label="tabbar.userAria">
           <button id="tabNearby" type="button" onclick="go('S4_NEARBY')">
             <div class="ico" aria-hidden="true">📍</div>
-            <div>Okolica</div>
+            <div data-i18n="tabbar.nearby">Okolica</div>
           </button>
           <button id="tabChats" type="button" onclick="go('S6_CHATS_LIST')">
             <div class="ico" style="position:relative;" aria-hidden="true">
               💬
               <span class="pill" id="badgeChats" style="position:absolute;right:-6px;top:-10px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
-            <div>Czaty</div>
+            <div data-i18n="tabbar.chats">Czaty</div>
           </button>
           <button id="tabEvents" type="button" onclick="go('S7_EVENTS')">
             <div class="ico" aria-hidden="true">📅</div>
-            <div>Wydarzenia</div>
+            <div data-i18n="tabbar.events">Wydarzenia</div>
           </button>
           <button id="tabGroups" type="button" onclick="go('S8_GROUPS')">
             <div class="ico" style="position:relative;" aria-hidden="true">
               👥
               <span class="pill" id="badgeGroups" style="position:absolute;right:-6px;top:-10px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
-            <div>Grupy</div>
+            <div data-i18n="tabbar.groups">Grupy</div>
           </button>
           <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
           <button id="tabSettingsUser" type="button" onclick="go('S10_SETTINGS')">
             <div class="ico" aria-hidden="true">👤</div>
-            <div>Profil</div>
+            <div data-i18n="tabbar.profile">Profil</div>
           </button>
         </nav>
   
         <!-- =========================================================
         ORGANIZER TABBAR
-        Panel / Nowe / Wydarzenia / Wiadomości / Ustawienia
+        Panel / Add / Events / Messages / Settings
         (Powiadomienia są w dzwonku na górze)
         ========================================================== -->
-        <nav class="tabbar" id="tabbarPartner" aria-label="Dolna nawigacja — Organizator">
+        <nav class="tabbar" id="tabbarPartner" aria-label="Dolna nawigacja — Organizator" data-i18n-aria-label="tabbar.partnerAria">
           <button id="ptabDash" type="button" onclick="go('S9_PARTNER')">
             <div class="ico" aria-hidden="true">📊</div>
-            <div>Profil</div>
+            <div data-i18n="tabbar.profile">Profil</div>
           </button>
           <button id="ptabCreate" type="button" onclick="openNewPartnerEventForm()">
             <div class="ico" aria-hidden="true">🎟️</div>
-            <div>Dodaj</div>
+            <div data-i18n="tabbar.add">Dodaj</div>
           </button>
           <button id="ptabMyEvents" type="button" onclick="go('S9_PARTNER_EVENTS')">
             <div class="ico" aria-hidden="true">📅</div>
-            <div>Wydarzenia</div>
+            <div data-i18n="tabbar.events">Wydarzenia</div>
           </button>
           <button id="ptabMsgs" type="button" onclick="go('S9_PARTNER_MESSAGES')">
             <div class="ico" style="position:relative;" aria-hidden="true">
               ✉️
               <span class="pill" id="badgePartnerMsgs" style="position:absolute;right:-6px;top:-10px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
-            <div>Wiadomości</div>
+            <div data-i18n="tabbar.messages">Wiadomości</div>
           </button>
           <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
           <button id="ptabSettings" type="button" onclick="go('S10_SETTINGS')">
             <div class="ico" aria-hidden="true">⚙️</div>
-            <div>Ustawienia</div>
+            <div data-i18n="tabbar.settings">Ustawienia</div>
           </button>
         </nav>
   
@@ -1975,7 +1982,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img id="brandLogo" class="brandLogo" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Poznawaj ludzi przez zainteresowania, nie wygląd.</div>
+                  <div class="brandTagline" data-i18n="welcome.tagline">Poznawaj ludzi przez zainteresowania, nie wygląd.</div>
                 </div>
               </div>
             </div>
@@ -1988,7 +1995,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <div class="heroHeader">
                 <div class="heroHello" data-i18n="welcome.title">Twoje miasto. Twoi ludzie.</div>
                 <div class="heroSub" data-i18n="welcome.subtitle">Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.</div>
-                <div class="langSwitchWelcome" aria-label="Wybór języka">
+                <div class="langSwitchWelcome" aria-label="Wybór języka" data-i18n-aria-label="welcome.langAria">
                   <button class="langBtn" data-lang-choice="pl" type="button" onclick="setLanguage('pl')">PL</button>
                   <button class="langBtn" data-lang-choice="en" type="button" onclick="setLanguage('en')">EN</button>
                 </div>
@@ -2625,18 +2632,18 @@ section#S11_PLANS .card[data-plan].is-current{
 
               <label class="mt12" data-i18n="partnerSetup.category">Kategoria</label>
               <select id="setupOrgCategory">
-                <option value="gastro">Gastro / restauracja / kawiarnia</option>
-                <option value="bar_nocne">Bar / klub / nightlife</option>
-                <option value="kultura">Kultura / koncerty / sztuka</option>
-                <option value="fitness">Fitness / sport / wellness</option>
-                <option value="beauty">Beauty / uroda</option>
-                <option value="hotel_event">Hotel / hotel / event / konferencje</option>
-                <option value="rozrywka">Rozrywka / atrakcje / gaming</option>
-                <option value="zakupy">Sklep / showroom / zakupy</option>
-                <option value="edukacja">Edukacja / warsztaty</option>
-                <option value="cowork">Cowork / biznes / networking</option>
-                <option value="plener">Plener / turystyka / rekreacja</option>
-                <option value="inne">Inne / trudno powiedzieć</option>
+                <option value="gastro" data-i18n="partnerCategory.gastro">Gastro / restauracja / kawiarnia</option>
+                <option value="bar_nocne" data-i18n="partnerCategory.bar_nocne">Bar / klub / nightlife</option>
+                <option value="kultura" data-i18n="partnerCategory.kultura">Kultura / koncerty / sztuka</option>
+                <option value="fitness" data-i18n="partnerCategory.fitness">Fitness / sport / wellness</option>
+                <option value="beauty" data-i18n="partnerCategory.beauty">Beauty / uroda</option>
+                <option value="hotel_event" data-i18n="partnerCategory.hotel_event">Hotel / hotel / event / konferencje</option>
+                <option value="rozrywka" data-i18n="partnerCategory.rozrywka">Rozrywka / atrakcje / gaming</option>
+                <option value="zakupy" data-i18n="partnerCategory.zakupy">Sklep / showroom / zakupy</option>
+                <option value="edukacja" data-i18n="partnerCategory.edukacja">Edukacja / warsztaty</option>
+                <option value="cowork" data-i18n="partnerCategory.cowork">Cowork / biznes / networking</option>
+                <option value="plener" data-i18n="partnerCategory.plener">Plener / turystyka / rekreacja</option>
+                <option value="inne" data-i18n="partnerCategory.inne">Inne / trudno powiedzieć</option>
               </select>
               
 
@@ -2891,7 +2898,7 @@ section#S11_PLANS .card[data-plan].is-current{
                   <div id="evPlaceMiniMap" class="eventPlaceMapThumb" hidden></div>
                   <div class="eventPlaceMapText">
                     <div class="tStrong" id="evPlaceTitle">—</div>
-                    <div class="sectionSub" id="evPlaceMeta" data-i18n="eventDetail.mapPlaceholder">Mapa lokalizacji będzie tutaj.</div>
+                    <div class="sectionSub" id="evPlaceMeta" data-i18n="eventDetail.mapPlaceholder">Dokładny adres pojawi się tutaj.</div>
                   </div>
                 </div>
               </div>
@@ -2954,7 +2961,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Grupy</div>
+                  <div class="brandTagline" data-i18n="groups.title">Grupy</div>
                 </div>
               </div>
             </div>
@@ -3303,7 +3310,7 @@ section#S11_PLANS .card[data-plan].is-current{
         <!-- =========================================================
         S9_PARTNER_MESSAGES — inbox
         ========================================================== -->
-        <section class="view" id="S9_PARTNER_MESSAGES" aria-label="Wiadomości organizatora">
+        <section class="view" id="S9_PARTNER_MESSAGES" aria-label="Wiadomości organizatora" data-i18n-aria-label="partnerMessages.aria">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -3311,7 +3318,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Wiadomości</div>
+                  <div class="brandTagline" data-i18n="partnerMessages.title">Wiadomości</div>
                 </div>
               </div>
             </div>
@@ -3321,7 +3328,7 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <div class="heroCard profileSummaryCard">
               
-              <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." class="mt12" />
+              <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." data-i18n-placeholder="partnerMessages.searchPlaceholder" class="mt12" />
             </div>
   
             <div class="col mt16" id="partnerMsgList"></div>
@@ -3444,18 +3451,18 @@ section#S11_PLANS .card[data-plan].is-current{
 
                 <label class="mt12" data-i18n="settings.industry">Branża</label>
                 <select id="setOrgCategory">
-                  <option value="gastro">Gastro / restauracja / kawiarnia</option>
-                  <option value="bar_nocne">Bar / klub / nightlife</option>
-                  <option value="kultura">Kultura / koncerty / sztuka</option>
-                  <option value="fitness">Fitness / sport / wellness</option>
-                  <option value="beauty">Beauty / uroda</option>
-                  <option value="hotel_event">Hotel / event / konferencje</option>
-                  <option value="rozrywka">Rozrywka / atrakcje / gaming</option>
-                  <option value="zakupy">Sklep / showroom / zakupy</option>
-                  <option value="edukacja">Edukacja / warsztaty</option>
-                  <option value="cowork">Cowork / biznes / networking</option>
-                  <option value="plener">Plener / turystyka / rekreacja</option>
-                  <option value="inne">Inne / trudno powiedzieć</option>
+                  <option value="gastro" data-i18n="partnerCategory.gastro">Gastro / restauracja / kawiarnia</option>
+                  <option value="bar_nocne" data-i18n="partnerCategory.bar_nocne">Bar / klub / nightlife</option>
+                  <option value="kultura" data-i18n="partnerCategory.kultura">Kultura / koncerty / sztuka</option>
+                  <option value="fitness" data-i18n="partnerCategory.fitness">Fitness / sport / wellness</option>
+                  <option value="beauty" data-i18n="partnerCategory.beauty">Beauty / uroda</option>
+                  <option value="hotel_event" data-i18n="partnerCategory.hotel_event">Hotel / event / konferencje</option>
+                  <option value="rozrywka" data-i18n="partnerCategory.rozrywka">Rozrywka / atrakcje / gaming</option>
+                  <option value="zakupy" data-i18n="partnerCategory.zakupy">Sklep / showroom / zakupy</option>
+                  <option value="edukacja" data-i18n="partnerCategory.edukacja">Edukacja / warsztaty</option>
+                  <option value="cowork" data-i18n="partnerCategory.cowork">Cowork / biznes / networking</option>
+                  <option value="plener" data-i18n="partnerCategory.plener">Plener / turystyka / rekreacja</option>
+                  <option value="inne" data-i18n="partnerCategory.inne">Inne / trudno powiedzieć</option>
                 </select>
 
                 <label class="mt12" data-i18n="partnerCreate.description">Opis</label>
@@ -3473,6 +3480,19 @@ section#S11_PLANS .card[data-plan].is-current{
                   <button class="btn secondary" type="button" onclick="openBugReport()" data-i18n="settings.reportBug">Zgłoś błąd</button>
                   <button class="btn secondary" type="button" onclick="openChangePassword()" data-i18n="settings.changePassword">Zmień hasło</button>
                   <button class="btn danger" type="button" onclick="openDeleteAccount()" data-i18n="settings.deleteAccount">Usuń konto</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card mt16 profileSummaryCard">
+              <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
+                <div style="text-align:left;flex:1;min-width:0;">
+                  <div class="sectionTitle" data-i18n="settings.languageTitle">Język aplikacji</div>
+                  <div class="sectionSub" data-i18n="settings.languageSub">Zmienisz język od razu, bez wylogowywania.</div>
+                </div>
+                <div class="langSwitchSettings" aria-label="Wybór języka" data-i18n-aria-label="welcome.langAria">
+                  <button class="langBtn" data-lang-choice="pl" type="button" onclick="setLanguage('pl')">PL</button>
+                  <button class="langBtn" data-lang-choice="en" type="button" onclick="setLanguage('en')">EN</button>
                 </div>
               </div>
             </div>
@@ -3665,7 +3685,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline">Powiadomienia</div>
+                  <div class="brandTagline" data-i18n="notifications.title">Powiadomienia</div>
                 </div>
               </div>
             </div>

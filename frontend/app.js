@@ -157,6 +157,7 @@ const I18N = {
     "enterprise.need.other": "Inne",
     "common.email": "Email",
     "common.remove": "Usuń",
+    "common.block": "Zablokuj",
     "profileEdit.title": "Edytuj profil",
     "profileEdit.photoTitle": "Zdjęcie profilowe",
     "profileEdit.photoSubtitle": "Dodaj swoje zdjęcie albo wygeneruj awatar AI.",
@@ -178,10 +179,57 @@ const I18N = {
     "profileInterests.subtitle": "Jedna wspólna baza tagów dla profilu, grup i wydarzeń.",
     "profileInterests.tags": "Twoje tagi",
     "profileInterests.placeholder": "np. kawa, joga, koncerty...",
+    "profileInterests.limitPlaceholder": "Limit osiągnięty • Odblokuj więcej w PLUS",
+    "profileInterests.limitToast": "Odblokuj więcej zainteresowań w planie PLUS",
+    "profileInterests.alreadyAdded": "To zainteresowanie już jest dodane",
+    "profileInterests.addedToast": "Dodano #{{tag}}",
+    "profileInterests.removedToast": "Usunięto #{{tag}}",
+    "profileInterests.removeTitle": "Kliknij, aby usunąć",
+    "geo.unavailable": "Geolokalizacja niedostępna w tej przeglądarce",
+    "geo.fetching": "Pobieram lokalizację…",
+    "geo.fetchingCity": "Pobieramy miasto...",
+    "geo.locationFetched": "Lokalizacja pobrana",
+    "geo.locationSet": "Lokalizacja ustawiona",
+    "geo.enableLocation": "Włącz lokalizację, aby kontynuować",
+    "geo.failed": "Nie udało się pobrać lokalizacji (brak zgody?)",
     "profileFriends.title": "Znajomi",
     "profileFriends.search_placeholder": "Szukaj znajomego...",
     "profileInvites.title": "Zaproszenia",
     "profileInvites.subtitle": "Przychodzące i wysłane zaproszenia w czytelnym układzie.",
+    "friends.selfAccount": "To Twoje konto",
+    "friends.friend": "Znajomy",
+    "friends.pending": "Zaproszenie wysłane",
+    "friends.add": "Dodaj do znajomych",
+    "friends.message": "Napisz",
+    "friends.messagesPro": "Wiadomości od planu PRO",
+    "friends.toastNoProfile": "Nie wybrano profilu",
+    "friends.toastLogin": "Najpierw się zaloguj",
+    "friends.toastSendFailed": "Nie udało się wysłać zaproszenia",
+    "friends.toastSent": "Zaproszenie do znajomych zostało wysłane",
+    "friends.toastChatAfterAccept": "Prywatny czat będzie dostępny po akceptacji znajomości",
+    "friends.toastAddFirst": "Najpierw dodaj tę osobę do znajomych",
+    "friends.toastProfileUnavailable": "Profil tej osoby nie jest teraz dostępny",
+    "friends.emptyInvites": "Brak oczekujących zaproszeń.",
+    "friends.defaultUser": "Użytkownik #{{id}}",
+    "friends.pendingDecision": "Zaproszenie oczekuje na decyzję.",
+    "friends.pendingAccept": "Zaproszenie wysłane — oczekuje na akceptację.",
+    "friends.accept": "Akceptuj",
+    "friends.reject": "Odrzuć",
+    "friends.sentPill": "Wysłane",
+    "friends.defaultGroup": "Grupa",
+    "friends.groupInviteLine": "{{user}} zaprasza Cię do grupy",
+    "friends.emptyFriends": "Nie masz jeszcze znajomych.",
+    "friends.friendFallback": "Znajomy w USLY",
+    "friends.viewProfile": "Zobacz profil",
+    "friends.groupInviteMissing": "Brak danych zaproszenia do grupy",
+    "friends.groupInviteUpdateFailed": "Nie udało się zaktualizować zaproszenia do grupy",
+    "friends.groupInviteAccepted": "Zaproszenie do grupy zaakceptowane",
+    "friends.groupInviteRejected": "Zaproszenie do grupy odrzucone",
+    "friends.groupInviteConnectionFailed": "Błąd połączenia przy aktualizacji zaproszenia do grupy",
+    "friends.inviteUpdateFailed": "Nie udało się zaktualizować zaproszenia",
+    "friends.inviteAccepted": "Zaproszenie zaakceptowane",
+    "friends.inviteRejected": "Zaproszenie odrzucone",
+    "friends.inviteConnectionFailed": "Błąd połączenia przy aktualizacji zaproszenia",
     "profileSetup.topbar": "Profil",
     "profileSetup.title": "Uzupełnij profil",
     "profileSetup.subtitle": "To ostatni krok po rejestracji. Sprawdź dane startowe i dodaj brakujące informacje do dopasowań.",
@@ -205,6 +253,18 @@ const I18N = {
     "partnerSetup.vibeTitle": "Klimat miejsca",
     "partnerSetup.vibeSubtitle": "Pokaż użytkownikom, czego mogą się spodziewać.",
     "partnerSetup.category": "Kategoria",
+    "partnerCategory.gastro": "Gastro / restauracja / kawiarnia",
+    "partnerCategory.bar_nocne": "Bar / klub / nightlife",
+    "partnerCategory.kultura": "Kultura / koncerty / sztuka",
+    "partnerCategory.fitness": "Fitness / sport / wellness",
+    "partnerCategory.beauty": "Beauty / uroda",
+    "partnerCategory.hotel_event": "Hotel / event / konferencje",
+    "partnerCategory.rozrywka": "Rozrywka / atrakcje / gaming",
+    "partnerCategory.zakupy": "Sklep / showroom / zakupy",
+    "partnerCategory.edukacja": "Edukacja / warsztaty",
+    "partnerCategory.cowork": "Cowork / biznes / networking",
+    "partnerCategory.plener": "Plener / turystyka / rekreacja",
+    "partnerCategory.inne": "Inne / trudno powiedzieć",
     "partnerSetup.about": "Krótki opis",
     "partnerSetup.aboutPlaceholder": "Co warto wiedzieć o tym miejscu?",
     "nearby.title": "W okolicy",
@@ -216,7 +276,45 @@ const I18N = {
     "nearby.eventsSub": "Kliknij kartę, aby wejść w szczegóły.",
     "nearby.emptyPeople": "Nie widzimy jeszcze osób z wspólnymi zainteresowaniami w Twojej okolicy.",
     "nearby.emptyEvents": "Nie widzimy jeszcze wydarzeń zgodnych z Twoimi zainteresowaniami w Twojej okolicy.",
+    "nearby.distanceUnder1": "< 1 km od Ciebie",
+    "nearby.distanceKm": "{{km}} km od Ciebie",
+    "nearby.inArea": "W okolicy",
     "personProfile.bioTitle": "O mnie",
+    "personProfile.partnerCategory": "Kategoria",
+    "personProfile.organizer": "Organizator",
+    "personProfile.organizerAboutTitle": "O organizatorze",
+    "personProfile.emptyOrganizerBio": "Ten organizator nie dodał jeszcze opisu.",
+    "personProfile.defaultEvent": "Wydarzenie",
+    "personProfile.eventSoon": "Termin wkrótce",
+    "personProfile.noPartnerEvents": "Ten organizator nie ma jeszcze widocznych wydarzeń.",
+    "personProfile.userProfileFallback": "Profil użytkownika",
+    "personProfile.ageYears": "{{age}} lat",
+    "personProfile.match": "{{score}}% dopasowania",
+    "personProfile.message": "Napisz",
+    "personProfile.messagesPro": "Wiadomości od planu PRO",
+    "personProfile.options": "Opcje",
+    "personProfile.report": "Zgłoś",
+    "personProfile.block": "Zablokuj",
+    "personProfile.toastMissingUser": "Brak danych użytkownika",
+    "personProfile.toastBlockFailed": "Nie udało się zablokować użytkownika",
+    "personProfile.toastBlocked": "Użytkownik został zablokowany",
+    "personProfile.toastConnectionError": "Błąd połączenia",
+    "userReport.modalTitle": "Zgłoś użytkownika",
+    "userReport.reasonTitle": "Powód zgłoszenia",
+    "userReport.subtitle": "Zgłoszenie trafi do moderacji USLY.",
+    "userReport.reasonLabel": "Wybierz powód",
+    "userReport.reasonSpam": "Spam / scam",
+    "userReport.reasonHarassment": "Nękanie lub obraźliwe treści",
+    "userReport.reasonProfile": "Nieodpowiedni profil lub bio",
+    "userReport.reasonImpersonation": "Podszywanie się",
+    "userReport.reasonOther": "Inne",
+    "userReport.descriptionLabel": "Opis opcjonalny",
+    "userReport.descriptionPlaceholder": "Dodaj szczegóły, które pomogą moderacji.",
+    "userReport.submit": "Wyślij zgłoszenie",
+    "userReport.toastNoUser": "Nie wybrano użytkownika",
+    "userReport.toastNoReason": "Wybierz powód zgłoszenia",
+    "userReport.toastFailed": "Nie udało się wysłać zgłoszenia",
+    "userReport.toastSent": "Zgłoszenie wysłane • #{{ticket}}",
     "personProfile.emptyBio": "Ta osoba nie dodała jeszcze bio.",
     "personProfile.organizerEvents": "Wydarzenia organizatora",
     "personProfile.write": "Napisz",
@@ -226,6 +324,53 @@ const I18N = {
     "chats.searchSub": "Po nazwie rozmowy",
     "chats.searchPlaceholder": "np. Alex",
     "chatThread.placeholder": "Napisz wiadomość.",
+    "chat.menu.title": "Menu czatu",
+    "chat.menu.notificationsOn": "Włącz powiadomienia",
+    "chat.menu.notificationsOff": "Wycisz rozmowę",
+    "chat.toast.notificationsOn": "Powiadomienia dla rozmowy zostały włączone",
+    "chat.toast.notificationsMuted": "Rozmowa została wyciszona",
+    "chat.toast.sendFailed": "Nie udało się wysłać wiadomości",
+    "chat.blocked.link": "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona.",
+    "chat.blocked.content": "Treść została zablokowana przez moderację USLY i nie została dostarczona.",
+    "chat.avatarMine": "Twój awatar",
+    "chat.openProfile": "Otwórz profil",
+    "chat.defaultUser": "Użytkownik",
+    "chat.organizerMessage": "Wiadomość od organizatora",
+    "chat.organizerMessageMarker": "— wiadomość od organizatora —",
+    "chat.defaultEventTitle": "📣 Wydarzenie",
+    "chat.checkingContent": "Sprawdzamy treść wiadomości…",
+    "groups.menu.title": "Menu grupy",
+    "groups.menu.notificationsOn": "Włącz powiadomienia",
+    "groups.menu.notificationsOff": "Wycisz grupę",
+    "groups.menu.people": "Ludzie w grupie",
+    "groups.menu.close": "Zamknij grupę",
+    "groups.menu.leave": "Opuść grupę",
+    "groups.toast.notificationsOn": "Powiadomienia dla grupy zostały włączone",
+    "groups.toast.notificationsMuted": "Grupa została wyciszona",
+    "groups.toast.joined": "Dołączono do grupy",
+    "groups.toast.joinFailed": "Nie udało się dołączyć do grupy",
+    "groups.toast.joinConnectionFailed": "Błąd dołączania do grupy",
+    "groups.toast.closed": "Grupa została zamknięta",
+    "groups.toast.closeFailed": "Nie udało się zamknąć grupy",
+    "groups.toast.closeConnectionFailed": "Błąd zamykania grupy",
+    "groups.toast.left": "Opuszczono grupę",
+    "groups.toast.leaveFailed": "Nie udało się opuścić grupy",
+    "groups.toast.leaveConnectionFailed": "Błąd opuszczania grupy",
+    "groups.toast.inviteMissing": "Brak danych zaproszenia",
+    "groups.toast.inviteSent": "Zaproszenie do grupy zostało wysłane",
+    "groups.toast.inviteFailed": "Nie udało się wysłać zaproszenia do grupy",
+    "groupThread.placeholder": "Napisz w grupie.",
+    "groupThread.sendAria": "Wyślij wiadomość do grupy",
+    "groupThread.join": "Dołącz do grupy",
+    "groupThread.defaultDesc": "Grupa oparta na wspólnych zainteresowaniach.",
+    "groupThread.joinToRead": "Dołącz do grupy, aby zobaczyć rozmowę i napisać wiadomość.",
+    "groupThread.loading": "Ładowanie wiadomości...",
+    "groupThread.empty": "Nie ma jeszcze wiadomości w tej grupie. Napisz jako pierwsza osoba.",
+    "groupThread.newMessages": "Nowe wiadomości",
+    "groupThread.me": "Ty",
+    "groupThread.loadFailed": "Nie udało się załadować wiadomości grupy.",
+    "groupThread.joinToWrite": "Dołącz do grupy, aby pisać wiadomości",
+    "groupThread.limitReached": "Limit grup dla Twojego planu został osiągnięty",
     "events.title": "Wydarzenia",
     "events.forYou": "Dla Ciebie",
     "events.myEvents": "Moje wydarzenia",
@@ -233,12 +378,69 @@ const I18N = {
     "eventDetail.kicker": "Wydarzenie",
     "eventDetail.description": "Opis wydarzenia",
     "eventDetail.place": "Miejsce",
-    "eventDetail.mapPlaceholder": "Mapa lokalizacji będzie tutaj.",
+    "eventDetail.mapPlaceholder": "Dokładny adres pojawi się tutaj.",
     "eventDetail.organizer": "Organizator",
     "eventDetail.tickets": "Bilety",
     "eventDetail.ticketLink": "Przejdź do zakupu / rezerwacji",
     "eventDetail.ticketLegal": "USLY nie sprzedaje biletów i nie jest organizatorem tego wydarzenia. Link przenosi do zewnętrznej strony, na której organizator prowadzi sprzedaż lub rezerwacje.",
+    "eventDetail.locationSaved": "Lokalizacja wydarzenia zapisana na mapie",
+    "eventDetail.locationMissing": "Dokładna lokalizacja nie została jeszcze wybrana",
+    "eventCapacity.signed": "{{count}} zapisanych",
+    "eventCapacity.used": "{{taken}} z {{capacity}} miejsc zajętych",
+    "eventCapacity.full": "Komplet miejsc",
+    "eventCapacity.lastOne": "Zostało ostatnie miejsce",
+    "eventCapacity.lastFew": "Zostały ostatnie {{count}} miejsca",
+    "eventDetail.organizer": "Organizator",
+    "eventDetail.organizerMeta": "Organizator wydarzenia",
+    "eventDetail.ticketFree": "Bezpłatne",
+    "eventDetail.ticketFixed": "Płatne — cena stała",
+    "eventDetail.ticketRange": "Płatne — przedział",
+    "eventDetail.ticketPaid": "Płatne",
+    "eventDetail.savedChip": "Obserwowane",
+    "eventDetail.interestedChip": "Biorę udział",
+    "eventDetail.priceLine": "Cena: {{price}} zł (zakup / rezerwacja poza aplikacją).",
+    "eventDetail.priceRangeLine": "Cena: {{from}}–{{to}} zł (zakup / rezerwacja poza aplikacją).",
+    "eventDetail.noDateToast": "To wydarzenie nie ma jeszcze daty.",
+    "eventDetail.calendarDesc": "Dodano z aplikacji USLY.",
+    "eventDetail.defaultSummary": "Wydarzenie USLY",
+    "eventDetail.calendarDownloaded": "Pobrano plik kalendarza.",
+    "eventDetail.saveRemoveFailed": "Nie udało się usunąć z obserwowanych",
+    "eventDetail.saveRemoved": "Usunięto z obserwowanych",
+    "eventDetail.saveAddFailed": "Nie udało się dodać do obserwowanych",
+    "eventDetail.saveAdded": "Dodano do obserwowanych",
+    "eventDetail.saveToggleFailed": "Nie udało się zmienić obserwowanych wydarzeń",
+    "eventDetail.joinRemoveFailed": "Nie udało się wycofać zapisu",
+    "eventDetail.joinRemoved": "Wycofano zapis na wydarzenie",
+    "eventDetail.joinAddFailed": "Nie udało się zapisać na wydarzenie",
+    "eventDetail.joinAdded": "Jesteś zapisany na wydarzenie",
+    "eventDetail.joinToggleFailed": "Nie udało się zmienić zapisu na wydarzenie",
+    "eventDetail.shareTitle": "Udostępnij",
+    "eventDetail.shareHeading": "Udostępnianie",
+    "eventDetail.shareSub": "Skopiuj link i prześlij go dalej.",
+    "eventDetail.copyLink": "Skopiuj link",
+    "eventDetail.copyToast": "Skopiowano link",
+    "eventReport.modalTitle": "Zgłoś wydarzenie",
+    "eventReport.reasonTitle": "Powód zgłoszenia",
+    "eventReport.chooseReason": "Wybierz powód",
+    "eventReport.reasonSpam": "Spam / scam",
+    "eventReport.reasonMisleading": "Fałszywe lub mylące wydarzenie",
+    "eventReport.reasonInappropriate": "Nieodpowiednia treść",
+    "eventReport.reasonUnsafe": "Podejrzane lub niebezpieczne wydarzenie",
+    "eventReport.reasonOther": "Inne",
+    "eventReport.descriptionPlaceholder": "Dodatkowe informacje (opcjonalnie)",
+    "eventReport.submit": "Wyślij zgłoszenie",
+    "eventReport.noEvent": "Brak wydarzenia",
+    "eventReport.toastNoReason": "Wybierz powód zgłoszenia",
+    "eventReport.toastFailed": "Nie udało się wysłać zgłoszenia",
+    "eventReport.toastSent": "Zgłoszenie wysłane • #{{ticket}}",
+    "eventReport.toastConnection": "Błąd połączenia",
+    "eventMenu.title": "Opcje wydarzenia",
+    "eventMenu.report": "Zgłoś",
+    "eventMenu.hide": "Ukryj",
+    "eventMenu.hideSoon": "Ukrywanie wydarzeń będzie dostępne w kolejnej aktualizacji.",
     "eventDetail.observe": "Obserwuj",
+    "eventDetail.observed": "Obserwowane",
+    "eventDetail.cancelInterest": "Zrezygnuj z udziału",
     "eventDetail.interested": "Wezmę udział",
     "eventDetail.addCalendar": "Dodaj do kalendarza",
     "eventDetail.share": "Udostępnij",
@@ -246,9 +448,38 @@ const I18N = {
     "eventDetail.writeOrganizer": "Napisz do organizatora",
     "groups.searchPlaceholder": "Szukaj grupy (np. #kino)",
     "groups.yourGroups": "Twoje grupy",
+    "groups.suggestedGroups": "Proponowane grupy",
+    "groups.yourGroupsSub": "Grupy, do których już należysz.",
+    "groups.suggestedGroupsSub": "Dopasowane do Twoich zainteresowań i wykluczające grupy, w których już jesteś.",
+    "groups.noSuggestedGroups": "Brak proponowanych grup",
+    "groups.memberOne": "1 osoba",
+    "groups.memberFew": "{{count}} osoby",
+    "groups.memberMany": "{{count}} osób",
+    "groups.createdByYouHtml": "Założona<br>przez Ciebie",
     "groups.create": "Utwórz grupę",
     "groupThread.placeholder": "Napisz w grupie.",
     "groupPeople.title": "Ludzie w grupie",
+    "groupPeople.subtitle": "Zarządzaj zaproszeniami i sprawdź, kto już jest w grupie.",
+    "groupPeople.premiumOnly": "Zapraszanie do grup jest dostępne od planu PREMIUM.",
+    "groupPeople.inviteTab": "Do zaproszenia",
+    "groupPeople.membersTab": "Grupowicze",
+    "groupPeople.invitedTab": "Zaproszeni",
+    "groupPeople.shared": "Wspólne: {{tags}}",
+    "groupPeople.invite": "Zaproś",
+    "groupPeople.emptyInvite": "Brak osób do zaproszenia.",
+    "groupPeople.memberFallback": "Grupowicz w USLY",
+    "groupPeople.founder": "Założyciel",
+    "groupPeople.yourProfile": "Twój profil",
+    "groupPeople.viewProfile": "Zobacz profil",
+    "groupPeople.emptyMembers": "Brak grupowiczów.",
+    "groupPeople.invitePending": "Zaproszenie oczekuje",
+    "groupPeople.emptyInvited": "Brak oczekujących zaproszeń.",
+    "groupPeople.toastPremium": "Dodawanie znajomych do grup jest dostępne od planu PREMIUM",
+    "groupPeople.addFriend": "Dodaj znajomego",
+    "groupPeople.availablePremium": "Dostępne od PREMIUM",
+    "groupPeople.inviteFriendModalTitle": "Dodaj znajomego do grupy",
+    "groupPeople.pickFriend": "Wybierz znajomego",
+    "groupPeople.pickFriendSub": "Wybierz znajomego, którego chcesz zaprosić do tej grupy.",
     "partnerDash.title": "Panel organizatora",
     "partnerDash.yourPlace": "Twoje miejsce",
     "partnerDash.meta": "Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.",
@@ -292,10 +523,74 @@ const I18N = {
     "partnerCreate.ticketLink": "Link do biletów / rezerwacji",
     "partnerCreate.saveDraft": "Zapisz szkic",
     "partnerCreate.publish": "Utwórz wydarzenie",
+    "partnerCreate.resume": "Wznów wydarzenie",
+    "partnerCreate.publishExisting": "Opublikuj",
+    "partnerEvent.featured": "Wyróżnione",
     "partnerEvents.title": "Twoje wydarzenia",
     "partnerParticipants.title": "Uczestnicy wydarzenia",
     "partnerParticipants.notifyAll": "Powiadom wszystkich uczestników",
     "partnerParticipants.notifyText": "Wyślij jedną wiadomość do wszystkich zapisanych osób. Idealne na przypomnienia i ważne informacje.",
+    "partnerEvents.saveFailed": "Nie udało się zapisać wydarzenia",
+    "tabbar.userAria": "Dolna nawigacja — Towarzysz",
+    "tabbar.partnerAria": "Dolna nawigacja — Organizator",
+    "tabbar.nearby": "Okolica",
+    "tabbar.chats": "Czaty",
+    "tabbar.events": "Wydarzenia",
+    "tabbar.groups": "Grupy",
+    "tabbar.profile": "Profil",
+    "tabbar.add": "Dodaj",
+    "tabbar.messages": "Wiadomości",
+    "tabbar.settings": "Ustawienia",
+    "partnerMessages.aria": "Wiadomości organizatora",
+    "partnerMessages.title": "Wiadomości",
+    "partnerMessages.searchPlaceholder": "Szukaj rozmowy...",
+    "partnerMessages.defaultUser": "Użytkownik",
+    "partnerMessages.empty": "Brak rozmów",
+    "partnerMessages.loadFailed": "Nie udało się załadować rozmów",
+    "notifications.title": "Powiadomienia",
+    "notifications.empty": "Brak powiadomień",
+    "notifications.loadMore": "Wczytaj więcej",
+    "notifications.defaultUser": "Użytkownik",
+    "notifications.defaultNewPerson": "Nowa osoba",
+    "notifications.defaultEvent": "Wydarzenie",
+    "notifications.defaultGroup": "Grupa",
+    "notifications.partner.newObserverTitle": "Nowe obserwowanie wydarzenia",
+    "notifications.partner.newSignupTitle": "Nowy zapis na wydarzenie",
+    "notifications.partner.newObserverBody": "{{user}} obserwuje: {{event}}",
+    "notifications.partner.newSignupBody": "{{user}} zapisał(a) się na: {{event}}",
+    "notifications.friendRequestTitle": "Zaproszenie do znajomych",
+    "notifications.friendRequestBody": "{{user}} chce dodać Cię do znajomych",
+    "notifications.groupInviteTitle": "Zaproszenie do grupy",
+    "notifications.groupInviteBody": "{{user}} zaprasza Cię do grupy: {{group}}",
+    "notifications.admin.userReportInReview": "Twoje zgłoszenie jest sprawdzane",
+    "notifications.admin.userReportResolved": "Twoje zgłoszenie zostało uznane",
+    "notifications.admin.userReportRejected": "Twoje zgłoszenie zostało odrzucone",
+    "notifications.admin.warningProfile": "Ostrzeżenie dotyczące profilu",
+    "notifications.admin.warningContent": "Ostrzeżenie dotyczące treści",
+    "notifications.admin.warningBehavior": "Ostrzeżenie dotyczące zachowania",
+    "notifications.admin.bugAccepted": "Przyjęliśmy Twoje zgłoszenie błędu",
+    "notifications.admin.bugInProgress": "Pracujemy nad Twoim zgłoszeniem",
+    "notifications.admin.bugFixed": "Zgłoszony błąd został poprawiony",
+    "notifications.admin.bugResolved": "Twoje zgłoszenie błędu zostało rozwiązane",
+    "notifications.admin.bugNotReproducible": "Nie udało się odtworzyć zgłoszonego błędu",
+    "notifications.admin.warningBody": "Administracja wysłała ostrzeżenie dotyczące zasad USLY. Sprawdź swój profil i aktywność w aplikacji. W razie pytań możesz skontaktować się z supportem USLY.",
+    "notifications.admin.bugBody": "Dziękujemy za zgłoszenie. Aktualizujemy status, żeby było jasne, co dzieje się z Twoją sprawą.",
+    "notifications.admin.reportBody": "Administracja zaktualizowała status Twojego zgłoszenia. Dziękujemy za pomoc w dbaniu o bezpieczeństwo społeczności.",
+    "notifications.event.reminder2dTitle": "Wydarzenie już za 2 dni",
+    "notifications.event.reminder1dTitle": "Wydarzenie już jutro",
+    "notifications.event.timeAndLocationChangedTitle": "Zmiana godziny i miejsca wydarzenia",
+    "notifications.event.timeChangedTitle": "Zmiana godziny wydarzenia",
+    "notifications.event.locationChangedTitle": "Zmiana miejsca wydarzenia",
+    "notifications.event.underReviewTitle": "Wydarzenie jest weryfikowane przez administrację",
+    "notifications.event.safetyNoticeTitle": "Ważna informacja o wydarzeniu",
+    "notifications.event.archivedTitle": "Wydarzenie zostało zarchiwizowane",
+    "notifications.event.updatedTitle": "Zmiana w zapisanym wydarzeniu",
+    "notifications.event.reminder2dBody": "Przypominamy: {{event}} odbędzie się za 2 dni.{{context}}",
+    "notifications.event.reminder1dBody": "Przypominamy: {{event}} odbędzie się jutro.{{context}}",
+    "notifications.event.underReviewBody": "{{event}} jest aktualnie sprawdzane przez administrację. Zachowaj ostrożność i podejmij świadomą decyzję o udziale.{{context}}",
+    "notifications.event.safetyNoticeBody": "{{event}}: administracja otrzymała zgłoszenie dotyczące bezpieczeństwa lub zgodności z zasadami.{{context}}",
+    "notifications.event.archivedBody": "{{event}} zostało zarchiwizowane przez administrację.{{context}}",
+    "notifications.event.updatedBody": "{{event}} zostało zaktualizowane",
     "partnerParticipants.messagePlaceholder": "Napisz wiadomość do uczestników...",
     "partnerParticipants.send": "Wyślij do uczestników",
     "partnerParticipants.savedUsers": "Zapisani uczestnicy",
@@ -303,6 +598,17 @@ const I18N = {
     "settings.title": "Ustawienia",
     "settings.profile": "Twój profil",
     "settings.profileSub": "Uzupełnij profil, aby poprawić dopasowania.",
+    "settings.ageLabel": "Wiek: {{age}} lat",
+    "bugReport.modalTitle": "Zgłoś błąd",
+    "bugReport.heading": "Zgłoszenie błędu",
+    "bugReport.subtitle": "Opisz krótko problem. To trafia do zespołu (na testach).",
+    "bugReport.label": "Co nie działa?",
+    "bugReport.placeholder": "Np. Po kliknięciu Zapisz zmiany nic się nie dzieje...",
+    "bugReport.submit": "Wyślij",
+    "bugReport.toast.empty": "Opisz proszę problem",
+    "bugReport.toast.sent": "Dzięki! Zgłoszenie wysłane.",
+    "bugReport.toast.failed": "Nie udało się wysłać",
+    "bugReport.toast.saved": "Dzięki! Zgłoszenie zapisane",
     "settings.interests": "Zainteresowania",
     "settings.friendsSub": "Lista kontaktów",
     "settings.open": "Otwórz",
@@ -310,6 +616,146 @@ const I18N = {
     "settings.accountHelp": "Konto i pomoc",
     "settings.reportBug": "Zgłoś błąd",
     "settings.changePassword": "Zmień hasło",
+    "password.modalTitle": "Zmień hasło",
+    "password.heading": "Zmiana hasła",
+    "password.subtitle": "Wpisz obecne hasło i ustaw nowe hasło do konta.",
+    "password.current": "Obecne hasło",
+    "password.currentPlaceholder": "Wpisz obecne hasło",
+    "password.new": "Nowe hasło",
+    "password.newPlaceholder": "Wpisz nowe hasło",
+    "password.repeat": "Powtórz nowe hasło",
+    "password.repeatPlaceholder": "Powtórz nowe hasło",
+    "password.save": "Zapisz nowe hasło",
+    "password.toastMismatch": "Nowe hasła nie są takie same",
+    "password.toastMin": "Nowe hasło musi mieć co najmniej 8 znaków",
+    "password.toastCurrentInvalid": "Obecne hasło jest nieprawidłowe",
+    "password.toastSame": "Nowe hasło musi być inne niż obecne",
+    "delete.modalTitle": "Usuń konto",
+    "delete.heading": "Usuń konto",
+    "delete.subtitle": "Ta akcja jest nieodwracalna. Wpisz hasło, aby potwierdzić usunięcie konta.",
+    "delete.password": "Hasło",
+    "delete.placeholder": "Wpisz hasło, aby potwierdzić",
+    "delete.confirm": "Usuń konto",
+    "delete.toastFill": "Wpisz hasło, aby potwierdzić usunięcie konta",
+    "delete.toastInvalid": "Hasło jest nieprawidłowe",
+    "delete.toastSuccess": "Konto zostało usunięte",
+    "delete.toastFailed": "Nie udało się usunąć konta",
+    "settings.toast.saveFailed": "Nie udało się zapisać ustawień",
+    "partnerSettings.toastSaveFailed": "Nie udało się zapisać ustawień organizatora",
+    "partnerSettings.toastSaved": "Zapisano ustawienia organizatora",
+    "partnerLogo.toastUploadFailed": "Nie udało się wgrać logo",
+    "partnerLogo.toastSaved": "Logo zapisane",
+    "partnerLogo.toastRemoveFailed": "Nie udało się usunąć logo",
+    "partnerLogo.toastRemoved": "Logo usunięte",
+    "partnerParticipants.defaultUser": "Użytkownik #{{id}}",
+    "partnerParticipants.signupLabel": "Zapis: {{when}}",
+    "partnerParticipants.write": "Napisz",
+    "partnerParticipants.loadFailed": "Nie udało się załadować zapisanych.",
+    "partnerParticipants.messageLocked": "Wiadomości do uczestników są dostępne od planu PRO",
+    "partnerParticipants.modalTitle": "Napisz do uczestnika",
+    "partnerParticipants.conversationWith": "Rozmowa z:",
+    "partnerParticipants.defaultParticipant": "Uczestnik",
+    "partnerParticipantMessage.placeholder": "Napisz wiadomość...",
+    "partnerParticipantMessage.send": "Wyślij",
+    "partnerParticipantMessage.blockedLink": "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona.",
+    "partnerParticipantMessage.blockedContent": "Treść została zablokowana przez moderację USLY i nie została dostarczona.",
+    "partnerBroadcast.locked": "Ta funkcja jest dostępna od planu PREMIUM",
+    "partnerBroadcast.noParticipants": "Brak zapisanych uczestników",
+    "partnerBroadcast.organizerMarker": "— wiadomość od organizatora —",
+    "partnerBroadcast.sent": "Wysłano do {{count}} uczestników",
+    "partnerBroadcast.failed": "Nie udało się wysłać wiadomości do uczestników",
+    "partnerPlace.enterQuery": "Wpisz nazwę miejsca lub adres",
+    "partnerPlace.notFound": "Nie znaleziono miejsca. Doprecyzuj adres lub nazwę.",
+    "partnerPlace.searchFailed": "Nie udało się wyszukać miejsca.",
+    "partnerPlace.defaultPlace": "Miejsce",
+    "partnerPlace.selectedLabel": "Wybrano:",
+    "partnerPlace.defaultLower": "miejsce",
+    "partnerPlace.selectedToast": "Miejsce wydarzenia zostało wybrane",
+    "partnerEvent.editorOpened": "Otwarto wydarzenie do edycji",
+    "partnerEvent.partnerOnly": "To jest dostępne tylko dla organizatora",
+    "partnerEvent.draftRequired": "Aby zapisać szkic, uzupełnij: nazwa, miasto, kiedy, gdzie, hashtag",
+    "partnerEvent.invalidDate": "Podaj poprawną datę wydarzenia",
+    "partnerEvent.invalidCapacity": "Podaj poprawną liczbę miejsc",
+    "partnerEvent.ticketRequired": "Dodaj link do biletów / rezerwacji",
+    "partnerEvent.invalidPrice": "Podaj poprawną cenę",
+    "partnerEvent.invalidPriceRange": "Podaj poprawny zakres cen",
+    "partnerEvent.priceRangeOrder": "Cena od nie może być większa niż cena do",
+    "partnerEvent.draftSaveFailed": "Nie udało się zapisać szkicu",
+    "partnerEvent.draftSaved": "Zapisano szkic wydarzenia",
+    "partnerEvent.createdAsDraft": "Zapisano wydarzenie jako szkic",
+    "partnerEvent.publishRequiredExisting": "Uzupełnij: nazwa, miasto, kiedy",
+    "partnerEvent.publishRequiredNew": "Uzupełnij: nazwa, miasto, kiedy, gdzie, hashtag",
+    "partnerEvent.saveChangesFailed": "Nie udało się zapisać zmian wydarzenia",
+    "partnerEvent.updated": "Zaktualizowano wydarzenie",
+    "partnerEvent.draftSavedPublishFailed": "Zapisano szkic, ale nie udało się go opublikować",
+    "partnerEvent.resumed": "Wznowiono wydarzenie",
+    "partnerEvent.published": "Opublikowano wydarzenie",
+    "partnerEvent.createFailed": "Nie udało się utworzyć wydarzenia",
+    "partnerEvent.createdMissingId": "Utworzono wydarzenie, ale brakuje ID do publikacji",
+    "partnerEvent.createdPublishFailed": "Wydarzenie utworzono, ale nie udało się go opublikować",
+    "partnerEvent.createdAndPublished": "Utworzono i opublikowano wydarzenie",
+    "partnerEvent.publishLimitReached": "Plan {{plan}} pozwala na maksymalnie {{limit}} aktywne wydarzenia. Zapisz kolejne jako szkic albo przejdź na wyższy plan.",
+    "partnerSetup.cityRequired": "Podaj miasto działania",
+    "partnerSetup.profileSaved": "Profil organizatora zapisany",
+    "partnerSetup.profileSaveFailed": "Nie udało się zapisać profilu organizatora",
+    "profileSetup.profileSaved": "Profil zapisany",
+    "profileSetup.profileSaveFailed": "Nie udało się zapisać profilu",
+    "partnerEvent.publishFailed": "Nie udało się opublikować wydarzenia",
+    "partnerEvent.quickPublished": "Wydarzenie opublikowane",
+    "partnerEvent.archiveFailed": "Nie udało się zarchiwizować wydarzenia",
+    "partnerEvent.archived": "Wydarzenie przeniesiono do archiwum",
+    "partnerEvent.statusDraft": "Szkic",
+    "partnerEvent.sectionActiveTitle": "Aktywne",
+    "partnerEvent.sectionActiveDesc": "Wydarzenia, które są teraz widoczne dla użytkowników.",
+    "partnerEvent.sectionDraftsTitle": "Szkice",
+    "partnerEvent.sectionDraftsDesc": "Robocze wydarzenia przed publikacją.",
+    "partnerEvent.sectionFinishedTitle": "Zakończone",
+    "partnerEvent.sectionFinishedDesc": "Wydarzenia, których termin już minął.",
+    "partnerEvent.sectionArchivedTitle": "Archiwalne",
+    "partnerEvent.sectionArchivedDesc": "Zamknięte lub przeniesione do archiwum.",
+    "partnerEvent.countOne": "1 wydarzenie",
+    "partnerEvent.countFew": "{{count}} wydarzenia",
+    "partnerEvent.countMany": "{{count}} wydarzeń",
+    "partnerDash.metricActive": "Aktywne",
+    "partnerDash.metricActiveSub": "Opublikowane teraz",
+    "partnerDash.metricDrafts": "Szkice",
+    "partnerDash.metricDraftsSub": "Robocze",
+    "partnerDash.metricSignupsTotal": "Zapisy (łącznie)",
+    "admin.toastStatusSaved": "Status zgłoszenia zapisany",
+    "admin.toastStatusSaveFailed": "Nie udało się zapisać statusu",
+    "admin.toastBugNotFound": "Nie znaleziono zgłoszenia błędu",
+    "admin.toastBugPreviewFailed": "Nie udało się otworzyć podglądu błędu",
+    "app.viewMissing": "Brak widoku: {{view}}",
+    "bugReport.ticketSent": "Zgłoszenie wysłane • #{{ticket}}",
+    "bugReport.ticketSaved": "Zgłoszenie zapisane • #{{ticket}}",
+    "partnerParticipants.sent": "Wiadomość została wysłana",
+    "settings.toast.saved": "Zapisano ustawienia",
+    "photo.modalTitle": "Dodaj zdjęcie",
+    "photo.heading": "Upload zdjęcia",
+    "photo.subtitle": "Dodaj zdjęcie profilowe albo zostaw puste pole i używaj placeholdera.",
+    "photo.save": "Zapisz zdjęcie",
+    "photo.toast.pickFile": "Wybierz plik ze zdjęciem",
+    "photo.toast.uploadFailed": "Nie udało się wgrać zdjęcia",
+    "photo.toast.saved": "Zdjęcie zapisane",
+    "photo.toast.removeFailed": "Nie udało się usunąć zdjęcia",
+    "photo.toast.removed": "Zdjęcie usunięte",
+    "avatar.modalTitle": "Stwórz awatar AI",
+    "avatar.heading": "Awatar AI",
+    "avatar.subtitle": "Opisz styl, a USLY wygeneruje ilustracyjny awatar profilowy. Generowanie może chwilę potrwać.",
+    "avatar.statusChecking": "Sprawdzam limit...",
+    "avatar.styleLabel": "Styl awatara",
+    "avatar.placeholder": "np. minimalistyczny, ciepły, elegancki, pastelowy",
+    "avatar.generate": "Generuj awatar",
+    "avatar.generating": "Generuję...",
+    "avatar.limitReached": "Limit wykorzystany",
+    "avatar.toastDescribe": "Opisz krótko styl awatara",
+    "avatar.toastLimitReached": "Limit awatarów AI w Twoim planie został wykorzystany",
+    "avatar.toastFailed": "Nie udało się wygenerować awatara",
+    "avatar.toastReady": "Awatar gotowy",
+    "avatar.toastReadyRemaining": "Awatar gotowy. Pozostało: {{remaining}}",
+    "avatar.statusFailed": "Nie udało się sprawdzić limitu awatarów AI.",
+    "avatar.statusLine": "Twój plan: <b>{{plan}}</b> • Awatary AI: <b>{{used}}/{{limit}}</b> w tym miesiącu • Pozostało: <b>{{remaining}}</b>",
+    "avatar.statusLimitLine": "Twój plan: <b>{{plan}}</b> • Wykorzystałaś limit <b>{{used}}/{{limit}}</b> awatarów AI w tym miesiącu. Zmień plan, aby wygenerować więcej.",
     "settings.deleteAccount": "Usuń konto",
     "settings.partnerProfileSub": "Uzupełnij profil organizatora.",
     "settings.logoTitle": "Logo miejsca",
@@ -320,6 +766,8 @@ const I18N = {
     "settings.industry": "Branża",
     "settings.orgAboutPlaceholder": "Krótko opisz miejsce, klimat i ofertę.",
     "settings.partnerAccountSub": "Najważniejsze akcje konta Organizatora.",
+    "settings.languageTitle": "Język aplikacji",
+    "settings.languageSub": "Zmienisz język od razu, bez wylogowywania.",
     "settings.documents": "Dokumenty",
     "settings.documentsSub": "Regulamin i Polityka prywatności.",
     "settings.logout": "Wyloguj",
@@ -405,6 +853,49 @@ const I18N = {
     "register.toast.partner_required": "Uzupełnij nazwę i miasto organizatora",
     "register.toast.create_error": "Nie udało się utworzyć konta",
     "register.toast.auto_login_error": "Konto utworzone, ale nie udało się zalogować automatycznie",
+    "register.toast.created_logged_in": "Konto utworzone i zalogowano",
+    "register.toast.create_error": "Nie udało się utworzyć konta",
+    "login.toast.missing": "Podaj email i hasło",
+    "login.toast.error": "Błąd logowania",
+    "login.toast.roleMismatch": "To konto należy do innej roli. Wybierz właściwy typ konta i spróbuj ponownie.",
+    "login.toast.success": "Zalogowano",
+    "logout.toast.success": "Wylogowano",
+    "social.loginSoon": "Logowanie społecznościowe będzie dostępne wkrótce",
+    "social.signupSoon": "Rejestracja społecznościowa będzie dostępna wkrótce",
+    "role.user": "Towarzysz",
+    "role.partner": "Organizator",
+    "register.user.subtitleDynamic": "Stwórz konto Towarzysza i ustaw profil.",
+    "register.partner.subtitleDynamic": "Stwórz konto Organizatora i ustaw profil.",
+    "plans.toast.saveFailed": "Nie udało się zapisać planu",
+    "plans.toast.partnerSaveFailed": "Nie udało się zapisać planu organizatora",
+    "plans.toast.selected": "Wybrano plan: {{plan}}",
+    "enterprise.toast.contactRequired": "Podaj email lub telefon do kontaktu",
+    "enterprise.toast.sending": "Wysyłam...",
+    "enterprise.toast.failed": "Nie udało się wysłać zapytania",
+    "enterprise.toast.sent": "Zapytanie wysłane. Odezwę się do Ciebie z propozycją.",
+    "groups.create.availablePlus": "Dostępne od PLUS",
+    "groups.create.limitReached": "Limit wykorzystany",
+    "groups.create.button": "Utwórz grupę",
+    "groups.create.hintLocked": "Tworzenie własnych grup jest dostępne od planu PLUS.",
+    "groups.create.hintUnlimited": "Utworzone grupy: {{count}} • Na planie VIP możesz tworzyć grupy bez limitu.",
+    "groups.create.hintReached": "Utworzone grupy: {{count}} / {{limit}} • Wykorzystałaś cały limit dla tego planu.",
+    "groups.create.hintLeft": "Utworzone grupy: {{count}} / {{limit}} • Możesz utworzyć jeszcze {{left}}.",
+    "groups.create.toastLocked": "Tworzenie grup jest dostępne od planu PLUS",
+    "groups.create.modalTitle": "Utwórz grupę",
+    "groups.create.title": "Tytuł grupy *",
+    "groups.create.titlePlaceholder": "np. Kawosze Warszawa",
+    "groups.create.interest": "Hashtag / zainteresowanie *",
+    "groups.create.interestPlaceholder": "np. kawa",
+    "groups.create.description": "Opis",
+    "groups.create.descriptionPlaceholder": "Krótki opis grupy (opcjonalnie)",
+    "groups.create.planUnlimited": "Tworzysz grupy bez limitu.",
+    "groups.create.planLimited": "Ten plan pozwala tworzyć do {{limit}} własnych grup.",
+    "groups.create.submit": "Utwórz",
+    "groups.create.cancel": "Anuluj",
+    "groups.create.toastTitle": "Podaj nazwę grupy (min. 3 znaki)",
+    "groups.create.toastInterest": "Podaj hashtag grupy",
+    "groups.create.toastFailed": "Nie udało się utworzyć grupy",
+    "groups.create.toastSuccess": "Grupa została utworzona",
     "plans.user.plus.price": "29 zł / miesiąc",
     "plans.user.premium.price": "49 zł / miesiąc",
     "plans.user.vip.price": "89 zł / miesiąc",
@@ -414,6 +905,8 @@ const I18N = {
     "login.forgot_password": "Nie pamiętasz hasła?",
     "welcome.title": "Twoje miasto. Twoi ludzie.",
     "welcome.subtitle": "Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.",
+    "welcome.tagline": "Poznawaj ludzi przez zainteresowania, nie wygląd.",
+    "welcome.langAria": "Wybór języka",
     "welcome.choose_account": "Wybierz konto",
     "welcome.user": "Poznaj ludzi",
     "welcome.partner": "Twórz wydarzenia",
@@ -517,6 +1010,7 @@ const I18N = {
     "enterprise.need.other": "Other",
     "common.email": "Email",
     "common.remove": "Remove",
+    "common.block": "Block",
     "profileEdit.title": "Edit profile",
     "profileEdit.photoTitle": "Profile photo",
     "profileEdit.photoSubtitle": "Add your photo or generate an AI avatar.",
@@ -538,10 +1032,46 @@ const I18N = {
     "profileInterests.subtitle": "One shared tag base for your profile, groups and events.",
     "profileInterests.tags": "Your tags",
     "profileInterests.placeholder": "e.g. coffee, yoga, concerts...",
+    "profileInterests.limitPlaceholder": "Limit reached • Unlock more in PLUS",
+    "profileInterests.limitToast": "Unlock more interests in the PLUS plan",
     "profileFriends.title": "Friends",
     "profileFriends.search_placeholder": "Search for a friend...",
     "profileInvites.title": "Invitations",
     "profileInvites.subtitle": "Incoming and sent invitations in a clear layout.",
+    "friends.selfAccount": "This is your account",
+    "friends.friend": "Friend",
+    "friends.pending": "Invitation sent",
+    "friends.add": "Add friend",
+    "friends.message": "Message",
+    "friends.messagesPro": "Messages from PRO plan",
+    "friends.toastNoProfile": "No profile selected",
+    "friends.toastLogin": "Log in first",
+    "friends.toastSendFailed": "Could not send invitation",
+    "friends.toastSent": "Friend invitation sent",
+    "friends.toastChatAfterAccept": "Private chat will be available after the friend request is accepted",
+    "friends.toastAddFirst": "Add this person as a friend first",
+    "friends.toastProfileUnavailable": "This profile is not available right now",
+    "friends.emptyInvites": "No pending invitations.",
+    "friends.defaultUser": "User #{{id}}",
+    "friends.pendingDecision": "Invitation is waiting for a decision.",
+    "friends.pendingAccept": "Invitation sent — waiting for acceptance.",
+    "friends.accept": "Accept",
+    "friends.reject": "Reject",
+    "friends.sentPill": "Sent",
+    "friends.defaultGroup": "Group",
+    "friends.groupInviteLine": "{{user}} invited you to a group",
+    "friends.emptyFriends": "You do not have friends yet.",
+    "friends.friendFallback": "USLY friend",
+    "friends.viewProfile": "View profile",
+    "friends.groupInviteMissing": "Missing group invitation data",
+    "friends.groupInviteUpdateFailed": "Could not update group invitation",
+    "friends.groupInviteAccepted": "Group invitation accepted",
+    "friends.groupInviteRejected": "Group invitation rejected",
+    "friends.groupInviteConnectionFailed": "Connection error while updating group invitation",
+    "friends.inviteUpdateFailed": "Could not update invitation",
+    "friends.inviteAccepted": "Invitation accepted",
+    "friends.inviteRejected": "Invitation rejected",
+    "friends.inviteConnectionFailed": "Connection error while updating invitation",
     "profileSetup.topbar": "Profile",
     "profileSetup.title": "Complete your profile",
     "profileSetup.subtitle": "This is the final step after registration. Check your starting data and add missing information for better matches.",
@@ -565,6 +1095,18 @@ const I18N = {
     "partnerSetup.vibeTitle": "Venue vibe",
     "partnerSetup.vibeSubtitle": "Show users what they can expect.",
     "partnerSetup.category": "Category",
+    "partnerCategory.gastro": "Gastro / restaurant / café",
+    "partnerCategory.bar_nocne": "Bar / club / nightlife",
+    "partnerCategory.kultura": "Culture / concerts / art",
+    "partnerCategory.fitness": "Fitness / sport / wellness",
+    "partnerCategory.beauty": "Beauty",
+    "partnerCategory.hotel_event": "Hotel / event / conference",
+    "partnerCategory.rozrywka": "Entertainment / attractions / gaming",
+    "partnerCategory.zakupy": "Shop / showroom / retail",
+    "partnerCategory.edukacja": "Education / workshops",
+    "partnerCategory.cowork": "Cowork / business / networking",
+    "partnerCategory.plener": "Outdoor / tourism / recreation",
+    "partnerCategory.inne": "Other / not sure",
     "partnerSetup.about": "Short description",
     "partnerSetup.aboutPlaceholder": "What should people know about this place?",
     "nearby.title": "Nearby",
@@ -576,7 +1118,45 @@ const I18N = {
     "nearby.eventsSub": "Tap a card to open details.",
     "nearby.emptyPeople": "We do not see any people with shared interests in your area yet.",
     "nearby.emptyEvents": "We do not see any events matching your interests in your area yet.",
+    "nearby.distanceUnder1": "< 1 km from you",
+    "nearby.distanceKm": "{{km}} km from you",
+    "nearby.inArea": "Nearby",
     "personProfile.bioTitle": "About me",
+    "personProfile.partnerCategory": "Category",
+    "personProfile.organizer": "Organizer",
+    "personProfile.organizerAboutTitle": "About organizer",
+    "personProfile.emptyOrganizerBio": "This organizer has not added a description yet.",
+    "personProfile.defaultEvent": "Event",
+    "personProfile.eventSoon": "Date coming soon",
+    "personProfile.noPartnerEvents": "This organizer has no visible events yet.",
+    "personProfile.userProfileFallback": "User profile",
+    "personProfile.ageYears": "{{age}} years",
+    "personProfile.match": "{{score}}% match",
+    "personProfile.message": "Message",
+    "personProfile.messagesPro": "Messages from PRO plan",
+    "personProfile.options": "Options",
+    "personProfile.report": "Report",
+    "personProfile.block": "Block",
+    "personProfile.toastMissingUser": "Missing user data",
+    "personProfile.toastBlockFailed": "Could not block user",
+    "personProfile.toastBlocked": "User blocked",
+    "personProfile.toastConnectionError": "Connection error",
+    "userReport.modalTitle": "Report user",
+    "userReport.reasonTitle": "Report reason",
+    "userReport.subtitle": "The report will go to USLY moderation.",
+    "userReport.reasonLabel": "Choose reason",
+    "userReport.reasonSpam": "Spam / scam",
+    "userReport.reasonHarassment": "Harassment or offensive content",
+    "userReport.reasonProfile": "Inappropriate profile or bio",
+    "userReport.reasonImpersonation": "Impersonation",
+    "userReport.reasonOther": "Other",
+    "userReport.descriptionLabel": "Optional description",
+    "userReport.descriptionPlaceholder": "Add details that will help moderation.",
+    "userReport.submit": "Send report",
+    "userReport.toastNoUser": "No user selected",
+    "userReport.toastNoReason": "Choose report reason",
+    "userReport.toastFailed": "Could not send report",
+    "userReport.toastSent": "Report sent • #{{ticket}}",
     "personProfile.emptyBio": "This person has not added a bio yet.",
     "personProfile.organizerEvents": "Organizer events",
     "personProfile.write": "Message",
@@ -586,6 +1166,53 @@ const I18N = {
     "chats.searchSub": "By conversation name",
     "chats.searchPlaceholder": "e.g. Alex",
     "chatThread.placeholder": "Write a message.",
+    "chat.menu.title": "Chat menu",
+    "chat.menu.notificationsOn": "Turn on notifications",
+    "chat.menu.notificationsOff": "Mute conversation",
+    "chat.toast.notificationsOn": "Conversation notifications turned on",
+    "chat.toast.notificationsMuted": "Conversation muted",
+    "chat.toast.sendFailed": "Could not send message",
+    "chat.blocked.link": "Links are currently blocked for USLY safety. The message was not delivered.",
+    "chat.blocked.content": "The content was blocked by USLY moderation and was not delivered.",
+    "chat.avatarMine": "Your avatar",
+    "chat.openProfile": "Open profile",
+    "chat.defaultUser": "User",
+    "chat.organizerMessage": "Message from organizer",
+    "chat.organizerMessageMarker": "— message from organizer —",
+    "chat.defaultEventTitle": "📣 Event",
+    "chat.checkingContent": "Checking message content…",
+    "groups.menu.title": "Group menu",
+    "groups.menu.notificationsOn": "Turn on notifications",
+    "groups.menu.notificationsOff": "Mute group",
+    "groups.menu.people": "People in group",
+    "groups.menu.close": "Close group",
+    "groups.menu.leave": "Leave group",
+    "groups.toast.notificationsOn": "Group notifications turned on",
+    "groups.toast.notificationsMuted": "Group muted",
+    "groups.toast.joined": "Joined the group",
+    "groups.toast.joinFailed": "Could not join the group",
+    "groups.toast.joinConnectionFailed": "Group join error",
+    "groups.toast.closed": "Group closed",
+    "groups.toast.closeFailed": "Could not close the group",
+    "groups.toast.closeConnectionFailed": "Group closing error",
+    "groups.toast.left": "Left the group",
+    "groups.toast.leaveFailed": "Could not leave the group",
+    "groups.toast.leaveConnectionFailed": "Group leaving error",
+    "groups.toast.inviteMissing": "Missing invitation data",
+    "groups.toast.inviteSent": "Group invitation sent",
+    "groups.toast.inviteFailed": "Could not send group invitation",
+    "groupThread.placeholder": "Write in group.",
+    "groupThread.sendAria": "Send message to group",
+    "groupThread.join": "Join group",
+    "groupThread.defaultDesc": "A group based on shared interests.",
+    "groupThread.joinToRead": "Join the group to see the conversation and write a message.",
+    "groupThread.loading": "Loading messages...",
+    "groupThread.empty": "There are no messages in this group yet. Be the first to write.",
+    "groupThread.newMessages": "New messages",
+    "groupThread.me": "You",
+    "groupThread.loadFailed": "Could not load group messages.",
+    "groupThread.joinToWrite": "Join the group to write messages",
+    "groupThread.limitReached": "Group limit for your plan has been reached",
     "events.title": "Events",
     "events.forYou": "For you",
     "events.myEvents": "My events",
@@ -593,7 +1220,18 @@ const I18N = {
     "eventDetail.kicker": "Event",
     "eventDetail.description": "Event description",
     "eventDetail.place": "Place",
-    "eventDetail.mapPlaceholder": "The location map will appear here.",
+    "eventDetail.mapPlaceholder": "The exact address will appear here.",
+    "eventDetail.locationSaved": "Event location saved on the map",
+    "eventDetail.locationMissing": "Exact location has not been selected yet",
+    "eventCapacity.signed": "{{count}} signed up",
+    "eventCapacity.used": "{{taken}} of {{capacity}} spots taken",
+    "eventCapacity.full": "Fully booked",
+    "eventCapacity.lastOne": "Last spot left",
+    "eventCapacity.lastFew": "Last {{count}} spots left",
+    "eventDetail.ticketFree": "Free",
+    "eventDetail.ticketFixed": "Paid — fixed price",
+    "eventDetail.ticketRange": "Paid — range",
+    "eventDetail.ticketPaid": "Paid",
     "eventDetail.organizer": "Organizer",
     "eventDetail.tickets": "Tickets",
     "eventDetail.ticketLink": "Go to purchase / reservation",
@@ -602,13 +1240,47 @@ const I18N = {
     "eventDetail.interested": "I’m going",
     "eventDetail.addCalendar": "Add to calendar",
     "eventDetail.share": "Share",
+    "eventDetail.shareTitle": "Share",
+    "eventDetail.shareHeading": "Share event",
+    "eventDetail.shareSub": "Copy the link and share it.",
+    "eventDetail.copyLink": "Copy link",
+    "eventDetail.copyToast": "Link copied",
     "eventDetail.interestedNote": "If you select “I’m going”, the organizer will see you on the interested list.",
     "eventDetail.writeOrganizer": "Message the organizer",
     "groups.searchPlaceholder": "Search groups (e.g. #cinema)",
     "groups.yourGroups": "Your groups",
+    "groups.suggestedGroups": "Suggested groups",
+    "groups.yourGroupsSub": "Groups you already belong to.",
+    "groups.suggestedGroupsSub": "Matched to your interests and excluding groups you already joined.",
+    "groups.noSuggestedGroups": "No suggested groups",
+    "groups.memberOne": "1 person",
+    "groups.memberFew": "{{count}} people",
+    "groups.memberMany": "{{count}} people",
+    "groups.createdByYouHtml": "Created<br>by you",
     "groups.create": "Create group",
     "groupThread.placeholder": "Write in the group.",
     "groupPeople.title": "People in group",
+    "groupPeople.subtitle": "Manage invitations and see who is already in the group.",
+    "groupPeople.premiumOnly": "Upgrade to PREMIUM to invite friends to groups.",
+    "groupPeople.inviteTab": "To invite",
+    "groupPeople.membersTab": "Members",
+    "groupPeople.invitedTab": "Invited",
+    "groupPeople.shared": "Shared: {{tags}}",
+    "groupPeople.invite": "Invite",
+    "groupPeople.emptyInvite": "No people to invite.",
+    "groupPeople.memberFallback": "USLY group member",
+    "groupPeople.founder": "Founder",
+    "groupPeople.yourProfile": "Your profile",
+    "groupPeople.viewProfile": "View profile",
+    "groupPeople.emptyMembers": "No group members.",
+    "groupPeople.invitePending": "Invitation pending",
+    "groupPeople.emptyInvited": "No pending invitations.",
+    "groupPeople.toastPremium": "Adding friends to groups is available from the PREMIUM plan",
+    "groupPeople.addFriend": "Add friend",
+    "groupPeople.availablePremium": "Available from PREMIUM",
+    "groupPeople.inviteFriendModalTitle": "Add friend to group",
+    "groupPeople.pickFriend": "Choose a friend",
+    "groupPeople.pickFriendSub": "Choose the friend you want to invite to this group.",
     "partnerDash.title": "Organizer dashboard",
     "partnerDash.yourPlace": "Your place",
     "partnerDash.meta": "Complete your organizer profile to present your brand and offer in a better way.",
@@ -652,10 +1324,74 @@ const I18N = {
     "partnerCreate.ticketLink": "Ticket / reservation link",
     "partnerCreate.saveDraft": "Save draft",
     "partnerCreate.publish": "Create event",
+    "partnerCreate.resume": "Resume event",
+    "partnerCreate.publishExisting": "Publish",
+    "partnerEvent.featured": "Featured",
     "partnerEvents.title": "Your events",
     "partnerParticipants.title": "Event participants",
     "partnerParticipants.notifyAll": "Notify all participants",
     "partnerParticipants.notifyText": "Send one message to all signed-up people. Ideal for reminders and important updates.",
+    "partnerEvents.saveFailed": "Could not save the event",
+    "tabbar.userAria": "Bottom navigation — Companion",
+    "tabbar.partnerAria": "Bottom navigation — Organizer",
+    "tabbar.nearby": "Nearby",
+    "tabbar.chats": "Chats",
+    "tabbar.events": "Events",
+    "tabbar.groups": "Groups",
+    "tabbar.profile": "Profile",
+    "tabbar.add": "Add",
+    "tabbar.messages": "Messages",
+    "tabbar.settings": "Settings",
+    "partnerMessages.aria": "Organizer messages",
+    "partnerMessages.title": "Messages",
+    "partnerMessages.searchPlaceholder": "Search conversation...",
+    "partnerMessages.defaultUser": "User",
+    "partnerMessages.empty": "No conversations",
+    "partnerMessages.loadFailed": "Could not load conversations",
+    "notifications.title": "Notifications",
+    "notifications.empty": "No notifications yet",
+    "notifications.loadMore": "Load more",
+    "notifications.defaultUser": "User",
+    "notifications.defaultNewPerson": "New person",
+    "notifications.defaultEvent": "Event",
+    "notifications.defaultGroup": "Group",
+    "notifications.partner.newObserverTitle": "New event follow",
+    "notifications.partner.newSignupTitle": "New event signup",
+    "notifications.partner.newObserverBody": "{{user}} is following: {{event}}",
+    "notifications.partner.newSignupBody": "{{user}} signed up for: {{event}}",
+    "notifications.friendRequestTitle": "Friend request",
+    "notifications.friendRequestBody": "{{user}} wants to add you as a friend",
+    "notifications.groupInviteTitle": "Group invitation",
+    "notifications.groupInviteBody": "{{user}} invited you to the group: {{group}}",
+    "notifications.admin.userReportInReview": "Your report is being reviewed",
+    "notifications.admin.userReportResolved": "Your report has been accepted",
+    "notifications.admin.userReportRejected": "Your report has been rejected",
+    "notifications.admin.warningProfile": "Profile warning",
+    "notifications.admin.warningContent": "Content warning",
+    "notifications.admin.warningBehavior": "Behavior warning",
+    "notifications.admin.bugAccepted": "We accepted your bug report",
+    "notifications.admin.bugInProgress": "We are working on your report",
+    "notifications.admin.bugFixed": "The reported issue has been fixed",
+    "notifications.admin.bugResolved": "Your bug report has been resolved",
+    "notifications.admin.bugNotReproducible": "We could not reproduce the reported issue",
+    "notifications.admin.warningBody": "Administration sent a warning about USLY rules. Check your profile and activity in the app. If you have questions, you can contact USLY support.",
+    "notifications.admin.bugBody": "Thank you for your report. We are updating the status so it is clear what is happening with your case.",
+    "notifications.admin.reportBody": "Administration updated the status of your report. Thank you for helping keep the community safe.",
+    "notifications.event.reminder2dTitle": "Event in 2 days",
+    "notifications.event.reminder1dTitle": "Event tomorrow",
+    "notifications.event.timeAndLocationChangedTitle": "Event time and location changed",
+    "notifications.event.timeChangedTitle": "Event time changed",
+    "notifications.event.locationChangedTitle": "Event location changed",
+    "notifications.event.underReviewTitle": "Event is being reviewed by administration",
+    "notifications.event.safetyNoticeTitle": "Important event information",
+    "notifications.event.archivedTitle": "Event has been archived",
+    "notifications.event.updatedTitle": "Saved event update",
+    "notifications.event.reminder2dBody": "Reminder: {{event}} takes place in 2 days.{{context}}",
+    "notifications.event.reminder1dBody": "Reminder: {{event}} takes place tomorrow.{{context}}",
+    "notifications.event.underReviewBody": "{{event}} is currently being reviewed by administration. Stay cautious and make an informed decision about attending.{{context}}",
+    "notifications.event.safetyNoticeBody": "{{event}}: administration received a report about safety or rules compliance.{{context}}",
+    "notifications.event.archivedBody": "{{event}} has been archived by administration.{{context}}",
+    "notifications.event.updatedBody": "{{event}} has been updated",
     "partnerParticipants.messagePlaceholder": "Write a message to participants...",
     "partnerParticipants.send": "Send to participants",
     "partnerParticipants.savedUsers": "Signed-up participants",
@@ -663,6 +1399,17 @@ const I18N = {
     "settings.title": "Settings",
     "settings.profile": "Your profile",
     "settings.profileSub": "Complete your profile to improve matches.",
+    "settings.ageLabel": "Age: {{age}} years",
+    "bugReport.modalTitle": "Report a bug",
+    "bugReport.heading": "Bug report",
+    "bugReport.subtitle": "Briefly describe the problem. It goes to the team during testing.",
+    "bugReport.label": "What is not working?",
+    "bugReport.placeholder": "E.g. after tapping Save changes, nothing happens...",
+    "bugReport.submit": "Send",
+    "bugReport.toast.empty": "Please describe the problem",
+    "bugReport.toast.sent": "Thanks! Report sent.",
+    "bugReport.toast.failed": "Could not send",
+    "bugReport.toast.saved": "Thanks! Report saved",
     "settings.interests": "Interests",
     "settings.friendsSub": "Contact list",
     "settings.open": "Open",
@@ -670,6 +1417,146 @@ const I18N = {
     "settings.accountHelp": "Account and help",
     "settings.reportBug": "Report a bug",
     "settings.changePassword": "Change password",
+    "password.modalTitle": "Change password",
+    "password.heading": "Password change",
+    "password.subtitle": "Enter your current password and set a new password for your account.",
+    "password.current": "Current password",
+    "password.currentPlaceholder": "Enter current password",
+    "password.new": "New password",
+    "password.newPlaceholder": "Enter new password",
+    "password.repeat": "Repeat new password",
+    "password.repeatPlaceholder": "Repeat new password",
+    "password.save": "Save new password",
+    "password.toastMismatch": "New passwords do not match",
+    "password.toastMin": "New password must contain at least 8 characters",
+    "password.toastCurrentInvalid": "Current password is incorrect",
+    "password.toastSame": "New password must be different from current password",
+    "delete.modalTitle": "Delete account",
+    "delete.heading": "Delete account",
+    "delete.subtitle": "This action cannot be undone. Enter your password to confirm account deletion.",
+    "delete.password": "Password",
+    "delete.placeholder": "Enter password to confirm",
+    "delete.confirm": "Delete account",
+    "delete.toastFill": "Enter password to confirm account deletion",
+    "delete.toastInvalid": "Password is incorrect",
+    "delete.toastSuccess": "Account deleted",
+    "delete.toastFailed": "Could not delete account",
+    "settings.toast.saveFailed": "Could not save settings",
+    "partnerSettings.toastSaveFailed": "Could not save organizer settings",
+    "partnerSettings.toastSaved": "Organizer settings saved",
+    "partnerLogo.toastUploadFailed": "Could not upload logo",
+    "partnerLogo.toastSaved": "Logo saved",
+    "partnerLogo.toastRemoveFailed": "Could not remove logo",
+    "partnerLogo.toastRemoved": "Logo removed",
+    "partnerParticipants.defaultUser": "User #{{id}}",
+    "partnerParticipants.signupLabel": "Signup: {{when}}",
+    "partnerParticipants.write": "Message",
+    "partnerParticipants.loadFailed": "Could not load signups.",
+    "partnerParticipants.messageLocked": "Participant messages are available from the PRO plan",
+    "partnerParticipants.modalTitle": "Message participant",
+    "partnerParticipants.conversationWith": "Conversation with:",
+    "partnerParticipants.defaultParticipant": "Participant",
+    "partnerParticipantMessage.placeholder": "Write a message...",
+    "partnerParticipantMessage.send": "Send",
+    "partnerParticipantMessage.blockedLink": "Links are currently blocked for USLY safety reasons. The message was not delivered.",
+    "partnerParticipantMessage.blockedContent": "The content was blocked by USLY moderation and was not delivered.",
+    "partnerBroadcast.locked": "This feature is available from the PREMIUM plan",
+    "partnerBroadcast.noParticipants": "No signed-up participants",
+    "partnerBroadcast.organizerMarker": "— message from organizer —",
+    "partnerBroadcast.sent": "Sent to {{count}} participants",
+    "partnerBroadcast.failed": "Could not send message to participants",
+    "partnerPlace.enterQuery": "Enter a place name or address",
+    "partnerPlace.notFound": "Place not found. Refine the address or name.",
+    "partnerPlace.searchFailed": "Could not search for the place.",
+    "partnerPlace.defaultPlace": "Place",
+    "partnerPlace.selectedLabel": "Selected:",
+    "partnerPlace.defaultLower": "place",
+    "partnerPlace.selectedToast": "Event place selected",
+    "partnerEvent.editorOpened": "Event opened for editing",
+    "partnerEvent.partnerOnly": "This is available only for organizers",
+    "partnerEvent.draftRequired": "To save a draft, fill in: name, city, date, place and hashtag",
+    "partnerEvent.invalidDate": "Enter a valid event date",
+    "partnerEvent.invalidCapacity": "Enter a valid number of spots",
+    "partnerEvent.ticketRequired": "Add a ticket / reservation link",
+    "partnerEvent.invalidPrice": "Enter a valid price",
+    "partnerEvent.invalidPriceRange": "Enter a valid price range",
+    "partnerEvent.priceRangeOrder": "Price from cannot be higher than price to",
+    "partnerEvent.draftSaveFailed": "Could not save draft",
+    "partnerEvent.draftSaved": "Event draft saved",
+    "partnerEvent.createdAsDraft": "Event saved as draft",
+    "partnerEvent.publishRequiredExisting": "Fill in: name, city and date",
+    "partnerEvent.publishRequiredNew": "Fill in: name, city, date, place and hashtag",
+    "partnerEvent.saveChangesFailed": "Could not save event changes",
+    "partnerEvent.updated": "Event updated",
+    "partnerEvent.draftSavedPublishFailed": "Draft saved, but it could not be published",
+    "partnerEvent.resumed": "Event resumed",
+    "partnerEvent.published": "Event published",
+    "partnerEvent.createFailed": "Could not create event",
+    "partnerEvent.createdMissingId": "Event created, but the ID needed to publish is missing",
+    "partnerEvent.createdPublishFailed": "Event created, but it could not be published",
+    "partnerEvent.createdAndPublished": "Event created and published",
+    "partnerEvent.publishLimitReached": "Plan {{plan}} allows up to {{limit}} active events. Save the next one as a draft or upgrade your plan.",
+    "partnerSetup.cityRequired": "Enter operating city",
+    "partnerSetup.profileSaved": "Organizer profile saved",
+    "partnerSetup.profileSaveFailed": "Could not save organizer profile",
+    "profileSetup.profileSaved": "Profile saved",
+    "profileSetup.profileSaveFailed": "Could not save profile",
+    "partnerEvent.publishFailed": "Could not publish event",
+    "partnerEvent.quickPublished": "Event published",
+    "partnerEvent.archiveFailed": "Could not archive event",
+    "partnerEvent.archived": "Event moved to archive",
+    "partnerEvent.statusDraft": "Draft",
+    "partnerEvent.sectionActiveTitle": "Active",
+    "partnerEvent.sectionActiveDesc": "Events currently visible to users.",
+    "partnerEvent.sectionDraftsTitle": "Drafts",
+    "partnerEvent.sectionDraftsDesc": "Draft events before publishing.",
+    "partnerEvent.sectionFinishedTitle": "Finished",
+    "partnerEvent.sectionFinishedDesc": "Events whose date has already passed.",
+    "partnerEvent.sectionArchivedTitle": "Archived",
+    "partnerEvent.sectionArchivedDesc": "Closed or moved to archive.",
+    "partnerEvent.countOne": "1 event",
+    "partnerEvent.countFew": "{{count}} events",
+    "partnerEvent.countMany": "{{count}} events",
+    "partnerDash.metricActive": "Active",
+    "partnerDash.metricActiveSub": "Published now",
+    "partnerDash.metricDrafts": "Drafts",
+    "partnerDash.metricDraftsSub": "Draft",
+    "partnerDash.metricSignupsTotal": "Signups total",
+    "admin.toastStatusSaved": "Report status saved",
+    "admin.toastStatusSaveFailed": "Could not save status",
+    "admin.toastBugNotFound": "Bug report not found",
+    "admin.toastBugPreviewFailed": "Could not open bug preview",
+    "app.viewMissing": "Missing view: {{view}}",
+    "bugReport.ticketSent": "Report sent • #{{ticket}}",
+    "bugReport.ticketSaved": "Report saved • #{{ticket}}",
+    "partnerParticipants.sent": "Message sent",
+    "settings.toast.saved": "Settings saved",
+    "photo.modalTitle": "Add photo",
+    "photo.heading": "Photo upload",
+    "photo.subtitle": "Add a profile photo or leave it empty and use the placeholder.",
+    "photo.save": "Save photo",
+    "photo.toast.pickFile": "Choose a photo file",
+    "photo.toast.uploadFailed": "Could not upload photo",
+    "photo.toast.saved": "Photo saved",
+    "photo.toast.removeFailed": "Could not remove photo",
+    "photo.toast.removed": "Photo removed",
+    "avatar.modalTitle": "Create AI avatar",
+    "avatar.heading": "AI avatar",
+    "avatar.subtitle": "Describe the style and USLY will generate an illustrated profile avatar. Generation may take a moment.",
+    "avatar.statusChecking": "Checking limit...",
+    "avatar.styleLabel": "Avatar style",
+    "avatar.placeholder": "e.g. minimal, warm, elegant, pastel",
+    "avatar.generate": "Generate avatar",
+    "avatar.generating": "Generating...",
+    "avatar.limitReached": "Limit reached",
+    "avatar.toastDescribe": "Briefly describe avatar style",
+    "avatar.toastLimitReached": "AI avatar limit for your plan has been reached",
+    "avatar.toastFailed": "Could not generate avatar",
+    "avatar.toastReady": "Avatar ready",
+    "avatar.toastReadyRemaining": "Avatar ready. Remaining: {{remaining}}",
+    "avatar.statusFailed": "Could not check AI avatar limit.",
+    "avatar.statusLine": "Your plan: <b>{{plan}}</b> • AI avatars: <b>{{used}}/{{limit}}</b> this month • Remaining: <b>{{remaining}}</b>",
+    "avatar.statusLimitLine": "Your plan: <b>{{plan}}</b> • You have used the <b>{{used}}/{{limit}}</b> AI avatar limit this month. Change plan to generate more.",
     "settings.deleteAccount": "Delete account",
     "settings.partnerProfileSub": "Complete your organizer profile.",
     "settings.logoTitle": "Venue logo",
@@ -680,6 +1567,8 @@ const I18N = {
     "settings.industry": "Industry",
     "settings.orgAboutPlaceholder": "Briefly describe the place, vibe and offer.",
     "settings.partnerAccountSub": "Key Organizer account actions.",
+    "settings.languageTitle": "App language",
+    "settings.languageSub": "Change the language instantly, without logging out.",
     "settings.documents": "Documents",
     "settings.documentsSub": "Terms and Privacy Policy.",
     "settings.logout": "Log out",
@@ -765,6 +1654,49 @@ const I18N = {
     "register.toast.partner_required": "Fill in organizer name and city",
     "register.toast.create_error": "Could not create account",
     "register.toast.auto_login_error": "Account created, but automatic login failed",
+    "register.toast.created_logged_in": "Account created and logged in",
+    "register.toast.create_error": "Could not create account",
+    "login.toast.missing": "Enter email and password",
+    "login.toast.error": "Login error",
+    "login.toast.roleMismatch": "This account belongs to a different role. Choose the correct account type and try again.",
+    "login.toast.success": "Logged in",
+    "logout.toast.success": "Logged out",
+    "social.loginSoon": "Social login will be available soon",
+    "social.signupSoon": "Social signup will be available soon",
+    "role.user": "Companion",
+    "role.partner": "Organizer",
+    "register.user.subtitleDynamic": "Create a Companion account and set up your profile.",
+    "register.partner.subtitleDynamic": "Create an Organizer account and set up your profile.",
+    "plans.toast.saveFailed": "Could not save plan",
+    "plans.toast.partnerSaveFailed": "Could not save organizer plan",
+    "plans.toast.selected": "Selected plan: {{plan}}",
+    "enterprise.toast.contactRequired": "Enter an email or phone number for contact",
+    "enterprise.toast.sending": "Sending...",
+    "enterprise.toast.failed": "Could not send inquiry",
+    "enterprise.toast.sent": "Inquiry sent. I will get back to you with an offer.",
+    "groups.create.availablePlus": "Available from PLUS",
+    "groups.create.limitReached": "Limit reached",
+    "groups.create.button": "Create group",
+    "groups.create.hintLocked": "Creating your own groups is available from the PLUS plan.",
+    "groups.create.hintUnlimited": "Created groups: {{count}} • VIP plan allows unlimited groups.",
+    "groups.create.hintReached": "Created groups: {{count}} / {{limit}} • You have reached the limit for this plan.",
+    "groups.create.hintLeft": "Created groups: {{count}} / {{limit}} • You can still create {{left}}.",
+    "groups.create.toastLocked": "Group creation is available from the PLUS plan",
+    "groups.create.modalTitle": "Create group",
+    "groups.create.title": "Group title *",
+    "groups.create.titlePlaceholder": "e.g. Warsaw Coffee Lovers",
+    "groups.create.interest": "Hashtag / interest *",
+    "groups.create.interestPlaceholder": "e.g. coffee",
+    "groups.create.description": "Description",
+    "groups.create.descriptionPlaceholder": "Short group description (optional)",
+    "groups.create.planUnlimited": "You can create unlimited groups.",
+    "groups.create.planLimited": "This plan allows up to {{limit}} own groups.",
+    "groups.create.submit": "Create",
+    "groups.create.cancel": "Cancel",
+    "groups.create.toastTitle": "Enter group name (min. 3 characters)",
+    "groups.create.toastInterest": "Enter group hashtag",
+    "groups.create.toastFailed": "Could not create group",
+    "groups.create.toastSuccess": "Group created",
     "plans.user.plus.price": "29 PLN / month",
     "plans.user.premium.price": "49 PLN / month",
     "plans.user.vip.price": "89 PLN / month",
@@ -774,6 +1706,8 @@ const I18N = {
     "login.forgot_password": "Forgot password?",
     "welcome.title": "Your city. Your people.",
     "welcome.subtitle": "People, conversations and events built around interests — not chance.",
+    "welcome.tagline": "Meet people through interests, not looks.",
+    "welcome.langAria": "Language selection",
     "welcome.choose_account": "Choose account",
     "welcome.user": "Meet people",
     "welcome.partner": "Create events",
@@ -787,7 +1721,14 @@ const I18N = {
 
 function t(key, fallback = "") {
   const lang = App?.lang || "pl";
-  return I18N?.[lang]?.[key] || I18N?.pl?.[key] || fallback || key;
+  const params = fallback && typeof fallback === "object" ? fallback : null;
+  let value = I18N?.[lang]?.[key] || I18N?.pl?.[key] || (params ? "" : fallback) || key;
+  if (params) {
+    Object.entries(params).forEach(([name, paramValue]) => {
+      value = String(value).replaceAll(`{{${name}}}`, String(paramValue ?? ""));
+    });
+  }
+  return value;
 }
 
 function setLanguage(lang) {
@@ -812,6 +1753,12 @@ function applyI18n(root = document) {
     const key = el.dataset.i18nPlaceholder;
     if (!key) return;
     el.setAttribute("placeholder", t(key, el.getAttribute("placeholder") || ""));
+  });
+
+  root.querySelectorAll("[data-i18n-aria-label]").forEach((el) => {
+    const key = el.dataset.i18nAriaLabel;
+    if (!key) return;
+    el.setAttribute("aria-label", t(key, el.getAttribute("aria-label") || ""));
   });
 }
 
@@ -998,11 +1945,11 @@ function syncEventDetailButtons() {
   const interestedBtn = document.querySelector('#S7B_EVENT_DETAIL button[onclick="toggleInterestedEvent()"]');
 
   if (saveBtn) {
-    saveBtn.textContent = ev.saved ? "Obserwowane" : "Obserwuj";
+    saveBtn.textContent = ev.saved ? t("eventDetail.observed") : t("eventDetail.observe");
   }
 
   if (interestedBtn) {
-    interestedBtn.textContent = ev.interested ? "Zrezygnuj z udziału" : "Wezmę udział";
+    interestedBtn.textContent = ev.interested ? t("eventDetail.cancelInterest") : t("eventDetail.interested");
   }
 }
 
@@ -1017,7 +1964,7 @@ function go(viewId) {
 
   const next = $(viewId);
   if (!next) {
-    toast(`Brak widoku: ${viewId}`);
+    toast(t("app.viewMissing", { view: viewId }));
     return;
   }
   next.classList.add("active");
@@ -1132,16 +2079,16 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
     if ($("setBio")) $("setBio").value = App.user.bio || "";
     if ($("setCity")) $("setCity").value = App.user.city || "";
 
-    safeSetText("settingsProfileHeroNick", App.user.nick || "Twój profil");
+    safeSetText("settingsProfileHeroNick", App.user.nick || t("settings.profile"));
     safeSetText(
       "settingsProfileHeroMeta",
-      [App.user.city, App.user.bio].filter(Boolean).join(" • ") || "Uzupełnij profil, aby poprawić dopasowania."
+      [App.user.city, App.user.bio].filter(Boolean).join(" • ") || t("settings.profileSub")
     );
     safeSetText("settingsProfilePlanPill", String(App.user.plan || "FREE").toUpperCase());
     safeSetText("settingsProfilePlanPillSecondary", String(App.user.plan || "FREE").toUpperCase());
     if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
     if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
-    safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+    safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
     safeSetText("setPrefAgeFromVal", String(App.user.prefAgeFrom));
     safeSetText("setPrefAgeToVal", String(App.user.prefAgeTo));
     refreshProfileRelations().catch(() => {});
@@ -1212,13 +2159,13 @@ function closeModal() {
 // Minimal UI for "Zgłoś błąd" button added in S10_SETTINGS.
 // Does not remove/alter any existing behavior.
 function openBugReport() {
-  openModal("Zgłoś błąd", `
-    <div class="tStrong">Zgłoszenie błędu</div>
-    <div class="sectionSub mt10">Opisz krótko problem. To trafia do zespołu (na testach).</div>
-    <label class="mt12">Co nie działa?</label>
-    <textarea id="bugReportText" maxlength="1000" placeholder="Np. Po kliknięciu Zapisz zmiany nic się nie dzieje..."></textarea>
+  openModal(t("bugReport.modalTitle"), `
+    <div class="tStrong">${t("bugReport.heading")}</div>
+    <div class="sectionSub mt10">${t("bugReport.subtitle")}</div>
+    <label class="mt12">${t("bugReport.label")}</label>
+    <textarea id="bugReportText" maxlength="1000" placeholder="${t("bugReport.placeholder")}"></textarea>
     <div class="charHint"><span id="bugReportCount">0</span>/1000</div>
-    <button class="btn mt16" type="button" onclick="submitBugReport()">Wyślij</button>
+    <button class="btn mt16" type="button" onclick="submitBugReport()">${t("bugReport.submit")}</button>
   `);
 
   const ta = $("bugReportText");
@@ -1236,7 +2183,7 @@ function submitBugReport() {
   const ta = $("bugReportText");
   const message = (ta?.value || "").trim();
   if (!message) {
-    toast("Opisz proszę problem");
+    toast(t("bugReport.toast.empty"));
     return;
   }
 
@@ -1257,18 +2204,18 @@ function submitBugReport() {
     })
       .then(async (r) => {
         if (!r.ok) throw new Error("HTTP " + r.status);
-        toast("Dzięki! Zgłoszenie wysłane.");
+        toast(t("bugReport.toast.sent"));
         closeModal();
       })
       .catch(() => {
-        toast("Nie udało się wysłać ");
+        toast(t("bugReport.toast.failed"));
         closeModal();
       });
     return;
   }
 
   // fallback
-  toast("Dzięki! Zgłoszenie zapisane ");
+  toast(t("bugReport.toast.saved"));
   closeModal();
 }
 
@@ -1294,11 +2241,11 @@ function selectRole(role) {
   });
 
   // Labels
-  safeSetText("roleLabelLogin", role === "user" ? "Towarzysz" : "Organizator");
-  safeSetText("roleLabelRegister", role === "user" ? "Towarzysz" : "Organizator");
+  safeSetText("roleLabelLogin", role === "user" ? t("role.user") : t("role.partner"));
+  safeSetText("roleLabelRegister", role === "user" ? t("role.user") : t("role.partner"));
   safeSetText("regSubLine", role === "user"
-    ? "Stwórz konto Towarzysza i ustaw profil."
-    : "Stwórz konto Organizatora i ustaw profil.");
+    ? t("register.user.subtitleDynamic")
+    : t("register.partner.subtitleDynamic"));
 
   // Show/Hide registration account fields
   const regUserAccountFields = $("regUserAccountFields");
@@ -1353,7 +2300,7 @@ async function loginPrimary() {
   const password = $("loginPass")?.value?.trim();
 
   if (!email || !password) {
-    toast("Podaj email i hasło");
+    toast(t("login.toast.missing"));
     return;
   }
 
@@ -1365,7 +2312,7 @@ async function loginPrimary() {
     });
 
     if (!data?.success || !data?.data?.access_token) {
-      toast(data?.error?.message || "Błąd logowania");
+      toast(data?.error?.message || t("login.toast.error"));
       return;
     }
 
@@ -1428,11 +2375,12 @@ if (App.role === "user") {
 renderAll();
 bindMessageInputs();
 
-toast("Zalogowano");
+toast(t("login.toast.success"));
 if (App.role === "user") go("S4_NEARBY");
 else go("S9_PARTNER");
   } catch (err) {
-    toast(err?.userMessage || "Błąd logowania");
+    const code = String(err?.code || err?.data?.error?.code || err?.data?.code || err?.data?.detail || err?.message || "");
+    toast(code.includes("INSUFFICIENT_ROLE") ? t("login.toast.roleMismatch") : (err?.userMessage || t("login.toast.error")));
   }
 }
 
@@ -1453,11 +2401,11 @@ async function loadPartnerProfile() {
 }
 
 function loginSocial(provider) {
-  toast("Logowanie społecznościowe będzie dostępne wkrótce");
+  toast(t("social.loginSoon"));
 }
 
 function signupSocial(provider) {
-  toast("Rejestracja społecznościowa będzie dostępna wkrótce");
+  toast(t("social.signupSoon"));
 }
 
 function logout() {
@@ -1492,17 +2440,17 @@ function logout() {
   hide($("tabbarUser"));
   hide($("tabbarPartner"));
 
-  toast("Wylogowano");
+  toast(t("logout.toast.success"));
   App.history = ["S0_WELCOME"];
   go("S0_WELCOME");
 }
 function openForgot() {
-  openModal(t("forgot.modal.title", "Odzyskiwanie hasła"), `
-    <div class="tStrong">${t("forgot.heading", "Reset hasła")}</div>
-    <div class="sectionSub">${t("forgot.subtitle", "Podaj adres e-mail przypisany do konta. Wyślemy link do ustawienia nowego hasła.")}</div>
+  openModal(t("forgot.modal.title"), `
+    <div class="tStrong">${t("forgot.heading")}</div>
+    <div class="sectionSub">${t("forgot.subtitle")}</div>
     <label class="mt12">${t("forgot.email.label", "Email")}</label>
     <input id="forgotEmail" type="email" placeholder="${t("forgot.email.placeholder", "np. ola@email.com")}" />
-    <button class="btn mt16" type="button" onclick="submitForgotPassword()">${t("forgot.submit", "Wyślij link")}</button>
+    <button class="btn mt16" type="button" onclick="submitForgotPassword()">${t("forgot.submit")}</button>
   `);
 }
 
@@ -1522,9 +2470,9 @@ async function submitForgotPassword() {
     });
 
     closeModal();
-    toast(t("forgot.toast.success", "Jeśli konto istnieje, wyślemy link do ustawienia nowego hasła."));
+    toast(t("forgot.toast.success"));
   } catch (err) {
-    toast(err?.userMessage || t("forgot.toast.error", "Nie udało się wysłać linku. Spróbuj ponownie."));
+    toast(err?.userMessage || t("forgot.toast.error"));
   }
 }
 
@@ -1542,12 +2490,12 @@ async function registerPrimary() {
   const passRepeat = $("regPassRepeat")?.value?.trim();
 
   if (!email || !pass || !passRepeat || pass.length < 8) {
-    toast(t("register.toast.account_required", "Uzupełnij email, hasło i powtórzenie hasła (min. 8 znaków)"));
+    toast(t("register.toast.account_required"));
     return;
   }
 
   if (pass !== passRepeat) {
-    toast(t("reset.toast.passwords_mismatch", "Hasła nie są takie same"));
+    toast(t("reset.toast.passwords_mismatch"));
     return;
   }
 
@@ -1574,13 +2522,13 @@ async function registerPrimary() {
     }
 
     if (!dob) {
-      showAgeError(t("register.toast.birthdate_required", "Podaj datę urodzenia."));
+      showAgeError(t("register.toast.birthdate_required"));
       return;
     }
 
     const birth = new Date(dob);
     if (Number.isNaN(birth.getTime())) {
-      showAgeError(t("register.toast.birthdate_invalid", "Nieprawidłowa data urodzenia."));
+      showAgeError(t("register.toast.birthdate_invalid"));
       return;
     }
 
@@ -1590,19 +2538,19 @@ async function registerPrimary() {
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
 
     if (age < 18) {
-      showAgeError(t("register.toast.age_under_18", "Nie możesz się zarejestrować – wymagane jest ukończone 18 lat."));
+      showAgeError(t("register.toast.age_under_18"));
       return;
     }
 
     hideAgeError();
 
     if (!nick) {
-      toast(t("register.toast.nick_required", "Uzupełnij datę urodzenia i nick"));
+      toast(t("register.toast.nick_required"));
       return;
     }
 
     if (!App.user?.geo?.lat || !App.user?.geo?.lng) {
-      toast(t("register.toast.location_required", "Włącz lokalizację, aby kontynuować"));
+      toast(t("register.toast.location_required"));
       return;
     }
 
@@ -1617,7 +2565,7 @@ async function registerPrimary() {
     dob = null;
 
     if (!company || !city) {
-      toast(t("register.toast.partner_required", "Uzupełnij nazwę i miasto organizatora"));
+      toast(t("register.toast.partner_required"));
       return;
     }
 
@@ -1641,7 +2589,7 @@ async function registerPrimary() {
     });
 
     if (!data?.success || !data?.data?.id) {
-      toast(data?.error?.message || t("register.toast.create_error", "Nie udało się utworzyć konta"));
+      toast(data?.error?.message || t("register.toast.create_error"));
       return;
     }
 
@@ -1652,7 +2600,7 @@ async function registerPrimary() {
     });
 
     if (!loginData?.success || !loginData?.data?.access_token) {
-      toast(t("register.toast.auto_login_error", "Konto utworzone, ale nie udało się zalogować automatycznie"));
+      toast(t("register.toast.auto_login_error"));
       go("S1_LOGIN");
       return;
     }
@@ -1688,7 +2636,7 @@ async function registerPrimary() {
     renderAll();
     bindMessageInputs();
 
-    toast("Konto utworzone i zalogowano");
+    toast(t("register.toast.created_logged_in"));
       if (App.role === "user") {
         if ($("setupNick")) $("setupNick").value = App.user.nick || "";
         if ($("setupCity")) $("setupCity").value = App.user.city || "";
@@ -1696,8 +2644,8 @@ async function registerPrimary() {
         if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
         if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
         safeSetText("bioCount", String(($("setupBio")?.value || "").length));
-        safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
-        safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+        safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
+        safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
         renderInterestChips("interestChips");
         refreshInterestUi();
         go("S3_PROFILE_SETUP");
@@ -1706,12 +2654,12 @@ async function registerPrimary() {
         if ($("setupOrgCategory")) $("setupOrgCategory").value = App.partner.category || "inne";
         if ($("setupOrgAbout")) $("setupOrgAbout").value = App.partner.about || "";
         safeSetText("setupOrgAboutCount", String(($("setupOrgAbout")?.value || "").length));
-        safeSetText("setupPartnerCompanyName", App.partner.company || "Uzupełnij profil");
+        safeSetText("setupPartnerCompanyName", App.partner.company || t("partnerSetup.title"));
         go("S3B_PARTNER_SETUP");
         setTimeout(updateOrgLogoFallback, 0);
       }
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się utworzyć konta");
+    toast(err?.userMessage || t("register.toast.create_error"));
   }
 }
 
@@ -1777,7 +2725,7 @@ async function setUserPlan(plan, silent = false) {
       });
 
       if (!data?.success || !data?.data) {
-        throw new Error(data?.error?.message || "Nie udało się zapisać planu");
+        throw new Error(data?.error?.message || t("plans.toast.saveFailed"));
       }
 
       App.user.plan = data.data.plan || plan;
@@ -1785,7 +2733,7 @@ async function setUserPlan(plan, silent = false) {
       safeSetText("planPillSetup", App.user.plan.toUpperCase());
       refreshUserPlanCardsUi();
       renderAll();
-      if (!silent) toast(`Wybrano plan: ${App.user.plan.toUpperCase()}`);
+      if (!silent) toast(t("plans.toast.selected", { plan: App.user.plan.toUpperCase() }));
       return;
     } catch (err) {
       App.user.plan = prevPlan;
@@ -1800,12 +2748,12 @@ async function setUserPlan(plan, silent = false) {
       safeSetText("planPillSetup", prevPlan.toUpperCase());
       refreshUserPlanCardsUi();
       renderAll();
-      toast(err?.userMessage || err?.message || "Nie udało się zapisać planu");
+      toast(err?.userMessage || err?.message || t("plans.toast.saveFailed"));
       return;
     }
   }
 
-  if (!silent) toast(`Wybrano plan: ${plan.toUpperCase()}`);
+  if (!silent) toast(t("plans.toast.selected", { plan: plan.toUpperCase() }));
 }
 
 async function setPartnerPlan(plan, silent = false) {
@@ -1856,7 +2804,7 @@ async function setPartnerPlan(plan, silent = false) {
         App.partner.plan = prevPlan;
         try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, prevPlan); } catch(_) {}
         renderAll();
-        toast(res?.error?.message || "Nie udało się zapisać planu organizatora");
+        toast(res?.error?.message || t("plans.toast.partnerSaveFailed"));
         return;
       }
 
@@ -1865,16 +2813,16 @@ async function setPartnerPlan(plan, silent = false) {
       document.querySelectorAll("#partnerPlanPill").forEach((el) => {
         el.textContent = String(App.partner.plan).toUpperCase();
       });
-      toast(`Wybrano plan: ${String(App.partner.plan).toUpperCase()}`);
+      toast(t("plans.toast.selected", { plan: String(App.partner.plan).toUpperCase() }));
     } catch (err) {
       App.partner.plan = prevPlan;
       try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, prevPlan); } catch(_) {}
       renderAll();
-      toast(err?.userMessage || "Nie udało się zapisać planu organizatora");
+      toast(err?.userMessage || t("plans.toast.partnerSaveFailed"));
       return;
     }
   } else if (!silent) {
-    toast(`Wybrano plan: ${String(plan).toUpperCase()}`);
+    toast(t("plans.toast.selected", { plan: String(plan).toUpperCase() }));
   }
 
   renderAll();
@@ -1899,13 +2847,13 @@ async function submitEnterpriseContact() {
   };
 
   if (!payload.contact) {
-    toast("Podaj email lub telefon do kontaktu");
+    toast(t("enterprise.toast.contactRequired"));
     return;
   }
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = "Wysyłam...";
+    btn.textContent = t("enterprise.toast.sending");
   }
 
   try {
@@ -1916,50 +2864,50 @@ async function submitEnterpriseContact() {
     });
 
     if (!data?.success) {
-      toast(data?.error?.message || "Nie udało się wysłać zapytania");
+      toast(data?.error?.message || t("enterprise.toast.failed"));
       return;
     }
 
-    toast("Zapytanie wysłane. Odezwę się do Ciebie z propozycją.");
+    toast(t("enterprise.toast.sent"));
     closeModal();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wysłać zapytania");
+    toast(err?.userMessage || t("enterprise.toast.failed"));
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "Wyślij zapytanie";
+      btn.textContent = t("enterprise.submit");
     }
   }
 }
 
 function contactEnterprisePlan() {
-  openModal(t("enterprise.modal.title", "Plan Enterprise"), `
-    <div class="tStrong">${t("enterprise.modal.heading", "Porozmawiajmy o pakiecie dla Twojej marki")}</div>
-    <div class="sectionSub mt10">${t("enterprise.modal.subtitle", "Zostaw kontakt i zaznacz, czego potrzebujesz. Przygotujemy indywidualną propozycję dla Twojego miejsca, wydarzeń lub sieci lokalizacji.")}</div>
+  openModal(t("enterprise.modal.title"), `
+    <div class="tStrong">${t("enterprise.modal.heading")}</div>
+    <div class="sectionSub mt10">${t("enterprise.modal.subtitle")}</div>
 
-    <label class="mt12">${t("enterprise.company.label", "Nazwa firmy / marki")}</label>
-    <input id="enterpriseContactCompany" type="text" placeholder="${t("enterprise.company.placeholder", "np. klub, restauracja, sieć miejsc")}" />
+    <label class="mt12">${t("enterprise.company.label")}</label>
+    <input id="enterpriseContactCompany" type="text" placeholder="${t("enterprise.company.placeholder")}" />
 
-    <label class="mt12">${t("enterprise.city.label", "Miasto / zasięg działania")}</label>
-    <input id="enterpriseContactCity" type="text" placeholder="${t("enterprise.city.placeholder", "np. Warszawa, kilka miast, cała Polska")}" />
+    <label class="mt12">${t("enterprise.city.label")}</label>
+    <input id="enterpriseContactCity" type="text" placeholder="${t("enterprise.city.placeholder")}" />
 
-    <label class="mt12">${t("enterprise.contact.label", "Email lub telefon do kontaktu")}</label>
-    <input id="enterpriseContactContact" type="text" placeholder="${t("enterprise.contact.placeholder", "np. kontakt@firma.pl lub numer telefonu")}" />
+    <label class="mt12">${t("enterprise.contact.label")}</label>
+    <input id="enterpriseContactContact" type="text" placeholder="${t("enterprise.contact.placeholder")}" />
 
-    <label class="mt12">${t("enterprise.interests.label", "Czym jesteście zainteresowani?")}</label>
+    <label class="mt12">${t("enterprise.interests.label")}</label>
     <div class="mt8" style="display:grid;gap:8px">
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.visibility", "Większa widoczność wydarzeń")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.visibility", "Większa widoczność wydarzeń")}</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.locations", "Promocja kilku lokalizacji")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.locations", "Promocja kilku lokalizacji")}</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.campaign", "Kampania lub event specjalny")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.campaign", "Kampania lub event specjalny")}</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.long_term", "Współpraca długoterminowa")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.long_term", "Współpraca długoterminowa")}</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.network", "Oferta dla sieci lub franczyzy")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.network", "Oferta dla sieci lub franczyzy")}</span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.other", "Inne")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.other", "Inne")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.visibility")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.visibility")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.locations")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.locations")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.campaign")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.campaign")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.long_term")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.long_term")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.network")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.network")}</span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.025));font-weight:700;line-height:1.2;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)"><input class="enterpriseNeedOption" type="checkbox" value="${t("enterprise.need.other")}" style="width:18px;height:18px;flex:0 0 auto;margin:0" /><span>${t("enterprise.need.other")}</span></label>
     </div>
 
-    <label class="mt12">${t("enterprise.message.label", "Krótka wiadomość")}</label>
-    <textarea id="enterpriseContactNeeds" rows="4" placeholder="${t("enterprise.message.placeholder", "Napisz krótko, czego potrzebujesz albo jaki efekt chcesz osiągnąć.")}"></textarea>
+    <label class="mt12">${t("enterprise.message.label")}</label>
+    <textarea id="enterpriseContactNeeds" rows="4" placeholder="${t("enterprise.message.placeholder")}"></textarea>
 
-    <button id="enterpriseContactSubmitBtn" class="btn mt16" type="button" onclick="submitEnterpriseContact()">${t("enterprise.submit", "Wyślij zapytanie")}</button>
+    <button id="enterpriseContactSubmitBtn" class="btn mt16" type="button" onclick="submitEnterpriseContact()">${t("enterprise.submit")}</button>
   `);
 }
 
@@ -2108,23 +3056,23 @@ function refreshCreateGroupUi() {
     btn.style.cursor = enabled ? "pointer" : "not-allowed";
 
     if (!rules.canCreate) {
-      btn.textContent = "Dostępne od PLUS";
+      btn.textContent = t("groups.create.availablePlus");
     } else if (limitReached) {
-      btn.textContent = "Limit wykorzystany";
+      btn.textContent = t("groups.create.limitReached");
     } else {
-      btn.textContent = "Utwórz grupę";
+      btn.textContent = t("groups.create.button");
     }
   }
 
   if (hint) {
     if (!rules.canCreate) {
-      hint.textContent = "Tworzenie własnych grup jest dostępne od planu PLUS.";
+      hint.textContent = t("groups.create.hintLocked");
     } else if (rules.createLimit == null) {
-      hint.textContent = `Utworzone grupy: ${createdCount} • Na planie VIP możesz tworzyć grupy bez limitu.`;
+      hint.textContent = t("groups.create.hintUnlimited", { count: createdCount });
     } else if (limitReached) {
-      hint.textContent = `Utworzone grupy: ${createdCount} / ${rules.createLimit} • Wykorzystałaś cały limit dla tego planu.`;
+      hint.textContent = t("groups.create.hintReached", { count: createdCount, limit: rules.createLimit });
     } else {
-      hint.textContent = `Utworzone grupy: ${createdCount} / ${rules.createLimit} • Możesz utworzyć jeszcze ${rules.createLimit - createdCount}.`;
+      hint.textContent = t("groups.create.hintLeft", { count: createdCount, limit: rules.createLimit, left: rules.createLimit - createdCount });
     }
   }
 }
@@ -2133,32 +3081,32 @@ function openCreateGroupModal() {
   const rules = getUserGroupCreateRules();
 
   if (!rules.canCreate) {
-    toast("Tworzenie grup jest dostępne od planu PLUS");
+    toast(t("groups.create.toastLocked"));
     return;
   }
 
-  openModal("Utwórz grupę", `
-    <label>Tytuł grupy *</label>
-    <input id="createGroupTitle" type="text" placeholder="np. Kawosze Warszawa" />
+  openModal(t("groups.create.modalTitle"), `
+    <label>${t("groups.create.title")}</label>
+    <input id="createGroupTitle" type="text" placeholder="${t("groups.create.titlePlaceholder")}" />
 
-    <label class="mt12">Hashtag / zainteresowanie *</label>
+    <label class="mt12">${t("groups.create.interest")}</label>
     <div class="hashRow">
       <span class="hashPrefix">#</span>
-      <input id="createGroupInterest" type="text" placeholder="np. kawa" />
+      <input id="createGroupInterest" type="text" placeholder="${t("groups.create.interestPlaceholder")}" />
     </div>
 
-    <label class="mt12">Opis</label>
-    <textarea id="createGroupDesc" maxlength="600" placeholder="Krótki opis grupy (opcjonalnie)"></textarea>
+    <label class="mt12">${t("groups.create.description")}</label>
+    <textarea id="createGroupDesc" maxlength="600" placeholder="${t("groups.create.descriptionPlaceholder")}"></textarea>
 
     <div class="sectionSub mt12">
       ${rules.createLimit == null
-        ? "Tworzysz grupy bez limitu."
-        : `Ten plan pozwala tworzyć do ${rules.createLimit} własnych grup.`}
+        ? t("groups.create.planUnlimited")
+        : t("groups.create.planLimited", { limit: rules.createLimit })}
     </div>
 
     <div class="row mt16">
-      <button class="btn" type="button" onclick="submitCreateGroup()">Utwórz</button>
-      <button class="btn secondary" type="button" onclick="closeModal()">Anuluj</button>
+      <button class="btn" type="button" onclick="submitCreateGroup()">${t("groups.create.submit")}</button>
+      <button class="btn secondary" type="button" onclick="closeModal()">${t("groups.create.cancel")}</button>
     </div>
   `);
 }
@@ -2169,12 +3117,12 @@ async function submitCreateGroup() {
   const description = $("createGroupDesc")?.value?.trim() || "";
 
   if (!title || title.length < 3) {
-    toast("Podaj nazwę grupy (min. 3 znaki)");
+    toast(t("groups.create.toastTitle"));
     return;
   }
 
   if (!interest || interest.length < 2) {
-    toast("Podaj hashtag grupy");
+    toast(t("groups.create.toastInterest"));
     return;
   }
 
@@ -2190,16 +3138,16 @@ async function submitCreateGroup() {
     });
 
     if (!data?.success) {
-      toast(data?.error?.message || "Nie udało się utworzyć grupy");
+      toast(data?.error?.message || t("groups.create.toastFailed"));
       return;
     }
 
     closeModal();
     await Promise.all([loadMyGroups(), loadGroups()]);
     renderGroups();
-    toast("Grupa została utworzona");
+    toast(t("groups.create.toastSuccess"));
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się utworzyć grupy");
+    toast(err?.userMessage || t("groups.create.toastFailed"));
   }
 }
 
@@ -2269,7 +3217,7 @@ async function saveSettings() {
     });
 
     if (!data?.success || !data?.data) {
-      toast(data?.error?.message || "Nie udało się zapisać ustawień");
+      toast(data?.error?.message || t("settings.toast.saveFailed"));
       return;
     }
 
@@ -2283,10 +3231,10 @@ async function saveSettings() {
 
     await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
 
-    toast("Zapisano ustawienia");
+    toast(t("settings.toast.saved"));
     renderAll();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zapisać ustawień");
+    toast(err?.userMessage || t("settings.toast.saveFailed"));
   }
 }
 
@@ -2309,7 +3257,7 @@ async function savePartnerSettings() {
     });
 
     if (!data?.success || !data?.data) {
-      toast(data?.error?.message || "Nie udało się zapisać ustawień organizatora");
+      toast(data?.error?.message || t("partnerSettings.toastSaveFailed"));
       return;
     }
 
@@ -2318,10 +3266,10 @@ async function savePartnerSettings() {
     App.partner.city = data.data.miasto || city;
     App.partner.about = data.data.bio || about;
 
-    toast("Zapisano ustawienia organizatora");
+    toast(t("partnerSettings.toastSaved"));
     renderAll();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zapisać ustawień organizatora");
+    toast(err?.userMessage || t("partnerSettings.toastSaveFailed"));
   }
 }
 
@@ -2347,15 +3295,15 @@ async function uploadPartnerLogo(file) {
     });
 
     if (!data?.success || !data?.data?.logo_url) {
-      toast(data?.error?.message || "Nie udało się wgrać logo");
+      toast(data?.error?.message || t("partnerLogo.toastUploadFailed"));
       return;
     }
 
     App.partner.logoUrl = data.data.logo_url;
-    toast("Logo zapisane");
+    toast(t("partnerLogo.toastSaved"));
     renderAll();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wgrać logo");
+    toast(err?.userMessage || t("partnerLogo.toastUploadFailed"));
   }
 }
 
@@ -2387,16 +3335,16 @@ async function uploadUserAvatar(file) {
     });
 
     if (!data?.success || !data?.data?.avatar_url) {
-      toast(data?.error?.message || "Nie udało się wgrać zdjęcia");
+      toast(data?.error?.message || t("photo.toast.uploadFailed"));
       return;
     }
 
     App.user.avatarUrl = data.data.avatar_url;
-    toast("Zdjęcie zapisane");
+    toast(t("photo.toast.saved"));
     renderAll();
     closeModal();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wgrać zdjęcia");
+    toast(err?.userMessage || t("photo.toast.uploadFailed"));
   }
 }
 
@@ -2410,16 +3358,16 @@ async function removeUserAvatar() {
     });
 
     if (!data?.success) {
-      toast(data?.error?.message || "Nie udało się usunąć zdjęcia");
+      toast(data?.error?.message || t("photo.toast.removeFailed"));
       return;
     }
 
     App.user.avatarUrl = "";
-    toast("Zdjęcie usunięte");
+    toast(t("photo.toast.removed"));
     renderAll();
     closeModal();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się usunąć zdjęcia");
+    toast(err?.userMessage || t("photo.toast.removeFailed"));
   }
 }
 
@@ -2432,24 +3380,24 @@ async function removePartnerLogo() {
     });
 
     if (!data?.success) {
-      toast(data?.error?.message || "Nie udało się usunąć logo");
+      toast(data?.error?.message || t("partnerLogo.toastRemoveFailed"));
       return;
     }
 
     App.partner.logoUrl = "";
-    toast("Logo usunięte");
+    toast(t("partnerLogo.toastRemoved"));
     renderAll();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się usunąć logo");
+    toast(err?.userMessage || t("partnerLogo.toastRemoveFailed"));
   }
 }
 
 function openAddPhoto() {
-  openModal("Dodaj zdjęcie", `
-    <div class="tStrong">Upload zdjęcia</div>
-    <div class="sectionSub mt10">Dodaj zdjęcie profilowe albo zostaw puste pole i używaj placeholdera.</div>
+  openModal(t("photo.modalTitle"), `
+    <div class="tStrong">${t("photo.heading")}</div>
+    <div class="sectionSub mt10">${t("photo.subtitle")}</div>
     <input id="userAvatarFileInput" type="file" accept="image/jpeg,image/png,image/webp" class="mt12" />
-    <button id="userAvatarUploadBtn" class="btn mt16" type="button">Zapisz zdjęcie</button>
+    <button id="userAvatarUploadBtn" class="btn mt16" type="button">${t("photo.save")}</button>
   `);
 
   setTimeout(() => {
@@ -2460,7 +3408,7 @@ function openAddPhoto() {
     btn.addEventListener("click", async () => {
       const file = input.files?.[0];
       if (!file) {
-        toast("Wybierz plik ze zdjęciem");
+        toast(t("photo.toast.pickFile"));
         return;
       }
       await uploadUserAvatar(file);
@@ -2476,13 +3424,13 @@ async function generateAiAvatar() {
   const prompt = input?.value?.trim() || "";
 
   if (prompt.length < 3) {
-    toast("Opisz krótko styl awatara");
+    toast(t("avatar.toastDescribe"));
     return;
   }
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = "Generuję...";
+    btn.textContent = t("avatar.generating");
   }
 
   try {
@@ -2497,24 +3445,24 @@ async function generateAiAvatar() {
       const code = detail?.code || data?.error?.code;
 
       if (code === "ai_avatar_limit_reached") {
-        toast("Limit awatarów AI w Twoim planie został wykorzystany");
+        toast(t("avatar.toastLimitReached"));
       } else {
-        toast(data?.error?.message || "Nie udało się wygenerować awatara");
+        toast(data?.error?.message || t("avatar.toastFailed"));
       }
       return;
     }
 
     App.user.avatarUrl = data.data.avatar_url;
     const remaining = Number(data.data.remaining ?? 0);
-    toast(remaining > 0 ? `Awatar gotowy. Pozostało: ${remaining}` : "Awatar gotowy");
+    toast(remaining > 0 ? t("avatar.toastReadyRemaining", { remaining }) : t("avatar.toastReady"));
     renderAll();
     closeModal();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wygenerować awatara");
+    toast(err?.userMessage || t("avatar.toastFailed"));
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "Generuj awatar";
+      btn.textContent = t("avatar.generate");
     }
   }
 }
@@ -2522,12 +3470,12 @@ async function generateAiAvatar() {
 async function refreshAiAvatarStatus() {
   const box = $("aiAvatarStatusBox");
   const btn = $("aiAvatarGenerateBtn");
-  if (box) box.textContent = "Sprawdzam limit...";
+  if (box) box.textContent = t("avatar.statusChecking");
 
   try {
     const data = await apiFetch("/ai/avatar/status");
     if (!data?.success || !data?.data) {
-      if (box) box.textContent = "Nie udało się sprawdzić limitu awatarów AI.";
+      if (box) box.textContent = t("avatar.statusFailed");
       return;
     }
 
@@ -2539,27 +3487,27 @@ async function refreshAiAvatarStatus() {
 
     if (box) {
       box.innerHTML = remaining > 0
-        ? `Twój plan: <b>${plan}</b> • Awatary AI: <b>${used}/${limit}</b> w tym miesiącu • Pozostało: <b>${remaining}</b>`
-        : `Twój plan: <b>${plan}</b> • Wykorzystałaś limit <b>${used}/${limit}</b> awatarów AI w tym miesiącu. Zmień plan, aby wygenerować więcej.`;
+        ? t("avatar.statusLine", { plan, used, limit, remaining })
+        : t("avatar.statusLimitLine", { plan, used, limit, remaining });
     }
 
     if (btn) {
       btn.disabled = remaining <= 0;
-      btn.textContent = remaining > 0 ? "Generuj awatar" : "Limit wykorzystany";
+      btn.textContent = remaining > 0 ? t("avatar.generate") : t("avatar.limitReached");
     }
   } catch (err) {
-    if (box) box.textContent = "Nie udało się sprawdzić limitu awatarów AI.";
+    if (box) box.textContent = t("avatar.statusFailed");
   }
 }
 
 function openAvatarAI() {
-  openModal("Stwórz awatar AI", `
-    <div class="tStrong">Awatar AI</div>
-    <div class="sectionSub mt10">Opisz styl, a USLY wygeneruje ilustracyjny awatar profilowy. Generowanie może chwilę potrwać.</div>
-    <div id="aiAvatarStatusBox" class="sectionSub mt10">Sprawdzam limit...</div>
-    <label class="mt12">Styl awatara</label>
-    <input id="aiAvatarPrompt" type="text" maxlength="240" placeholder="np. minimalistyczny, ciepły, elegancki, pastelowy" />
-    <button id="aiAvatarGenerateBtn" class="btn mt16" type="button" onclick="generateAiAvatar()">Generuj awatar</button>
+  openModal(t("avatar.modalTitle"), `
+    <div class="tStrong">${t("avatar.heading")}</div>
+    <div class="sectionSub mt10">${t("avatar.subtitle")}</div>
+    <div id="aiAvatarStatusBox" class="sectionSub mt10">${t("avatar.statusChecking")}</div>
+    <label class="mt12">${t("avatar.styleLabel")}</label>
+    <input id="aiAvatarPrompt" type="text" maxlength="240" placeholder="${t("avatar.placeholder")}" />
+    <button id="aiAvatarGenerateBtn" class="btn mt16" type="button" onclick="generateAiAvatar()">${t("avatar.generate")}</button>
   `);
   setTimeout(() => refreshAiAvatarStatus(), 0);
 }
@@ -2583,7 +3531,7 @@ async function finishPartnerSetup() {
   const about = $("setupOrgAbout")?.value?.trim() || "";
 
   if (!city) {
-    toast("Podaj miasto działania");
+    toast(t("partnerSetup.cityRequired"));
     return;
   }
 
@@ -2600,7 +3548,7 @@ async function finishPartnerSetup() {
     });
 
     if (!data?.success || !data?.data) {
-      toast(data?.error?.message || "Nie udało się zapisać profilu organizatora");
+      toast(data?.error?.message || t("partnerSetup.profileSaveFailed"));
       return;
     }
 
@@ -2610,10 +3558,10 @@ async function finishPartnerSetup() {
     App.partner.about = data.data.bio || about;
 
     await Promise.all([loadPartnerProfile(), loadPartnerEvents()]);
-    toast("Profil organizatora zapisany");
+    toast(t("partnerSetup.profileSaved"));
     go("S9_PARTNER");
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zapisać profilu organizatora");
+    toast(err?.userMessage || t("partnerSetup.profileSaveFailed"));
   }
 }
 
@@ -2653,7 +3601,7 @@ async function finishProfileSetup() {
     });
 
     if (!data?.success || !data?.data) {
-      toast(data?.error?.message || "Nie udało się zapisać profilu");
+      toast(data?.error?.message || t("profileSetup.profileSaveFailed"));
       return;
     }
 
@@ -2667,10 +3615,10 @@ async function finishProfileSetup() {
 
     await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
 
-    toast("Profil zapisany");
+    toast(t("profileSetup.profileSaved"));
     go("S4_NEARBY");
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zapisać profilu");
+    toast(err?.userMessage || t("profileSetup.profileSaveFailed"));
   }
 }
 
@@ -2715,7 +3663,7 @@ function resolvePersonById(userId) {
   if (fromChats?.with) {
     return {
       id: String(fromChats.with.id),
-      nick: fromChats.with.nick || `Użytkownik #${pid}`,
+      nick: fromChats.with.nick || t("friends.defaultUser", { id: pid }),
       role: fromChats.with.role || "user",
       company: fromChats.with.company || "",
       city: fromChats.with.city || "",
@@ -2732,7 +3680,7 @@ function resolvePersonById(userId) {
   const friendCards = Array.from(document.querySelectorAll('#profileFriendsList [onclick*="openChatParticipantProfile"]'));
   const friendCard = friendCards.find(el => String(el.getAttribute('onclick') || '').includes(`'${pid}'`));
   if (friendCard) {
-    const title = friendCard.querySelector('.sectionTitle')?.textContent?.trim() || `Użytkownik #${pid}`;
+    const title = friendCard.querySelector('.sectionTitle')?.textContent?.trim() || t("friends.defaultUser", { id: pid });
     const sub = friendCard.querySelector('.sectionSub')?.textContent?.trim() || "";
     return {
       id: pid,
@@ -2751,7 +3699,7 @@ function resolvePersonById(userId) {
   if (fromGroupMembers) {
     return {
       id: pid,
-      nick: fromGroupMembers.nick || `Użytkownik #${pid}`,
+      nick: fromGroupMembers.nick || t("friends.defaultUser", { id: pid }),
       city: fromGroupMembers.city || "",
       age: 0,
       emoji: "",
@@ -2765,7 +3713,7 @@ function resolvePersonById(userId) {
   if (fromGroupInvited) {
     return {
       id: pid,
-      nick: fromGroupInvited.nick || `Użytkownik #${pid}`,
+      nick: fromGroupInvited.nick || t("friends.defaultUser", { id: pid }),
       city: fromGroupInvited.city || "",
       age: 0,
       emoji: "",
@@ -2830,20 +3778,20 @@ function openPerson(personId) {
       chatBtn.style.opacity = "";
       chatBtn.classList.remove("secondary");
       chatBtn.dataset.state = "friend";
-      chatBtn.textContent = "Napisz";
+      chatBtn.textContent = t("personProfile.message");
     }
 
     const organizerId = String(p.id || personId);
-    const displayName = p.company || p.nick || "Organizator";
-    safeSetText("personInterestsTitle", "Kategoria");
+    const displayName = p.company || p.nick || t("personProfile.organizer");
+    safeSetText("personInterestsTitle", t("personProfile.partnerCategory"));
     safeSetText("personTitle", displayName);
     safeSetText("personNick", displayName);
-    safeSetText("personMeta", p.city || "Organizator");
+    safeSetText("personMeta", p.city || t("personProfile.organizer"));
     const matchEl = $("personMatchScore");
     if (matchEl) matchEl.style.display = "none";
     safeSetText("personMatchScore", "");
-    safeSetText("personBioTitle", "O organizatorze");
-    safeSetText("personBio", p.bio || "Ten organizator nie dodał jeszcze opisu.");
+    safeSetText("personBioTitle", t("personProfile.organizerAboutTitle"));
+    safeSetText("personBio", p.bio || t("personProfile.emptyOrganizerBio"));
 
     const partnerEventsPanel = $("partnerEventsPanel");
     const partnerEventsList = $("personPartnerEventsList");
@@ -2863,7 +3811,7 @@ function openPerson(personId) {
 
               <div class="partnerEventContent">
                 <div class="partnerEventTitle">
-                  ${escapeHtml(ev.title || "Wydarzenie")}
+                  ${escapeHtml(ev.title || t("personProfile.defaultEvent"))}
                 </div>
 
                 <div class="partnerEventMeta">
@@ -2871,14 +3819,14 @@ function openPerson(personId) {
                 </div>
 
                 <div class="partnerEventMeta">
-                  📅 ${escapeHtml(ev.when || "Termin wkrótce")}
+                  📅 ${escapeHtml(ev.when || t("personProfile.eventSoon"))}
                 </div>
               </div>
 
               <div class="partnerEventArrow">›</div>
             </div>
           `).join("")
-        : '<div class="sectionSub">Ten organizator nie ma jeszcze widocznych wydarzeń.</div>';
+        : `<div class="sectionSub">${t("personProfile.noPartnerEvents")}</div>`;
     }
 
     if (avatar) {
@@ -2891,7 +3839,7 @@ function openPerson(personId) {
     }
 
     if (chips) {
-      chips.dataset.label = "Branża";
+      chips.dataset.label = t("personProfile.partnerCategory");
       chips.innerHTML = "";
       const categoryLabel = getPartnerCategoryLabel(p.category);
       if (categoryLabel) chips.appendChild(makeChip(categoryLabel, null));
@@ -2900,8 +3848,8 @@ function openPerson(personId) {
     return;
   }
 
-  safeSetText("personInterestsTitle", "Zainteresowania");
-  safeSetText("personBioTitle", "O mnie");
+  safeSetText("personInterestsTitle", t("personProfile.interestsTitle"));
+  safeSetText("personBioTitle", t("personProfile.bioTitle"));
   const partnerEventsPanelDefault = $("partnerEventsPanel");
   if (partnerEventsPanelDefault) partnerEventsPanelDefault.hidden = true;
 
@@ -2913,7 +3861,7 @@ function openPerson(personId) {
       chatBtn.style.opacity = rules.canMessageParticipants ? "" : "0.7";
       chatBtn.classList.toggle("secondary", !rules.canMessageParticipants);
       chatBtn.dataset.state = rules.canMessageParticipants ? "friend" : "partner_locked";
-      chatBtn.textContent = rules.canMessageParticipants ? "Napisz" : "Wiadomości od planu PRO";
+      chatBtn.textContent = rules.canMessageParticipants ? t("personProfile.message") : t("personProfile.messagesPro");
     }
   } else {
     if (friendBtn) friendBtn.style.display = "";
@@ -2923,13 +3871,13 @@ function openPerson(personId) {
   safeSetText("personNick", p.nick);
   safeSetText("personMeta", [
     p.city,
-    Number.isFinite(p.age) && p.age > 0 ? `${p.age} lat` : ""
-  ].filter(Boolean).join(" • ") || "Profil użytkownika");
+    Number.isFinite(p.age) && p.age > 0 ? t("personProfile.ageYears", { age: p.age }) : ""
+  ].filter(Boolean).join(" • ") || t("personProfile.userProfileFallback"));
   safeSetText("personDistanceMeta", formatDistanceFromMe(p));
   const matchEl = $("personMatchScore");
   if (matchEl) matchEl.style.display = "";
-  safeSetText("personMatchScore", `${sharedScore(p)}% dopasowania`);
-  safeSetText("personBio", p.bio || "Ta osoba nie dodała jeszcze bio.");
+  safeSetText("personMatchScore", t("personProfile.match", { score: sharedScore(p) }));
+  safeSetText("personBio", p.bio || t("personProfile.emptyBio"));
 
   if (avatar) {
     avatar.innerHTML = p.avatarUrl
@@ -2977,11 +3925,11 @@ function openPerson(personId) {
       safeSetText("personNick", full.nick);
       safeSetText("personMeta", [
         full.city,
-        Number.isFinite(full.age) && full.age > 0 ? `${full.age} lat` : ""
-      ].filter(Boolean).join(" • ") || "Profil użytkownika");
+        Number.isFinite(full.age) && full.age > 0 ? t("personProfile.ageYears", { age: full.age }) : ""
+      ].filter(Boolean).join(" • ") || t("personProfile.userProfileFallback"));
       safeSetText("personDistanceMeta", formatDistanceFromMe(full));
-      safeSetText("personMatchScore", `${sharedScore(full)}% dopasowania`);
-      safeSetText("personBio", full.bio || "Ta osoba nie dodała jeszcze bio.");
+      safeSetText("personMatchScore", t("personProfile.match", { score: sharedScore(full) }));
+      safeSetText("personBio", full.bio || t("personProfile.emptyBio"));
 
       const avatarEl = $("personAvatar");
       if (avatarEl) {
@@ -3018,7 +3966,7 @@ function openPerson(personId) {
 async function blockUser(userId) {
   const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
   if (!token || !userId) {
-    toast("Brak danych użytkownika");
+    toast(t("personProfile.toastMissingUser"));
     return;
   }
 
@@ -3035,11 +3983,11 @@ async function blockUser(userId) {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      toast("Nie udało się zablokować użytkownika");
+      toast(t("personProfile.toastBlockFailed"));
       return;
     }
 
-    toast("Użytkownik został zablokowany");
+    toast(t("personProfile.toastBlocked"));
     closeModal();
 
     // szybki refresh danych
@@ -3050,44 +3998,44 @@ async function blockUser(userId) {
 
   } catch (e) {
     console.error("submitEventReport failed", e);
-    toast(e?.userMessage || e?.message || "Błąd połączenia");
+    toast(e?.userMessage || e?.message || t("personProfile.toastConnectionError"));
   }
 }
 
 
 function openPersonMenu() {
-  openModal("Opcje", `
-    <button class="btn secondary" type="button" onclick="openUserReportModal()">Zgłoś</button>
-    <button class="btn danger mt12" type="button" onclick="blockUser(App.selectedPersonId)">Zablokuj</button>
+  openModal(t("personProfile.options"), `
+    <button class="btn secondary" type="button" onclick="openUserReportModal()">${t("personProfile.report")}</button>
+    <button class="btn danger mt12" type="button" onclick="blockUser(App.selectedPersonId)">${t("personProfile.block")}</button>
   `);
 }
 
 
 function openUserReportModal() {
   if (!App.selectedPersonId) {
-    toast("Nie wybrano użytkownika");
+    toast(t("userReport.toastNoUser"));
     return;
   }
 
-  openModal("Zgłoś użytkownika", `
-    <div data-hide-modal-footer="1" style="display:none;"></div>\n    <div class="tStrong">Powód zgłoszenia</div>
-    <div class="sectionSub mt10">Zgłoszenie trafi do moderacji USLY.</div>
+  openModal(t("userReport.modalTitle"), `
+    <div data-hide-modal-footer="1" style="display:none;"></div>\n    <div class="tStrong">${t("userReport.reasonTitle")}</div>
+    <div class="sectionSub mt10">${t("userReport.subtitle")}</div>
 
-    <label class="mt12">Wybierz powód</label>
+    <label class="mt12">${t("userReport.reasonLabel")}</label>
     <select id="userReportReason">
-      <option value="spam">Spam / scam</option>
-      <option value="harassment">Nękanie lub obraźliwe treści</option>
-      <option value="inappropriate_profile">Nieodpowiedni profil lub bio</option>
-      <option value="impersonation">Podszywanie się</option>
-      <option value="other">Inne</option>
+      <option value="spam">${t("userReport.reasonSpam")}</option>
+      <option value="harassment">${t("userReport.reasonHarassment")}</option>
+      <option value="inappropriate_profile">${t("userReport.reasonProfile")}</option>
+      <option value="impersonation">${t("userReport.reasonImpersonation")}</option>
+      <option value="other">${t("userReport.reasonOther")}</option>
     </select>
 
-    <label class="mt12">Opis opcjonalny</label>
-    <textarea id="userReportDescription" maxlength="1000" placeholder="Dodaj szczegóły, które pomogą moderacji."></textarea>
+    <label class="mt12">${t("userReport.descriptionLabel")}</label>
+    <textarea id="userReportDescription" maxlength="1000" placeholder="${t("userReport.descriptionPlaceholder")}"></textarea>
     <div class="charHint"><span id="userReportDescriptionCount">0</span>/1000</div>
 
-    <button class="btn mt16" type="button" onclick="submitUserReport()">Wyślij zgłoszenie</button>
-    <button class="btn secondary mt12" type="button" onclick="closeModal()">Anuluj</button>
+    <button class="btn mt16" type="button" onclick="submitUserReport()">${t("userReport.submit")}</button>
+    <button class="btn secondary mt12" type="button" onclick="closeModal()">${t("groups.create.cancel")}</button>
   `);
 
   setTimeout(() => {
@@ -3106,12 +4054,12 @@ async function submitUserReport() {
   const description = $("userReportDescription")?.value?.trim() || "";
 
   if (!reportedUserId) {
-    toast("Nie wybrano użytkownika");
+    toast(t("userReport.toastNoUser"));
     return;
   }
 
   if (!reason) {
-    toast("Wybierz powód zgłoszenia");
+    toast(t("userReport.toastNoReason"));
     return;
   }
 
@@ -3128,14 +4076,14 @@ async function submitUserReport() {
     });
 
     if (!data?.success) {
-      toast(data?.error?.message || "Nie udało się wysłać zgłoszenia");
+      toast(data?.error?.message || t("userReport.toastFailed"));
       return;
     }
 
-    toast(`Zgłoszenie wysłane • #${data.data?.ticket || ""}`.trim());
+    toast(t("userReport.toastSent", { ticket: data.data?.ticket || "" }).trim());
     closeModal();
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wysłać zgłoszenia");
+    toast(err?.userMessage || t("userReport.toastFailed"));
   }
 }
 
@@ -3150,11 +4098,11 @@ function startChatFromProfile() {
 
   if (chatState !== "friend") {
     if (chatState === "self") {
-      toast("To Twoje konto");
+      toast(t("friends.selfAccount"));
     } else if (chatState === "pending") {
-      toast("Prywatny czat będzie dostępny po akceptacji znajomości");
+      toast(t("friends.toastChatAfterAccept"));
     } else {
-      toast("Najpierw dodaj tę osobę do znajomych");
+      toast(t("friends.toastAddFirst"));
     }
     return;
   }
@@ -3211,10 +4159,10 @@ function setPersonFriendButtonState(state) {
   btn.disabled = false;
   btn.style.opacity = "";
   btn.classList.remove("secondary");
-  btn.textContent = "Dodaj do znajomych";
+  btn.textContent = t("friends.add");
 
   if (state === "self") {
-    btn.textContent = "To Twoje konto";
+    btn.textContent = t("friends.selfAccount");
     btn.disabled = true;
     btn.style.opacity = "0.7";
     btn.classList.add("secondary");
@@ -3226,7 +4174,7 @@ function setPersonFriendButtonState(state) {
     btn.style.display = "none";
     btn.dataset.state = "friend_status";
     if (badge) {
-      badge.textContent = "Znajomy";
+      badge.textContent = t("friends.friend");
       badge.classList.add("isVisible");
     }
     if (actions) {
@@ -3236,7 +4184,7 @@ function setPersonFriendButtonState(state) {
   }
 
   if (state === "pending") {
-    btn.textContent = "Zaproszenie wysłane";
+    btn.textContent = t("friends.pending");
     btn.disabled = true;
     btn.style.opacity = "0.7";
     btn.classList.add("secondary");
@@ -3256,7 +4204,7 @@ function setPersonChatButtonState(state) {
     btn.disabled = !rules.canMessageParticipants;
     btn.style.opacity = rules.canMessageParticipants ? "" : "0.7";
     btn.classList.toggle("secondary", !rules.canMessageParticipants);
-    btn.textContent = rules.canMessageParticipants ? "Napisz" : "Wiadomości od planu PRO";
+    btn.textContent = rules.canMessageParticipants ? t("friends.message") : t("friends.messagesPro");
     return;
   }
 
@@ -3264,12 +4212,12 @@ function setPersonChatButtonState(state) {
   btn.disabled = false;
   btn.style.opacity = "";
   btn.classList.add("secondary");
-  btn.textContent = "Napisz";
+  btn.textContent = t("friends.message");
   btn.style.display = "none";
 
   if (state === "friend") {
     btn.style.display = "";
-    btn.textContent = "Napisz";
+    btn.textContent = t("friends.message");
     btn.classList.remove("secondary");
     return;
   }
@@ -3323,18 +4271,18 @@ function syncPersonFriendButton(incoming, outgoing, friends) {
 async function addFriendFromProfile() {
   const pid = App.selectedPersonId;
   if (!pid) {
-    toast("Nie wybrano profilu");
+    toast(t("friends.toastNoProfile"));
     return;
   }
 
   if (String(pid) === String(App.currentUserId)) {
-    toast("To Twoje konto");
+    toast(t("friends.selfAccount"));
     return;
   }
 
   const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
   if (!token) {
-    toast("Najpierw się zaloguj");
+    toast(t("friends.toastLogin"));
     return;
   }
 
@@ -3346,16 +4294,16 @@ async function addFriendFromProfile() {
     });
 
     if (!data?.success && data !== null) {
-      toast(data?.error?.message || "Nie udało się wysłać zaproszenia");
+      toast(data?.error?.message || t("friends.toastSendFailed"));
       return;
     }
 
-    toast("Zaproszenie do znajomych zostało wysłane");
+    toast(t("friends.toastSent"));
     await refreshProfileRelations();
     await refreshNotifBadgeCount();
     if (App.currentView === "S12_NOTIFICATIONS") await renderNotifications();
   } catch (err) {
-    toast(err?.userMessage || err?.message || "Nie udało się wysłać zaproszenia");
+    toast(err?.userMessage || err?.message || t("friends.toastSendFailed"));
   }
 }
 
@@ -3438,13 +4386,13 @@ function renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites = 
   const outGroupItems = Array.isArray(outgoingGroupInvites) ? outgoingGroupInvites : [];
 
   if (!inItems.length && !outItems.length && !inGroupItems.length && !outGroupItems.length) {
-    el.innerHTML = '<div class="tMuted">Brak oczekujących zaproszeń.</div>';
+    el.innerHTML = `<div class="tMuted">${t("friends.emptyInvites")}</div>`;
     return;
   }
 
   const incomingHtml = inItems.map(item => {
     const user = item.user || {};
-    const sender = user.nick || `Użytkownik #${user.id || "—"}`;
+    const sender = user.nick || t("friends.defaultUser", { id: user.id || "—" });
     const city = user.city || "";
     const requestId = item.id;
 
@@ -3453,11 +4401,11 @@ function renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites = 
         <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
             <div style="text-align:left;flex:1;cursor:pointer;" onclick="openPerson('${user.id}')">
             <div class="sectionTitle" style="font-size:16px;">${sender}</div>
-            <div class="sectionSub">${city || "Zaproszenie oczekuje na decyzję."}</div>
+            <div class="sectionSub">${city || t("friends.pendingDecision")}</div>
           </div>
           <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-            <button class="btn small" type="button" onclick="respondToFriendRequest(${Number(requestId)}, 'accepted')">Akceptuj</button>
-            <button class="btn secondary small" type="button" onclick="respondToFriendRequest(${Number(requestId)}, 'rejected')">Odrzuć</button>
+            <button class="btn small" type="button" onclick="respondToFriendRequest(${Number(requestId)}, 'accepted')">${t("friends.accept")}</button>
+            <button class="btn secondary small" type="button" onclick="respondToFriendRequest(${Number(requestId)}, 'rejected')">${t("friends.reject")}</button>
           </div>
         </div>
       </div>
@@ -3466,7 +4414,7 @@ function renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites = 
 
   const outgoingHtml = outItems.map(item => {
     const user = item.user || {};
-    const nick = user.nick || `Użytkownik #${user.id || "—"}`;
+    const nick = user.nick || t("friends.defaultUser", { id: user.id || "—" });
     const city = user.city || "";
 
     return `
@@ -3474,9 +4422,9 @@ function renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites = 
         <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
             <div style="text-align:left;flex:1;cursor:pointer;" onclick="openPerson('${user.id}')">
             <div class="sectionTitle" style="font-size:16px;">${nick}</div>
-            <div class="sectionSub">${city || "Zaproszenie wysłane — oczekuje na akceptację."}</div>
+            <div class="sectionSub">${city || t("friends.pendingAccept")}</div>
           </div>
-          <div class="pill">Wysłane</div>
+          <div class="pill">${t("friends.sentPill")}</div>
         </div>
       </div>
     `;
@@ -3485,19 +4433,19 @@ function renderProfileFriendRequests(incoming, outgoing, incomingGroupInvites = 
   const groupInvHtml = incomingGroupInvites.map(inv => {
     const user = inv.user || {};
     const group = inv.group || {};
-    const nick = user.nick || `Użytkownik #${user.id || "—"}`;
-    const groupTitle = group.title || "Grupa";
+    const nick = user.nick || t("friends.defaultUser", { id: user.id || "—" });
+    const groupTitle = group.title || t("friends.defaultGroup");
 
     return `
       <div class="card" style="margin:0;">
         <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
           <div style="text-align:left;flex:1;">
             <div class="sectionTitle" style="font-size:16px;">${groupTitle}</div>
-            <div class="sectionSub">${nick} zaprasza Cię do grupy</div>
+            <div class="sectionSub">${t("friends.groupInviteLine", { user: nick })}</div>
           </div>
           <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-            <button class="btn small" type="button" onclick="respondToGroupInvitation(${Number(inv.id)}, 'accepted')">Akceptuj</button>
-            <button class="btn secondary small" type="button" onclick="respondToGroupInvitation(${Number(inv.id)}, 'rejected')">Odrzuć</button>
+            <button class="btn small" type="button" onclick="respondToGroupInvitation(${Number(inv.id)}, 'accepted')">${t("friends.accept")}</button>
+            <button class="btn secondary small" type="button" onclick="respondToGroupInvitation(${Number(inv.id)}, 'rejected')">${t("friends.reject")}</button>
           </div>
         </div>
       </div>
@@ -3531,13 +4479,13 @@ function renderProfileFriends(items) {
   if (!el) return;
 
   if (!items.length) {
-    el.innerHTML = '<div class="tMuted">Nie masz jeszcze znajomych.</div>';
+    el.innerHTML = `<div class="tMuted">${t("friends.emptyFriends")}</div>`;
     return;
   }
 
   el.innerHTML = items.map(item => {
     const friendId = item.id || item.user_id || item.friend_id;
-    const friendNick = item.nick || item.name || item.friend_nick || `Użytkownik #${friendId || "—"}`;
+    const friendNick = item.nick || item.name || item.friend_nick || t("friends.defaultUser", { id: friendId || "—" });
     const friendCity = item.city || "";
 
     return `
@@ -3545,9 +4493,9 @@ function renderProfileFriends(items) {
         <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
           <div style="text-align:left;flex:1;">
             <div class="sectionTitle" style="font-size:16px;">${friendNick}</div>
-            <div class="sectionSub">${friendCity || "Znajomy w USLY"}</div>
+            <div class="sectionSub">${friendCity || t("friends.friendFallback")}</div>
           </div>
-          <button class="btn secondary small" type="button" onclick="event.stopPropagation(); openChatParticipantProfile('${String(friendId || "")}')">Zobacz profil</button>
+          <button class="btn secondary small" type="button" onclick="event.stopPropagation(); openChatParticipantProfile('${String(friendId || "")}')">${t("friends.viewProfile")}</button>
         </div>
       </div>
     `;
@@ -3558,7 +4506,7 @@ function renderProfileFriends(items) {
 async function respondToGroupInvitation(invitationId, action) {
   const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
   if (!token || !invitationId) {
-    toast("Brak danych zaproszenia do grupy");
+    toast(t("friends.groupInviteMissing"));
     return;
   }
 
@@ -3575,17 +4523,17 @@ async function respondToGroupInvitation(invitationId, action) {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      toast(data?.error?.message || data?.detail || "Nie udało się zaktualizować zaproszenia do grupy");
+      toast(data?.error?.message || data?.detail || t("friends.groupInviteUpdateFailed"));
       return;
     }
 
-    toast(action === "accepted" ? "Zaproszenie do grupy zaakceptowane" : "Zaproszenie do grupy odrzucone");
+    toast(action === "accepted" ? t("friends.groupInviteAccepted") : t("friends.groupInviteRejected"));
     await loadMyGroups();
     await refreshProfileRelations();
     await refreshGroupBadgeCount();
     if (App.currentView === "S12_NOTIFICATIONS") await renderNotifications();
   } catch (_) {
-    toast("Błąd połączenia przy aktualizacji zaproszenia do grupy");
+    toast(t("friends.groupInviteConnectionFailed"));
   }
 }
 
@@ -3593,7 +4541,7 @@ async function respondToGroupInvitation(invitationId, action) {
 async function respondToFriendRequest(requestId, action) {
   const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
   if (!token || !requestId) {
-    toast("Brak danych zaproszenia");
+    toast(t("groups.toast.inviteMissing"));
     return;
   }
 
@@ -3610,14 +4558,14 @@ async function respondToFriendRequest(requestId, action) {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      toast(data.detail || "Nie udało się zaktualizować zaproszenia");
+      toast(data.detail || t("friends.inviteUpdateFailed"));
       return;
     }
 
-    toast(action === "accepted" ? "Zaproszenie zaakceptowane" : "Zaproszenie odrzucone");
+    toast(action === "accepted" ? t("friends.inviteAccepted") : t("friends.inviteRejected"));
     await refreshProfileRelations();
   } catch (_) {
-    toast("Błąd połączenia przy aktualizacji zaproszenia");
+    toast(t("friends.inviteConnectionFailed"));
   }
 }
 
@@ -3630,13 +4578,13 @@ function openChatParticipantProfile(userId) {
   if (!userId) return;
 
   if (String(userId) === String(App.currentUserId)) {
-    toast("To Twoje konto");
+    toast(t("friends.selfAccount"));
     return;
   }
 
   const person = resolvePersonById(userId);
   if (!person) {
-    toast("Profil tej osoby nie jest teraz dostępny");
+    toast(t("friends.toastProfileUnavailable"));
     return;
   }
 
@@ -3709,7 +4657,7 @@ async function renderChatThread() {
 
     if (from === "me") {
       const meName = App.role === "partner"
-        ? (App.partner.company || App.partner.nazwa || "Organizator")
+        ? (App.partner.company || App.partner.nazwa || t("personProfile.organizer"))
         : (App.user.nick || "U");
       const meAvatar = App.role === "partner"
         ? (App.partner.logoUrl || App.partner.logo_url || "")
@@ -3719,7 +4667,7 @@ async function renderChatThread() {
         const src = String(meAvatar).startsWith("http")
           ? meAvatar
           : `${API_BASE_URL}${meAvatar}`;
-        avatar.innerHTML = `<img src="${src}" alt="Twój awatar" style="width:100%;height:100%;object-fit:cover;" />`;
+        avatar.innerHTML = `<img src="${src}" alt="${t("chat.avatarMine")}" style="width:100%;height:100%;object-fit:cover;" />`;
       } else {
         avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f8fbff,#dce7f7);color:#111827;font-weight:900;border:1px solid rgba(255,255,255,.75);">${avatarInitial(meName)}</div>`;
       }
@@ -3727,7 +4675,7 @@ async function renderChatThread() {
     } else {
       const other = getChatOtherPerson();
       const otherAvatar = other?.avatarUrl || other?.logoUrl || other?.logo_url || "";
-      const otherName = other?.nick || other?.company || other?.name || "Użytkownik";
+      const otherName = other?.nick || other?.company || other?.name || t("chat.defaultUser");
       if (otherAvatar) {
         const src = String(otherAvatar).startsWith("http")
           ? otherAvatar
@@ -3736,7 +4684,7 @@ async function renderChatThread() {
       } else {
         avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f8fbff,#dce7f7);color:#111827;font-weight:900;border:1px solid rgba(255,255,255,.75);">${avatarInitial(otherName)}</div>`;
       }
-      avatar.title = "Otwórz profil";
+      avatar.title = t("chat.openProfile");
       avatar.addEventListener("mouseenter", () => {
         avatar.style.transform = "scale(1.04)";
       });
@@ -3782,14 +4730,14 @@ async function renderChatThread() {
 
     if (rawText.startsWith("📣 ")) {
       const lines = rawText.split("\n").map(x => x.trim()).filter(Boolean);
-      const titleLine = lines[0] || "📣 Wydarzenie";
-      const bodyLines = lines.filter(line => line !== "— wiadomość od organizatora —" && line !== titleLine);
+      const titleLine = lines[0] || t("chat.defaultEventTitle");
+      const bodyLines = lines.filter(line => line !== t("chat.organizerMessageMarker") && line !== titleLine);
       const bodyText = bodyLines.join("\n\n");
 
       bubble.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:8px;">
           <div style="font-weight:1000;line-height:1.15;">${escapeHtml(titleLine)}</div>
-          <div style="font-size:12px;font-weight:900;letter-spacing:.01em;opacity:.72;text-transform:uppercase;">Wiadomość od organizatora</div>
+          <div style="font-size:12px;font-weight:900;letter-spacing:.01em;opacity:.72;text-transform:uppercase;">${t("chat.organizerMessage")}</div>
           <div style="line-height:1.45;">${escapeHtml(bodyText)}</div>
           ${metaLabel ? `<div style="font-size:11px;opacity:.65;text-align:right;">${metaLabel.includes("✓✓") ? escapeHtml(metaLabel).replace("✓✓", '<span style="color:#6EE7FF;font-weight:700;">✓✓</span>') : metaLabel.includes("✓") ? escapeHtml(metaLabel).replace("✓", '<span style="opacity:0.4;">✓</span>') : escapeHtml(metaLabel)}</div>` : ``}
         </div>
@@ -3801,7 +4749,7 @@ async function renderChatThread() {
             ${blockedReason
               ? `⚠️ ${escapeHtml(blockedReason)}`
               : pending
-                ? `${escapeHtml(rawText)}<div style="margin-top:6px;font-size:11px;opacity:.72;">Sprawdzamy treść wiadomości…</div>`
+                ? `${escapeHtml(rawText)}<div style="margin-top:6px;font-size:11px;opacity:.72;">${t("chat.checkingContent")}</div>`
                 : escapeHtml(rawText)
             }
           </div>
@@ -3853,7 +4801,7 @@ async function renderChatThread() {
         createdAt: m.createdAt || null,
         isRead: false,
         pending: false,
-        blockedReason: m.blockedReason || "Wiadomość została zablokowana przez moderację USLY i nie została dostarczona.",
+        blockedReason: m.blockedReason || t("chat.blocked.content"),
       })),
       ...localPendingMessages.map(m => ({
         kind: "local",
@@ -3998,8 +4946,8 @@ async function sendChat() {
       rawMessage.toLowerCase().includes("moderac");
 
     const blockedReason = rawMessage.includes("message_blocked_link")
-      ? "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona."
-      : "Treść została zablokowana przez moderację USLY i nie została dostarczona.";
+      ? t("chat.blocked.link")
+      : t("chat.blocked.content");
 
     const blockedItem = {
       id: pendingId,
@@ -4018,7 +4966,7 @@ async function sendChat() {
     await renderChatThread();
 
     if (!isModerated) {
-      toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+      toast(err?.userMessage || t("chat.toast.sendFailed"));
     }
   } finally {
     sendChat.__busy = false;
@@ -4030,13 +4978,13 @@ function openChatMenu() {
   const chatId = App.selectedChatId;
   const isMuted = isChatMuted(chatId);
 
-  openModal("Menu czatu", `
+  openModal(t("chat.menu.title"), `
     <button class="btn secondary" type="button"
-      onclick="setChatMuted('${chatId}', ${isMuted ? "false" : "true"}); closeModal(); renderChatList(); toast('${isMuted ? "Powiadomienia dla rozmowy zostały włączone" : "Rozmowa została wyciszona"}');">
-      ${isMuted ? "Włącz powiadomienia" : "Wycisz rozmowę"}
+      onclick="setChatMuted('${chatId}', ${isMuted ? "false" : "true"}); closeModal(); renderChatList(); toast('${isMuted ? t("chat.toast.notificationsOn") : t("chat.toast.notificationsMuted")}');">
+      ${isMuted ? t("chat.menu.notificationsOn") : t("chat.menu.notificationsOff")}
     </button>
 
-    <button class="btn danger mt12" type="button" onclick="blockUser(Number(String(App.selectedChatUserId).replace('u', '')))">Zablokuj</button>
+    <button class="btn danger mt12" type="button" onclick="blockUser(Number(String(App.selectedChatUserId).replace('u', '')))">${t("common.block")}</button>
   `);
 }
 
@@ -4074,9 +5022,7 @@ function openEvent(eventId) {
   safeSetText("evPlaceTitle", eventPlaceName);
   safeSetText(
     "evPlaceMeta",
-    eventPlaceAddress
-      ? eventPlaceAddress
-      : (hasEventCoords ? "Lokalizacja wydarzenia zapisana na mapie" : "Dokładna lokalizacja nie została jeszcze wybrana")
+    ev.address || ev.where || ev.city || (hasEventCoords ? t("eventDetail.locationSaved") : t("eventDetail.locationMissing"))
   );
 
   const chips = $("evInterestChips");
@@ -4087,11 +5033,11 @@ function openEvent(eventId) {
 
   safeSetText("evDesc", ev.desc);
 
-  const organizerName = ev.organizer?.name || "Organizator";
+  const organizerName = ev.organizer?.name || t("eventDetail.organizer");
   const organizerMeta = [
     getPartnerCategoryLabel(ev.organizer?.category || ""),
     ev.city || ""
-  ].filter(Boolean).join(" • ") || "Organizator wydarzenia";
+  ].filter(Boolean).join(" • ") || t("eventDetail.organizerMeta");
 
   safeSetText("evOrganizerName", organizerName);
   const miniMapEl = $("evPlaceMiniMap");
@@ -4147,7 +5093,7 @@ function openEvent(eventId) {
     const src = ev.organizer?.logoUrl || "";
     organizerLogo.innerHTML = src
       ? `<img src="${String(src).startsWith("http") ? src : `${API_BASE_URL}${src}`}" alt="${organizerName}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
-      : premiumIcon("org", organizerName || "Organizator");
+      : premiumIcon("org", organizerName || t("eventDetail.organizer"));
   }
 
   const capacityLine = $("evCapacityLine");
@@ -4174,7 +5120,7 @@ function openEvent(eventId) {
   const legalBoxEl = $("evTicketLegalBox");
 
   if (ev.paidMode === "free") {
-    if (typeEl) typeEl.textContent = "Bezpłatne";
+    if (typeEl) typeEl.textContent = t("eventDetail.ticketFree");
     if (pricePill) pricePill.textContent = "0 zł";
     if (lineEl) lineEl.textContent = "";
     if (linkEl) {
@@ -4183,18 +5129,18 @@ function openEvent(eventId) {
     }
     if (legalBoxEl) legalBoxEl.style.display = "none";
   } else if (ev.paidMode === "paid_fixed") {
-    if (typeEl) typeEl.textContent = "Płatne — cena stała";
+    if (typeEl) typeEl.textContent = t("eventDetail.ticketFixed");
     if (pricePill) pricePill.textContent = `${ev.price} zł`;
-    if (lineEl) lineEl.textContent = `Cena: ${ev.price} zł (zakup / rezerwacja poza aplikacją).`;
+    if (lineEl) lineEl.textContent = t("eventDetail.priceLine", { price: ev.price });
     if (linkEl) {
       linkEl.href = ev.ticketLink || "#";
       linkEl.style.display = "";
     }
     if (legalBoxEl) legalBoxEl.style.display = "";
   } else {
-    if (typeEl) typeEl.textContent = "Płatne — przedział";
+    if (typeEl) typeEl.textContent = t("eventDetail.ticketRange");
     if (pricePill) pricePill.textContent = `${ev.priceFrom}–${ev.priceTo} zł`;
-    if (lineEl) lineEl.textContent = `Cena: ${ev.priceFrom}–${ev.priceTo} zł (zakup / rezerwacja poza aplikacją).`;
+    if (lineEl) lineEl.textContent = t("eventDetail.priceRangeLine", { from: ev.priceFrom, to: ev.priceTo });
     if (linkEl) {
       linkEl.href = ev.ticketLink || "#";
       linkEl.style.display = "";
@@ -4206,6 +5152,10 @@ function openEvent(eventId) {
   safeSetText("evBadge", App.user.plan.toUpperCase());
 
   go("S7B_EVENT_DETAIL");
+  safeSetText(
+    "evPlaceMeta",
+    ev.address || ev.where || ev.city || (hasEventCoords ? t("eventDetail.locationSaved") : t("eventDetail.locationMissing"))
+  );
   syncEventDetailButtons();
 }
 
@@ -4229,7 +5179,7 @@ function addSelectedEventToCalendar() {
   if (!ev) return;
 
   if (!ev.start_at) {
-    toast("To wydarzenie nie ma jeszcze daty.");
+    toast(t("eventDetail.noDateToast"));
     return;
   }
 
@@ -4241,7 +5191,7 @@ function addSelectedEventToCalendar() {
     ev.desc || "",
     "",
     ev.organizer?.name ? `Organizator: ${ev.organizer.name}` : "",
-    "Dodano z aplikacji USLY."
+    t("eventDetail.calendarDesc")
   ].filter(Boolean).join("\n");
 
   const ics = [
@@ -4255,7 +5205,7 @@ function addSelectedEventToCalendar() {
     `DTSTAMP:${formatIcsDate(new Date())}`,
     `DTSTART:${start}`,
     `DTEND:${end}`,
-    `SUMMARY:${escapeIcsText(ev.title || "Wydarzenie USLY")}`,
+    `SUMMARY:${escapeIcsText(ev.title || t("eventDetail.defaultSummary"))}`,
     `LOCATION:${escapeIcsText(location)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     "END:VEVENT",
@@ -4274,7 +5224,7 @@ function addSelectedEventToCalendar() {
   a.remove();
   URL.revokeObjectURL(url);
 
-  toast("Pobrano plik kalendarza.");
+  toast(t("eventDetail.calendarDownloaded"));
 }
 
 async function toggleSaveEvent() {
@@ -4287,19 +5237,19 @@ async function toggleSaveEvent() {
         method: "DELETE",
       });
       if (!res?.success) {
-        toast(res?.error?.message || "Nie udało się usunąć z obserwowanych");
+        toast(res?.error?.message || t("eventDetail.saveRemoveFailed"));
         return;
       }
-      toast("Usunięto z obserwowanych");
+      toast(t("eventDetail.saveRemoved"));
     } else {
       const res = await apiFetch(`/events/${ev.id}/save`, {
         method: "POST",
       });
       if (!res?.success) {
-        toast(res?.error?.message || "Nie udało się dodać do obserwowanych");
+        toast(res?.error?.message || t("eventDetail.saveAddFailed"));
         return;
       }
-      toast("Dodano do obserwowanych");
+      toast(t("eventDetail.saveAdded"));
     }
 
     await loadEvents();
@@ -4313,7 +5263,7 @@ async function toggleSaveEvent() {
       renderNearby();
     }
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zmienić obserwowanych wydarzeń");
+    toast(err?.userMessage || t("eventDetail.saveToggleFailed"));
   }
 }
 
@@ -4327,19 +5277,19 @@ async function toggleInterestedEvent() {
         method: "DELETE",
       });
       if (!res?.success) {
-        toast(res?.error?.message || "Nie udało się wycofać zapisu");
+        toast(res?.error?.message || t("eventDetail.joinRemoveFailed"));
         return;
       }
-      toast("Wycofano zapis na wydarzenie");
+      toast(t("eventDetail.joinRemoved"));
     } else {
       const res = await apiFetch(`/events/${ev.id}/join`, {
         method: "POST",
       });
       if (!res?.success) {
-        toast(res?.error?.message || "Nie udało się zapisać na wydarzenie");
+        toast(res?.error?.message || t("eventDetail.joinAddFailed"));
         return;
       }
-      toast("Jesteś zapisany na wydarzenie");
+      toast(t("eventDetail.joinAdded"));
     }
 
     await loadEvents();
@@ -4353,15 +5303,15 @@ async function toggleInterestedEvent() {
       renderNearby();
     }
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zmienić zapisu na wydarzenie");
+    toast(err?.userMessage || t("eventDetail.joinToggleFailed"));
   }
 }
 
 function openShare() {
-  openModal("Udostępnij", `
-    <div class="tStrong">Udostępnianie</div>
-    <div class="sectionSub mt10">W wersji produkcyjnej: deep link / share sheet.</div>
-    <button class="btn mt16" type="button" onclick="toast('Skopiowano link '); closeModal();">Skopiuj link</button>
+  openModal(t("eventDetail.shareTitle"), `
+    <div class="tStrong">${t("eventDetail.shareHeading")}</div>
+    <div class="sectionSub mt10">${t("eventDetail.shareSub")}</div>
+    <button class="btn mt16" type="button" onclick="toast(t('eventDetail.copyToast')); closeModal();">${t("eventDetail.copyLink")}</button>
   `);
 }
 
@@ -4370,30 +5320,30 @@ function openEventReportModal() {
   const eventId = App.selectedEventId;
 
   if (!eventId) {
-    toast("Brak wydarzenia");
+    toast(t("eventReport.noEvent"));
     return;
   }
 
-  openModal("Zgłoś wydarzenie", `
+  openModal(t("eventReport.modalTitle"), `
     <div data-hide-modal-footer="1" style="display:none;"></div>
 
-    <div class="tStrong">Powód zgłoszenia</div>
+    <div class="tStrong">${t("eventReport.reasonTitle")}</div>
 
     <select id="eventReportReason" class="input mt8">
-      <option value="">Wybierz powód</option>
-      <option value="spam">Spam / scam</option>
-      <option value="misleading">Fałszywe lub mylące wydarzenie</option>
-      <option value="inappropriate">Nieodpowiednia treść</option>
-      <option value="unsafe">Podejrzane lub niebezpieczne wydarzenie</option>
-      <option value="other">Inne</option>
+      <option value="">${t("eventReport.chooseReason")}</option>
+      <option value="spam">${t("eventReport.reasonSpam")}</option>
+      <option value="misleading">${t("eventReport.reasonMisleading")}</option>
+      <option value="inappropriate">${t("eventReport.reasonInappropriate")}</option>
+      <option value="unsafe">${t("eventReport.reasonUnsafe")}</option>
+      <option value="other">${t("eventReport.reasonOther")}</option>
     </select>
 
     <textarea id="eventReportDesc" class="mt12" maxlength="1000"
-      placeholder="Dodatkowe informacje (opcjonalnie)"></textarea>
+      placeholder="${t("eventReport.descriptionPlaceholder")}"></textarea>
 
     <div class="row mt16">
-      <button class="btn" type="button" onclick="submitEventReport()">Wyślij zgłoszenie</button>
-      <button class="btn secondary" type="button" onclick="closeModal()">Anuluj</button>
+      <button class="btn" type="button" onclick="submitEventReport()">${t("eventReport.submit")}</button>
+      <button class="btn secondary" type="button" onclick="closeModal()">${t("groups.create.cancel")}</button>
     </div>
   `);
 }
@@ -4404,7 +5354,7 @@ async function submitEventReport() {
   const description = $("eventReportDesc")?.value || "";
 
   if (!reason) {
-    toast("Wybierz powód zgłoszenia");
+    toast(t("eventReport.toastNoReason"));
     return;
   }
 
@@ -4421,22 +5371,22 @@ async function submitEventReport() {
     });
 
     if (!res?.success) {
-      toast(res?.error?.message || "Nie udało się wysłać zgłoszenia");
+      toast(res?.error?.message || t("eventReport.toastFailed"));
       return;
     }
 
-    toast(`Zgłoszenie wysłane • #${res.data.ticket}`);
+    toast(t("eventReport.toastSent", { ticket: res.data.ticket }));
     closeModal();
 
   } catch (e) {
-    toast("Błąd połączenia");
+    toast(t("eventReport.toastConnection"));
   }
 }
 
 function openEventMenu() {
-  openModal("Opcje wydarzenia", `
-    <button class="btn secondary" type="button" onclick="openEventReportModal();">Zgłoś</button>
-    <button class="btn danger mt12" type="button" onclick="toast('Ukrywanie wydarzeń będzie dostępne w kolejnej aktualizacji.'); closeModal();">Ukryj</button>
+  openModal(t("eventMenu.title"), `
+    <button class="btn secondary" type="button" onclick="openEventReportModal();">${t("eventMenu.report")}</button>
+    <button class="btn danger mt12" type="button" onclick="toast(t('eventMenu.hideSoon')); closeModal();">${t("eventMenu.hide")}</button>
   `);
 }
 
@@ -4550,7 +5500,7 @@ async function openGroup(groupId) {
 
   if (inviteBtn) {
     inviteBtn.disabled = !canInvite;
-    inviteBtn.textContent = canInvite ? "Dodaj znajomego" : "Dostępne od PREMIUM";
+    inviteBtn.textContent = canInvite ? t("groupPeople.addFriend") : t("groupPeople.availablePremium");
   }
 
   if (inviteHook) {
@@ -4571,12 +5521,12 @@ async function openGroup(groupId) {
   if (inputDock) {
     inputDock.innerHTML = inGroup
       ? `
-          <input id="groupInput" type="text" placeholder="Napisz w grupie." />
-          <button class="btn small" id="groupSendBtn" type="button" onclick="sendGroup()" aria-label="Wyślij wiadomość do grupy">➜</button>
+          <input id="groupInput" type="text" placeholder="${t("groupThread.placeholder")}" />
+          <button class="btn small" id="groupSendBtn" type="button" onclick="sendGroup()" aria-label="${t("groupThread.sendAria")}">➜</button>
         `
       : `
           <button class="btn" type="button" style="width:100%;" onclick="joinGroup('${groupId}')">
-            Dołącz do grupy
+            ${t("groupThread.join")}
           </button>
         `;
   }
@@ -4587,7 +5537,7 @@ async function openGroup(groupId) {
   if (currentInput) {
     currentInput.disabled = false;
     currentInput.value = "";
-    currentInput.placeholder = "Napisz w grupie.";
+    currentInput.placeholder = t("groupThread.placeholder");
   }
   if (currentSendBtn) {
     currentSendBtn.disabled = false;
@@ -4616,17 +5566,17 @@ async function openGroup(groupId) {
         <div style="padding:16px;">
           <div class="tStrong">${g.title}</div>
           <div class="sectionSub" style="margin-top:6px;">
-            ${g.desc || "Grupa oparta na wspólnych zainteresowaniach."}
+            ${g.desc || t("groupThread.defaultDesc")}
           </div>
           <div class="tMuted" style="margin-top:12px;">
-            Dołącz do grupy, aby zobaczyć rozmowę i napisać wiadomość.
+            ${t("groupThread.join")}, aby zobaczyć rozmowę i napisać wiadomość.
           </div>
         `;
       go("S8B_GROUP_THREAD");
       return;
     }
 
-    box.innerHTML = '<div class="tMuted" style="padding:16px; text-align:center;">Ładowanie wiadomości...</div>';
+    box.innerHTML = `<div class="tMuted" style="padding:16px; text-align:center;">${t("groupThread.loading")}</div>`;
     const seenAt = parseUslyTimestamp(readGroupSeenMap()[String(groupId)]);
 
     try {
@@ -4654,7 +5604,7 @@ async function openGroup(groupId) {
           createdAt: m.createdAt || null,
           isRead: false,
           pending: false,
-          blockedReason: m.blockedReason || "Wiadomość została zablokowana przez moderację USLY i nie została dostarczona.",
+          blockedReason: m.blockedReason || t("chat.blocked.content"),
         })),
         ...localPendingGroupMessages.map(m => ({
           kind: "local",
@@ -4675,7 +5625,7 @@ async function openGroup(groupId) {
       if (!timelineItems.length) {
         box.innerHTML = `
           <div class="tMuted" style="padding:16px; text-align:center;">
-            Nie ma jeszcze wiadomości w tej grupie. Napisz jako pierwsza osoba.
+            ${t("groupThread.empty")}
           </div>
         `;
       } else {
@@ -4698,28 +5648,28 @@ async function openGroup(groupId) {
             : "";
 
           const avatarHtml = person?.avatarUrl
-            ? `<img src="${String(person.avatarUrl).startsWith("http") ? person.avatarUrl : `${API_BASE_URL}${person.avatarUrl}`}" alt="${escapeHtml(person.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;" />`
+            ? `<img src="${String(person.avatarUrl).startsWith("http") ? person.avatarUrl : `${API_BASE_URL}${person.avatarUrl}`}" alt="${escapeHtml(person.nick || t("chat.defaultUser"))}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;" />`
             : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(person?.nick || "U"))}" data-name="${escapeHtml(person?.nick || "U")}">${avatarInitial(person?.nick || "U")}</div>`;
 
           const avatarButton = `
             <button
               type="button"
               onclick="openPerson('${String(m.senderUserId)}')"
-              title="Otwórz profil"
+              title="${t("chat.openProfile")}"
               style="width:32px;height:32px;min-width:32px;border-radius:999px;border:${from === "me" ? "0" : "1px solid rgba(16,24,40,0.08)"};padding:0;display:inline-flex;align-items:center;justify-content:center;background:#f2f4f7;overflow:hidden;box-shadow:${from === "me" ? "none" : "0 2px 8px rgba(16,24,40,0.08)"};cursor:pointer;flex-shrink:0;"
             >${avatarHtml}</button>
           `;
 
-          const senderLabel = from === "me" ? "Ty" : escapeHtml(person?.nick || `Użytkownik #${String(m.senderUserId)}`);
+          const senderLabel = from === "me" ? t("groupThread.me") : escapeHtml(person?.nick || t("friends.defaultUser", { id: String(m.senderUserId) }));
           const dividerHtml = isNewForCurrentUser
-            ? `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;"><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div><div class="sectionSub" style="white-space:nowrap;">Nowe wiadomości</div><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div></div>`
+            ? `<div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;"><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div><div class="sectionSub" style="white-space:nowrap;">${t("groupThread.newMessages")}</div><div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div></div>`
             : ``;
 
           if (isNewForCurrentUser) newDividerInserted = true;
 
           const contentHtml = isBlocked
             ? `⚠️ ${escapeHtml(m.blockedReason)}`
-            : `${escapeHtml(m.text || "")}${isPending ? `<div style="margin-top:6px;font-size:11px;opacity:.72;">Sprawdzamy treść wiadomości…</div>` : ""}`;
+            : `${escapeHtml(m.text || "")}${isPending ? `<div style="margin-top:6px;font-size:11px;opacity:.72;">${t("chat.checkingContent")}</div>` : ""}`;
 
           return `
             ${dividerHtml}
@@ -4743,7 +5693,7 @@ async function openGroup(groupId) {
       }
     } catch (err) {
       console.error("load group messages failed", err);
-      box.innerHTML = '<div class="tMuted" style="padding:16px; text-align:center;">Nie udało się załadować wiadomości grupy.</div>';
+      box.innerHTML = `<div class="tMuted" style="padding:16px; text-align:center;">${t("groupThread.loadFailed")}</div>`;
     }
   }
 
@@ -4809,7 +5759,7 @@ async function sendGroup() {
   sendGroup.__busy = true;
   const groupId = App.selectedGroupId;
   if (!isUserInGroup(groupId)) {
-    toast("Dołącz do grupy, aby pisać wiadomości");
+    toast(t("groupThread.joinToWrite"));
     return;
   }
 
@@ -4841,7 +5791,7 @@ async function sendGroup() {
     });
 
     if (!res?.success) {
-      throw new Error(res?.error?.message || "Nie udało się wysłać wiadomości");
+      throw new Error(res?.error?.message || t("chat.toast.sendFailed"));
     }
 
     openGroup.__localPending = (openGroup.__localPending || []).filter(m => m.id !== pendingId);
@@ -4859,8 +5809,8 @@ async function sendGroup() {
       rawMessage.toLowerCase().includes("moderac");
 
     const blockedReason = rawMessage.includes("message_blocked_link")
-      ? "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona."
-      : "Treść została zablokowana przez moderację USLY i nie została dostarczona.";
+      ? t("chat.blocked.link")
+      : t("chat.blocked.content");
 
     const blockedItem = {
       id: pendingId,
@@ -4879,7 +5829,7 @@ async function sendGroup() {
     await openGroup(groupId);
 
     if (!isModerated) {
-      toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+      toast(err?.userMessage || t("chat.toast.sendFailed"));
     }
   } finally {
     sendGroup.__busy = false;
@@ -4892,7 +5842,7 @@ async function sendGroup() {
 async function joinGroup(groupId) {
   try {
     if (!canJoinMoreGroups()) {
-      toast("Limit grup dla Twojego planu został osiągnięty");
+      toast(t("groupThread.limitReached"));
       return;
     }
 
@@ -4902,16 +5852,16 @@ async function joinGroup(groupId) {
 
     if (res?.success) {
       await loadMyGroups();
-      toast("Dołączono do grupy");
+      toast(t("groups.toast.joined"));
       renderAll();
       openGroup(groupId);
     } else {
-      toast("Nie udało się dołączyć do grupy");
+      toast(t("groups.toast.joinFailed"));
     }
 
   } catch (err) {
     console.error("joinGroup failed", err);
-    toast("Błąd dołączania do grupy");
+    toast(t("groups.toast.joinConnectionFailed"));
   }
 }
 
@@ -4924,16 +5874,16 @@ async function closeGroup(groupId) {
 
     if (res?.success) {
       await loadMyGroups();
-      toast("Grupa została zamknięta");
+      toast(t("groups.toast.closed"));
       App.selectedGroupId = null;
       renderAll();
     } else {
-      toast("Nie udało się zamknąć grupy");
+      toast(t("groups.toast.closeFailed"));
     }
 
   } catch (err) {
     console.error("closeGroup failed", err);
-    toast(err?.userMessage || "Błąd zamykania grupy");
+    toast(err?.userMessage || t("groups.toast.closeConnectionFailed"));
   }
 }
 
@@ -4947,15 +5897,15 @@ async function leaveGroup(groupId) {
 
     if (res?.success) {
       await loadMyGroups();
-      toast("Opuszczono grupę");
+      toast(t("groups.toast.left"));
       renderAll();
     } else {
-      toast("Nie udało się opuścić grupy");
+      toast(t("groups.toast.leaveFailed"));
     }
 
   } catch (err) {
     console.error("leaveGroup failed", err);
-    toast(err?.userMessage || "Błąd opuszczania grupy");
+    toast(err?.userMessage || t("groups.toast.leaveConnectionFailed"));
   }
 }
 function openGroupMenu() {
@@ -4967,26 +5917,26 @@ function openGroupMenu() {
   const isCreator = !!g?.isCreator;
   const isMuted = isGroupMuted(groupId);
 
-  openModal("Menu grupy", `
-    <button class="btn secondary" type="button" onclick="setGroupMuted('${groupId}', ${isMuted ? "false" : "true"}); closeModal(); renderGroups(); refreshGroupBadgeCount(); toast('${isMuted ? "Powiadomienia dla grupy zostały włączone" : "Grupa została wyciszona"}');">
-      ${isMuted ? "Włącz powiadomienia" : "Wycisz grupę"}
+  openModal(t("groups.menu.title"), `
+    <button class="btn secondary" type="button" onclick="setGroupMuted('${groupId}', ${isMuted ? "false" : "true"}); closeModal(); renderGroups(); refreshGroupBadgeCount(); toast('${isMuted ? t("groups.toast.notificationsOn") : t("groups.toast.notificationsMuted")}');">
+      ${isMuted ? t("groups.menu.notificationsOn") : t("groups.menu.notificationsOff")}
     </button>
 
     <button class="btn secondary mt12" type="button"
              onclick="closeModal(); openGroupPeopleScreen();">
-             Ludzie w grupie
+             ${t("groups.menu.people")}
            </button>
 
     ${
       inGroup && isCreator
         ? `<button class="btn danger mt12" type="button"
              onclick="closeGroup('${groupId}'); closeModal();">
-             Zamknij grupę
+             ${t("groups.menu.close")}
            </button>`
         : inGroup
           ? `<button class="btn danger mt12" type="button"
                onclick="leaveGroup('${groupId}'); closeModal();">
-               Opuść grupę
+               ${t("groups.menu.leave")}
              </button>`
           : ``
     }
@@ -4998,7 +5948,7 @@ function openGroupMenu() {
 async function inviteFriendToSelectedGroup(userId) {
   const groupId = App.selectedGroupId;
   if (!groupId || !userId) {
-    toast("Brak danych zaproszenia");
+    toast(t("groups.toast.inviteMissing"));
     return;
   }
 
@@ -5010,16 +5960,16 @@ async function inviteFriendToSelectedGroup(userId) {
     });
 
     if (res?.success) {
-      toast("Zaproszenie do grupy zostało wysłane");
+      toast(t("groups.toast.inviteSent"));
       await refreshProfileRelations();
       if (App.currentView === "S12_NOTIFICATIONS") await renderNotifications();
       closeModal();
     } else {
-      toast("Nie udało się wysłać zaproszenia do grupy");
+      toast(t("groups.toast.inviteFailed"));
     }
   } catch (err) {
     console.error("inviteFriendToSelectedGroup failed", err);
-    toast(err?.userMessage || "Nie udało się wysłać zaproszenia do grupy");
+    toast(err?.userMessage || t("groups.toast.inviteFailed"));
   }
 }
 
@@ -5041,7 +5991,7 @@ async function openGroupPeopleScreen() {
   const g = allGroups.find(x => String(x.id) === String(App.selectedGroupId));
   if (!g) return;
 
-  safeSetText("groupPeopleTitle", "Ludzie w grupie");
+  safeSetText("groupPeopleTitle", t("groups.menu.people"));
   safeSetText("groupPeopleTagline", g.title ? `${g.title}${g.interestTag ? ` • #${g.interestTag}` : ""}` : (g.interestTag ? `#${g.interestTag}` : ""));
 
   let groupPeople = { members: [], invited: [] };
@@ -5090,14 +6040,14 @@ async function openGroupPeopleScreen() {
             <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
             <div class="groupPeopleText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">Wspólne: ${commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ")}</div>
+              <div class="listMeta">${t("groupPeople.shared", { tags: commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ") })}</div>
             </div>
           </div>
           <div class="groupPeopleAction">
-            <button class="btn small" type="button" onclick="inviteFriendToSelectedGroup('${p.id}')">Zaproś</button>
+            <button class="btn small" type="button" onclick="inviteFriendToSelectedGroup('${p.id}')">${t("groupPeople.invite")}</button>
           </div>
         </div>
-      `).join("") || '<div class="tMuted">Brak osób do zaproszenia.</div>';
+      `).join("") || `<div class="tMuted">${t("groupPeople.emptyInvite")}</div>`;
 
   const membersHtml = members.map(p => `
         <div class="listItem groupPeopleRow" style="margin-bottom:10px; cursor:pointer;" onclick="${String(p.id) === myId ? "" : `openPerson('${String(p.id)}')`}">
@@ -5105,20 +6055,20 @@ async function openGroupPeopleScreen() {
             <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupPeopleText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">${p.city || "Grupowicz w USLY"}</div>
+              <div class="listMeta">${p.city || t("groupPeople.memberFallback")}</div>
             </div>
           </div>
           <div class="groupPeopleAction">
             ${p.is_founder
-              ? `<button class="btn secondary small" type="button" disabled>Założyciel</button>`
+              ? `<button class="btn secondary small" type="button" disabled>${t("groupPeople.founder")}</button>`
               : (String(p.id) === myId
-                  ? `<button class="btn secondary small" type="button" disabled>Twój profil</button>`
-                  : `<button class="btn secondary small" type="button" onclick="event.stopPropagation(); openPerson('${String(p.id)}')">Zobacz profil</button>`
+                  ? `<button class="btn secondary small" type="button" disabled>${t("groupPeople.yourProfile")}</button>`
+                  : `<button class="btn secondary small" type="button" onclick="event.stopPropagation(); openPerson('${String(p.id)}')">${t("groupPeople.viewProfile")}</button>`
                 )
             }
           </div>
         </div>
-      `).join("") || '<div class="tMuted">Brak grupowiczów.</div>';
+      `).join("") || `<div class="tMuted">${t("groupPeople.emptyMembers")}</div>`;
 
   const invitedHtml = invited.map(p => `
         <div class="listItem groupPeopleRow" style="margin-bottom:10px; cursor:pointer;" onclick="openPerson('${String(p.id)}')">
@@ -5126,14 +6076,14 @@ async function openGroupPeopleScreen() {
             <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupPeopleText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">${p.city || "Zaproszenie oczekuje"}</div>
+              <div class="listMeta">${p.city || t("groupPeople.invitePending")}</div>
             </div>
           </div>
           <div class="groupPeopleAction">
-            <button class="btn secondary small" type="button" onclick="event.stopPropagation(); openPerson('${String(p.id)}')">Zobacz profil</button>
+            <button class="btn secondary small" type="button" onclick="event.stopPropagation(); openPerson('${String(p.id)}')">${t("groupPeople.viewProfile")}</button>
           </div>
         </div>
-      `).join("") || '<div class="tMuted">Brak oczekujących zaproszeń.</div>';
+      `).join("") || `<div class="tMuted">${t("groupPeople.emptyInvited")}</div>`;
 
   const activeHtml = App.groupInviteTab === "members"
     ? membersHtml
@@ -5141,19 +6091,35 @@ async function openGroupPeopleScreen() {
 
   const screen = $("groupPeopleScreen");
   if (screen) {
+    const memberCount = members.length;
+    const invitedCount = invited.length;
+    const inviteCount = similarFriends.length;
     screen.innerHTML = `
       <div class="groupInviteModal">
-        <div class="sectionTitle">Ludzie w grupie</div>
-        <div class="sectionSub mt8">
-          Zarządzaj zaproszeniami i sprawdź, kto już jest w grupie.
+        <div class="groupPeopleSummary">
+          <div class="groupPeopleStat">
+            <span>${memberCount}</span>
+            <small>${t("groupPeople.membersTab")}</small>
+          </div>
+          <div class="groupPeopleStat">
+            <span>${invitedCount}</span>
+            <small>${t("groupPeople.invitedTab")}</small>
+          </div>
+          <div class="groupPeopleStat">
+            <span>${canInvite ? inviteCount : 0}</span>
+            <small>${t("groupPeople.inviteTab")}</small>
+          </div>
         </div>
-        ${canInvite ? "" : `<div class="tMuted mt8">Zapraszanie do grup jest dostępne od planu PREMIUM.</div>`}
-        <div class="segmented mt12">
-          <button class="segBtn ${App.groupInviteTab === "invite" ? "on" : ""}" type="button" ${canInvite ? `onclick="App.groupInviteTab='invite'; openGroupPeopleScreen()"` : "disabled aria-disabled='true'"}>Do zaproszenia</button>
-          <button class="segBtn ${App.groupInviteTab === "members" ? "on" : ""}" type="button" onclick="App.groupInviteTab='members'; openGroupPeopleScreen()">Grupowicze</button>
-          <button class="segBtn ${App.groupInviteTab === "invited" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invited'; openGroupPeopleScreen()">Zaproszeni</button>
+
+        ${canInvite ? "" : `<div class="groupPeopleNotice">${t("groupPeople.premiumOnly")}</div>`}
+
+        <div class="segmented mt14">
+          <button class="segBtn ${App.groupInviteTab === "invite" ? "on" : ""}" type="button" ${canInvite ? `onclick="App.groupInviteTab='invite'; openGroupPeopleScreen()"` : "disabled aria-disabled='true'"}>${t("groupPeople.inviteTab")}</button>
+          <button class="segBtn ${App.groupInviteTab === "members" ? "on" : ""}" type="button" onclick="App.groupInviteTab='members'; openGroupPeopleScreen()">${t("groupPeople.membersTab")}</button>
+          <button class="segBtn ${App.groupInviteTab === "invited" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invited'; openGroupPeopleScreen()">${t("groupPeople.invitedTab")}</button>
         </div>
-        <div class="mt16">
+
+        <div class="mt14">
           ${activeHtml}
         </div>
       </div>
@@ -5177,7 +6143,7 @@ async function openInviteFriendToGroup() {
   if (!g) return;
 
   if (!canInviteFriendsToGroup()) {
-    toast("Dodawanie znajomych do grup jest dostępne od planu PREMIUM");
+    toast(t("groupPeople.toastPremium"));
     return;
   }
 
@@ -5234,14 +6200,14 @@ async function openInviteFriendToGroup() {
             <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
             <div class="groupInviteCardText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">Wspólne: ${commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ")}</div>
+              <div class="listMeta">${t("groupPeople.shared", { tags: commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ") })}</div>
             </div>
           </div>
           <div class="groupInviteCardAction">
-            <button class="btn small" type="button" onclick="inviteFriendToSelectedGroup('${p.id}')">Dodaj</button>
+            <button class="btn small" type="button" onclick="inviteFriendToSelectedGroup('${p.id}')">${t("groupPeople.invite")}</button>
           </div>
         </div>
-      `).join("") || '<div class="tMuted">Brak osób do zaproszenia.</div>';
+      `).join("") || `<div class="tMuted">${t("groupPeople.emptyInvite")}</div>`;
 
   const membersHtml = members.map(p => `
         <div class="listItem groupInviteCard" style="margin-bottom:10px; cursor:pointer;" onclick="openChatParticipantProfile('${String(p.id)}'); closeModal();">
@@ -5249,17 +6215,17 @@ async function openInviteFriendToGroup() {
             <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupInviteCardText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">${p.city || "Grupowicz w USLY"}</div>
+              <div class="listMeta">${p.city || t("groupPeople.memberFallback")}</div>
             </div>
           </div>
           <div class="groupInviteCardAction">
             ${p.is_founder
-              ? `<button class="btn secondary small" type="button" disabled>Założyciel</button>`
-              : `<button class="btn secondary small" type="button">Zobacz profil</button>`
+              ? `<button class="btn secondary small" type="button" disabled>${t("groupPeople.founder")}</button>`
+              : `<button class="btn secondary small" type="button">${t("groupPeople.viewProfile")}</button>`
             }
           </div>
         </div>
-      `).join("") || '<div class="tMuted">Brak grupowiczów.</div>';
+      `).join("") || `<div class="tMuted">${t("groupPeople.emptyMembers")}</div>`;
 
   const invitedHtml = invited.map(p => `
         <div class="listItem groupInviteCard" style="margin-bottom:10px; cursor:default;">
@@ -5267,29 +6233,29 @@ async function openInviteFriendToGroup() {
             <div class="listAvatar">${p.avatar_url ? `<img src="${String(p.avatar_url).startsWith("http") ? p.avatar_url : `${API_BASE_URL}${p.avatar_url}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div class="groupInviteCardText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">${p.city || "Zaproszenie oczekuje"}</div>
+              <div class="listMeta">${p.city || t("groupPeople.invitePending")}</div>
             </div>
           </div>
           <div class="groupInviteCardAction">
-            <button class="btn secondary small" type="button" disabled>Zaproszeni</button>
+            <button class="btn secondary small" type="button" disabled>${t("groupPeople.invitedTab")}</button>
           </div>
         </div>
-      `).join("") || '<div class="tMuted">Brak oczekujących zaproszeń.</div>';
+      `).join("") || `<div class="tMuted">${t("groupPeople.emptyInvited")}</div>`;
 
   const activeHtml = App.groupInviteTab === "members"
     ? membersHtml
     : (App.groupInviteTab === "invited" ? invitedHtml : inviteHtml);
 
-  openModal("Dodaj znajomego do grupy", `
+  openModal(t("groupPeople.inviteFriendModalTitle"), `
     <div class="groupInviteModal">
-      <div class="tStrong">Wybierz znajomego</div>
+      <div class="tStrong">${t("groupPeople.pickFriend")}</div>
     <div class="sectionSub mt10">
-      Wybierz znajomego, którego chcesz zaprosić do tej grupy.
+      ${t("groupPeople.pickFriendSub")}
     </div>
     <div class="segmented mt12">
-      <button class="segBtn ${App.groupInviteTab === "invite" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invite'; openInviteFriendToGroup()">Do zaproszenia</button>
-      <button class="segBtn ${App.groupInviteTab === "members" ? "on" : ""}" type="button" onclick="App.groupInviteTab='members'; openInviteFriendToGroup()">Grupowicze</button>
-      <button class="segBtn ${App.groupInviteTab === "invited" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invited'; openInviteFriendToGroup()">Zaproszeni</button>
+      <button class="segBtn ${App.groupInviteTab === "invite" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invite'; openInviteFriendToGroup()">${t("groupPeople.inviteTab")}</button>
+      <button class="segBtn ${App.groupInviteTab === "members" ? "on" : ""}" type="button" onclick="App.groupInviteTab='members'; openInviteFriendToGroup()">${t("groupPeople.membersTab")}</button>
+      <button class="segBtn ${App.groupInviteTab === "invited" ? "on" : ""}" type="button" onclick="App.groupInviteTab='invited'; openInviteFriendToGroup()">${t("groupPeople.invitedTab")}</button>
     </div>
     <div class="mt16">
       ${activeHtml}
@@ -5408,14 +6374,14 @@ function syncPartnerEventSubmitBtn() {
   }
 
   if (App.partnerEventFormMode === "archived_edit") {
-    btn.textContent = "Wznów wydarzenie";
+    btn.textContent = t("partnerCreate.resume");
     if (draftBtn) draftBtn.style.display = "none";
     return;
   }
 
   if (draftBtn) draftBtn.style.display = "";
 
-  btn.textContent = App.selectedPartnerEventId ? "Opublikuj" : "Utwórz wydarzenie";
+  btn.textContent = App.selectedPartnerEventId ? t("partnerCreate.publishExisting") : t("partnerCreate.publish");
 }
 
 function resetPartnerEventFormMode() {
@@ -5488,13 +6454,13 @@ async function renderPartnerEventParticipants() {
             <div class="listLeft">
               <div class="listAvatar"><div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(user.nick || user.email || "U"))}" data-name="${escapeHtml(user.nick || user.email || "U")}">${avatarInitial(user.nick || user.email || "U")}</div></div>
               <div style="min-width:0;">
-                <div class="listTitle">${user.nick || user.email || `Użytkownik #${user.id || "?"}`}</div>
-                <div class="listMeta">Zapis: ${when}</div>
+                <div class="listTitle">${user.nick || user.email || t("partnerParticipants.defaultUser", { id: user.id || "?" })}</div>
+                <div class="listMeta">${t("partnerParticipants.signupLabel", { when })}</div>
               </div>
             </div>
             ${canMessageParticipants ? `
               <div class="listRight">
-                <button class="btn secondary small" type="button" onclick="openPartnerParticipantMessageModal('${user.id}', '${(user.nick || user.email || '').replace(/'/g, "&apos;")}')">Napisz</button>
+                <button class="btn secondary small" type="button" onclick="openPartnerParticipantMessageModal('${user.id}', '${(user.nick || user.email || '').replace(/'/g, "&apos;")}')">${t("partnerParticipants.write")}</button>
               </div>
             ` : ``}
           </div>
@@ -5503,24 +6469,24 @@ async function renderPartnerEventParticipants() {
     }).join("");
   } catch (err) {
     console.error("renderPartnerEventParticipants failed", err);
-    list.innerHTML = '<div class="tMuted">Nie udało się załadować zapisanych.</div>';
+    list.innerHTML = `<div class="tMuted">${t("partnerParticipants.loadFailed")}</div>`;
   }
 }
 
 function openPartnerParticipantMessageModal(userId, userName) {
   const rules = getPartnerPlanRules();
   if (!rules.canMessageParticipants) {
-    toast("Wiadomości do uczestników są dostępne od planu PRO");
+    toast(t("partnerParticipants.messageLocked"));
     return;
   }
 
-  openModal("Napisz do uczestnika", `
-    <div class="sectionSub">Rozmowa z: <strong>${userName || "Uczestnik"}</strong></div>
-    <textarea id="partnerParticipantMessageInput" class="mt12" maxlength="1000" placeholder="Napisz wiadomość..."></textarea>
+  openModal(t("partnerParticipants.modalTitle"), `
+    <div class="sectionSub">${t("partnerParticipants.conversationWith")} <strong>${userName || t("partnerParticipants.defaultParticipant")}</strong></div>
+    <textarea id="partnerParticipantMessageInput" class="mt12" maxlength="1000" placeholder="${t("partnerParticipantMessage.placeholder")}"></textarea>
     <div id="partnerParticipantMessageStatus" class="sectionSub mt10" style="display:none;"></div>
     <div class="row mt16">
-      <button class="btn" type="button" onclick="sendPartnerParticipantMessage('${userId}')">Wyślij</button>
-      <button class="btn secondary" type="button" onclick="closeModal()">Anuluj</button>
+      <button class="btn" type="button" onclick="sendPartnerParticipantMessage('${userId}')">${t("partnerParticipantMessage.send")}</button>
+      <button class="btn secondary" type="button" onclick="closeModal()">${t("groups.create.cancel")}</button>
     </div>
   `);
 }
@@ -5542,7 +6508,7 @@ async function sendPartnerParticipantMessage(userId) {
     status.style.opacity = ".82";
     status.style.border = "0";
     status.style.padding = "0";
-    status.textContent = "Sprawdzamy treść wiadomości…";
+    status.textContent = t("partnerParticipantMessage.checking");
   }
   if (input) input.disabled = true;
   if (sendBtn) sendBtn.disabled = true;
@@ -5558,7 +6524,7 @@ async function sendPartnerParticipantMessage(userId) {
     });
 
     closeModal();
-    toast("Wiadomość została wysłana");
+    toast(t("partnerParticipants.sent"));
   } catch (err) {
     const rawMessage = String(err?.userMessage || err?.message || err?.detail || "");
     const rawStatus = String(err?.status || err?.statusCode || err?.response?.status || "");
@@ -5570,8 +6536,8 @@ async function sendPartnerParticipantMessage(userId) {
       rawMessage.toLowerCase().includes("moderac");
 
     const blockedReason = rawMessage.includes("message_blocked_link")
-      ? "Linki są obecnie blokowane ze względów bezpieczeństwa USLY. Wiadomość nie została dostarczona."
-      : "Treść została zablokowana przez moderację USLY i nie została dostarczona.";
+      ? t("partnerParticipantMessage.blockedLink")
+      : t("partnerParticipantMessage.blockedContent");
 
     if (status && isModerated) {
       status.style.display = "block";
@@ -5581,7 +6547,7 @@ async function sendPartnerParticipantMessage(userId) {
       status.style.padding = "10px 12px";
       status.textContent = `⚠️ ${blockedReason}`;
     } else {
-      toast(err?.userMessage || "Nie udało się wysłać wiadomości");
+      toast(err?.userMessage || t("chat.toast.sendFailed"));
       if (status) status.style.display = "none";
     }
 
@@ -5595,7 +6561,7 @@ async function sendPartnerParticipantMessage(userId) {
 async function sendPartnerBroadcastMessage() {
   const rules = getPartnerPlanRules();
   if (!rules.canBroadcastParticipants) {
-    toast("Ta funkcja jest dostępna od planu PREMIUM");
+    toast(t("partnerBroadcast.locked"));
     return;
   }
 
@@ -5606,8 +6572,8 @@ async function sendPartnerBroadcastMessage() {
 
   const ev = (App.partnerEvents || []).find(x => String(x.id) === String(App.selectedPartnerEventId));
   const eventLabel = ev
-    ? `${ev.title || "Wydarzenie"}${ev.city ? `, ${ev.city}` : ""}`
-    : "Wydarzenie";
+    ? `${ev.title || t("personProfile.defaultEvent")}${ev.city ? `, ${ev.city}` : ""}`
+    : t("personProfile.defaultEvent");
 
   try {
     if (btn) btn.disabled = true;
@@ -5616,11 +6582,11 @@ async function sendPartnerBroadcastMessage() {
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
 
     if (!items.length) {
-      toast("Brak zapisanych uczestników");
+      toast(t("partnerBroadcast.noParticipants"));
       return;
     }
 
-    const content = `📣 ${ev?.title || "Wydarzenie"}${ev?.city ? ` (${ev.city})` : ""}
+    const content = `📣 ${ev?.title || t("personProfile.defaultEvent")}${ev?.city ? ` (${ev.city})` : ""}
 — wiadomość od organizatora —
 
 ${text}`;
@@ -5642,9 +6608,9 @@ ${text}`;
     }
 
     if (input) input.value = "";
-    toast(sent > 0 ? `Wysłano do ${sent} uczestników` : "Brak zapisanych uczestników");
+    toast(sent > 0 ? t("partnerBroadcast.sent", { count: sent }) : t("partnerBroadcast.noParticipants"));
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wysłać wiadomości do uczestników");
+    toast(err?.userMessage || t("partnerBroadcast.failed"));
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -5674,7 +6640,7 @@ async function searchPartnerEventPlace() {
   const query = [address, city].filter(Boolean).join(", ");
 
   if (!query) {
-    toast("Wpisz nazwę miejsca lub adres");
+    toast(t("partnerPlace.enterQuery"));
     return;
   }
 
@@ -5689,14 +6655,14 @@ async function searchPartnerEventPlace() {
 
     if (!results.length) {
       renderPartnerPlaceResults([]);
-      toast("Nie znaleziono miejsca. Doprecyzuj adres lub nazwę.");
+      toast(t("partnerPlace.notFound"));
       return;
     }
 
     renderPartnerPlaceResults(results);
   } catch (e) {
     console.error("searchPartnerEventPlace error", e);
-    toast("Nie udało się wyszukać miejsca.");
+    toast(t("partnerPlace.searchFailed"));
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -5722,7 +6688,7 @@ function renderPartnerPlaceResults(results = []) {
           style="justify-content:flex-start;text-align:left;"
         >
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <strong>${escapeHtml(place.name || "Miejsce")}</strong>
+            <strong>${escapeHtml(place.name || t("partnerPlace.defaultPlace"))}</strong>
             <span style="font-size:12px;opacity:.75;">
               ${escapeHtml(place.address || "")}
             </span>
@@ -5749,13 +6715,13 @@ function renderPartnerPlaceResults(results = []) {
       if (hint) {
         hint.hidden = false;
         hint.innerHTML = `
-          <span style="display:block;font-weight:900;">Wybrano: ${escapeHtml(place.name || place.address || "miejsce")}</span>
+          <span style="display:block;font-weight:900;">${t("partnerPlace.selectedLabel")} ${escapeHtml(place.name || place.address || t("partnerPlace.defaultLower"))}</span>
           ${place.address ? `<span style="display:block;font-size:12px;opacity:.75;margin-top:4px;">${escapeHtml(place.address)}</span>` : ""}
         `;
       }
 
       if (box) box.innerHTML = "";
-      toast("Miejsce wydarzenia zostało wybrane");
+      toast(t("partnerPlace.selectedToast"));
     });
   });
 }
@@ -5883,7 +6849,7 @@ function openPartnerEventEditor(eventId) {
   syncPartnerPricingFields();
   syncPartnerCapacityFields();
 
-  toast("Otwarto wydarzenie do edycji");
+  toast(t("partnerEvent.editorOpened"));
   go("S9_PARTNER_CREATE");
   renderPartnerEventParticipants();
 }
@@ -5891,7 +6857,7 @@ function openPartnerEventEditor(eventId) {
 
 async function savePartnerEventDraft() {
   if (App.role !== "partner") {
-    toast("To jest dostępne tylko dla organizatora");
+    toast(t("partnerEvent.partnerOnly"));
     return;
   }
 
@@ -5906,13 +6872,13 @@ async function savePartnerEventDraft() {
   const desc = $("peDesc")?.value?.trim();
 
   if (!title || !city || !when || !where || !interest) {
-    toast("Aby zapisać szkic, uzupełnij: nazwa, miasto, kiedy, gdzie, hashtag");
+    toast(t("partnerEvent.draftRequired"));
     return;
   }
 
   const startAt = new Date(when);
   if (Number.isNaN(startAt.getTime())) {
-    toast("Podaj poprawną datę wydarzenia");
+    toast(t("partnerEvent.invalidDate"));
     return;
   }
 
@@ -5929,33 +6895,33 @@ async function savePartnerEventDraft() {
 
   if (!unlimitedCapacity) {
     if (!Number.isInteger(capacityValue) || capacityValue < 1) {
-      toast("Podaj poprawną liczbę miejsc");
+      toast(t("partnerEvent.invalidCapacity"));
       return;
     }
   }
 
   if (paidMode === "paid_fixed") {
     if (!ticketLink) {
-      toast("Dodaj link do biletów / rezerwacji");
+      toast(t("partnerEvent.ticketRequired"));
       return;
     }
     if (!(price > 0)) {
-      toast("Podaj poprawną cenę");
+      toast(t("partnerEvent.invalidPrice"));
       return;
     }
   }
 
   if (paidMode === "paid_range") {
     if (!ticketLink) {
-      toast("Dodaj link do biletów / rezerwacji");
+      toast(t("partnerEvent.ticketRequired"));
       return;
     }
     if (!(priceFrom > 0) || !(priceTo > 0)) {
-      toast("Podaj poprawny zakres cen");
+      toast(t("partnerEvent.invalidPriceRange"));
       return;
     }
     if (priceFrom > priceTo) {
-      toast("Cena od nie może być większa niż cena do");
+      toast(t("partnerEvent.priceRangeOrder"));
       return;
     }
   }
@@ -5998,12 +6964,12 @@ async function savePartnerEventDraft() {
       });
 
       if (!data?.success || !data?.data) {
-        toast(data?.error?.message || "Nie udało się zapisać szkicu");
+        toast(data?.error?.message || t("partnerEvent.draftSaveFailed"));
         return;
       }
 
       await loadPartnerEvents();
-      toast("Zapisano szkic wydarzenia");
+      toast(t("partnerEvent.draftSaved"));
     } else {
       const data = await apiFetch("/partners/events", {
         method: "POST",
@@ -6012,12 +6978,12 @@ async function savePartnerEventDraft() {
       });
 
       if (!data?.success || !data?.data) {
-        toast(data?.error?.message || "Nie udało się zapisać szkicu");
+        toast(data?.error?.message || t("partnerEvent.draftSaveFailed"));
         return;
       }
 
       await loadPartnerEvents();
-      toast("Zapisano wydarzenie jako szkic");
+      toast(t("partnerEvent.createdAsDraft"));
     }
 
     resetPartnerEventFormMode();
@@ -6028,7 +6994,7 @@ async function savePartnerEventDraft() {
 
     go("S9_PARTNER_EVENTS");
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zapisać szkicu");
+    toast(err?.userMessage || t("partnerEvent.draftSaveFailed"));
   }
 }
 
@@ -6049,13 +7015,13 @@ function getPartnerPublishLimitBlockMessage() {
   const activeCount = getPartnerActivePublishedEventsCount();
   if (activeCount < rules.maxActiveEvents) return null;
 
-  return `Plan ${String(rules.plan || "free").toUpperCase()} pozwala na maksymalnie ${rules.maxActiveEvents} aktywne wydarzenia. Zapisz kolejne jako szkic albo przejdź na wyższy plan.`;
+  return t("partnerEvent.publishLimitReached", { plan: String(rules.plan || "free").toUpperCase(), limit: rules.maxActiveEvents });
 }
 
 
 async function publishPartnerEvent() {
   if (App.role !== "partner") {
-    toast("To jest dostępne tylko dla organizatora");
+    toast(t("partnerEvent.partnerOnly"));
     return;
   }
 
@@ -6071,19 +7037,19 @@ async function publishPartnerEvent() {
 
   if (App.selectedPartnerEventId) {
     if (!title || !city || !when) {
-      toast("Uzupełnij: nazwa, miasto, kiedy");
+      toast(t("partnerEvent.publishRequiredExisting"));
       return;
     }
   } else {
     if (!title || !city || !when || !where || !interest) {
-      toast("Uzupełnij: nazwa, miasto, kiedy, gdzie, hashtag");
+      toast(t("partnerEvent.publishRequiredNew"));
       return;
     }
   }
 
   const startAt = new Date(when);
   if (Number.isNaN(startAt.getTime())) {
-    toast("Podaj poprawną datę wydarzenia");
+    toast(t("partnerEvent.invalidDate"));
     return;
   }
 
@@ -6100,33 +7066,33 @@ async function publishPartnerEvent() {
 
   if (!unlimitedCapacity) {
     if (!Number.isInteger(capacityValue) || capacityValue < 1) {
-      toast("Podaj poprawną liczbę miejsc");
+      toast(t("partnerEvent.invalidCapacity"));
       return;
     }
   }
 
   if (paidMode === "paid_fixed") {
     if (!ticketLink) {
-      toast("Dodaj link do biletów / rezerwacji");
+      toast(t("partnerEvent.ticketRequired"));
       return;
     }
     if (!(price > 0)) {
-      toast("Podaj poprawną cenę");
+      toast(t("partnerEvent.invalidPrice"));
       return;
     }
   }
 
   if (paidMode === "paid_range") {
     if (!ticketLink) {
-      toast("Dodaj link do biletów / rezerwacji");
+      toast(t("partnerEvent.ticketRequired"));
       return;
     }
     if (!(priceFrom > 0) || !(priceTo > 0)) {
-      toast("Podaj poprawny zakres cen");
+      toast(t("partnerEvent.invalidPriceRange"));
       return;
     }
     if (priceFrom > priceTo) {
-      toast("Cena od nie może być większa niż cena do");
+      toast(t("partnerEvent.priceRangeOrder"));
       return;
     }
   }
@@ -6169,13 +7135,13 @@ async function publishPartnerEvent() {
       });
 
       if (!data?.success || !data?.data) {
-        toast(data?.error?.message || "Nie udało się zapisać zmian wydarzenia");
+        toast(data?.error?.message || t("partnerEvent.saveChangesFailed"));
         return;
       }
 
       if (App.partnerEventFormMode === "published_edit") {
         await loadPartnerEvents();
-        toast("Zaktualizowano wydarzenie");
+        toast(t("partnerEvent.updated"));
       } else {
         const publishBlockMessage = getPartnerPublishLimitBlockMessage();
         if (publishBlockMessage) {
@@ -6189,13 +7155,13 @@ async function publishPartnerEvent() {
         });
 
         if (!publishData?.success || !publishData?.data) {
-          toast(publishData?.error?.message || "Zapisano szkic, ale nie udało się go opublikować");
+          toast(publishData?.error?.message || t("partnerEvent.draftSavedPublishFailed"));
           await loadPartnerEvents();
           return;
         }
 
         await loadPartnerEvents();
-        toast(App.partnerEventFormMode === "archived_edit" ? "Wznowiono wydarzenie" : "Opublikowano wydarzenie");
+        toast(App.partnerEventFormMode === "archived_edit" ? t("partnerEvent.resumed") : t("partnerEvent.published"));
       }
     } else {
       const data = await apiFetch("/partners/events", {
@@ -6205,13 +7171,13 @@ async function publishPartnerEvent() {
       });
 
       if (!data?.success || !data?.data) {
-        toast(data?.error?.message || "Nie udało się utworzyć wydarzenia");
+        toast(data?.error?.message || t("partnerEvent.createFailed"));
         return;
       }
 
       const createdEventId = data?.data?.id;
       if (!createdEventId) {
-        toast("Utworzono wydarzenie, ale brakuje ID do publikacji");
+        toast(t("partnerEvent.createdMissingId"));
         return;
       }
 
@@ -6227,13 +7193,13 @@ async function publishPartnerEvent() {
       });
 
       if (!publishData?.success || !publishData?.data) {
-        toast(publishData?.error?.message || "Wydarzenie utworzono, ale nie udało się go opublikować");
+        toast(publishData?.error?.message || t("partnerEvent.createdPublishFailed"));
         await loadPartnerEvents();
         return;
       }
 
       await loadPartnerEvents();
-      toast("Utworzono i opublikowano wydarzenie");
+      toast(t("partnerEvent.createdAndPublished"));
     }
 
     resetPartnerEventFormMode();
@@ -6244,7 +7210,7 @@ async function publishPartnerEvent() {
 
     go("S9_PARTNER_EVENTS");
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zapisać wydarzenia");
+    toast(err?.userMessage || t("partnerEvents.saveFailed"));
   }
 }
 
@@ -6265,10 +7231,10 @@ function getNotificationIcon(title = "", body = "") {
     users: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.8 20c.7-3.2 2.9-4.8 6.2-4.8 3.2 0 5.4 1.6 6.2 4.8M16.5 11a3 3 0 1 0 0-6M17 15.2c2.5.3 4.1 1.9 4.7 4.8"/></svg>`,
   };
 
-  if (text.includes("zapis")) return { icon: icons.check, className: "notifIconSuccess" };
-  if (text.includes("obserw")) return { icon: icons.eye, className: "notifIconObserve" };
-  if (text.includes("grup")) return { icon: icons.users, className: "notifIconGroup" };
-  if (text.includes("znajom")) return { icon: icons.userPlus, className: "notifIconFriend" };
+  if (text.includes("zapis") || text.includes("signup") || text.includes("signed up")) return { icon: icons.check, className: "notifIconSuccess" };
+  if (text.includes("obserw") || text.includes("follow")) return { icon: icons.eye, className: "notifIconObserve" };
+  if (text.includes("grup") || text.includes("group")) return { icon: icons.users, className: "notifIconGroup" };
+  if (text.includes("znajom") || text.includes("friend")) return { icon: icons.userPlus, className: "notifIconFriend" };
 
   if (
     text.includes("jutro") ||
@@ -6325,8 +7291,8 @@ async function renderNotifications() {
           out.push(...rows.map((row) => ({
             type: "signup",
             eventId: ev.id,
-            eventTitle: ev.title || "Wydarzenie",
-            userNick: row?.user?.nick || row?.user?.email || `Użytkownik #${row?.user?.id || "?"}`,
+            eventTitle: ev.title || t("notifications.defaultEvent"),
+            userNick: row?.user?.nick || row?.user?.email || `${t("notifications.defaultUser")} #${row?.user?.id || "?"}`,
             createdAt: row?.signup?.created_at || null,
           })));
         } catch (err) {
@@ -6339,8 +7305,8 @@ async function renderNotifications() {
           out.push(...rows.map((row) => ({
             type: "observer",
             eventId: ev.id,
-            eventTitle: ev.title || "Wydarzenie",
-            userNick: row?.user?.nick || row?.user?.email || `Użytkownik #${row?.user?.id || "?"}`,
+            eventTitle: ev.title || t("notifications.defaultEvent"),
+            userNick: row?.user?.nick || row?.user?.email || `${t("notifications.defaultUser")} #${row?.user?.id || "?"}`,
             createdAt: row?.saved?.created_at || null,
           })));
         } catch (err) {
@@ -6359,10 +7325,10 @@ async function renderNotifications() {
         })
         .slice(0, 50)
         .map((item) => ({
-          title: item.type === "observer" ? "Nowe obserwowanie wydarzenia" : "Nowy zapis na wydarzenie",
+          title: item.type === "observer" ? t("notifications.partner.newObserverTitle") : t("notifications.partner.newSignupTitle"),
           body: item.type === "observer"
-            ? `${item.userNick} obserwuje: ${item.eventTitle}`
-            : `${item.userNick} zapisał(a) się na: ${item.eventTitle}`,
+            ? t("notifications.partner.newObserverBody", { user: item.userNick, event: item.eventTitle })
+            : t("notifications.partner.newSignupBody", { user: item.userNick, event: item.eventTitle }),
           targetView: "S9_PARTNER_EVENTS",
           createdAt: item.createdAt || null,
         }));
@@ -6378,10 +7344,10 @@ async function renderNotifications() {
       const eventNotifItems = Array.isArray(eventNotifRes?.data?.items) ? eventNotifRes.data.items : [];
 
       incoming.forEach((req) => {
-        const nick = req?.user?.nick || req?.user?.email || "Nowa osoba";
+        const nick = req?.user?.nick || req?.user?.email || t("notifications.defaultNewPerson");
         items.push({
-          title: "Zaproszenie do znajomych",
-          body: `${nick} chce dodać Cię do znajomych`,
+          title: t("notifications.friendRequestTitle"),
+          body: t("notifications.friendRequestBody", { user: nick }),
           targetView: "S10E_PROFILE_INVITES",
           createdAt: req?.created_at || null,
         });
@@ -6392,17 +7358,17 @@ async function renderNotifications() {
         const event = row?.event || {};
 
         const userReportTitles = {
-          admin_user_report_in_review: "Twoje zgłoszenie jest sprawdzane",
-          admin_user_report_resolved: "Twoje zgłoszenie zostało uznane",
-          admin_user_report_rejected: "Twoje zgłoszenie zostało odrzucone",
-          admin_user_warning_warning_profile: "Ostrzeżenie dotyczące profilu",
-          admin_user_warning_warning_content: "Ostrzeżenie dotyczące treści",
-          admin_user_warning_warning_behavior: "Ostrzeżenie dotyczące zachowania",
-          admin_bug_report_accepted: "Przyjęliśmy Twoje zgłoszenie błędu",
-          admin_bug_report_in_progress: "Pracujemy nad Twoim zgłoszeniem",
-          admin_bug_report_fixed: "Zgłoszony błąd został poprawiony",
-          admin_bug_report_resolved: "Twoje zgłoszenie błędu zostało rozwiązane",
-          admin_bug_report_not_reproducible: "Nie udało się odtworzyć zgłoszonego błędu",
+          admin_user_report_in_review: t("notifications.admin.userReportInReview"),
+          admin_user_report_resolved: t("notifications.admin.userReportResolved"),
+          admin_user_report_rejected: t("notifications.admin.userReportRejected"),
+          admin_user_warning_warning_profile: t("notifications.admin.warningProfile"),
+          admin_user_warning_warning_content: t("notifications.admin.warningContent"),
+          admin_user_warning_warning_behavior: t("notifications.admin.warningBehavior"),
+          admin_bug_report_accepted: t("notifications.admin.bugAccepted"),
+          admin_bug_report_in_progress: t("notifications.admin.bugInProgress"),
+          admin_bug_report_fixed: t("notifications.admin.bugFixed"),
+          admin_bug_report_resolved: t("notifications.admin.bugResolved"),
+          admin_bug_report_not_reproducible: t("notifications.admin.bugNotReproducible"),
         };
 
         if (userReportTitles[notification.type]) {
@@ -6411,10 +7377,10 @@ async function renderNotifications() {
           items.push({
             title: userReportTitles[notification.type],
             body: isWarning
-              ? "Administracja wysłała ostrzeżenie dotyczące zasad USLY. Sprawdź swój profil i aktywność w aplikacji. W razie pytań możesz skontaktować się z supportem USLY."
+              ? t("notifications.admin.warningBody")
               : isBugReport
-                ? "Dziękujemy za zgłoszenie. Aktualizujemy status, żeby było jasne, co dzieje się z Twoją sprawą."
-                : "Administracja zaktualizowała status Twojego zgłoszenia. Dziękujemy za pomoc w dbaniu o bezpieczeństwo społeczności.",
+                ? t("notifications.admin.bugBody")
+                : t("notifications.admin.reportBody"),
             targetView: "S12_NOTIFICATIONS",
             createdAt: notification?.created_at || null,
           });
@@ -6442,7 +7408,7 @@ async function renderNotifications() {
           !isReminder1d
         ) return;
 
-        const title = event?.title || "Wydarzenie";
+        const title = event?.title || t("notifications.defaultEvent");
         const place = [event?.city, event?.where].filter(Boolean).join(", ");
         const when = event?.start_at
           ? String(event.start_at).trim().replace("T", " ").slice(0, 16)
@@ -6451,46 +7417,46 @@ async function renderNotifications() {
 
         items.push({
           title: isReminder2d
-            ? "Wydarzenie już za 2 dni"
+            ? t("notifications.event.reminder2dTitle")
             : isReminder1d
-              ? "Wydarzenie już jutro"
+              ? t("notifications.event.reminder1dTitle")
               : isTimeAndLocationChange
-                ? "Zmiana godziny i miejsca wydarzenia"
+                ? t("notifications.event.timeAndLocationChangedTitle")
                 : isTimeChange
-              ? "Zmiana godziny wydarzenia"
+              ? t("notifications.event.timeChangedTitle")
               : isLocationChange
-                ? "Zmiana miejsca wydarzenia"
+                ? t("notifications.event.locationChangedTitle")
                 : isAdminUnderReview
-                  ? "Wydarzenie jest weryfikowane przez administrację"
+                  ? t("notifications.event.underReviewTitle")
                   : isAdminSafetyNotice
-                    ? "Ważna informacja o wydarzeniu"
+                    ? t("notifications.event.safetyNoticeTitle")
                     : isAdminArchived
-                      ? "Wydarzenie zostało zarchiwizowane"
-                      : "Zmiana w zapisanym wydarzeniu",
+                      ? t("notifications.event.archivedTitle")
+                      : t("notifications.event.updatedTitle"),
           body: isReminder2d
-            ? `Przypominamy: ${title} odbędzie się za 2 dni.${eventContext ? ` ${eventContext}` : ""}`
+            ? t("notifications.event.reminder2dBody", { event: title, context: eventContext ? ` ${eventContext}` : "" })
             : isReminder1d
-              ? `Przypominamy: ${title} odbędzie się jutro.${eventContext ? ` ${eventContext}` : ""}`
+              ? t("notifications.event.reminder1dBody", { event: title, context: eventContext ? ` ${eventContext}` : "" })
               : isAdminUnderReview
-                ? `${title} jest aktualnie sprawdzane przez administrację. Zachowaj ostrożność i podejmij świadomą decyzję o udziale.${eventContext ? ` ${eventContext}` : ""}`
+                ? t("notifications.event.underReviewBody", { event: title, context: eventContext ? ` ${eventContext}` : "" })
                 : isAdminSafetyNotice
-              ? `${title}: administracja otrzymała zgłoszenie dotyczące bezpieczeństwa lub zgodności z zasadami.${eventContext ? ` ${eventContext}` : ""}`
+              ? t("notifications.event.safetyNoticeBody", { event: title, context: eventContext ? ` ${eventContext}` : "" })
               : isAdminArchived
-                ? `${title} zostało zarchiwizowane przez administrację.${eventContext ? ` ${eventContext}` : ""}`
+                ? t("notifications.event.archivedBody", { event: title, context: eventContext ? ` ${eventContext}` : "" })
                 : place || when
                   ? `${title} — ${eventContext}`
-                  : `${title} zostało zaktualizowane`,
+                  : t("notifications.event.updatedBody", { event: title }),
           targetView: "S7_EVENTS",
           createdAt: notification?.created_at || null,
         });
       });
 
       incomingGroupInvites.forEach((inv) => {
-        const nick = inv?.user?.nick || inv?.user?.email || "Użytkownik";
-        const groupTitle = inv?.group?.title || "Grupa";
+        const nick = inv?.user?.nick || inv?.user?.email || t("notifications.defaultUser");
+        const groupTitle = inv?.group?.title || t("notifications.defaultGroup");
         items.push({
-          title: "Zaproszenie do grupy",
-          body: `${nick} zaprasza Cię do grupy: ${groupTitle}`,
+          title: t("notifications.groupInviteTitle"),
+          body: t("notifications.groupInviteBody", { user: nick, group: groupTitle }),
           targetView: "S10E_PROFILE_INVITES",
           createdAt: inv?.created_at || null,
         });
@@ -6515,7 +7481,7 @@ async function renderNotifications() {
   if (items.length === 0) {
     list.innerHTML = `
       <div class="card">
-        <div class="sectionSub">Brak powiadomień</div>
+        <div class="sectionSub">${t("notifications.empty")}</div>
       </div>
     `;
     updateNotifBadges(0);
@@ -6558,7 +7524,7 @@ async function renderNotifications() {
   `;
   }).join("") + (
     items.length > notificationsVisibleLimit
-      ? `<button class="btn secondary mt12" type="button" onclick="showMoreNotifications()">Wczytaj więcej (${items.length - notificationsVisibleLimit})</button>`
+      ? `<button class="btn secondary mt12" type="button" onclick="showMoreNotifications()">${t("notifications.loadMore")} (${items.length - notificationsVisibleLimit})</button>`
       : ""
   );
 
@@ -6921,30 +7887,32 @@ function getEventCapacityCopy(ev) {
 
   if (capacity == null) {
     return {
-      line: `${signups} zapisanych`,
+      line: t("eventCapacity.signed", { count: signups }),
       alert: "",
       full: false,
     };
   }
 
+  const usedLine = t("eventCapacity.used", { taken: signups, capacity });
+
   if (spotsLeft === 0) {
     return {
-      line: `${signups} z ${capacity} miejsc zajętych`,
-      alert: "Komplet miejsc",
+      line: usedLine,
+      alert: t("eventCapacity.full"),
       full: true,
     };
   }
 
   if (typeof spotsLeft === "number" && spotsLeft > 0 && spotsLeft <= 3) {
     return {
-      line: `${signups} z ${capacity} miejsc zajętych`,
-      alert: `Zostały ostatnie ${spotsLeft} ${spotsLeft === 1 ? "miejsce" : "miejsca"}`,
+      line: usedLine,
+      alert: spotsLeft === 1 ? t("eventCapacity.lastOne") : t("eventCapacity.lastFew", { count: spotsLeft }),
       full: false,
     };
   }
 
   return {
-    line: `${signups} z ${capacity} miejsc zajętych`,
+    line: usedLine,
     alert: "",
     full: false,
   };
@@ -6961,7 +7929,7 @@ function renderNearby() {
     const people = getNearbyPeopleForView();
 
     if (!people.length) {
-      pList.innerHTML = `<div class="tMuted">${t("nearby.emptyPeople", "Nie widzimy jeszcze osób z wspólnymi zainteresowaniami w Twojej okolicy.")}</div>`;
+      pList.innerHTML = `<div class="tMuted">${t("nearby.emptyPeople")}</div>`;
     } else {
       pList.innerHTML = people.map(p => `
       <div class="listItem nearbyPersonCard" onclick="openPerson('${p.id}')">
@@ -6969,8 +7937,8 @@ function renderNearby() {
           <div class="listLeft">
             <div class="listAvatar nearbyPersonAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div style="min-width:0;">
-              <div class="listTitle">${escapeHtml(p.nick || "Użytkownik")}</div>
-              <div class="listMeta">${p.distance_km != null ? (p.distance_km < 1 ? "< 1 km od Ciebie" : `${String(p.distance_km).replace(".", ",")} km od Ciebie`) : "W okolicy"}${p.age ? ` • ${p.age} lat` : ""}</div>
+              <div class="listTitle">${escapeHtml(p.nick || t("friends.defaultUser", { id: p.id || "—" }))}</div>
+              <div class="listMeta">${p.distance_km != null ? (p.distance_km < 1 ? t("nearby.distanceUnder1", "< 1 km od Ciebie") : t("nearby.distanceKm", { km: String(p.distance_km).replace(".", ",") })) : t("nearby.inArea", "W okolicy")}${p.age ? ` • ${t("personProfile.ageYears", { age: p.age })}` : ""}</div>
             </div>
           </div>
           <div class="listRight">
@@ -6991,7 +7959,7 @@ function renderNearby() {
       .slice(0, 8);
 
     if (!events.length) {
-      eList.innerHTML = `<div class="tMuted">${t("nearby.emptyEvents", "Nie widzimy jeszcze wydarzeń zgodnych z Twoimi zainteresowaniami w Twojej okolicy.")}</div>`;
+      eList.innerHTML = `<div class="tMuted">${t("nearby.emptyEvents")}</div>`;
       return;
     }
 
@@ -7007,15 +7975,15 @@ function renderNearby() {
           </div>
           <div class="listRight">
             <div class="listTag ${ev.paidMode === 'free' ? '' : 'paid'}">
-              ${ev.paidMode === "free" ? "Bezpłatne" : "Płatne"}
+              ${ev.paidMode === "free" ? t("eventDetail.ticketFree") : t("eventDetail.ticketPaid")}
             </div>
           </div>
         </div>
         <div class="listBody">
         #${ev.interest} • ${getEventCapacityCopy(ev).line}${getEventCapacityCopy(ev).alert ? ` • ${getEventCapacityCopy(ev).alert}` : ""}
         ${(ev.saved || ev.interested) ? `<div class="chips" style="margin-top:8px;">
-          ${ev.saved ? `<div class="chip">Obserwowane</div>` : ``}
-          ${ev.interested ? `<div class="chip">Biorę udział</div>` : ``}
+          ${ev.saved ? `<div class="chip">${t("eventDetail.savedChip")}</div>` : ``}
+          ${ev.interested ? `<div class="chip">${t("eventDetail.interestedChip")}</div>` : ``}
         </div>` : ``}
       </div>
       </div>
@@ -7061,7 +8029,7 @@ function renderEventsList() {
         </div>
         <div class="listRight">
           <div class="listTag ${ev.paidMode === 'free' ? '' : 'paid'}">
-            ${ev.paidMode === "free" ? "Bezpłatne" : "Płatne"}
+            ${ev.paidMode === "free" ? t("eventDetail.ticketFree") : t("eventDetail.ticketPaid")}
           </div>
         </div>
       </div>
@@ -7071,8 +8039,8 @@ function renderEventsList() {
 
         ${(ev.saved || ev.interested) ? `
           <div class="chips" style="margin-top:8px;">
-            ${ev.saved ? `<div class="chip">Obserwowane</div>` : ``}
-            ${ev.interested ? `<div class="chip">Biorę udział</div>` : ``}
+            ${ev.saved ? `<div class="chip">${t("eventDetail.savedChip")}</div>` : ``}
+            ${ev.interested ? `<div class="chip">${t("eventDetail.interestedChip")}</div>` : ``}
           </div>
         ` : ``}
       </div>
@@ -7122,10 +8090,10 @@ async function renderGroups() {
     const muted = isGroupMuted(g.id);
     const m = Number(g.members);
 const membersLabel = m === 1
-  ? "1 osoba"
+  ? t("groups.memberOne")
   : (m >= 2 && m <= 4)
-    ? `${m} osoby`
-    : `${m} osób`;
+    ? t("groups.memberFew", { count: m })
+    : t("groups.memberMany", { count: m });
     return `
       <div class="listItem ${unread > 0 ? 'unread' : ''}" onclick="openGroup('${g.id}')" style="position:relative; padding-bottom:36px;">
         ${g.isCreator ? `<div style="
@@ -7148,7 +8116,7 @@ const membersLabel = m === 1
     0 0 0 1px rgba(255,255,255,.04) inset,
     0 0 12px rgba(52,230,255,.18);
   backdrop-filter: blur(6px);
-">Założona<br>przez Ciebie</div>` : ``}
+">${t("groups.createdByYouHtml")}</div>` : ``}
         <div class="listTop">
           <div class="listLeft">
             <div class="listAvatar">${premiumIcon("group", g.title || "Grupa")}</div>
@@ -7172,8 +8140,8 @@ const membersLabel = m === 1
   if (myGroups.length) {
     html += `
       <div class="card">
-        <div class="sectionTitle">Twoje grupy</div>
-        <div class="sectionSub">Grupy, do których już należysz.</div>
+        <div class="sectionTitle">${t("groups.yourGroups", "Twoje grupy")}</div>
+        <div class="sectionSub">${t("groups.yourGroupsSub")}</div>
         <div class="col mt12">
           ${myGroups.map(renderGroupCard).join("")}
         </div>
@@ -7183,10 +8151,10 @@ const membersLabel = m === 1
 
   html += `
     <div class="card ${myGroups.length ? "mt16" : ""}">
-      <div class="sectionTitle">Proponowane grupy</div>
-      <div class="sectionSub">Dopasowane do Twoich zainteresowań i wykluczające grupy, w których już jesteś.</div>
+      <div class="sectionTitle">${t("groups.suggestedGroups", "Proponowane grupy")}</div>
+      <div class="sectionSub">${t("groups.suggestedGroupsSub")}</div>
       <div class="col mt12">
-        ${suggestedGroups.length ? suggestedGroups.map(renderGroupCard).join("") : '<div class="tMuted">Brak proponowanych grup</div>'}
+        ${suggestedGroups.length ? suggestedGroups.map(renderGroupCard).join("") : `<div class="tMuted">${t("groups.noSuggestedGroups", "Brak proponowanych grup")}</div>`}
       </div>
     </div>
   `;
@@ -7216,7 +8184,7 @@ async function renderChatList() {
         const isPartner = String(c.other_user_role || existing?.with?.role || "").toLowerCase() === "partner";
         const displayName = isPartner
           ? (c.other_user_company || existing?.with?.company || c.other_user_name || `Organizator #${c.other_user_id}`)
-          : (c.other_user_name || existing?.with?.nick || `Użytkownik #${c.other_user_id}`);
+          : (c.other_user_name || existing?.with?.nick || `${t("partnerMessages.defaultUser")} #${c.other_user_id}`);
 
         if (!existing) {
           App.chats.unshift({
@@ -7286,7 +8254,7 @@ async function renderChatList() {
 
     if (list) {
       if (!(finalChats || []).length) {
-        list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
+        list.innerHTML = `<div class="tMuted">${t("partnerMessages.empty")}</div>`;
       } else {
         list.innerHTML = (finalChats || []).map(c => {
         const muted = isChatMuted(c.id);
@@ -7337,7 +8305,7 @@ async function renderChatList() {
 
     if (list) {
       if (!fallbackChats.length) {
-        list.innerHTML = '<div class="tMuted">Nie udało się załadować rozmów</div>';
+        list.innerHTML = `<div class="tMuted">${t("partnerMessages.loadFailed")}</div>`;
       } else {
         list.innerHTML = fallbackChats.map(c => `
         <div class="listItem" onclick="openChat('${c.id}')">
@@ -7384,15 +8352,15 @@ function renderPartnerEvents() {
   };
 
   const priceText = (ev) => {
-    if (ev.pricing_type === "free") return "Bezpłatne";
+    if (ev.pricing_type === "free") return t("eventDetail.ticketFree");
     if (ev.pricing_type === "paid_fixed") {
-      return ev.price_fixed != null ? `${Math.round(Number(ev.price_fixed) / 100)} zł` : "Płatne";
+      return ev.price_fixed != null ? `${Math.round(Number(ev.price_fixed) / 100)} zł` : t("eventDetail.ticketPaid");
     }
     if (ev.pricing_type === "paid_range") {
       if (ev.price_min != null && ev.price_max != null) {
         return `${Math.round(Number(ev.price_min) / 100)}-${Math.round(Number(ev.price_max) / 100)} zł`;
       }
-      return "Płatne";
+      return t("eventDetail.ticketPaid");
     }
     return "—";
   };
@@ -7401,10 +8369,10 @@ function renderPartnerEvents() {
     const status = String(ev.status || "draft").toLowerCase();
     const endAt = ev?.end_at ? new Date(ev.end_at) : null;
 
-    if (status === "archived") return "Archiwalne";
-    if (status === "draft") return "Szkic";
-    if (status === "published" && endAt && !Number.isNaN(endAt.getTime()) && endAt < now) return "Zakończone";
-    if (status === "published") return "Aktywne";
+    if (status === "archived") return t("partnerEvent.sectionArchivedTitle");
+    if (status === "draft") return t("partnerEvent.statusDraft");
+    if (status === "published" && endAt && !Number.isNaN(endAt.getTime()) && endAt < now) return t("partnerEvent.sectionFinishedTitle");
+    if (status === "published") return t("partnerEvent.sectionActiveTitle");
     return status;
   };
 
@@ -7418,7 +8386,7 @@ function renderPartnerEvents() {
             <div style="min-width:0;">
               <div class="listTitle">${ev.title || "Bez nazwy"}</div>
               <div class="listMeta">${ev.city || "—"} • ${ev.where || "—"} • ${formatWhen(ev.start_at)}</div>
-              ${isFeatured ? `<div class="mt12"><span class="listTag featured">Wyróżnione</span></div>` : ""}
+              ${isFeatured ? `<div class="mt12"><span class="listTag featured">${t("partnerEvent.featured")}</span></div>` : ""}
             </div>
           </div>
           <div class="listRight">
@@ -7477,30 +8445,30 @@ function renderPartnerEvents() {
 
   const eventCountLabel = (count) => {
     const n = Math.abs(Number(count || 0));
-    if (n === 1) return "1 wydarzenie";
-    if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return `${n} wydarzenia`;
-    return `${n} wydarzeń`;
+    if (n === 1) return t("partnerEvent.countOne");
+    if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return t("partnerEvent.countFew", { count: n });
+    return t("partnerEvent.countMany", { count: n });
   };
 
   const sectionCopy = {
     active: {
-      title: "Aktywne",
-      desc: "Wydarzenia, które są teraz widoczne dla użytkowników.",
+      title: t("partnerEvent.sectionActiveTitle"),
+      desc: t("partnerEvent.sectionActiveDesc"),
       icon: "📅",
     },
     drafts: {
-      title: "Szkice",
-      desc: "Robocze wydarzenia przed publikacją.",
+      title: t("partnerEvent.sectionDraftsTitle"),
+      desc: t("partnerEvent.sectionDraftsDesc"),
       icon: "✎",
     },
     finished: {
-      title: "Zakończone",
-      desc: "Wydarzenia, których termin już minął.",
+      title: t("partnerEvent.sectionFinishedTitle"),
+      desc: t("partnerEvent.sectionFinishedDesc"),
       icon: "✓",
     },
     archived: {
-      title: "Archiwalne",
-      desc: "Zamknięte lub przeniesione do archiwum.",
+      title: t("partnerEvent.sectionArchivedTitle"),
+      desc: t("partnerEvent.sectionArchivedDesc"),
       icon: '<span class="partnerEventArchiveIcon" aria-hidden="true"></span>',
     },
   };
@@ -7564,15 +8532,15 @@ async function quickPublishPartnerEvent(eventId) {
     });
 
     if (!data?.success || !data?.data) {
-      toast(data?.error?.message || "Nie udało się opublikować wydarzenia");
+      toast(data?.error?.message || t("partnerEvent.publishFailed"));
       return;
     }
 
     await loadPartnerEvents();
     if (App.currentView === "S9_PARTNER_EVENTS") renderPartnerEvents();
-    toast("Wydarzenie opublikowane");
+    toast(t("partnerEvent.quickPublished"));
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się opublikować wydarzenia");
+    toast(err?.userMessage || t("partnerEvent.publishFailed"));
   }
 }
 
@@ -7586,15 +8554,15 @@ async function quickArchivePartnerEvent(eventId) {
     });
 
     if (!data?.success || !data?.data) {
-      toast(data?.error?.message || "Nie udało się zarchiwizować wydarzenia");
+      toast(data?.error?.message || t("partnerEvent.archiveFailed"));
       return;
     }
 
     await loadPartnerEvents();
     if (App.currentView === "S9_PARTNER_EVENTS") renderPartnerEvents();
-    toast("Wydarzenie przeniesiono do archiwum");
+    toast(t("partnerEvent.archived"));
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się zarchiwizować wydarzenia");
+    toast(err?.userMessage || t("partnerEvent.archiveFailed"));
   }
 }
 
@@ -7624,7 +8592,7 @@ async function renderPartnerMsgList() {
             id: chatId,
             with: {
               id: c.other_user_id,
-              nick: c.other_user_name || `Użytkownik #${c.other_user_id}`,
+              nick: c.other_user_name || `${t("partnerMessages.defaultUser")} #${c.other_user_id}`,
               role: c.other_user_role || "user",
               company: c.other_user_company || "",
               bio: c.other_user_bio || "",
@@ -7641,7 +8609,7 @@ async function renderPartnerMsgList() {
           existing.with = {
             ...(existing.with || {}),
             id: c.other_user_id,
-            nick: c.other_user_name || existing.with?.nick || `Użytkownik #${c.other_user_id}`,
+            nick: c.other_user_name || existing.with?.nick || `${t("partnerMessages.defaultUser")} #${c.other_user_id}`,
             role: c.other_user_role || existing.with?.role || "user",
             company: c.other_user_company || existing.with?.company || "",
             bio: c.other_user_bio || existing.with?.bio || "",
@@ -7658,7 +8626,7 @@ async function renderPartnerMsgList() {
           id: chatId,
           with: {
             id: c.other_user_id,
-            nick: c.other_user_name || `Użytkownik #${c.other_user_id}`,
+            nick: c.other_user_name || `${t("partnerMessages.defaultUser")} #${c.other_user_id}`,
             role: c.other_user_role || "user",
             company: c.other_user_company || "",
             bio: c.other_user_bio || "",
@@ -7675,7 +8643,7 @@ async function renderPartnerMsgList() {
     const finalChats = chats;
 
     if (!(finalChats || []).length) {
-      list.innerHTML = '<div class="tMuted">Brak rozmów</div>';
+      list.innerHTML = `<div class="tMuted">${t("partnerMessages.empty")}</div>`;
     } else {
       list.innerHTML = (finalChats || []).map(c => {
         const muted = isChatMuted(c.id);
@@ -7704,7 +8672,7 @@ async function renderPartnerMsgList() {
     }
   } catch (err) {
     console.error("renderPartnerMsgList failed", err);
-    list.innerHTML = '<div class="tMuted">Nie udało się załadować rozmów</div>';
+    list.innerHTML = `<div class="tMuted">${t("partnerMessages.loadFailed")}</div>`;
   }
 }
 
@@ -7990,12 +8958,12 @@ function addUserInterest(tag, chipsId) {
   if (!t) return;
   const exists = App.user.interests.some(x => x.toLowerCase() === t.toLowerCase());
   if (exists) {
-    toast("To zainteresowanie już jest dodane");
+    toast(t("profileInterests.alreadyAdded"));
     return;
   }
   const count = Array.isArray(App.user.interests) ? App.user.interests.length : 0;
   if (!canAddMoreInterests(count)) {
-    toast("Limit zainteresowań osiągnięty • Odblokuj więcej w planie PLUS");
+    toast(t("profileInterests.limitToast"));
     return;
   }
 
@@ -8003,7 +8971,7 @@ function addUserInterest(tag, chipsId) {
   try { localStorage.setItem("usly_user_interests", JSON.stringify(App.user.interests)); } catch(_) {}
   renderInterestChips(chipsId);
   syncUserInterests();
-  toast(`Dodano #${t}`);
+  toast(t("profileInterests.addedToast", { tag: t }));
 }
 
 function removeUserInterest(tag, chipsId) {
@@ -8013,7 +8981,7 @@ function removeUserInterest(tag, chipsId) {
   refreshInterestUi();
   renderInterestChips(chipsId);
   syncUserInterests();
-  toast(`Usunięto #${t}`);
+  toast(t("profileInterests.removedToast", { tag: t }));
 }
 
 function renderInterestChips(chipsId) {
@@ -8032,7 +9000,7 @@ function makeChip(text, onRemove) {
   span.className = "chip";
   span.textContent = text;
   if (onRemove) {
-    span.title = "Kliknij, aby usunąć";
+    span.title = t("profileInterests.removeTitle");
     span.addEventListener("click", onRemove);
   }
   return span;
@@ -8040,21 +9008,7 @@ function makeChip(text, onRemove) {
 
 function getPartnerCategoryLabel(value) {
   const key = String(value || "").trim().toLowerCase();
-  const map = {
-    gastro: "Gastro / restauracja / kawiarnia",
-    bar_nocne: "Bar / klub / nightlife",
-    kultura: "Kultura / koncerty / sztuka",
-    fitness: "Fitness / sport / wellness",
-    beauty: "Beauty / uroda",
-    hotel_event: "Hotel / event / konferencje",
-    rozrywka: "Rozrywka / atrakcje / gaming",
-    zakupy: "Sklep / showroom / zakupy",
-    edukacja: "Edukacja / warsztaty",
-    cowork: "Cowork / biznes / networking",
-    plener: "Plener / turystyka / rekreacja",
-    inne: "Inne / trudno powiedzieć",
-  };
-  return map[key] || String(value || "").trim();
+  return key ? t(`partnerCategory.${key}`, String(value || "").trim()) : "";
 }
 
 function renderTypeahead(taId, items, onPick) {
@@ -8202,11 +9156,11 @@ function initGeolocation() {
 // Global function name as requested (punkt 12)
 function useCurrentLocationForCity() {
   if (!navigator.geolocation) {
-    toast("Geolokalizacja niedostępna w tej przeglądarce");
+    toast(t("geo.unavailable"));
     return;
   }
 
-  toast("Pobieram lokalizację…");
+  toast(t("geo.fetching"));
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const lat = pos.coords.latitude;
@@ -8222,7 +9176,7 @@ function useCurrentLocationForCity() {
       App.user.geo.lng = String(lng);
 
       const city = $("regCity");
-      if (city && App.role === "user") city.value = "Pobieramy miasto...";
+      if (city && App.role === "user") city.value = t("geo.fetchingCity");
 
       fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=10&addressdetails=1`)
         .then((r) => r.ok ? r.json() : null)
@@ -8233,19 +9187,19 @@ function useCurrentLocationForCity() {
             App.user.city = cityName;
             if (city && App.role === "user") city.value = cityName;
           } else if (city && App.role === "user") {
-            city.value = "Lokalizacja pobrana";
+            city.value = t("geo.locationFetched");
           }
-          toast("Lokalizacja ustawiona");
+          toast(t("geo.locationSet"));
         })
         .catch(() => {
-          if (city && App.role === "user") city.value = "Lokalizacja pobrana";
-          toast("Lokalizacja ustawiona");
+          if (city && App.role === "user") city.value = t("geo.locationFetched");
+          toast(t("geo.locationSet"));
         });
     },
     () => {
       const city = $("regCity");
-      if (city && App.role === "user") city.value = "Włącz lokalizację, aby kontynuować";
-      toast("Nie udało się pobrać lokalizacji (brak zgody?)");
+      if (city && App.role === "user") city.value = t("geo.enableLocation");
+      toast(t("geo.failed"));
     },
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
   );
@@ -8349,8 +9303,8 @@ function formatDistanceFromMe(person) {
   }
 
   if (!Number.isFinite(d)) return "";
-  if (d < 1) return "< 1 km od Ciebie";
-  return `${String(Math.round(d * 10) / 10).replace(".", ",")} km od Ciebie`;
+  if (d < 1) return t("nearby.distanceUnder1", "< 1 km od Ciebie");
+  return t("nearby.distanceKm", { km: String(Math.round(d * 10) / 10).replace(".", ",") });
 }
 
 function suggestPeopleByInterest(tag) {
@@ -8436,7 +9390,7 @@ function mapApiEventToViewModel(e) {
           hour: "2-digit",
           minute: "2-digit",
         })
-      : "Termin wkrótce";
+      : t("personProfile.eventSoon");
 
   return {
     id: String(e.id),
@@ -8675,7 +9629,7 @@ function renderAll() {
     if ($("setupNearbyRadiusKm")) $("setupNearbyRadiusKm").value = String(App.user.nearbyRadiusKm || 25);
     if ($("setPrefAgeFrom")) $("setPrefAgeFrom").value = String(App.user.prefAgeFrom);
     if ($("setPrefAgeTo")) $("setPrefAgeTo").value = String(App.user.prefAgeTo);
-    safeSetText("setupAgeDisplay", `Wiek: ${App.user.age || "—"} lat`);
+    safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
     safeSetText("bioCount", String(($("setupBio")?.value || "").length));
   }
 
@@ -8687,23 +9641,9 @@ function renderAll() {
 
   const partnerHubMeta = $("partnerHubMeta");
   if (partnerHubMeta) {
-    const partnerCategoryLabels = {
-      gastro: "Gastro / restauracja / kawiarnia",
-      bar_nocne: "Bar / klub / nightlife",
-      kultura: "Kultura / koncerty / sztuka",
-      fitness: "Fitness / sport / wellness",
-      beauty: "Beauty / uroda",
-      hotel_event: "Hotel / event / konferencje",
-      rozrywka: "Rozrywka / atrakcje / gaming",
-      zakupy: "Sklep / showroom / zakupy",
-      edukacja: "Edukacja / warsztaty i szkolenia",
-      cowork: "Cowork / biznes / networking",
-      plener: "Plener / turystyka / rekreacja",
-      inne: "Inne / trudno powiedzieć"
-    };
-    const categoryLabel = partnerCategoryLabels[App.partner.category] || App.partner.category || "";
+    const categoryLabel = App.partner.category ? t(`partnerCategory.${App.partner.category}`, App.partner.category) : "";
     const meta = [categoryLabel, App.partner.city].filter(Boolean).join(" • ");
-    partnerHubMeta.textContent = meta || "Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.";
+    partnerHubMeta.textContent = meta || t("partnerDash.meta");
   }
 
   const partnerHubLogoPreview = $("partnerHubLogoPreview");
@@ -8741,21 +9681,21 @@ function renderAll() {
     if (metricCards[0]) {
       const label = metricCards[0].querySelector(".metricLabel");
       const sub = metricCards[0].querySelector(".metricSub");
-      if (label) label.textContent = "Aktywne";
-      if (sub) sub.textContent = "Opublikowane teraz";
+      if (label) label.textContent = t("partnerDash.metricActive");
+      if (sub) sub.textContent = t("partnerDash.metricActiveSub");
     }
 
     if (metricCards[1]) {
       const label = metricCards[1].querySelector(".metricLabel");
       const sub = metricCards[1].querySelector(".metricSub");
-      if (label) label.textContent = "Szkice";
-      if (sub) sub.textContent = "Robocze";
+      if (label) label.textContent = t("partnerDash.metricDrafts");
+      if (sub) sub.textContent = t("partnerDash.metricDraftsSub");
     }
 
     if (metricCards[2]) {
       const label = metricCards[2].querySelector(".metricLabel");
       const sub = metricCards[2].querySelector(".metricSub");
-      if (label) label.textContent = "Zapisy (łącznie)";
+      if (label) label.textContent = t("partnerDash.metricSignupsTotal");
       if (sub) sub.textContent = "Do aktywnych";
     }
 
@@ -8798,7 +9738,7 @@ function renderAll() {
       const src = String(App.user.avatarUrl).startsWith("http")
         ? App.user.avatarUrl
         : `${API_BASE_URL}${App.user.avatarUrl}`;
-      el.innerHTML = `<img src="${src}" alt="Awatar użytkownika" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+      el.innerHTML = `<img src="${src}" alt="${t("chat.defaultUser")}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
     } else {
       const name = App.user.nick || "U";
       el.innerHTML = `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(name))}">${avatarInitial(name)}</div>`;
@@ -8937,7 +9877,7 @@ async function init() {
   if (regBirthDate && ageError && regBirthDate.dataset.bound !== "1") {
     regBirthDate.addEventListener("input", () => {
       ageError.style.display = "none";
-      ageError.textContent = "Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.";
+      ageError.textContent = t("register.toast.age_under_18");
     });
     regBirthDate.dataset.bound = "1";
   }
@@ -9231,7 +10171,7 @@ function renderNearbyMapMarkers() {
     const dynamicIcon = L.divIcon({
       className: "nearby-person-marker",
       html: `<div style="position:relative;width:48px;height:56px;display:flex;align-items:flex-start;justify-content:center;">
-        <div style="width:40px;height:40px;border-radius:999px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:900;background:${personBg};border:3px solid rgba(110,231,255,.96);box-shadow:0 12px 28px rgba(0,0,0,.34),0 0 0 4px rgba(110,231,255,.16);">${personAvatarSrc ? `<img src="${personAvatarSrc}" alt="${escapeHtml(person.nick || "Użytkownik")}" style="width:100%;height:100%;object-fit:cover;" />` : personInitial}</div>
+        <div style="width:40px;height:40px;border-radius:999px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:900;background:${personBg};border:3px solid rgba(110,231,255,.96);box-shadow:0 12px 28px rgba(0,0,0,.34),0 0 0 4px rgba(110,231,255,.16);">${personAvatarSrc ? `<img src="${personAvatarSrc}" alt="${escapeHtml(person.nick || t("chat.defaultUser"))}" style="width:100%;height:100%;object-fit:cover;" />` : personInitial}</div>
         <div style="position:absolute;left:19px;top:36px;width:10px;height:10px;background:#fff;transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,.18);"></div>
       </div>`,
       iconSize: [48, 56],
@@ -9322,8 +10262,8 @@ function refreshInterestUi() {
     input.style.opacity = canAdd ? "1" : "0.6";
 
     if (!canAdd) {
-      input.placeholder = "Limit osiągnięty • Odblokuj więcej w PLUS";
-      input.onclick = () => toast("Odblokuj więcej zainteresowań w planie PLUS");
+      input.placeholder = t("profileInterests.limitPlaceholder");
+      input.onclick = () => toast(t("profileInterests.limitToast"));
     } else {
       input.onclick = null;
     }
@@ -9335,16 +10275,16 @@ function openProfileInterests(){
 }
 
 function openChangePassword() {
-  openModal("Zmień hasło", `
-    <div class="tStrong">Zmiana hasła</div>
-    <div class="sectionSub mt10">Wpisz obecne hasło i ustaw nowe hasło do konta.</div>
-    <label class="mt12">Obecne hasło</label>
-    <input id="changePasswordCurrent" type="password" placeholder="Wpisz obecne hasło" />
-    <label class="mt12">Nowe hasło</label>
-    <input id="changePasswordNew" type="password" placeholder="Wpisz nowe hasło" />
-    <label class="mt12">Powtórz nowe hasło</label>
-    <input id="changePasswordRepeat" type="password" placeholder="Powtórz nowe hasło" />
-    <button class="btn mt16" type="button" onclick="submitChangePassword()">Zapisz nowe hasło</button>
+  openModal(t("password.modalTitle"), `
+    <div class="tStrong">${t("password.heading")}</div>
+    <div class="sectionSub mt10">${t("password.subtitle")}</div>
+    <label class="mt12">${t("password.current")}</label>
+    <input id="changePasswordCurrent" type="password" placeholder="${t("password.currentPlaceholder")}" />
+    <label class="mt12">${t("password.new")}</label>
+    <input id="changePasswordNew" type="password" placeholder="${t("password.newPlaceholder")}" />
+    <label class="mt12">${t("password.repeat")}</label>
+    <input id="changePasswordRepeat" type="password" placeholder="${t("password.repeatPlaceholder")}" />
+    <button class="btn mt16" type="button" onclick="submitChangePassword()">${t("password.save")}</button>
   `);
 }
 
@@ -9354,17 +10294,17 @@ async function submitChangePassword() {
   const repeatPassword = $("changePasswordRepeat")?.value?.trim() || "";
 
   if (!currentPassword || !newPassword || !repeatPassword) {
-    toast(t("reset.toast.fill_passwords", "Uzupełnij wszystkie pola hasła"));
+    toast(t("reset.toast.fill_passwords"));
     return;
   }
 
   if (newPassword !== repeatPassword) {
-    toast("Nowe hasła nie są takie same");
+    toast(t("password.toastMismatch"));
     return;
   }
 
   if (newPassword.length < 8) {
-    toast("Nowe hasło musi mieć co najmniej 8 znaków");
+    toast(t("password.toastMin"));
     return;
   }
 
@@ -9379,30 +10319,30 @@ async function submitChangePassword() {
     });
 
     if (res?.success) {
-      toast(t("reset.toast.success", "Hasło zostało zmienione"));
+      toast(t("reset.toast.success"));
       closeModal();
       return;
     }
 
-    toast(res?.error?.message || t("reset.toast.change_error", "Nie udało się zmienić hasła"));
+    toast(res?.error?.message || t("reset.toast.change_error"));
   } catch (err) {
     const msg =
       err?.data?.detail === "CURRENT_PASSWORD_INVALID"
-        ? "Obecne hasło jest nieprawidłowe"
+        ? t("password.toastCurrentInvalid")
         : err?.data?.detail === "NEW_PASSWORD_SAME_AS_CURRENT"
-        ? "Nowe hasło musi być inne niż obecne"
-        : err?.userMessage || "Nie udało się zmienić hasła";
+        ? t("password.toastSame")
+        : err?.userMessage || t("reset.toast.change_error");
     toast(msg);
   }
 }
 
 function openDeleteAccount() {
-  openModal("Usuń konto", `
-    <div class="tStrong">Usuń konto</div>
-    <div class="sectionSub mt10">Ta akcja jest nieodwracalna. Wpisz hasło, aby potwierdzić usunięcie konta.</div>
-    <label class="mt12">Hasło</label>
-    <input id="deleteAccountPassword" type="password" placeholder="Wpisz hasło, aby potwierdzić" />
-    <button class="btn danger mt16" type="button" onclick="submitDeleteAccount()">Usuń konto</button>
+  openModal(t("delete.modalTitle"), `
+    <div class="tStrong">${t("delete.heading")}</div>
+    <div class="sectionSub mt10">${t("delete.subtitle")}</div>
+    <label class="mt12">${t("delete.password")}</label>
+    <input id="deleteAccountPassword" type="password" placeholder="${t("delete.placeholder")}" />
+    <button class="btn danger mt16" type="button" onclick="submitDeleteAccount()">${t("delete.confirm")}</button>
   `);
 }
 
@@ -9410,7 +10350,7 @@ async function submitDeleteAccount() {
   const password = $("deleteAccountPassword")?.value?.trim() || "";
 
   if (!password) {
-    toast("Wpisz hasło, aby potwierdzić usunięcie konta");
+    toast(t("delete.toastFill"));
     return;
   }
 
@@ -9426,18 +10366,18 @@ async function submitDeleteAccount() {
       App.isLoggedIn = false;
       App.currentUserId = null;
       closeModal();
-      toast("Konto zostało usunięte");
+      toast(t("delete.toastSuccess"));
       go("S0_WELCOME");
       renderAll();
       return;
     }
 
-    toast(res?.error?.message || "Nie udało się usunąć konta");
+    toast(res?.error?.message || t("delete.toastFailed"));
   } catch (err) {
     const msg =
       err?.data?.detail === "PASSWORD_INVALID"
-        ? "Hasło jest nieprawidłowe"
-        : err?.userMessage || "Nie udało się usunąć konta";
+        ? t("delete.toastInvalid")
+        : err?.userMessage || t("delete.toastFailed");
     toast(msg);
   }
 }
@@ -9448,7 +10388,7 @@ async function submitBugReport() {
   const ta = $("bugReportText");
   const message = (ta?.value || "").trim();
   if (!message) {
-    toast("Opisz proszę problem");
+    toast(t("bugReport.toast.empty"));
     return;
   }
 
@@ -9472,18 +10412,18 @@ async function submitBugReport() {
     });
 
     if (!res?.success || !res?.data?.ticket) {
-      toast(res?.error?.message || "Nie udało się wysłać zgłoszenia");
+      toast(res?.error?.message || t("bugReport.toast.failed"));
       return;
     }
 
     closeModal();
     if (res.data.emailed) {
-      toast(`Zgłoszenie wysłane • #${res.data.ticket}`);
+      toast(t("bugReport.ticketSent", { ticket: res.data.ticket }));
     } else {
-      toast(`Zgłoszenie zapisane • #${res.data.ticket}`);
+      toast(t("bugReport.ticketSaved", { ticket: res.data.ticket }));
     }
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się wysłać zgłoszenia");
+    toast(err?.userMessage || t("bugReport.toast.failed"));
   }
 }
 
@@ -9492,22 +10432,22 @@ async function submitResetPassword() {
   const repeatPassword = $("resetPasswordRepeat")?.value?.trim() || "";
 
   if (!newPassword || !repeatPassword) {
-    toast(t("reset.toast.fill_passwords", "Uzupełnij wszystkie pola hasła"));
+    toast(t("reset.toast.fill_passwords"));
     return;
   }
 
   if (newPassword !== repeatPassword) {
-    toast(t("reset.toast.passwords_mismatch", "Hasła nie są takie same"));
+    toast(t("reset.toast.passwords_mismatch"));
     return;
   }
 
   if (newPassword.length < 8) {
-    toast(t("reset.toast.password_too_short", "Hasło musi mieć co najmniej 8 znaków"));
+    toast(t("reset.toast.password_too_short"));
     return;
   }
 
   if (!App.resetToken) {
-    toast(t("reset.toast.missing_token", "Brak tokenu resetu hasła"));
+    toast(t("reset.toast.missing_token"));
     return;
   }
 
@@ -9522,14 +10462,14 @@ async function submitResetPassword() {
     });
 
     if (res?.success) {
-      toast("Hasło zostało zmienione");
+      toast(t("reset.toast.success"));
       go("S1_LOGIN");
       return;
     }
 
-    toast(res?.error?.message || "Nie udało się zmienić hasła");
+    toast(res?.error?.message || t("reset.toast.change_error"));
   } catch (err) {
-    toast(err?.userMessage || t("reset.toast.generic_error", "Błąd resetu hasła"));
+    toast(err?.userMessage || t("reset.toast.generic_error"));
   }
 }
 
@@ -9537,7 +10477,7 @@ async function loadResetPasswordScreen(token) {
   const tokenValue = String(token || "").trim();
 
   if (!tokenValue) {
-    toast(t("reset.toast.missing_link", "Brak linku do resetu hasła"));
+    toast(t("reset.toast.missing_link"));
     return false;
   }
 
@@ -9549,7 +10489,7 @@ async function loadResetPasswordScreen(token) {
     });
 
     if (!res?.success || !res?.data?.email) {
-      toast(t("reset.toast.invalid_link", "Link do resetu hasła jest nieprawidłowy"));
+      toast(t("reset.toast.invalid_link"));
       return false;
     }
 
@@ -9565,7 +10505,7 @@ async function loadResetPasswordScreen(token) {
 
     return true;
   } catch (err) {
-    toast(err?.userMessage || "Nie udało się otworzyć resetu hasła");
+    toast(err?.userMessage || t("reset.toast.generic_error"));
     return false;
   }
 }
@@ -9717,11 +10657,11 @@ async function adminChangeReportStatus(reportType, ticket, status) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    toast("Status zgłoszenia zapisany");
+    toast(t("admin.toastStatusSaved"));
     await reloadAdminReports();
   } catch (e) {
     console.error("adminChangeReportStatus error", e);
-    toast(e?.userMessage || "Nie udało się zapisać statusu");
+    toast(e?.userMessage || t("admin.toastStatusSaveFailed"));
   }
 }
 
@@ -9856,7 +10796,7 @@ async function openAdminBugPreview(ticket) {
     const bug = items.find((x) => String(x.ticket || x.id || "") === String(ticket));
 
     if (!bug) {
-      toast("Nie znaleziono zgłoszenia błędu");
+      toast(t("admin.toastBugNotFound"));
       return;
     }
 
@@ -9877,7 +10817,7 @@ async function openAdminBugPreview(ticket) {
     `);
   } catch (e) {
     console.error("openAdminBugPreview error", e);
-    toast("Nie udało się otworzyć podglądu błędu");
+    toast(t("admin.toastBugPreviewFailed"));
   }
 }
 window.openAdminBugPreview = openAdminBugPreview;
@@ -9926,7 +10866,7 @@ async function openAdminEventPreview(eventId, ticket, reportStatus = "new") {
     openModal("Podgląd wydarzenia", `
       <div data-hide-modal-footer="1" style="display:none;"></div>
       <div class="card">
-        <div class="sectionTitle">${escapeAdminHtml(ev.title || "Wydarzenie")}</div>
+        <div class="sectionTitle">${escapeAdminHtml(ev.title || t("personProfile.defaultEvent"))}</div>
         <div class="sectionSub mt8">ID: ${escapeAdminHtml(ev.id)} · Status: ${escapeAdminHtml(ev.status || "—")}</div>
         <div class="row mt16" style="gap:10px;align-items:stretch;">
           <div class="card" style="flex:1;min-width:0;margin:0;padding:12px;border-radius:18px;"><div class="sectionSub">Zgłoszenia</div><div class="sectionTitle">${escapeAdminHtml(ev.reports_total || 0)}</div></div>
