@@ -14,7 +14,7 @@ services:
       - key: SENTRY_TRACES_SAMPLE_RATE
         value: "1.0"
       - key: FRONTEND_ORIGIN
-        value: "https://twoj-frontend.com"
+        value: "https://uslyapp.pl"
       - key: JWT_SECRET_KEY
         value: "supersecretkey123456789"
       - key: JWT_ALGORITHM
@@ -23,3 +23,13 @@ services:
         value: "60"
       - key: LOG_LEVEL
         value: "INFO"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_IMAGE_MODEL
+        value: "gpt-image-1"
+      - key: OPENAI_IMAGE_SIZE
+        value: "1024x1024"
+      - key: OPENAI_IMAGE_QUALITY
+        value: "low"
+      - key: OPENAI_MODERATION_MODEL
+        value: "gpt-4.1-mini"

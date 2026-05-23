@@ -159,7 +159,7 @@ from fastapi import (
     Query,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -212,14 +212,16 @@ app.add_middleware(SlowAPIMiddleware)
 frontend_origin = os.getenv("FRONTEND_ORIGIN", "")
 
 allowed_origins = [
-    "null",  # allow file:// frontend
-
+    "null",  # allow file:// frontend during local/mobile dev
     "http://127.0.0.1:5173",
     "http://localhost:5173",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
     "http://127.0.0.1:5501",
     "http://localhost:5501",
+    "https://uslyapp.pl",
+    "https://www.uslyapp.pl",
+    "https://usly-backend-v2.onrender.com",
 ]
 
 if frontend_origin:
@@ -228,7 +230,7 @@ if frontend_origin:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -415,6 +417,44 @@ def leave_event(
 UPLOADS_DIR = Path("uploads")
 UPLOADS_DIR.mkdir(exist_ok=True)
 app.mount("/uploads/static", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
+# =========================
+# Static frontend / admin
+# =========================
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = PROJECT_ROOT / "frontend"
+
+@app.get("/", include_in_schema=False)
+def serve_frontend_index():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+@app.get("/admin.html", include_in_schema=False)
+def serve_admin_html():
+    return FileResponse(FRONTEND_DIR / "admin.html")
+
+@app.get("/app.js", include_in_schema=False)
+def serve_app_js():
+    return FileResponse(FRONTEND_DIR / "app.js")
+
+@app.get("/api.js", include_in_schema=False)
+def serve_api_js():
+    return FileResponse(FRONTEND_DIR / "api.js")
+
+@app.get("/style.css", include_in_schema=False)
+def serve_style_css():
+    return FileResponse(FRONTEND_DIR / "style.css")
+
+@app.get("/admin.js", include_in_schema=False)
+def serve_admin_js():
+    return FileResponse(FRONTEND_DIR / "admin.js")
+
+@app.get("/admin.css", include_in_schema=False)
+def serve_admin_css():
+    return FileResponse(FRONTEND_DIR / "admin.css")
+
+@app.get("/USLY logo.png", include_in_schema=False)
+def serve_usly_logo():
+    return FileResponse(FRONTEND_DIR / "USLY logo.png")
 
 
 # =========================
@@ -4813,8 +4853,6 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
         headers=headers,
         content=fail(code=ErrorCode.RATE_LIMITED, lang=lang),
     )
-
-from fastapi.responses import FileResponse
 
 @app.get("/api/legal/terms_pl")
 def get_terms_pl():
