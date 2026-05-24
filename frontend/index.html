@@ -3761,50 +3761,6 @@ section#S11_PLANS .card[data-plan].is-current{
           <option value="ekologia"></option><option value="recykling"></option><option value="thrifting"></option><option value="planowanie"></option>
           <option value="organizacja"></option><option value="minimalizm"></option><option value="slow life"></option><option value="mindset"></option>
         </datalist>
-        <section class="view adminReportsScope" id="S_ADMIN_REPORTS" aria-label="Panel administratora">
-          <header class="topbar">
-            <button class="backBtn" type="button" onclick="logout()">Wyloguj</button>
-            <div class="brandMini">USLY Admin</div>
-            <div style="width:64px;"></div>
-          </header>
-
-          <div class="content adminDashboard">
-            <div class="card mt16 adminDashboardHero">
-              <div class="sectionTitle">Panel administratora</div>
-              <div class="sectionSub">Zgłoszenia użytkowników, wydarzeń i błędów.</div>
-
-              <select id="adminReportsStatusFilter" class="mt12" onchange="reloadAdminReports()">
-                <option value="all">Wszystkie statusy</option>
-                <option value="new">Nowe</option>
-                <option value="in_review">Do obserwacji</option>
-                <option value="resolved">Rozwiązane</option>
-                <option value="rejected">Odrzucone</option>
-              </select>
-            </div>
-
-            <div class="card mt16 adminDashboardSection">
-              <div class="sectionTitle">Zgłoszenia użytkowników</div>
-              <div id="adminUserReportsList" class="mt12">
-                <div class="emptyState">Ładowanie...</div>
-              </div>
-            </div>
-
-            <div class="card mt16 adminDashboardSection">
-              <div class="sectionTitle">Zgłoszenia wydarzeń</div>
-              <div id="adminEventReportsList" class="mt12">
-                <div class="emptyState">Ładowanie...</div>
-              </div>
-            </div>
-
-            <div class="card mt16 adminDashboardSection">
-              <div class="sectionTitle">Zgłoszenia błędów</div>
-              <div id="adminBugReportsList" class="mt12">
-                <div class="emptyState">Ładowanie...</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
       </div>
     </div>
   </div>
