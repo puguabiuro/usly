@@ -2008,9 +2008,9 @@ section#S11_PLANS .card[data-plan].is-current{
               </div>
   
               <div class="heroBadges" aria-hidden="true" style="display:none;">
-                <div class="pill">Poznawaj po zainteresowaniach</div>
-                <div class="pill">Spotykaj ludzi w swoim klimacie</div>
-                <div class="pill">Wychodź do miejsc, które czujesz</div>
+                <div class="pill" data-i18n="landing.pill.interests">Poznawaj po zainteresowaniach</div>
+                <div class="pill" data-i18n="landing.pill.vibe">Spotykaj ludzi w swoim klimacie</div>
+                <div class="pill" data-i18n="landing.pill.places">Wychodź do miejsc, które czujesz</div>
               </div>
   
               <div class="row mt12">
@@ -2175,7 +2175,7 @@ section#S11_PLANS .card[data-plan].is-current{
 
                 <div id="regPartnerAccountFields" style="display:none;">
                   <label class="mt12" data-i18n="register.company">Oficjalna nazwa miejsca / firmy *</label>
-                  <input id="regCompany" type="text" placeholder="np. Kawiarnia Aurora" data-i18n-placeholder="register.company_placeholder" />
+                  <input id="regCompany" type="text" placeholder="np. Studio Miejsce" data-i18n-placeholder="register.company_placeholder" />
                 </div>
 
                 <label class="mt12" data-i18n="register.password">Hasło *</label>
@@ -2315,11 +2315,11 @@ section#S11_PLANS .card[data-plan].is-current{
 
               <label class="mt12" data-i18n="profileEdit.radius">Zasięg okolicy</label>
               <select id="setNearbyRadiusKm">
-                <option value="5">Do 5 km</option>
-                <option value="10">Do 10 km</option>
-                <option value="25">Do 25 km</option>
-                <option value="50">Do 50 km</option>
-                <option value="100">Do 100 km</option>
+                <option value="5" data-i18n="profileEdit.radius5">Do 5 km</option>
+                <option value="10" data-i18n="profileEdit.radius10">Do 10 km</option>
+                <option value="25" data-i18n="profileEdit.radius25">Do 25 km</option>
+                <option value="50" data-i18n="profileEdit.radius50">Do 50 km</option>
+                <option value="100" data-i18n="profileEdit.radius100">Do 100 km</option>
               </select>
 
               <div class="hintCard mt16">
@@ -2492,7 +2492,7 @@ section#S11_PLANS .card[data-plan].is-current{
                   <div class="avatar big" id="userAvatar"></div>
                   <div style="text-align:left;flex:1;">
                     <div style="font-weight:950;" data-i18n="profileSetup.startProfile">Twój profil startowy</div>
-                    <div class="sectionSub" id="setupAgeDisplay">Wiek: — lat</div>
+                    <div class="sectionSub" id="setupAgeDisplay" data-i18n="settings.ageLabel">Wiek: — lat</div>
                   </div>
                   <div class="planPill" id="planPillSetup">FREE</div>
                 </div>
@@ -2511,11 +2511,11 @@ section#S11_PLANS .card[data-plan].is-current{
 
                 <label class="mt12" data-i18n="profileEdit.radius">Zasięg okolicy</label>
                 <select id="setupNearbyRadiusKm">
-                  <option value="5">Do 5 km</option>
-                  <option value="10">Do 10 km</option>
-                  <option value="25" selected>Do 25 km</option>
-                  <option value="50">Do 50 km</option>
-                  <option value="100">Do 100 km</option>
+                  <option value="5" data-i18n="profileEdit.radius5">Do 5 km</option>
+                  <option value="10" data-i18n="profileEdit.radius10">Do 10 km</option>
+                  <option value="25" selected data-i18n="profileEdit.radius25">Do 25 km</option>
+                  <option value="50" data-i18n="profileEdit.radius50">Do 50 km</option>
+                  <option value="100" data-i18n="profileEdit.radius100">Do 100 km</option>
                 </select>
 
                 <div class="setupInterestCard mt16">
@@ -2917,7 +2917,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <div class="eventSocialSection" id="evTicketBox">
                 <div class="eventPanelLabel" data-i18n="eventDetail.tickets">Bilety</div>
                 <div class="eventTicketRow">
-                  <div class="tStrong" id="evTicketType">Bezpłatne</div>
+                  <div class="tStrong" id="evTicketType" data-i18n="eventDetail.ticketFree">Bezpłatne</div>
                   <div class="planPill" id="evTicketPricePill">0 zł</div>
                 </div>
                 <div class="sectionSub mt10" id="evTicketPriceLine">—</div>
@@ -3152,7 +3152,7 @@ section#S11_PLANS .card[data-plan].is-current{
           <div class="content">
             <div class="heroCard profileSummaryCard">
               <label data-i18n="partnerCreate.name">Nazwa *</label>
-              <input id="peTitle" type="text" placeholder="np. Koncert na żywo" data-i18n-placeholder="partnerCreate.namePlaceholder" />
+              <input id="peTitle" type="text" placeholder="np. Kameralny wieczór muzyczny" data-i18n-placeholder="partnerCreate.namePlaceholder" />
   
               <label class="mt12" data-i18n="partnerCreate.city">Miasto *</label>
               <input id="peCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" />
@@ -3161,7 +3161,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <input id="peWhen" type="datetime-local" />
   
               <label class="mt12" data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>
-              <input id="peAddress" type="text" placeholder="np. Padma Joga Kobyłka albo ul. Nadmeńska 5C" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
+              <input id="peAddress" type="text" placeholder="np. Studio Aurora albo ul. Słoneczna 12" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
 
               <input id="peWhere" type="hidden" />
               <input id="peResolvedAddress" type="hidden" />
@@ -3444,7 +3444,7 @@ section#S11_PLANS .card[data-plan].is-current{
                 <input id="setOrgEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
 
                 <label class="mt12" data-i18n="register.company">Oficjalna nazwa miejsca / firmy</label>
-                <input id="setOrgCompany" type="text" placeholder="np. Kawiarnia Aurora" data-i18n-placeholder="register.company_placeholder" />
+                <input id="setOrgCompany" type="text" placeholder="np. Studio Miejsce" data-i18n-placeholder="register.company_placeholder" />
 
                 <label class="mt12" data-i18n="partnerCreate.city">Miasto *</label>
                 <input id="setOrgCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" list="citiesDatalist" />
