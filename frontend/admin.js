@@ -6,6 +6,7 @@ const Admin = {
   },
   users: [],
   events: [],
+  me: null,
 };
 
 function adminToast(message) {
@@ -17,6 +18,27 @@ function adminToast(message) {
   window.__adminToastTimer = setTimeout(() => {
     el.hidden = true;
   }, 2500);
+}
+
+function renderAdminActor() {
+  const el = document.getElementById("adminCurrentActor");
+  if (!el) return;
+  const me = Admin.me || {};
+  const name = me.admin_display_name || me.email || "Admin";
+  const level = me.admin_level || me.role || "admin";
+  el.textContent = `${name} · ${level}`;
+}
+
+async function loadCurrentAdmin() {
+  try {
+    const res = await apiFetch("/auth/me");
+    Admin.me = res?.data || res || null;
+    renderAdminActor();
+  } catch (e) {
+    console.error("loadCurrentAdmin error", e);
+    Admin.me = null;
+    renderAdminActor();
+  }
 }
 
 function escapeAdmin(value) {
@@ -812,6 +834,12 @@ function adminHistoryEntryLabel(h) {
   return "Zmiana statusu";
 }
 
+function adminHistoryActorLabel(h) {
+  const name = h.admin_display_name || (h.admin_id ? `Admin #${h.admin_id}` : "Admin");
+  const level = h.admin_level ? ` · ${h.admin_level}` : "";
+  return `${name}${level}`;
+}
+
 function renderAdminHistory(history, limit = null) {
   const items = Array.isArray(history) ? history.slice().reverse() : [];
   const visibleItems = Number.isInteger(limit) ? items.slice(0, limit) : items;
@@ -831,7 +859,7 @@ function renderAdminHistory(history, limit = null) {
         <div class="adminHistoryCard">
           <div class="adminHistoryKind">${escapeAdmin(kind)}</div>
           <div class="adminHistoryTitle">${escapeAdmin(h.note || "Notatka wewnętrzna")}</div>
-          <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · Admin #${escapeAdmin(h.admin_id || "—")}</div>
+          <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · ${escapeAdmin(adminHistoryActorLabel(h))}</div>
         </div>
       `;
     }
@@ -843,7 +871,7 @@ function renderAdminHistory(history, limit = null) {
           <div class="adminHistoryTitle">Wysłano ostrzeżenie do użytkownika</div>
           <div class="adminHistoryMeta"><strong>Typ ostrzeżenia:</strong> ${escapeAdmin(h.label || h.action || "—")}</div>
           <div class="adminHistoryMeta"><strong>Kod akcji:</strong> ${escapeAdmin(h.action || "—")}</div>
-          <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · Admin #${escapeAdmin(h.admin_id || "—")}</div>
+          <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · ${escapeAdmin(adminHistoryActorLabel(h))}</div>
         </div>
       `;
     }
@@ -855,7 +883,7 @@ function renderAdminHistory(history, limit = null) {
           <div class="adminHistoryTitle">Poinformowano zapisanych i obserwujących wydarzenie</div>
           <div class="adminHistoryMeta"><strong>Typ komunikatu:</strong> ${escapeAdmin(h.notification_type || "—")}</div>
           <div class="adminHistoryMeta"><strong>Liczba odbiorców:</strong> ${escapeAdmin(h.notified_count ?? "—")}</div>
-          <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · Admin #${escapeAdmin(h.admin_id || "—")}</div>
+          <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · ${escapeAdmin(adminHistoryActorLabel(h))}</div>
         </div>
       `;
     }
@@ -864,7 +892,7 @@ function renderAdminHistory(history, limit = null) {
       <div class="adminHistoryCard">
         <div class="adminHistoryKind">${escapeAdmin(kind)}</div>
         <div class="adminHistoryTitle">${escapeAdmin(adminStatusLabel(h.from_status || "new"))} → ${escapeAdmin(adminStatusLabel(h.to_status || "new"))}</div>
-        <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · Admin #${escapeAdmin(h.admin_id || "—")}</div>
+        <div class="adminHistoryMeta">${escapeAdmin(h.at || "—")} · ${escapeAdmin(adminHistoryActorLabel(h))}</div>
         ${h.moderator_note ? `<div class="adminHistoryMeta"><strong>Notatka:</strong> ${escapeAdmin(h.moderator_note)}</div>` : ""}
         ${h.moderator_message ? `<div class="adminHistoryMeta"><strong>Wiadomość:</strong> ${escapeAdmin(h.moderator_message)}</div>` : ""}
       </div>
@@ -2417,6 +2445,7 @@ async function adminLogin(email, password) {
   document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
+  await loadCurrentAdmin();
   showAdminView("dashboard");
 
   adminToast("Zalogowano do panelu administratora.");
@@ -2444,6 +2473,7 @@ document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) 
   document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
+  loadCurrentAdmin().catch(() => {});
   showAdminView("dashboard");
 
   startAdminAutoRefresh();

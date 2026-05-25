@@ -79,6 +79,18 @@ class User(Base):
         default=UserRole.USER.value,
     )
 
+    admin_display_name: Mapped[str | None] = mapped_column(
+        String(80),
+        nullable=True,
+        default=None,
+    )
+
+    admin_level: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+        default=None,
+    )
+
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

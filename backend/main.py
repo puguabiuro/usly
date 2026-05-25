@@ -847,6 +847,8 @@ def auth_me(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "email": current_user.email,
         "role": current_user.role,
+        "admin_display_name": current_user.admin_display_name,
+        "admin_level": current_user.admin_level,
     }
 
 
@@ -5553,6 +5555,8 @@ def admin_update_report_status(
                 history.append({
                     "at": now,
                     "admin_id": current_user.id,
+                    "admin_display_name": current_user.admin_display_name or current_user.email or f"Admin #{current_user.id}",
+                    "admin_level": current_user.admin_level or "admin",
                     "from_status": previous_status,
                     "to_status": new_status,
                     "moderator_note": moderator_note,
@@ -5628,6 +5632,8 @@ def admin_add_report_note(
                     "type": "note",
                     "at": now,
                     "admin_id": current_user.id,
+                    "admin_display_name": current_user.admin_display_name or current_user.email or f"Admin #{current_user.id}",
+                    "admin_level": current_user.admin_level or "admin",
                     "note": note,
                 })
 
@@ -5689,6 +5695,8 @@ def admin_add_report_action(
                     "type": "warning",
                     "at": now,
                     "admin_id": current_user.id,
+                    "admin_display_name": current_user.admin_display_name or current_user.email or f"Admin #{current_user.id}",
+                    "admin_level": current_user.admin_level or "admin",
                     "action": action,
                     "label": label or action,
                 })
@@ -5754,7 +5762,7 @@ def admin_delete_user_account(
             AuditLog(
                 user_id=user.id,
                 action="admin_delete_user_account",
-                details=f"admin_id={current_user.id}; original_email={original_email}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; original_email={original_email}",
             )
         )
         db.commit()
@@ -5821,7 +5829,7 @@ def admin_update_event_status(
             AuditLog(
                 user_id=event.partner_user_id,
                 action="admin_update_event_status",
-                details=f"admin_id={current_user.id}; event_id={event.id}; from={previous_status}; to={new_status}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; event_id={event.id}; from={previous_status}; to={new_status}",
             )
         )
 
@@ -5949,7 +5957,7 @@ def admin_create_user_account(
             AuditLog(
                 user_id=user.id,
                 action="admin_create_user_account",
-                details=f"admin_id={current_user.id}; role={role}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; role={role}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
             )
         )
         db.commit()
@@ -6042,7 +6050,7 @@ def admin_send_user_reset_link(
             AuditLog(
                 user_id=user.id,
                 action="admin_send_reset_link",
-                details=f"admin_id={current_user.id}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
             )
         )
         db.commit()
@@ -6080,7 +6088,7 @@ def admin_reset_user_password(
             AuditLog(
                 user_id=user.id,
                 action="admin_reset_password",
-                details=f"admin_id={current_user.id}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}",
             )
         )
 
@@ -6149,7 +6157,7 @@ def admin_update_user_plan(
             AuditLog(
                 user_id=user.id,
                 action="admin_update_user_plan",
-                details=f"admin_id={current_user.id}; plan={plan}; source={plan_source}; status={plan_status}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; plan={plan}; source={plan_source}; status={plan_status}",
             )
         )
         db.commit()
@@ -6672,6 +6680,8 @@ def admin_notify_event_watchers(
                             "type": "notify_watchers",
                             "at": now,
                             "admin_id": current_user.id,
+                            "admin_display_name": current_user.admin_display_name or current_user.email or f"Admin #{current_user.id}",
+                            "admin_level": current_user.admin_level or "admin",
                             "notification_type": notification_type,
                             "notified_count": len(target_user_ids),
                         })
