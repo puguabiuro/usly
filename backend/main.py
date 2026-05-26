@@ -202,6 +202,35 @@ if _SENTRY_DSN:
     app.add_middleware(SentryAsgiMiddleware)
 
 app.add_middleware(RequestIdMiddleware)
+
+
+ADMIN_LEVEL_OWNER = "owner"
+ADMIN_LEVEL_OPERATIONS = "operations"
+ADMIN_LEVEL_MODERATION = "moderation"
+ADMIN_LEVEL_SUPPORT = "support"
+
+ADMIN_PERMISSION_LEVELS = {
+    "reports": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS, ADMIN_LEVEL_MODERATION, ADMIN_LEVEL_SUPPORT},
+    "users": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
+    "events": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
+    "plans": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
+    "account_status": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
+    "account_delete": {ADMIN_LEVEL_OWNER},
+    "admin_create": {ADMIN_LEVEL_OWNER},
+    "admin_manage": {ADMIN_LEVEL_OWNER},
+}
+
+
+def _admin_level(current_user: User) -> str:
+    return (current_user.admin_level or ADMIN_LEVEL_OWNER).strip().lower() if current_user.role == "admin" else ""
+
+
+def require_admin_permission(current_user: User, permission: str) -> None:
+    level = _admin_level(current_user)
+    allowed = ADMIN_PERMISSION_LEVELS.get(permission, {ADMIN_LEVEL_OWNER})
+    if level not in allowed:
+        raise HTTPException(status_code=403, detail="ADMIN_PERMISSION_DENIED")
+
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
@@ -5511,7 +5540,9 @@ def admin_update_report_status(
 ):
     import json
 
-    allowed = {"new", "in_review", "resolved", "rejected", "archived", "accepted", "in_progress", "fixed", "not_reproducible"}
+    require_admin_permission(current_user, "reports")
+
+    allowed = {"new", "in_review", "pending_owner_approval", "resolved", "rejected", "archived", "accepted", "in_progress", "fixed", "not_reproducible"}
     payload = payload or {}
     new_status = str(payload.get("status") or "").strip()
     moderator_note = str(payload.get("moderator_note") or "").strip()
@@ -5519,6 +5550,10 @@ def admin_update_report_status(
 
     if new_status not in allowed:
         raise HTTPException(status_code=422, detail="INVALID_REPORT_STATUS")
+
+    if _admin_level(current_user) in {ADMIN_LEVEL_MODERATION, ADMIN_LEVEL_SUPPORT}:
+        if report_type in {"user", "event"} and new_status not in {"in_review", "rejected", "resolved", "pending_owner_approval"}:
+            raise HTTPException(status_code=403, detail="OWNER_APPROVAL_REQUIRED")
 
     f = _admin_reports_file(report_type)
     if not f.exists():
@@ -5537,6 +5572,17 @@ def admin_update_report_status(
 
             if str(row.get("ticket")) == str(ticket):
                 previous_status = str(row.get("status") or "new")
+
+                if report_type in {"user", "event"}:
+                    if previous_status in {"resolved", "rejected"} and new_status in {"in_review", "pending_owner_approval"}:
+                        raise HTTPException(status_code=409, detail="REPORT_ALREADY_CLOSED")
+                    if (
+                        _admin_level(current_user) in {ADMIN_LEVEL_MODERATION, ADMIN_LEVEL_SUPPORT}
+                        and previous_status == "pending_owner_approval"
+                        and new_status in {"resolved", "rejected"}
+                    ):
+                        raise HTTPException(status_code=403, detail="OWNER_APPROVAL_ALREADY_REQUESTED")
+
                 now = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M")
 
                 row["status"] = new_status
@@ -5603,6 +5649,8 @@ def admin_add_report_note(
 ):
     import json
 
+    require_admin_permission(current_user, "reports")
+
     note = str((payload or {}).get("note") or "").strip()
     if not note:
         raise HTTPException(status_code=422, detail="EMPTY_NOTE")
@@ -5662,6 +5710,8 @@ def admin_add_report_action(
     current_user: User = Depends(require_role("admin")),
 ):
     import json
+
+    require_admin_permission(current_user, "reports")
 
     action = str((payload or {}).get("action") or "").strip()
     label = str((payload or {}).get("label") or "").strip()
@@ -5731,6 +5781,8 @@ def admin_delete_user_account(
     user_id: int,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "account_delete")
+
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.id == user_id).first()
@@ -5782,6 +5834,8 @@ def admin_update_user_status(
     payload: dict,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "account_status")
+
     new_status = str((payload or {}).get("status") or "").strip()
     if new_status not in {UserStatus.ACTIVE.value, UserStatus.BLOCKED.value}:
         raise HTTPException(status_code=422, detail="INVALID_USER_STATUS")
@@ -5809,6 +5863,8 @@ def admin_update_event_status(
     payload: dict,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "events")
+
     new_status = str((payload or {}).get("status") or "").strip()
     if new_status not in {"published", "archived"}:
         raise HTTPException(status_code=422, detail="INVALID_EVENT_STATUS")
@@ -5849,6 +5905,8 @@ def admin_create_user_account(
     role = str((payload or {}).get("role") or "user").strip().lower()
     password = str((payload or {}).get("password") or "").strip()
     dob_raw = str((payload or {}).get("dob") or "").strip()
+    admin_display_name = str((payload or {}).get("admin_display_name") or "").strip()
+    admin_level = str((payload or {}).get("admin_level") or "").strip().lower()
 
     if not email or "@" not in email:
         raise HTTPException(status_code=422, detail="INVALID_EMAIL")
@@ -5856,6 +5914,16 @@ def admin_create_user_account(
         raise HTTPException(status_code=422, detail="INVALID_ROLE")
     if len(password) < 6:
         raise HTTPException(status_code=422, detail="PASSWORD_TOO_SHORT")
+
+    if role == "admin":
+        require_admin_permission(current_user, "admin_create")
+        if not admin_display_name:
+            raise HTTPException(status_code=422, detail="ADMIN_DISPLAY_NAME_REQUIRED")
+        if admin_level not in {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS, ADMIN_LEVEL_SUPPORT}:
+            raise HTTPException(status_code=422, detail="INVALID_ADMIN_LEVEL")
+    else:
+        admin_display_name = ""
+        admin_level = ""
 
     parsed_dob = None
     if role == "user":
@@ -5883,6 +5951,8 @@ def admin_create_user_account(
             privacy_version="admin-created",
             role=role,
             status=UserStatus.ACTIVE.value,
+            admin_display_name=admin_display_name or None,
+            admin_level=admin_level or None,
         )
 
         db.add(user)
@@ -5957,7 +6027,7 @@ def admin_create_user_account(
             AuditLog(
                 user_id=user.id,
                 action="admin_create_user_account",
-                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; role={role}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; created_role={role}; created_admin_display_name={admin_display_name or '-'}; created_admin_level={admin_level or '-'}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
             )
         )
         db.commit()
@@ -5981,6 +6051,8 @@ def admin_send_user_reset_link(
 ):
     import smtplib
     import ssl
+
+    require_admin_permission(current_user, "users")
 
     db = SessionLocal()
     try:
@@ -6071,6 +6143,8 @@ def admin_reset_user_password(
     payload: dict,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "users")
+
     new_password = str((payload or {}).get("new_password") or "").strip()
 
     if len(new_password) < 6:
@@ -6109,6 +6183,8 @@ def admin_update_user_plan(
     payload: dict,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "plans")
+
     plan = str((payload or {}).get("plan") or "").strip().lower()
     plan_source = str((payload or {}).get("plan_source") or "manual").strip().lower()
     plan_status = str((payload or {}).get("plan_status") or "active").strip().lower()
@@ -6179,6 +6255,8 @@ def admin_user_preview(
     ticket: str | None = None,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "reports" if ticket else "users")
+
     import json
 
     db = SessionLocal()
@@ -6294,6 +6372,8 @@ def admin_event_preview(
     ticket: str | None = None,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "reports" if ticket else "events")
+
     db = SessionLocal()
     try:
         event = db.query(Event).filter(Event.id == event_id).first()
@@ -6410,6 +6490,8 @@ def admin_bug_reporter_context(
     ticket: str,
     current_user: User = Depends(require_role("admin")),
 ):
+    require_admin_permission(current_user, "reports")
+
     import json
 
     db = SessionLocal()
@@ -6512,6 +6594,8 @@ def admin_bug_reporter_context(
 
 @app.get("/admin/users")
 def admin_list_users(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "users")
+
     import json
 
     db = SessionLocal()
@@ -6583,6 +6667,8 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
 
 @app.get("/admin/user-reports")
 def get_admin_user_reports(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "reports")
+
     import json
     from pathlib import Path
 
@@ -6712,6 +6798,8 @@ def admin_notify_event_watchers(
 
 @app.get("/admin/events")
 def admin_list_events(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "events")
+
     db = SessionLocal()
     try:
         events = db.query(Event).order_by(Event.created_at.desc()).all()

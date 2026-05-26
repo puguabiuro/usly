@@ -20,6 +20,51 @@ function adminToast(message) {
   }, 2500);
 }
 
+function adminLevel() {
+  return String(Admin.me?.admin_level || "owner").toLowerCase();
+}
+
+function adminCanView(view) {
+  const level = adminLevel();
+  if (level === "owner") return true;
+  if (level === "operations") return ["reports", "users", "events"].includes(view);
+  if (level === "moderation" || level === "support") return view === "reports";
+  return view === "reports";
+}
+
+function adminCanFinalizeReportDecision() {
+  const level = adminLevel();
+  return level === "owner" || level === "operations";
+}
+
+function adminCanManageUsers() {
+  const level = adminLevel();
+  return level === "owner" || level === "operations";
+}
+
+function adminCanManageEvents() {
+  const level = adminLevel();
+  return level === "owner" || level === "operations";
+}
+
+function adminCanDeleteAccounts() {
+  return adminLevel() === "owner";
+}
+
+function defaultAdminView() {
+  return adminCanView("dashboard") ? "dashboard" : "reports";
+}
+
+function refreshAdminNavAccess() {
+  document.querySelectorAll("[data-admin-view]").forEach((btn) => {
+    const view = btn.dataset.adminView || "reports";
+    const allowed = adminCanView(view);
+    btn.disabled = !allowed;
+    btn.classList.toggle("adminNavDisabled", !allowed);
+    btn.title = allowed ? "" : "Brak dostępu na tym poziomie admina";
+  });
+}
+
 function renderAdminActor() {
   const el = document.getElementById("adminCurrentActor");
   if (!el) return;
@@ -27,6 +72,7 @@ function renderAdminActor() {
   const name = me.admin_display_name || me.email || "Admin";
   const level = me.admin_level || me.role || "admin";
   el.textContent = `${name} · ${level}`;
+  refreshAdminNavAccess();
 }
 
 async function loadCurrentAdmin() {
@@ -54,6 +100,7 @@ function adminStatusLabel(status) {
   const labels = {
     new: "Nowe",
     in_review: "Do obserwacji",
+    pending_owner_approval: "Do akceptacji ownera",
     resolved: "Rozwiązane",
     rejected: "Odrzucone",
     archived: "Archiwum",
@@ -485,6 +532,11 @@ async function reloadAdminReports() {
 
 
 async function adminSetReportStatus(reportType, ticket, status, extra = {}) {
+  if (status === "pending_owner_approval" && !String(extra.moderator_note || "").trim()) {
+    adminToast("Dodaj notatkę dla ownera przed przekazaniem sprawy.");
+    return;
+  }
+
   try {
     await window.apiFetch(`/admin/reports/${encodeURIComponent(reportType)}/${encodeURIComponent(ticket)}/status`, {
       method: "POST",
@@ -501,6 +553,34 @@ async function adminSetReportStatus(reportType, ticket, status, extra = {}) {
   } catch (e) {
     console.error("adminSetReportStatus error", e);
     adminToast(e?.userMessage || "Nie udało się zapisać statusu zgłoszenia.");
+  }
+}
+
+
+async function adminAddReportNote(reportType, ticket, textareaId, reopen = null) {
+  const note = document.getElementById(textareaId)?.value || "";
+
+  if (!String(note).trim()) {
+    adminToast("Wpisz notatkę.");
+    return;
+  }
+
+  try {
+    await window.apiFetch(`/admin/reports/${encodeURIComponent(reportType)}/${encodeURIComponent(ticket)}/note`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note }),
+    });
+
+    adminToast("Notatka dodana.");
+    await reloadAdminReports();
+
+    if (typeof reopen === "function") {
+      await reopen();
+    }
+  } catch (e) {
+    console.error("adminAddReportNote error", e);
+    adminToast(e?.userMessage || "Nie udało się dodać notatki.");
   }
 }
 
@@ -539,13 +619,21 @@ async function adminSendUserWarning(userId, reportTicket) {
 }
 
 async function adminSetUserReportDecision(userId, reportTicket, status) {
-  await adminSetReportStatus("user", reportTicket, status);
+  const moderator_note = status === "pending_owner_approval"
+    ? String(document.getElementById("userOwnerApprovalNote")?.value || "").trim()
+    : "";
+
+  await adminSetReportStatus("user", reportTicket, status, { moderator_note });
   await reloadAdminReports();
   openUserPreview(userId, reportTicket, status);
 }
 
 async function adminSetEventReportDecision(eventId, reportTicket, status) {
-  await adminSetReportStatus("event", reportTicket, status);
+  const moderator_note = status === "pending_owner_approval"
+    ? String(document.getElementById("eventOwnerApprovalNote")?.value || "").trim()
+    : "";
+
+  await adminSetReportStatus("event", reportTicket, status, { moderator_note });
   await reloadAdminReports();
   openEventPreview(eventId, reportTicket, status);
 }
@@ -736,6 +824,22 @@ function openCreateUserDrawer() {
         <input class="adminFieldInput" id="adminCreateUserDob" type="date" />
         <div class="adminWarnHint">Data urodzenia jest wymagana dla Towarzysza. Dla Organizatora/Admina może zostać pusta.</div>
 
+        <div class="adminInlineNotice">
+          <strong>Dane admina</strong>
+          <span>Uzupełnij tylko, jeśli tworzysz konto z rolą Admin. Tworzenie adminów jest dostępne wyłącznie dla ownera.</span>
+        </div>
+
+        <label class="adminFieldLabel" for="adminCreateAdminDisplayName">Nazwa admina</label>
+        <input class="adminFieldInput" id="adminCreateAdminDisplayName" type="text" placeholder="np. Support Marta" />
+
+        <label class="adminFieldLabel" for="adminCreateAdminLevel">Poziom dostępu admina</label>
+        <select class="adminFieldInput" id="adminCreateAdminLevel">
+          <option value="">Wybierz poziom</option>
+          <option value="owner">Owner — pełny dostęp</option>
+          <option value="operations">Operations — użytkownicy, wydarzenia, plany, zgłoszenia</option>
+          <option value="support">Support — zgłoszenia i obsługa</option>
+        </select>
+
         <label class="adminFieldLabel" for="adminCreateUserPassword">Hasło tymczasowe</label>
         <input class="adminFieldInput" id="adminCreateUserPassword" type="text" placeholder="Minimum 6 znaków" />
 
@@ -752,6 +856,8 @@ async function adminCreateUserAccount() {
   const role = String(document.getElementById("adminCreateUserRole")?.value || "user");
   const dob = String(document.getElementById("adminCreateUserDob")?.value || "").trim();
   const password = String(document.getElementById("adminCreateUserPassword")?.value || "").trim();
+  const admin_display_name = String(document.getElementById("adminCreateAdminDisplayName")?.value || "").trim();
+  const admin_level = String(document.getElementById("adminCreateAdminLevel")?.value || "").trim();
 
   if (!email || !email.includes("@")) {
     adminToast("Podaj poprawny email.");
@@ -768,11 +874,21 @@ async function adminCreateUserAccount() {
     return;
   }
 
+  if (role === "admin" && !admin_display_name) {
+    adminToast("Podaj nazwę admina, np. Support Marta.");
+    return;
+  }
+
+  if (role === "admin" && !admin_level) {
+    adminToast("Wybierz poziom dostępu admina.");
+    return;
+  }
+
   try {
     const res = await window.apiFetch("/admin/users/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role, dob, password }),
+      body: JSON.stringify({ email, role, dob, password, admin_display_name, admin_level }),
     });
 
     adminToast("Konto utworzone.");
@@ -1250,6 +1366,22 @@ function openBugPreview(ticket) {
       <div class="adminBio">${escapeAdmin(bug.message || bug.description || bug.body || "Brak opisu.")}</div>
     </div>
 
+    ${
+      bug.reporter_user_id || bug.user_id
+        ? `<div class="adminPreviewCard">
+            <h3>Pomoc przy koncie</h3>
+            <div class="adminSystemHint">
+              Dostępne tylko dlatego, że zgłoszenie błędu ma kontekst zalogowanego użytkownika. Nie ustawiamy hasła ręcznie — wysyłamy link resetu.
+            </div>
+            <div class="adminPreviewActions">
+              <button class="adminPrimaryAction" type="button" onclick="adminSendUserResetLink('${escapeAdmin(bug.reporter_user_id || bug.user_id)}')">
+                Wyślij link resetu hasła
+              </button>
+            </div>
+          </div>`
+        : ""
+    }
+
     <div class="adminPreviewCard">
       <h3>Dodaj notatkę wewnętrzną</h3>
       <textarea class="adminFieldTextarea" id="bugStandaloneNote" rows="3" placeholder="Widoczne tylko dla adminów/supportu. Nie zmienia statusu zgłoszenia."></textarea>
@@ -1268,6 +1400,8 @@ function openBugPreview(ticket) {
 }
 
 async function openEventPreview(eventId, reportTicket = "", reportStatus = "new") {
+  const canFinalizeReportDecision = adminCanFinalizeReportDecision();
+  const canManageEvents = adminCanManageEvents();
   try {
     const res = await window.apiFetch(`/admin/events/${eventId}/preview${reportTicket ? `?ticket=${encodeURIComponent(reportTicket)}` : ""}`);
     const ev = res?.data || {};
@@ -1369,44 +1503,30 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
         </div>
       </div>
 
-      <div class="adminPreviewCard">
-        <div class="adminHistoryHeader">
-          <h3>Historia wydarzenia</h3>
-          <span class="adminHistoryCount">${escapeAdmin((ev.event_history || []).length)} wpisów</span>
-        </div>
-        ${
-          Array.isArray(ev.event_history) && ev.event_history.length
-            ? ev.event_history.slice(0, 5).map((h) => `
-                <div class="adminHistoryCard">
-                  <div class="adminHistoryKind">${escapeAdmin(h.action || "Akcja")}</div>
-                  <div class="adminHistoryMeta">${escapeAdmin(h.created_at || "—")}</div>
-                  <div class="adminHistoryMeta">${escapeAdmin(h.details || "—")}</div>
-                </div>
-              `).join("")
-            : `<div class="adminHistoryCard"><div class="adminHistoryTitle">Brak historii wydarzenia</div></div>`
-        }
-        ${Array.isArray(ev.event_history) && ev.event_history.length > 5
-          ? `<button class="adminGhostMiniButton" type="button" onclick="openEventFullHistory('${escapeAdmin(ev.id)}')">Zobacz wszystko</button>`
-          : ""}
-      </div>
-
       <div class="adminPreviewBottomGrid">
         <div class="adminPreviewCard">
-          <h3>Akcje wydarzenia</h3>
+          <h3>${canManageEvents ? "Akcje wydarzenia" : "Uprawnienia supportu"}</h3>
 
-          <div class="adminActionStack">
-            <button class="${String(ev.status || "").toLowerCase() === "archived" ? "adminPrimaryAction" : "adminDangerAction"}" type="button" onclick="adminSetEventStatus('${escapeAdmin(ev.id)}','${String(ev.status || "").toLowerCase() === "archived" ? "published" : "archived"}')">
-              ${String(ev.status || "").toLowerCase() === "archived" ? "Przywróć wydarzenie" : "Zarchiwizuj wydarzenie"}
-            </button>
+          ${
+            canManageEvents
+              ? `<div class="adminActionStack">
+                  <button class="${String(ev.status || "").toLowerCase() === "archived" ? "adminPrimaryAction" : "adminDangerAction"}" type="button" onclick="adminSetEventStatus('${escapeAdmin(ev.id)}','${String(ev.status || "").toLowerCase() === "archived" ? "published" : "archived"}')">
+                    ${String(ev.status || "").toLowerCase() === "archived" ? "Przywróć wydarzenie" : "Zarchiwizuj wydarzenie"}
+                  </button>
 
-            <button class="adminPrimaryAction" type="button" onclick="adminNotifyEventWatchers('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','${escapeAdmin(reportStatus)}')">
-              Powiadom zapisanych
-            </button>
-          </div>
+                  <button class="adminPrimaryAction" type="button" onclick="adminNotifyEventWatchers('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','${escapeAdmin(reportStatus)}')">
+                    Powiadom zapisanych
+                  </button>
+                </div>
 
-          <div class="adminSystemHint">
-            Archiwizacja wydarzenia dotyczy samego wydarzenia. Powiadomienie zapisanych zostaje osobną akcją.
-          </div>
+                <div class="adminSystemHint">
+                  Archiwizacja wydarzenia dotyczy samego wydarzenia. Powiadomienie zapisanych zostaje osobną akcją.
+                </div>`
+              : `<div class="adminWarnBox">
+                  <div class="adminHistoryTitle">Ten poziom admina nie może archiwizować ani przywracać wydarzeń.</div>
+                  <div class="adminHistoryMeta">Możesz przeanalizować zgłoszenie, dodać notatkę i przekazać sprawę do akceptacji ownera.</div>
+                </div>`
+          }
 
           ${
             reportTicket
@@ -1424,10 +1544,13 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
                     </button>
                   </div>`
                 : `<div class="adminDecisionGrid">
-                    <button class="adminDecisionButton ${String(reportStatus || "new") === "in_review" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "in_review" ? "disabled" : `onclick="adminSetEventReportDecision('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','in_review')"`}>
+                    <button class="adminDecisionButton ${String(reportStatus || "new") === "in_review" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "in_review" || String(reportStatus || "new") === "resolved" || String(reportStatus || "new") === "rejected" ? "disabled" : `onclick="adminSetEventReportDecision('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','in_review')"`}>
                       <strong>${String(reportStatus || "new") === "in_review" ? "Aktualnie: sprawdzamy" : "Sprawdzamy"}</strong>
-                      <span>Zgłoszenie wydarzenia jest analizowane.</span>
+                      <span>${String(reportStatus || "new") === "resolved" || String(reportStatus || "new") === "rejected" ? "Zgłoszenie jest już zamknięte." : "Zgłoszenie wydarzenia jest analizowane."}</span>
                     </button>
+                    ${
+                      canFinalizeReportDecision
+                        ? `
                     <button class="adminDecisionButton ${String(reportStatus || "new") === "resolved" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "resolved" ? "disabled" : `onclick="adminSetEventReportDecision('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','resolved')"`}>
                       <strong>${String(reportStatus || "new") === "resolved" ? "Aktualnie: zasadne" : "Zasadne / rozwiązane"}</strong>
                       <span>Zgłoszenie potwierdzone. Wydarzenie można zarchiwizować osobną akcją wyżej.</span>
@@ -1440,6 +1563,37 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
                       <strong>Archiwum</strong>
                       <span>Tylko porządkowanie wewnętrzne.</span>
                     </button>
+                        `
+                        : String(reportStatus || "new") === "pending_owner_approval"
+                          ? `<div class="adminWarnBox">
+                              <div class="adminHistoryTitle">Sprawa przekazana do ownera</div>
+                              <div class="adminHistoryMeta">Ten poziom admina nie może już zamknąć tego zgłoszenia. Poczekaj na decyzję ownera.</div>
+                            </div>`
+                          : String(reportStatus || "new") === "resolved" || String(reportStatus || "new") === "rejected"
+                            ? `<div class="adminWarnBox">
+                                <div class="adminHistoryTitle">Zgłoszenie zamknięte</div>
+                                <div class="adminHistoryMeta">Po zamknięciu nie można przekazać tej sprawy do ownera bez ponownego otwarcia.</div>
+                              </div>`
+                            : `
+                    <button class="adminDecisionButton" type="button" onclick="adminSetEventReportDecision('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','resolved')">
+                      <strong>Zasadne / zamknij</strong>
+                      <span>Sprawa bez ciężkiej akcji. Zamyka zgłoszenie po pierwszej weryfikacji.</span>
+                    </button>
+                    <button class="adminDecisionButton" type="button" onclick="adminSetEventReportDecision('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','rejected')">
+                      <strong>Brak podstaw / odrzuć</strong>
+                      <span>Nie wymaga dalszych działań ani akceptacji ownera.</span>
+                    </button>
+                    <div class="adminWarnBox">
+                      <label class="adminFieldLabel" for="eventOwnerApprovalNote">Notatka dla ownera</label>
+                      <textarea class="adminFieldTextarea" id="eventOwnerApprovalNote" rows="3" placeholder="Opisz, co owner ma zatwierdzić i dlaczego. To pole jest wymagane."></textarea>
+                      <div class="adminWarnHint">Użyj tylko, gdy potrzebna jest ciężka akcja, np. archiwizacja wydarzenia lub decyzja sporna.</div>
+                    </div>
+                    <button class="adminDecisionButton" type="button" onclick="adminSetEventReportDecision('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}','pending_owner_approval')">
+                      <strong>Przekaż do akceptacji ownera</strong>
+                      <span>Przekaż sprawę do kolejki ownera. Użytkownik nie dostanie jeszcze powiadomienia.</span>
+                    </button>
+                        `
+                    }
                   </div>`
               : ""
           }
@@ -1466,6 +1620,27 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
           }
         </div>
       </div>
+
+      <div class="adminPreviewCard">
+        <div class="adminHistoryHeader">
+          <h3>Historia wydarzenia</h3>
+          <span class="adminHistoryCount">${escapeAdmin((ev.event_history || []).length)} wpisów</span>
+        </div>
+        ${
+          Array.isArray(ev.event_history) && ev.event_history.length
+            ? ev.event_history.slice(0, 5).map((h) => `
+                <div class="adminHistoryCard">
+                  <div class="adminHistoryKind">${escapeAdmin(h.action || "Akcja")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.created_at || "—")}</div>
+                  <div class="adminHistoryMeta">${escapeAdmin(h.details || "—")}</div>
+                </div>
+              `).join("")
+            : `<div class="adminHistoryCard"><div class="adminHistoryTitle">Brak historii wydarzenia</div></div>`
+        }
+        ${Array.isArray(ev.event_history) && ev.event_history.length > 5
+          ? `<button class="adminGhostMiniButton" type="button" onclick="openEventFullHistory('${escapeAdmin(ev.id)}')">Zobacz wszystko</button>`
+          : ""}
+      </div>
     `);
   } catch (e) {
     console.error("openEventPreview error", e);
@@ -1475,6 +1650,9 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
 
 
 async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', returnEventId = null) {
+  const canFinalizeReportDecision = adminCanFinalizeReportDecision();
+  const canManageUsers = adminCanManageUsers();
+  const canDeleteAccounts = adminCanDeleteAccounts();
   try {
     const res = await window.apiFetch(`/admin/users/${userId}/preview${reportTicket ? `?ticket=${encodeURIComponent(reportTicket)}` : ""}`);
     const u = res?.data || {};
@@ -1570,74 +1748,213 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
   <div class="adminPreviewBottomGrid">
 
     <div class="adminPreviewCard">
-      <h3>Szybkie akcje</h3>
+      <h3>${canManageUsers ? "Szybkie akcje" : "Uprawnienia supportu"}</h3>
 
-      <div class="adminActionStack">
-        ${String(u.status || "active") === "blocked"
-          ? `<button class="adminPrimaryAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','active')">Odblokuj użytkownika</button>`
-          : String(u.status || "active") === "deleted"
-            ? `<button class="adminGhostAction" type="button" disabled>Konto usunięte</button>`
-            : `<button class="adminDangerAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','blocked')">Zablokuj użytkownika</button>`
-        }
+      ${
+        !canManageUsers
+          ? `<div class="adminWarnBox">
+              <div class="adminHistoryTitle">Ten poziom admina nie może blokować, usuwać kont ani zmieniać pakietów.</div>
+              <div class="adminHistoryMeta">Możesz analizować zgłoszenie, dodać notatkę, wysłać ostrzeżenie i przekazać sprawę do akceptacji ownera.</div>
+            </div>`
+          : `<div class="adminActionStack">
+              ${
+                String(u.status || "active") === "blocked"
+                  ? `<button class="adminPrimaryAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','active')">Odblokuj użytkownika</button>`
+                  : String(u.status || "active") === "deleted"
+                    ? `<button class="adminGhostAction" type="button" disabled>Konto usunięte</button>`
+                    : `<button class="adminDangerAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','blocked')">Zablokuj użytkownika</button>`
+              }
+
+              ${
+                canDeleteAccounts && String(u.role || "") !== "admin" && String(u.status || "active") !== "deleted"
+                  ? `<button class="adminDangerAction" type="button" onclick="adminDeleteUserAccount('${escapeAdmin(u.id)}')">Usuń konto</button>`
+                  : ""
+              }
+
+              ${
+                String(u.status || "active") !== "deleted"
+                  ? `<div class="adminWarnBox">
+                      <label class="adminFieldLabel" for="adminUserPlanSelect">Pakiet konta</label>
+                      <select class="adminFieldInput" id="adminUserPlanSelect">
+                        ${(
+                          String(u.role || "user") === "partner"
+                            ? [["free","FREE"],["pro","PRO"],["premium","PREMIUM"],["enterprise","ENTERPRISE / wycena indywidualna"]]
+                            : [["free","FREE"],["plus","PLUS"],["premium","PREMIUM"],["vip","VIP"]]
+                        ).map(([plan, label]) => `<option value="${plan}" ${String(u.plan || "free") === plan ? "selected" : ""}>${label}</option>`).join("")}
+                      </select>
+
+                      <label class="adminFieldLabel" for="adminUserPlanSourceSelect">Źródło pakietu</label>
+                      <select class="adminFieldInput" id="adminUserPlanSourceSelect">
+                        ${[
+                          ["manual", "Ręcznie"],
+                          ["paid", "Płatny"],
+                          ["barter", "Barter"],
+                          ["promo", "Promo"],
+                          ["test", "Test"],
+                        ].map(([source, label]) => `<option value="${source}" ${String(u.plan_source || "manual") === source ? "selected" : ""}>${label}</option>`).join("")}
+                      </select>
+
+                      <label class="adminFieldLabel" for="adminUserPlanStatusSelect">Status pakietu</label>
+                      <select class="adminFieldInput" id="adminUserPlanStatusSelect">
+                        ${["active","inactive","expired","trial"].map(status => `<option value="${status}" ${String(u.plan_status || "active") === status ? "selected" : ""}>${status}</option>`).join("")}
+                      </select>
+
+                      <button class="adminPrimaryAction" type="button" onclick="adminUpdateUserPlan('${escapeAdmin(u.id)}')">
+                        Zapisz pakiet
+                      </button>
+                      <div class="adminWarnHint">Użyj np. barter/promo/test, gdy pakiet jest nadany ręcznie przez administrację.</div>
+                    </div>
+
+                    <div class="adminWarnBox">
+                      <label class="adminFieldLabel" for="adminTempPasswordInput">Hasło tymczasowe</label>
+                      <input class="adminFieldInput" id="adminTempPasswordInput" type="text" placeholder="Minimum 6 znaków" />
+                      <button class="adminPrimaryAction" type="button" onclick="adminResetUserPassword('${escapeAdmin(u.id)}')">
+                        Ustaw hasło tymczasowe
+                      </button>
+                      <button class="adminGhostAction" type="button" onclick="adminSendUserResetLink('${escapeAdmin(u.id)}')">
+                        Wyślij link resetu hasła
+                      </button>
+                      <div class="adminWarnHint">Ręczne hasło zapisze się w logach. Bezpieczniejsza opcja to wysłanie użytkownikowi linku resetu.</div>
+                    </div>`
+                  : `<div class="adminWarnBox">
+                      <div class="adminHistoryTitle">Konto usunięte</div>
+                      <div class="adminHistoryMeta">Edycja pakietu, hasła i resetu jest wyłączona dla usuniętych kont.</div>
+                    </div>`
+              }
+            </div>`
+      }
 
         ${
-          String(u.role || "") !== "admin" && String(u.status || "active") !== "deleted"
-            ? `<button class="adminDangerAction" type="button" onclick="adminDeleteUserAccount('${escapeAdmin(u.id)}')">Usuń konto</button>`
+          reportTicket
+            ? `<div class="adminWarnBox">
+                <label class="adminFieldLabel" for="userWarningAction">Ostrzeżenie dla użytkownika</label>
+                <select class="adminFieldInput" id="userWarningAction">
+                  <option value="warning_profile">Profil narusza zasady</option>
+                  <option value="warning_content">Treść narusza zasady</option>
+                  <option value="warning_behavior">Zachowanie narusza zasady</option>
+                </select>
+                <button class="adminPrimaryAction" type="button" onclick="adminSendUserWarning('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}')">
+                  Wyślij ostrzeżenie
+                </button>
+                <div class="adminWarnHint">Ostrzeżenie zapisze się w historii moderacji. Powiadomienie in-app dodamy w kolejnym etapie.</div>
+              </div>`
             : ""
         }
+      </div>
+
+      ${
+        reportTicket
+          ? `<div class="adminSectionDivider"></div><h3>Decyzja zgłoszenia</h3>`
+          : ""
+      }
+
+      ${
+        reportTicket
+          ? String(reportStatus || "new") === "archived"
+            ? `<div class="adminDecisionGrid">
+                <button class="adminDecisionButton" type="button" onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','in_review')">
+                  <strong>Przywróć do sprawdzenia</strong>
+                  <span>Zgłoszenie wróci do aktywnej obsługi.</span>
+                </button>
+              </div>`
+            : `<div class="adminDecisionGrid">
+                <button class="adminDecisionButton ${String(reportStatus || "new") === "in_review" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "in_review" || String(reportStatus || "new") === "resolved" || String(reportStatus || "new") === "rejected" ? "disabled" : `onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','in_review')"`}>
+                  <strong>${String(reportStatus || "new") === "in_review" ? "Aktualnie: sprawdzamy" : "Sprawdzamy"}</strong>
+                  <span>${String(reportStatus || "new") === "resolved" || String(reportStatus || "new") === "rejected" ? "Zgłoszenie jest już zamknięte." : "Zgłoszenie jest analizowane."}</span>
+                </button>
+                ${
+                  canFinalizeReportDecision
+                    ? `
+                <button class="adminDecisionButton ${String(reportStatus || "new") === "resolved" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "resolved" ? "disabled" : `onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','resolved')"`}>
+                  <strong>${String(reportStatus || "new") === "resolved" ? "Aktualnie: zasadne" : "Zasadne"}</strong>
+                  <span>Zgłoszenie potwierdzone i rozwiązane.</span>
+                </button>
+                <button class="adminDecisionButton ${String(reportStatus || "new") === "rejected" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "rejected" ? "disabled" : `onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','rejected')"`}>
+                  <strong>${String(reportStatus || "new") === "rejected" ? "Aktualnie: odrzucone" : "Odrzuć"}</strong>
+                  <span>Brak podstaw do działania.</span>
+                </button>
+                <button class="adminDecisionButton adminDecisionMuted" type="button" onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','archived')">
+                  <strong>Archiwum</strong>
+                  <span>Tylko porządkowanie wewnętrzne.</span>
+                </button>
+                    `
+                    : String(reportStatus || "new") === "pending_owner_approval"
+                      ? `<div class="adminWarnBox">
+                          <div class="adminHistoryTitle">Sprawa przekazana do ownera</div>
+                          <div class="adminHistoryMeta">Ten poziom admina nie może już zamknąć tego zgłoszenia. Poczekaj na decyzję ownera.</div>
+                        </div>`
+                      : String(reportStatus || "new") === "resolved" || String(reportStatus || "new") === "rejected"
+                        ? `<div class="adminWarnBox">
+                            <div class="adminHistoryTitle">Zgłoszenie zamknięte</div>
+                            <div class="adminHistoryMeta">Po zamknięciu nie można przekazać tej sprawy do ownera bez ponownego otwarcia.</div>
+                          </div>`
+                        : `
+                <button class="adminDecisionButton ${String(reportStatus || "new") === "resolved" ? "adminDecisionCurrent" : ""}" type="button" onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','resolved')">
+                  <strong>Zasadne / zamknij</strong>
+                  <span>Sprawa bez ciężkiej akcji. Zamyka zgłoszenie po pierwszej weryfikacji.</span>
+                </button>
+                <button class="adminDecisionButton ${String(reportStatus || "new") === "rejected" ? "adminDecisionCurrent" : ""}" type="button" onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','rejected')">
+                  <strong>Brak podstaw / odrzuć</strong>
+                  <span>Nie wymaga dalszych działań ani akceptacji ownera.</span>
+                </button>
+                <div class="adminWarnBox">
+                  <label class="adminFieldLabel" for="userOwnerApprovalNote">Notatka dla ownera</label>
+                  <textarea class="adminFieldTextarea" id="userOwnerApprovalNote" rows="3" placeholder="Opisz, co owner ma zatwierdzić i dlaczego. To pole jest wymagane."></textarea>
+                  <div class="adminWarnHint">Użyj tylko, gdy potrzebna jest ciężka akcja, np. blokada lub usunięcie konta.</div>
+                </div>
+                <button class="adminDecisionButton" type="button" onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','pending_owner_approval')">
+                  <strong>Przekaż do akceptacji ownera</strong>
+                  <span>Przekaż sprawę do kolejki ownera. Użytkownik nie dostanie jeszcze powiadomienia.</span>
+                </button>
+                    `
+                }
+              </div>`
+          : ""
+      }
+
+      <div class="adminSystemHint">
+        Wszystkie akcje administratora będą zapisywane w logach systemowych.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="adminPreviewCard">
+    <h3>Informacje systemowe</h3>
+
+    <div class="adminInfoList">
+      <div>
+        <span>ID użytkownika</span>
+        <strong>${escapeAdmin(u.id || "—")}</strong>
+      </div>
+
+      <div>
+        <span>Rola</span>
+        <strong>${escapeAdmin(u.role || "—")}</strong>
+      </div>
+
+      <div>
+        <span>Status konta</span>
+        <strong>${escapeAdmin(u.status || "—")}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="adminPreviewCard">
+    <div class="adminHistoryHeader">
+      <h3>Historia zgłoszeń</h3>
+
+      <button class="adminGhostMiniButton" type="button" onclick="openUserReportHistory('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','${escapeAdmin(reportStatus)}')">
+        Zobacz wszystko
+      </button>
+    </div>
+
+    ${renderAdminHistory(u.selected_report?.history, 5)}
+  </div>
 
         ${
-          String(u.status || "active") !== "deleted"
+          canManageUsers
             ? `<div class="adminWarnBox">
-          <label class="adminFieldLabel" for="adminUserPlanSelect">Pakiet konta</label>
-          <select class="adminFieldInput" id="adminUserPlanSelect">
-            ${(
-              String(u.role || "user") === "partner"
-                ? [["free","FREE"],["pro","PRO"],["premium","PREMIUM"],["enterprise","ENTERPRISE / wycena indywidualna"]]
-                : [["free","FREE"],["plus","PLUS"],["premium","PREMIUM"],["vip","VIP"]]
-            ).map(([plan, label]) => `<option value="${plan}" ${String(u.plan || "free") === plan ? "selected" : ""}>${label}</option>`).join("")}
-          </select>
-
-          <label class="adminFieldLabel" for="adminUserPlanSourceSelect">Źródło pakietu</label>
-          <select class="adminFieldInput" id="adminUserPlanSourceSelect">
-            ${[
-              ["manual", "Ręcznie"],
-              ["paid", "Płatny"],
-              ["barter", "Barter"],
-              ["promo", "Promo"],
-              ["test", "Test"],
-            ].map(([source, label]) => `<option value="${source}" ${String(u.plan_source || "manual") === source ? "selected" : ""}>${label}</option>`).join("")}
-          </select>
-
-          <label class="adminFieldLabel" for="adminUserPlanStatusSelect">Status pakietu</label>
-          <select class="adminFieldInput" id="adminUserPlanStatusSelect">
-            ${["active","inactive","expired","trial"].map(status => `<option value="${status}" ${String(u.plan_status || "active") === status ? "selected" : ""}>${status}</option>`).join("")}
-          </select>
-
-          <button class="adminPrimaryAction" type="button" onclick="adminUpdateUserPlan('${escapeAdmin(u.id)}')">
-            Zapisz pakiet
-          </button>
-          <div class="adminWarnHint">Użyj np. barter/promo/test, gdy pakiet jest nadany ręcznie przez administrację.</div>
-        </div>
-
-        <div class="adminWarnBox">
-          <label class="adminFieldLabel" for="adminTempPasswordInput">Hasło tymczasowe</label>
-          <input class="adminFieldInput" id="adminTempPasswordInput" type="text" placeholder="Minimum 6 znaków" />
-          <button class="adminPrimaryAction" type="button" onclick="adminResetUserPassword('${escapeAdmin(u.id)}')">
-            Ustaw hasło tymczasowe
-          </button>
-          <button class="adminGhostAction" type="button" onclick="adminSendUserResetLink('${escapeAdmin(u.id)}')">
-            Wyślij link resetu hasła
-          </button>
-          <div class="adminWarnHint">Ręczne hasło zapisze się w logach. Bezpieczniejsza opcja to wysłanie użytkownikowi linku resetu.</div>
-        </div>`
-            : `<div class="adminWarnBox">
-                <div class="adminHistoryTitle">Konto usunięte</div>
-                <div class="adminHistoryMeta">Edycja pakietu, hasła i resetu jest wyłączona dla usuniętych kont.</div>
-              </div>`
-        }
-
-        <div class="adminWarnBox">
           <div class="adminHistoryHeader">
             <h3>Historia pakietu</h3>
             <span class="adminHistoryCount">${escapeAdmin((u.plan_history || []).length)} wpisów</span>
@@ -1680,101 +1997,10 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
                   <div class="adminHistoryMeta">Akcje administracyjne pojawią się tutaj.</div>
                 </div>`
           }
-        </div>
-
-        ${
-          reportTicket
-            ? `<div class="adminWarnBox">
-                <label class="adminFieldLabel" for="userWarningAction">Ostrzeżenie dla użytkownika</label>
-                <select class="adminFieldInput" id="userWarningAction">
-                  <option value="warning_profile">Profil narusza zasady</option>
-                  <option value="warning_content">Treść narusza zasady</option>
-                  <option value="warning_behavior">Zachowanie narusza zasady</option>
-                </select>
-                <button class="adminPrimaryAction" type="button" onclick="adminSendUserWarning('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}')">
-                  Wyślij ostrzeżenie
-                </button>
-                <div class="adminWarnHint">Ostrzeżenie zapisze się w historii moderacji. Powiadomienie in-app dodamy w kolejnym etapie.</div>
-              </div>`
+        </div>`
             : ""
         }
-      </div>
 
-      ${
-        reportTicket
-          ? `<div class="adminSectionDivider"></div><h3>Decyzja zgłoszenia</h3>`
-          : ""
-      }
-
-      ${
-        reportTicket
-          ? String(reportStatus || "new") === "archived"
-            ? `<div class="adminDecisionGrid">
-                <button class="adminDecisionButton" type="button" onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','in_review')">
-                  <strong>Przywróć do sprawdzenia</strong>
-                  <span>Zgłoszenie wróci do aktywnej obsługi.</span>
-                </button>
-              </div>`
-            : `<div class="adminDecisionGrid">
-                <button class="adminDecisionButton ${String(reportStatus || "new") === "in_review" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "in_review" ? "disabled" : `onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','in_review')"`}>
-                  <strong>${String(reportStatus || "new") === "in_review" ? "Aktualnie: sprawdzamy" : "Sprawdzamy"}</strong>
-                  <span>Zgłoszenie jest analizowane.</span>
-                </button>
-                <button class="adminDecisionButton ${String(reportStatus || "new") === "resolved" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "resolved" ? "disabled" : `onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','resolved')"`}>
-                  <strong>${String(reportStatus || "new") === "resolved" ? "Aktualnie: zasadne" : "Zasadne"}</strong>
-                  <span>Zgłoszenie potwierdzone i rozwiązane.</span>
-                </button>
-                <button class="adminDecisionButton ${String(reportStatus || "new") === "rejected" ? "adminDecisionCurrent" : ""}" type="button" ${String(reportStatus || "new") === "rejected" ? "disabled" : `onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','rejected')"`}>
-                  <strong>${String(reportStatus || "new") === "rejected" ? "Aktualnie: odrzucone" : "Odrzuć"}</strong>
-                  <span>Brak podstaw do działania.</span>
-                </button>
-                <button class="adminDecisionButton adminDecisionMuted" type="button" onclick="adminSetUserReportDecision('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','archived')">
-                  <strong>Archiwum</strong>
-                  <span>Tylko porządkowanie wewnętrzne.</span>
-                </button>
-              </div>`
-          : ""
-      }
-
-      <div class="adminSystemHint">
-        Wszystkie akcje administratora będą zapisywane w logach systemowych.
-      </div>
-    </div>
-
-    <div class="adminPreviewCard">
-      <div class="adminHistoryHeader">
-        <h3>Historia zgłoszeń</h3>
-
-        <button class="adminGhostMiniButton" type="button" onclick="openUserReportHistory('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}','${escapeAdmin(reportStatus)}')">
-          Zobacz wszystko
-        </button>
-      </div>
-
-      ${renderAdminHistory(u.selected_report?.history, 5)}
-    </div>
-
-  </div>
-
-  <div class="adminPreviewCard">
-    <h3>Informacje systemowe</h3>
-
-    <div class="adminInfoList">
-      <div>
-        <span>ID użytkownika</span>
-        <strong>${escapeAdmin(u.id || "—")}</strong>
-      </div>
-
-      <div>
-        <span>Rola</span>
-        <strong>${escapeAdmin(u.role || "—")}</strong>
-      </div>
-
-      <div>
-        <span>Status konta</span>
-        <strong>${escapeAdmin(u.status || "—")}</strong>
-      </div>
-    </div>
-  </div>
 `);
 
   } catch (e) {
@@ -2293,6 +2519,11 @@ const buildPlanRows = (role, prices) => {
 
 
 function showAdminView(view) {
+  if (!adminCanView(view)) {
+    adminToast("Brak dostępu do tej sekcji dla Twojego poziomu admina.");
+    view = "reports";
+  }
+
   const dashboardView = document.getElementById("adminDashboardHomeView");
   const reportsView = document.getElementById("adminReportsView");
   const usersView = document.getElementById("adminUsersView");
@@ -2314,7 +2545,13 @@ function showAdminView(view) {
 }
 
 document.querySelectorAll("[data-admin-view]").forEach((btn) => {
-  btn.addEventListener("click", () => showAdminView(btn.dataset.adminView || "reports"));
+  btn.addEventListener("click", () => {
+    if (btn.disabled) {
+      adminToast("Brak dostępu do tej sekcji dla Twojego poziomu admina.");
+      return;
+    }
+    showAdminView(btn.dataset.adminView || "reports");
+  });
 });
 
 document.getElementById("adminStatusFilter")?.addEventListener("change", reloadAdminReports);
@@ -2446,7 +2683,7 @@ async function adminLogin(email, password) {
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
   await loadCurrentAdmin();
-  showAdminView("dashboard");
+  showAdminView(defaultAdminView());
 
   adminToast("Zalogowano do panelu administratora.");
   startAdminAutoRefresh();
@@ -2474,7 +2711,7 @@ document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) 
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
   loadCurrentAdmin().catch(() => {});
-  showAdminView("dashboard");
+  showAdminView(defaultAdminView());
 
   startAdminAutoRefresh();
 })();
