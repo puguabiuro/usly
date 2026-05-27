@@ -6696,6 +6696,8 @@ def admin_notify_event_watchers(
 ):
     import json
 
+    require_admin_permission(current_user, "events")
+
     payload = payload or {}
     ticket = str(payload.get("ticket") or "").strip()
     notification_type = str(payload.get("type") or "admin_event_under_review").strip()
@@ -6856,6 +6858,7 @@ def admin_list_events(current_user: User = Depends(require_role("admin"))):
 
 @app.get("/admin/event-reports")
 def get_admin_event_reports(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "reports")
     import json
     from pathlib import Path
 
@@ -6876,7 +6879,8 @@ def get_admin_event_reports(current_user: User = Depends(require_role("admin")))
 
 
 @app.get("/admin/bug-reports")
-def get_bug_reports():
+def get_bug_reports(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "reports")
     import json
     from pathlib import Path
 

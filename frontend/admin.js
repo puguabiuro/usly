@@ -27,6 +27,7 @@ function adminLevel() {
 function adminCanView(view) {
   const level = adminLevel();
   if (level === "owner") return true;
+  if (view === "owner-approval") return false;
   if (level === "operations") return ["reports", "users", "events"].includes(view);
   if (level === "moderation" || level === "support") return view === "reports";
   return view === "reports";
@@ -458,6 +459,87 @@ function renderEventReports(items) {
   `;
 }
 
+function renderOwnerApprovalQueue(userReports, eventReports) {
+  const box = document.getElementById("adminOwnerApprovalReports");
+  const userItems = (Array.isArray(userReports) ? userReports : [])
+    .filter((r) => String(r.status || "new") === "pending_owner_approval")
+    .map((r) => ({ ...r, approval_type: "user" }));
+  const eventItems = (Array.isArray(eventReports) ? eventReports : [])
+    .filter((r) => String(r.status || "new") === "pending_owner_approval")
+    .map((r) => ({ ...r, approval_type: "event" }));
+  const items = [...userItems, ...eventItems];
+
+  setAdminCount("adminOwnerApprovalCount", items.length);
+  if (!box) return;
+
+  if (!items.length) {
+    box.innerHTML = adminEmpty("Brak spraw oczekujących na akceptację ownera.");
+    return;
+  }
+
+  box.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>Typ</th>
+          <th>Ticket</th>
+          <th>Sprawa</th>
+          <th>Status</th>
+          <th>Data</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((r) => `
+          <tr>
+            <td><strong>${r.approval_type === "event" ? "Event" : "User"}</strong></td>
+            <td><strong>${escapeAdmin(r.ticket || "—")}</strong></td>
+            <td>
+              ${r.approval_type === "event"
+                ? `${escapeAdmin(r.event_title || "Wydarzenie")}<br><span>event #${escapeAdmin(r.event_id || "—")}</span>`
+                : `${escapeAdmin(r.reason_label || r.reason || "Zgłoszenie użytkownika")}<br><span>user #${escapeAdmin(r.reported_user_id || "—")}</span>`
+              }
+            </td>
+            <td>${adminStatusBadge(r.status || "pending_owner_approval")}</td>
+            <td>${escapeAdmin(r.created_at || "—")}</td>
+            <td>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                ${
+                  r.approval_type === "event"
+                    ? `<button class="tableAction" type="button" onclick="openEventPreview('${escapeAdmin(r.event_id)}','${escapeAdmin(r.ticket || "")}','${escapeAdmin(r.status || "pending_owner_approval")}')">Otwórz</button>`
+                    : `<button class="tableAction" type="button" onclick="openUserPreview('${escapeAdmin(r.reported_user_id)}','${escapeAdmin(r.ticket || "")}','${escapeAdmin(r.status || "pending_owner_approval")}')">Otwórz</button>`
+                }
+              </div>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function reloadOwnerApprovalQueue() {
+  try {
+    const [userReportsRes, eventReportsRes] = await Promise.all([
+      window.apiFetch("/admin/user-reports"),
+      window.apiFetch("/admin/event-reports"),
+    ]);
+
+    const userReports = Array.isArray(userReportsRes?.data) ? userReportsRes.data : [];
+    const eventReports = Array.isArray(eventReportsRes?.data) ? eventReportsRes.data : [];
+
+    Admin.reports.users = userReports;
+    Admin.reports.events = eventReports;
+
+    renderOwnerApprovalQueue(userReports, eventReports);
+  } catch (e) {
+    console.error("reloadOwnerApprovalQueue error", e);
+    const box = document.getElementById("adminOwnerApprovalReports");
+    if (box) box.innerHTML = adminEmpty("Nie udało się pobrać kolejki ownera.");
+    adminToast(e?.userMessage || "Nie udało się pobrać kolejki ownera.");
+  }
+}
+
 function renderBugReports(items) {
   const box = document.getElementById("adminBugReports");
   setAdminCount("adminBugCount", items.length);
@@ -550,6 +632,9 @@ async function adminSetReportStatus(reportType, ticket, status, extra = {}) {
 
     adminToast("Status zgłoszenia zapisany.");
     await reloadAdminReports();
+    if (typeof reloadOwnerApprovalQueue === "function") {
+      await reloadOwnerApprovalQueue();
+    }
   } catch (e) {
     console.error("adminSetReportStatus error", e);
     adminToast(e?.userMessage || "Nie udało się zapisać statusu zgłoszenia.");
@@ -1597,6 +1682,19 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
                   </div>`
               : ""
           }
+
+          ${
+            reportTicket
+              ? `<div class="adminWarnBox">
+                  <label class="adminFieldLabel" for="eventStandaloneNote">Notatka wewnętrzna dla adminów</label>
+                  <textarea class="adminFieldTextarea" id="eventStandaloneNote" rows="3" placeholder="Dodaj notatkę widoczną tylko w historii administracyjnej."></textarea>
+                  <button class="adminGhostAction" type="button" onclick="adminAddReportNote('event','${escapeAdmin(reportTicket)}','eventStandaloneNote', () => openEventPreview('${escapeAdmin(ev.id)}','${escapeAdmin(reportTicket)}'))">
+                    Dodaj notatkę
+                  </button>
+                  <div class="adminWarnHint">Nie wysyła powiadomienia do użytkowników i nie zmienia statusu zgłoszenia.</div>
+                </div>`
+              : ""
+          }
         </div>
 
         <div class="adminPreviewCard">
@@ -1909,6 +2007,19 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
                     `
                 }
               </div>`
+          : ""
+      }
+
+      ${
+        reportTicket
+          ? `<div class="adminWarnBox">
+              <label class="adminFieldLabel" for="userStandaloneNote">Notatka wewnętrzna dla adminów</label>
+              <textarea class="adminFieldTextarea" id="userStandaloneNote" rows="3" placeholder="Dodaj notatkę widoczną tylko w historii administracyjnej."></textarea>
+              <button class="adminGhostAction" type="button" onclick="adminAddReportNote('user','${escapeAdmin(reportTicket)}','userStandaloneNote', () => openUserPreview('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}'))">
+                Dodaj notatkę
+              </button>
+              <div class="adminWarnHint">Nie wysyła powiadomienia do użytkownika i nie zmienia statusu zgłoszenia.</div>
+            </div>`
           : ""
       }
 
@@ -2526,6 +2637,7 @@ function showAdminView(view) {
 
   const dashboardView = document.getElementById("adminDashboardHomeView");
   const reportsView = document.getElementById("adminReportsView");
+  const ownerApprovalView = document.getElementById("adminOwnerApprovalView");
   const usersView = document.getElementById("adminUsersView");
   const eventsView = document.getElementById("adminEventsView");
 
@@ -2535,11 +2647,13 @@ function showAdminView(view) {
 
   if (dashboardView) dashboardView.hidden = view !== "dashboard";
   if (reportsView) reportsView.hidden = view !== "reports";
+  if (ownerApprovalView) ownerApprovalView.hidden = view !== "owner-approval";
   if (usersView) usersView.hidden = view !== "users";
   if (eventsView) eventsView.hidden = view !== "events";
 
   if (view === "dashboard" && typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
   if (view === "reports") reloadAdminReports().catch(() => {});
+  if (view === "owner-approval" && typeof reloadOwnerApprovalQueue === "function") reloadOwnerApprovalQueue().catch(() => {});
   if (view === "users") reloadAdminUsers().catch(() => {});
   if (view === "events") reloadAdminEvents().catch(() => {});
 }

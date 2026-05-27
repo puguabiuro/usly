@@ -34,6 +34,7 @@
       <div class="adminSideLabel" id="adminCurrentActor">Admin</div>
       <button class="adminNav active" type="button" data-admin-view="dashboard">Dashboard</button>
       <button class="adminNav" type="button" data-admin-view="reports">Zgłoszenia</button>
+      <button class="adminNav" type="button" data-admin-view="owner-approval">Do akceptacji</button>
       <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
       <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
     </aside>
@@ -182,6 +183,23 @@
           <div id="adminBugReports" class="adminTableBox">Ładowanie...</div>
         </article>
       </section>
+      </section>
+
+      <section id="adminOwnerApprovalView" hidden>
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Do akceptacji ownera</h2>
+              <span id="adminOwnerApprovalCount">0</span>
+            </div>
+
+            <div class="adminSystemHint">
+              Tylko zgłoszenia user/event przekazane przez support do finalnej decyzji ownera.
+            </div>
+
+            <div id="adminOwnerApprovalReports" class="adminTableBox">Ładowanie...</div>
+          </article>
+        </section>
       </section>
 
       <section id="adminUsersView" hidden>
