@@ -112,6 +112,11 @@
     INSUFFICIENT_ROLE: "To konto należy do innego typu profilu. Wybierz właściwy typ logowania: Towarzysz lub Organizator.",
       UNAUTHORIZED: "To konto zostało usunięte albo nie masz już do niego dostępu.",
       NETWORK_ERROR: "Błąd sieci lub backend jest offline.",
+      EVENT_ARCHIVED_BY_ADMIN: "To wydarzenie zostało zablokowane przez administrację i nie może zostać ponownie opublikowane przez organizatora.",
+      CANNOT_MODERATE_SELF: "Nie możesz zablokować ani zmienić statusu własnego konta admina.",
+      CANNOT_MODERATE_ADMIN: "Tylko owner może zmieniać status innych administratorów.",
+      CANNOT_DELETE_ADMIN: "Konta administratora nie można usunąć z tego poziomu panelu.",
+      CANNOT_BLOCK_LAST_OWNER: "Nie można zablokować ostatniego aktywnego ownera systemu.",
       UNKNOWN_ERROR: "Coś poszło nie tak. Spróbuj ponownie.",
     },
     en: {
@@ -120,6 +125,11 @@
     INSUFFICIENT_ROLE: "This account belongs to a different profile type. Log in from the correct screen.",
       UNAUTHORIZED: "Unauthorized. Please log in again.",
       NETWORK_ERROR: "Network error or backend is offline.",
+      EVENT_ARCHIVED_BY_ADMIN: "This event has been blocked by administration and cannot be published again by the organizer.",
+      CANNOT_MODERATE_SELF: "You cannot block or change the status of your own admin account.",
+      CANNOT_MODERATE_ADMIN: "Only the owner can change another administrator’s status.",
+      CANNOT_DELETE_ADMIN: "An administrator account cannot be deleted from this admin panel level.",
+      CANNOT_BLOCK_LAST_OWNER: "You cannot block the last active owner of the system.",
       UNKNOWN_ERROR: "Something went wrong. Please try again.",
     },
   };

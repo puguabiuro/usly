@@ -570,6 +570,9 @@ const I18N = {
     "notifications.admin.userReportInReview": "Twoje zgłoszenie jest sprawdzane",
     "notifications.admin.userReportResolved": "Twoje zgłoszenie zostało uznane",
     "notifications.admin.userReportRejected": "Twoje zgłoszenie zostało odrzucone",
+    "notifications.admin.eventReportInReview": "Zgłoszenie wydarzenia jest sprawdzane",
+    "notifications.admin.eventReportResolved": "Zgłoszenie wydarzenia zostało uznane",
+    "notifications.admin.eventReportRejected": "Zgłoszenie wydarzenia zostało odrzucone",
     "notifications.admin.warningProfile": "Ostrzeżenie dotyczące profilu",
     "notifications.admin.warningContent": "Ostrzeżenie dotyczące treści",
     "notifications.admin.warningBehavior": "Ostrzeżenie dotyczące zachowania",
@@ -581,6 +584,7 @@ const I18N = {
     "notifications.admin.warningBody": "Administracja wysłała ostrzeżenie dotyczące zasad USLY. Sprawdź swój profil i aktywność w aplikacji. W razie pytań możesz skontaktować się z supportem USLY.",
     "notifications.admin.bugBody": "Dziękujemy za zgłoszenie. Aktualizujemy status, żeby było jasne, co dzieje się z Twoją sprawą.",
     "notifications.admin.reportBody": "Administracja zaktualizowała status Twojego zgłoszenia. Dziękujemy za pomoc w dbaniu o bezpieczeństwo społeczności.",
+    "notifications.admin.eventReportBody": "Administracja zaktualizowała status Twojego zgłoszenia wydarzenia. Dziękujemy za pomoc w dbaniu o bezpieczeństwo społeczności.",
     "notifications.event.reminder2dTitle": "Wydarzenie już za 2 dni",
     "notifications.event.reminder1dTitle": "Wydarzenie już jutro",
     "notifications.event.timeAndLocationChangedTitle": "Zmiana godziny i miejsca wydarzenia",
@@ -1379,6 +1383,9 @@ const I18N = {
     "notifications.admin.userReportInReview": "Your report is being reviewed",
     "notifications.admin.userReportResolved": "Your report has been accepted",
     "notifications.admin.userReportRejected": "Your report has been rejected",
+    "notifications.admin.eventReportInReview": "Your event report is being reviewed",
+    "notifications.admin.eventReportResolved": "Your event report has been accepted",
+    "notifications.admin.eventReportRejected": "Your event report has been rejected",
     "notifications.admin.warningProfile": "Profile warning",
     "notifications.admin.warningContent": "Content warning",
     "notifications.admin.warningBehavior": "Behavior warning",
@@ -1390,6 +1397,7 @@ const I18N = {
     "notifications.admin.warningBody": "Administration sent a warning about USLY rules. Check your profile and activity in the app. If you have questions, you can contact USLY support.",
     "notifications.admin.bugBody": "Thank you for your report. We are updating the status so it is clear what is happening with your case.",
     "notifications.admin.reportBody": "Administration updated the status of your report. Thank you for helping keep the community safe.",
+    "notifications.admin.eventReportBody": "Administration updated the status of your event report. Thank you for helping keep the community safe.",
     "notifications.event.reminder2dTitle": "Event in 2 days",
     "notifications.event.reminder1dTitle": "Event tomorrow",
     "notifications.event.timeAndLocationChangedTitle": "Event time and location changed",
@@ -7321,6 +7329,9 @@ async function renderNotifications() {
           admin_user_report_in_review: t("notifications.admin.userReportInReview"),
           admin_user_report_resolved: t("notifications.admin.userReportResolved"),
           admin_user_report_rejected: t("notifications.admin.userReportRejected"),
+          admin_event_report_in_review: t("notifications.admin.eventReportInReview"),
+          admin_event_report_resolved: t("notifications.admin.eventReportResolved"),
+          admin_event_report_rejected: t("notifications.admin.eventReportRejected"),
           admin_user_warning_warning_profile: t("notifications.admin.warningProfile"),
           admin_user_warning_warning_content: t("notifications.admin.warningContent"),
           admin_user_warning_warning_behavior: t("notifications.admin.warningBehavior"),
@@ -7334,13 +7345,16 @@ async function renderNotifications() {
         if (userReportTitles[notification.type]) {
           const isWarning = String(notification.type || "").startsWith("admin_user_warning_");
           const isBugReport = String(notification.type || "").startsWith("admin_bug_report_");
+          const isEventReport = String(notification.type || "").startsWith("admin_event_report_");
           items.push({
             title: userReportTitles[notification.type],
             body: isWarning
               ? t("notifications.admin.warningBody")
               : isBugReport
                 ? t("notifications.admin.bugBody")
-                : t("notifications.admin.reportBody"),
+                : isEventReport
+                  ? t("notifications.admin.eventReportBody")
+                  : t("notifications.admin.reportBody"),
             targetView: "S12_NOTIFICATIONS",
             createdAt: notification?.created_at || null,
           });

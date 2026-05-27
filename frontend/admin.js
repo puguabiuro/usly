@@ -110,6 +110,7 @@ function adminStatusLabel(status) {
     fixed: "Naprawione",
     not_reproducible: "Nie do odtworzenia",
     active: "Aktywne",
+    ended: "Zakończone",
     blocked: "Zablokowane",
     deleted: "Usunięte",
   };
@@ -280,7 +281,7 @@ function renderAdminEvents(items) {
             <td><strong>#${escapeAdmin(ev.id)}</strong></td>
             <td>${escapeAdmin(ev.title || "Wydarzenie")}<br><span>${escapeAdmin(ev.interest_tag || "—")}</span></td>
             <td>${escapeAdmin(ev.organizer_name || "—")}<br><span>${escapeAdmin(ev.organizer_email || "—")}</span></td>
-            <td>${adminStatusBadge(ev.status || "draft")}</td>
+            <td>${adminStatusBadge(ev.lifecycle_status || ev.status || "draft")}</td>
             <td>${escapeAdmin(ev.start_at || "—")}</td>
             <td>${escapeAdmin([ev.city, ev.where].filter(Boolean).join(", ") || "—")}</td>
             <td>${escapeAdmin(ev.signups_count || 0)} / ${escapeAdmin(ev.capacity || "∞")}</td>
@@ -315,11 +316,11 @@ async function reloadAdminEvents() {
         ev.city,
         ev.where,
         ev.interest_tag,
-        ev.status,
+        ev.lifecycle_status || ev.status,
       ].map(v => String(v || "").toLowerCase()).join(" ");
 
       if (query && !haystack.includes(query)) return false;
-      if (statusFilter !== "all" && String(ev.status || "") !== statusFilter) return false;
+      if (statusFilter !== "all" && String(ev.lifecycle_status || ev.status || "") !== statusFilter) return false;
 
       return true;
     });
@@ -361,10 +362,22 @@ function renderAdminUsers(items) {
         ${items.map((u) => `
           <tr>
             <td><strong>#${escapeAdmin(u.id)}</strong></td>
-            <td>${escapeAdmin(u.display_name || u.email || "—")}<br><span>${escapeAdmin(u.email || "—")}</span></td>
-            <td>${escapeAdmin(u.role || "—")}</td>
+            <td>${
+              String(u.role || "") === "admin"
+                ? `${escapeAdmin(u.admin_display_name || u.display_name || u.email || "Admin")}<br><span>${escapeAdmin(u.email || "—")}</span>`
+                : `${escapeAdmin(u.display_name || u.email || "—")}<br><span>${escapeAdmin(u.email || "—")}</span>`
+            }</td>
+            <td>${
+              String(u.role || "") === "admin"
+                ? `admin<br><span>${escapeAdmin(u.admin_level || "owner")}</span>`
+                : escapeAdmin(u.role || "—")
+            }</td>
             <td>${adminStatusBadge(u.status || "active")}</td>
-            <td>${escapeAdmin(u.plan || "free")}<br><span>${escapeAdmin(u.plan_source || "manual")}</span></td>
+            <td>${
+              String(u.role || "") === "admin"
+                ? "—"
+                : `${escapeAdmin(u.plan || "free")}<br><span>${escapeAdmin(u.plan_source || "manual")}</span>`
+            }</td>
             <td>${escapeAdmin(u.city || "—")}</td>
             <td>${escapeAdmin(u.dob || "—")}</td>
             <td>${escapeAdmin(u.created_at || "—")}</td>
@@ -843,6 +856,7 @@ async function adminDeleteUserAccount(userId) {
 
     adminToast("Konto usunięte.");
     await reloadAdminUsers();
+    if (typeof reloadAdminDashboard === "function") await reloadAdminDashboard();
     await openUserPreview(userId);
   } catch (e) {
     console.error("adminDeleteUserAccount error", e);
@@ -1484,7 +1498,7 @@ function openBugPreview(ticket) {
   `);
 }
 
-async function openEventPreview(eventId, reportTicket = "", reportStatus = "new") {
+async function openEventPreview(eventId, reportTicket = "", reportStatus = "new", returnEventId = "") {
   const canFinalizeReportDecision = adminCanFinalizeReportDecision();
   const canManageEvents = adminCanManageEvents();
   try {
@@ -1492,6 +1506,16 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
     const ev = res?.data || {};
 
     openAdminDrawer(`
+      ${
+        returnEventId
+          ? `<div class="adminPreviewActions">
+              <button class="adminGhostAction" type="button" onclick="openEventPreview('${escapeAdmin(returnEventId)}','${escapeAdmin(reportTicket)}','${escapeAdmin(reportStatus)}')">
+                ← Wróć do zgłoszonego wydarzenia
+              </button>
+            </div>`
+          : ""
+      }
+
       <div class="adminUserHero">
         <div class="adminUserHeroLeft">
           ${
@@ -1507,7 +1531,7 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
             <div class="adminUserEmail">${escapeAdmin(ev.organizer_name || "Organizator")} · ${escapeAdmin(ev.organizer_email || "—")} · #${escapeAdmin(ev.partner_user_id || "—")}</div>
 
             <div class="adminUserMetaRow">
-              ${adminStatusBadge(ev.status || "—")}
+              ${adminStatusBadge(ev.lifecycle_status || ev.status || "—")}
               <span class="adminUserRole">${escapeAdmin(ev.interest_tag || "event")}</span>
             </div>
           </div>
@@ -1546,7 +1570,7 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
             <div><span>Otwarte zgłoszenia</span><strong>${escapeAdmin(ev.reports_open || 0)}</strong></div>
             <div><span>Obserwujący</span><strong>${escapeAdmin(ev.saves_count || 0)}</strong></div>
             <div><span>Limit miejsc</span><strong>${escapeAdmin(ev.capacity || "—")}</strong></div>
-            <div><span>Status</span><strong>${escapeAdmin(ev.status || "—")}</strong></div>
+            <div><span>Status</span><strong>${escapeAdmin(ev.lifecycle_status || ev.status || "—")}</strong></div>
           </div>
         </div>
       </div>
@@ -1554,6 +1578,40 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
       <div class="adminPreviewCard">
         <h3>Opis wydarzenia</h3>
         <div class="adminBio">${escapeAdmin(ev.description || "Brak opisu wydarzenia.")}</div>
+      </div>
+
+      <div class="adminPreviewGrid">
+        <div class="adminPreviewCard">
+          <h3>Profil organizatora</h3>
+          <div class="adminInfoList">
+            <div><span>Nazwa</span><strong>${escapeAdmin(ev.organizer_name || "—")}</strong></div>
+            <div><span>Email</span><strong>${escapeAdmin(ev.organizer_email || "—")}</strong></div>
+            <div><span>Status konta</span><strong>${escapeAdmin(ev.organizer_status || "—")}</strong></div>
+            <div><span>Kategoria</span><strong>${escapeAdmin(ev.organizer_category || "—")}</strong></div>
+            <div><span>Miasto</span><strong>${escapeAdmin(ev.organizer_city || "—")}</strong></div>
+            <div><span>Pakiet</span><strong>${escapeAdmin(ev.organizer_plan || "free")}</strong></div>
+          </div>
+          <div class="adminBio" style="margin-top:12px;">${escapeAdmin(ev.organizer_bio || "Brak opisu profilu organizatora.")}</div>
+          ${
+            ev.partner_user_id
+              ? `<div class="adminPreviewActions"><button class="adminGhostAction" type="button" onclick="openUserPreview('${escapeAdmin(ev.partner_user_id)}','${escapeAdmin(reportTicket)}','${escapeAdmin(reportStatus)}','${escapeAdmin(ev.id)}')">Otwórz profil organizatora</button></div>`
+              : ""
+          }
+        </div>
+
+        <div class="adminPreviewCard">
+          <div class="adminHistoryHeader">
+            <h3>Inne aktywne wydarzenia organizatora</h3>
+            <span class="adminHistoryCount">${escapeAdmin((ev.organizer_active_events || []).length)} wydarzeń</span>
+          </div>
+          ${(ev.organizer_active_events || []).map((other) => `
+            <div class="adminHistoryCard" onclick="openEventPreview('${escapeAdmin(other.id)}','','new','${escapeAdmin(ev.id)}')" style="cursor:pointer;">
+              <div class="adminHistoryTitle">${escapeAdmin(other.title || "Wydarzenie")} • #${escapeAdmin(other.id || "—")}</div>
+              <div class="adminHistoryMeta">${escapeAdmin(other.city || "—")} · ${escapeAdmin(other.where || "—")}</div>
+              <div class="adminHistoryMeta">${escapeAdmin(other.start_at || "—")} · zapisy: ${escapeAdmin(other.signups_count || 0)} · obserwacje: ${escapeAdmin(other.saves_count || 0)}</div>
+            </div>
+          `).join("") || `<div class="adminHistoryCard"><div class="adminHistoryTitle">Brak innych aktywnych wydarzeń.</div></div>`}
+        </div>
       </div>
 
       <div class="adminPreviewGrid">
@@ -1759,8 +1817,8 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
   ${
     returnEventId
       ? `<div class="adminPreviewActions">
-          <button class="adminGhostAction" type="button" onclick="openEventPreview('${escapeAdmin(returnEventId)}')">
-            ← Wróć do wydarzenia
+          <button class="adminGhostAction" type="button" onclick="openEventPreview('${escapeAdmin(returnEventId)}','${escapeAdmin(reportTicket)}','${escapeAdmin(reportStatus)}')">
+            ← Wróć do zgłoszenia wydarzenia
           </button>
         </div>`
       : ""
@@ -1856,11 +1914,13 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
             </div>`
           : `<div class="adminActionStack">
               ${
-                String(u.status || "active") === "blocked"
-                  ? `<button class="adminPrimaryAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','active')">Odblokuj użytkownika</button>`
-                  : String(u.status || "active") === "deleted"
-                    ? `<button class="adminGhostAction" type="button" disabled>Konto usunięte</button>`
-                    : `<button class="adminDangerAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','blocked')">Zablokuj użytkownika</button>`
+                String(u.id || "") === String(Admin.me?.id || "")
+                  ? `<button class="adminGhostAction" type="button" disabled>To jest Twoje konto admina</button>`
+                  : String(u.status || "active") === "blocked"
+                    ? `<button class="adminPrimaryAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','active')">Odblokuj użytkownika</button>`
+                    : String(u.status || "active") === "deleted"
+                      ? `<button class="adminGhostAction" type="button" disabled>Konto usunięte</button>`
+                      : `<button class="adminDangerAction" type="button" onclick="adminSetUserStatus('${escapeAdmin(u.id)}','blocked')">Zablokuj użytkownika</button>`
               }
 
               ${
@@ -1904,15 +1964,11 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
                     </div>
 
                     <div class="adminWarnBox">
-                      <label class="adminFieldLabel" for="adminTempPasswordInput">Hasło tymczasowe</label>
-                      <input class="adminFieldInput" id="adminTempPasswordInput" type="text" placeholder="Minimum 6 znaków" />
-                      <button class="adminPrimaryAction" type="button" onclick="adminResetUserPassword('${escapeAdmin(u.id)}')">
-                        Ustaw hasło tymczasowe
-                      </button>
+                      <div class="adminHistoryTitle">Pomoc z dostępem do konta</div>
                       <button class="adminGhostAction" type="button" onclick="adminSendUserResetLink('${escapeAdmin(u.id)}')">
                         Wyślij link resetu hasła
                       </button>
-                      <div class="adminWarnHint">Ręczne hasło zapisze się w logach. Bezpieczniejsza opcja to wysłanie użytkownikowi linku resetu.</div>
+                      <div class="adminWarnHint">Bezpieczna opcja: użytkownik sam ustawia nowe hasło przez jednorazowy link.</div>
                     </div>`
                   : `<div class="adminWarnBox">
                       <div class="adminHistoryTitle">Konto usunięte</div>
@@ -1934,7 +1990,7 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
                 <button class="adminPrimaryAction" type="button" onclick="adminSendUserWarning('${escapeAdmin(userId)}','${escapeAdmin(reportTicket)}')">
                   Wyślij ostrzeżenie
                 </button>
-                <div class="adminWarnHint">Ostrzeżenie zapisze się w historii moderacji. Powiadomienie in-app dodamy w kolejnym etapie.</div>
+                <div class="adminWarnHint">Ostrzeżenie zapisze się w historii moderacji i wyśle użytkownikowi powiadomienie in-app.</div>
               </div>`
             : ""
         }
@@ -2169,9 +2225,10 @@ async function reloadAdminDashboard() {
     const activeUsers = users.filter(u => String(u.status || "active") === "active");
     const partners = users.filter(u => String(u.role || "") === "partner");
     const admins = users.filter(u => String(u.role || "") === "admin");
-    const activeEvents = events.filter(ev => String(ev.status || "") === "published");
-    const archivedEvents = events.filter(ev => String(ev.status || "") === "archived");
-    const draftEvents = events.filter(ev => String(ev.status || "") === "draft");
+    const activeEvents = events.filter(ev => String(ev.lifecycle_status || ev.status || "") === "published");
+    const endedEvents = events.filter(ev => String(ev.lifecycle_status || ev.status || "") === "ended");
+    const archivedEvents = events.filter(ev => String(ev.lifecycle_status || ev.status || "") === "archived");
+    const draftEvents = events.filter(ev => String(ev.lifecycle_status || ev.status || "") === "draft");
 
     const openReportStatuses = new Set(["new", "in_review", "accepted", "in_progress"]);
     const openReports = [...userReports, ...eventReports, ...bugReports].filter(r => openReportStatuses.has(String(r.status || "new")));
@@ -2187,6 +2244,7 @@ async function reloadAdminDashboard() {
             <div class="adminMetricCard"><span>Organizatorzy</span><strong>${partners.length}</strong></div>
             <div class="adminMetricCard"><span>Admini</span><strong>${admins.length}</strong></div>
             <div class="adminMetricCard"><span>Aktywne wydarzenia</span><strong>${activeEvents.length}</strong></div>
+            <div class="adminMetricCard"><span>Zakończone wydarzenia</span><strong>${endedEvents.length}</strong></div>
             <div class="adminMetricCard"><span>Szkice wydarzeń</span><strong>${draftEvents.length}</strong></div>
             <div class="adminMetricCard"><span>Archiwum wydarzeń</span><strong>${archivedEvents.length}</strong></div>
             <div class="adminMetricCard"><span>Otwarte zgłoszenia</span><strong>${openReports.length}</strong></div>
@@ -2458,7 +2516,7 @@ const buildPlanRows = (role, prices) => {
       ...events.slice(0, 8).map(ev => ({
         type: "event",
         title: `Nowe wydarzenie: ${ev.title || "Wydarzenie"}`,
-        meta: `${ev.status || "—"} / ${ev.city || "—"} / ${ev.organizer_name || "—"}`,
+        meta: `${ev.lifecycle_status || ev.status || "—"} / ${ev.city || "—"} / ${ev.organizer_name || "—"}`,
         at: ev.created_at,
       })),
       ...userReports.slice(0, 6).map(r => ({

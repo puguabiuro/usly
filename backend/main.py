@@ -2092,6 +2092,16 @@ def _ensure_utc(dt):
     return dt.astimezone(timezone.utc)
 
 
+def _admin_event_lifecycle_status(event: Event) -> str:
+    status = str(getattr(event, "status", "") or "")
+    if status in {"archived", "draft"}:
+        return status
+    end_at = _ensure_utc(getattr(event, "end_at", None))
+    if end_at and end_at < datetime.now(timezone.utc):
+        return "ended"
+    return status or "published"
+
+
 @app.post("/partners/events")
 def partner_create_event(
     payload: EventCreate,
@@ -2368,6 +2378,20 @@ def partner_publish_event(
 
         if event.status not in {"draft", "archived"}:
             raise HTTPException(status_code=409, detail="INVALID_STATUS_TRANSITION")
+
+        if event.status == "archived":
+            last_admin_status_log = (
+                db.query(AuditLog)
+                .filter(
+                    AuditLog.action == "admin_update_event_status",
+                    AuditLog.details.isnot(None),
+                    AuditLog.details.like(f"%event_id={event.id}%"),
+                )
+                .order_by(AuditLog.created_at.desc())
+                .first()
+            )
+            if last_admin_status_log and "to=archived" in (last_admin_status_log.details or ""):
+                raise HTTPException(status_code=403, detail="EVENT_ARCHIVED_BY_ADMIN")
 
         profile = (
             db.query(PartnerProfile)
@@ -2889,6 +2913,7 @@ def my_saved_events(
             db.query(EventSave, Event)
             .join(Event, Event.id == EventSave.event_id)
             .filter(EventSave.user_id == current_user.id)
+            .filter(Event.status == "published")
             .order_by(EventSave.created_at.desc())
         )
 
@@ -2943,6 +2968,7 @@ def my_event_signups(
             db.query(EventSignup, Event)
             .join(Event, Event.id == EventSignup.event_id)
             .filter(EventSignup.user_id == current_user.id)
+            .filter(Event.status == "published")
         )
 
         total = q.count()
@@ -5617,6 +5643,14 @@ def admin_update_report_status(
                             f"admin_user_report_{new_status}",
                         )
 
+                if report_type == "event" and new_status in {"in_review", "resolved", "rejected"}:
+                    reporter_user_id = int(row.get("reporter_user_id") or 0)
+                    if reporter_user_id:
+                        _admin_create_user_notification(
+                            reporter_user_id,
+                            f"admin_event_report_{new_status}",
+                        )
+
                 if report_type == "bug" and new_status in {"accepted", "in_progress", "fixed", "resolved", "not_reproducible"}:
                     bug_user_id = int(row.get("user_id") or 0)
                     if bug_user_id:
@@ -5845,11 +5879,35 @@ def admin_update_user_status(
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
-        if user.role == "admin":
+        if user.id == current_user.id:
+            raise HTTPException(status_code=400, detail="CANNOT_MODERATE_SELF")
+        if user.role == "admin" and _admin_level(current_user) != ADMIN_LEVEL_OWNER:
             raise HTTPException(status_code=400, detail="CANNOT_MODERATE_ADMIN")
+        if (
+            user.role == "admin"
+            and (user.admin_level or "").strip().lower() == ADMIN_LEVEL_OWNER
+            and new_status == UserStatus.BLOCKED.value
+        ):
+            active_owner_count = (
+                db.query(User)
+                .filter(User.role == "admin")
+                .filter(User.admin_level == ADMIN_LEVEL_OWNER)
+                .filter(User.status == UserStatus.ACTIVE.value)
+                .count()
+            )
+            if active_owner_count <= 1 and user.status == UserStatus.ACTIVE.value:
+                raise HTTPException(status_code=400, detail="CANNOT_BLOCK_LAST_OWNER")
 
+        previous_status = user.status
         user.status = new_status
         db.add(user)
+        db.add(
+            AuditLog(
+                user_id=user.id,
+                action="admin_update_user_status",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; from={previous_status}; to={new_status}",
+            )
+        )
         db.commit()
 
         return ok({"id": user.id, "status": user.status})
@@ -6278,6 +6336,11 @@ def admin_user_preview(
             account_plan_source = getattr(partner_profile, "plan_source", None) or "manual"
             account_plan_status = getattr(partner_profile, "plan_status", None) or "active"
             account_plan_updated_at = str(partner_profile.plan_updated_at) if partner_profile and partner_profile.plan_updated_at else None
+        elif user.role == UserRole.ADMIN.value:
+            account_plan = None
+            account_plan_source = None
+            account_plan_status = None
+            account_plan_updated_at = None
         else:
             account_plan = getattr(profile, "plan", None) if profile else "free"
             account_plan_source = getattr(profile, "plan_source", None) if profile else None
@@ -6334,10 +6397,12 @@ def admin_user_preview(
             "reports_total": reports_total,
             "reports_open": reports_open,
             "selected_report": selected_report,
-            "nick": getattr(profile, "nick", None) if profile else None,
-            "city": getattr(profile, "city", None) if profile else None,
-            "bio": getattr(profile, "bio", None) if profile else None,
-            "avatar_url": getattr(profile, "avatar_url", None) if profile else None,
+            "admin_display_name": user.admin_display_name,
+            "admin_level": user.admin_level,
+            "nick": getattr(partner_profile, "nazwa", None) if user.role == UserRole.PARTNER.value else (getattr(profile, "nick", None) if profile else user.admin_display_name),
+            "city": getattr(partner_profile, "miasto", None) if user.role == UserRole.PARTNER.value else (getattr(profile, "city", None) if profile else None),
+            "bio": getattr(partner_profile, "bio", None) if user.role == UserRole.PARTNER.value else (getattr(profile, "bio", None) if profile else None),
+            "avatar_url": getattr(partner_profile, "logo_url", None) if user.role == UserRole.PARTNER.value else (getattr(profile, "avatar_url", None) if profile else None),
             "interests": interests,
             "plan": account_plan,
             "plan_source": account_plan_source,
@@ -6418,6 +6483,18 @@ def admin_event_preview(
         )
         organizer_user = db.query(User).filter(User.id == event.partner_user_id).first()
 
+        now_utc = datetime.now(timezone.utc)
+        organizer_active_events = (
+            db.query(Event)
+            .filter(Event.partner_user_id == event.partner_user_id)
+            .filter(Event.id != event.id)
+            .filter(Event.status == "published")
+            .filter(Event.end_at >= now_utc)
+            .order_by(Event.start_at.asc())
+            .limit(8)
+            .all()
+        )
+
         event_history_logs = (
             db.query(AuditLog)
             .filter(
@@ -6453,6 +6530,26 @@ def admin_event_preview(
             "organizer_name": getattr(partner_profile, "nazwa", None),
             "organizer_logo_url": getattr(partner_profile, "logo_url", None),
             "organizer_email": getattr(organizer_user, "email", None),
+            "organizer_status": getattr(organizer_user, "status", None),
+            "organizer_category": getattr(partner_profile, "kategoria", None),
+            "organizer_city": getattr(partner_profile, "miasto", None),
+            "organizer_bio": getattr(partner_profile, "bio", None),
+            "organizer_plan": getattr(partner_profile, "plan", None),
+            "organizer_active_events": [
+                {
+                    "id": other.id,
+                    "title": other.title,
+                    "city": other.city,
+                    "where": getattr(other, "where", None),
+                    "start_at": str(other.start_at) if other.start_at else None,
+                    "end_at": str(other.end_at) if other.end_at else None,
+                    "status": other.status,
+                    "lifecycle_status": _admin_event_lifecycle_status(other),
+                    "signups_count": db.query(EventSignup).filter(EventSignup.event_id == other.id).count(),
+                    "saves_count": db.query(EventSave).filter(EventSave.event_id == other.id).count(),
+                }
+                for other in organizer_active_events
+            ],
             "reports_total": reports_total,
             "reports_open": reports_open,
             "selected_report": selected_report,
@@ -6465,6 +6562,7 @@ def admin_event_preview(
             "end_at": str(event.end_at) if event.end_at else None,
             "capacity": event.capacity,
             "status": event.status,
+            "lifecycle_status": _admin_event_lifecycle_status(event),
             "signups_count": signups_count,
             "saves_count": saves_count,
             "signups": signups,
@@ -6635,12 +6733,22 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
             else:
                 display_name = getattr(user_profile, "nick", None) or user.email
                 city = getattr(user_profile, "miasto", None)
-                plan = getattr(user_profile, "plan", None) or "free"
-                plan_source = getattr(user_profile, "plan_source", None) if user_profile else None
-                plan_status = getattr(user_profile, "plan_status", None) if user_profile else None
-                plan_updated_at = str(user_profile.plan_updated_at) if user_profile and user_profile.plan_updated_at else None
-                avatar_url = getattr(user_profile, "avatar_url", None)
-                bio = getattr(user_profile, "bio", None)
+                if user.role == UserRole.ADMIN.value:
+                    display_name = user.admin_display_name or user.email
+                    city = None
+                    plan = None
+                    plan_source = None
+                    plan_status = None
+                    plan_updated_at = None
+                    avatar_url = None
+                    bio = None
+                else:
+                    plan = getattr(user_profile, "plan", None) or "free"
+                    plan_source = getattr(user_profile, "plan_source", None) if user_profile else None
+                    plan_status = getattr(user_profile, "plan_status", None) if user_profile else None
+                    plan_updated_at = str(user_profile.plan_updated_at) if user_profile and user_profile.plan_updated_at else None
+                    avatar_url = getattr(user_profile, "avatar_url", None)
+                    bio = getattr(user_profile, "bio", None)
 
             items.append({
                 "id": user.id,
@@ -6648,6 +6756,8 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "role": user.role,
                 "status": user.status,
                 "display_name": display_name,
+                "admin_display_name": user.admin_display_name,
+                "admin_level": user.admin_level,
                 "city": city,
                 "dob": str(user.dob) if getattr(user, "dob", None) else None,
                 "created_at": str(user.created_at) if user.created_at else None,
@@ -6835,6 +6945,7 @@ def admin_list_events(current_user: User = Depends(require_role("admin"))):
                 "end_at": str(ev.end_at) if ev.end_at else None,
                 "capacity": ev.capacity,
                 "status": ev.status,
+                "lifecycle_status": _admin_event_lifecycle_status(ev),
                 "created_at": str(ev.created_at) if ev.created_at else None,
                 "updated_at": str(ev.updated_at) if ev.updated_at else None,
                 "pricing_type": getattr(ev, "pricing_type", None),
