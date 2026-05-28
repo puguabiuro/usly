@@ -241,6 +241,21 @@
   font-weight:950 !important;
 }
 
+.nearbyTrainerLine{
+  margin-top:4px;
+  color:rgba(247,251,255,.92);
+  font-size:12px;
+  font-weight:850;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.nearbyTrainerLine span{
+  color:rgba(255,215,102,.94);
+  font-weight:950;
+}
+
 .nearbyInterestChips{
   display:flex;
   flex-wrap:wrap;
@@ -256,6 +271,120 @@
   color:rgba(247,251,255,.86);
   font-size:12px;
   font-weight:800;
+}
+
+
+.trainerInterestBox{
+  border-radius:22px;
+  padding:16px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(255,215,120,.16);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.trainerInterestHeader{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.trainerInterestTitle{
+  color:#fff7df;
+  font-size:15px;
+  font-weight:950;
+  letter-spacing:.01em;
+}
+
+.trainerInterestSub{
+  color:rgba(247,251,255,.72);
+  font-size:13px;
+  line-height:1.45;
+}
+
+.trainerInterestLimit{
+  color:rgba(255,215,120,.92);
+  font-size:12px;
+  font-weight:800;
+}
+
+.trainerInterestChoices{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:14px;
+}
+
+.trainerInterestChip{
+  appearance:none;
+  border:none;
+  border-radius:999px;
+  padding:8px 12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  color:rgba(247,251,255,.90);
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    box-shadow .16s ease,
+    background .16s ease;
+}
+
+.trainerInterestChip:hover{
+  transform:translateY(-1px);
+  border-color:rgba(255,215,120,.34);
+}
+
+
+.personTrainerBox{
+  margin-top:0;
+  padding:0;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+}
+
+.personTrainerTitle{
+  color:rgba(247,251,255,.94);
+  font-size:14px;
+  font-weight:950;
+  letter-spacing:.01em;
+  margin-bottom:10px;
+}
+
+.personTrainerChips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.personTrainerChip{
+  padding:7px 12px;
+  border-radius:999px;
+  background:linear-gradient(135deg,rgba(255,255,255,.11),rgba(255,255,255,.055));
+  border:1px solid rgba(255,215,102,.36);
+  color:rgba(247,251,255,.94);
+  font-size:12px;
+  font-weight:900;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    0 8px 18px rgba(0,0,0,.10);
+}
+
+.trainerInterestChip.active{
+  color:#fff8e7;
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,.18), transparent 35%),
+    linear-gradient(135deg,rgba(255,215,120,.28),rgba(255,184,76,.18));
+  border:1px solid rgba(255,215,120,.88);
+  box-shadow:
+    0 0 0 1px rgba(255,215,120,.18),
+    0 10px 24px rgba(255,184,76,.18);
 }
 
 .avatarCardActions{
@@ -2406,6 +2535,7 @@ section#S11_PLANS .card[data-plan].is-current{
               </div>
               <div class="typeahead" id="setInterestTypeahead"></div>
               <div class="chips mt12" id="setInterestChips"></div>
+              <div class="trainerInterestBox mt12" id="setTrainerInterestBox"></div>
             </div>
           </div>
         </section>
@@ -2530,6 +2660,7 @@ section#S11_PLANS .card[data-plan].is-current{
                     <button class="btn secondary small hashAddBtn" id="interestAddBtn" type="button" aria-label="Add interest" data-i18n="profileSetup.addInterest">Dodaj</button>
                   </div>
                   <div class="chips" id="interestChips"></div>
+                  <div class="trainerInterestBox mt12" id="setupTrainerInterestBox"></div>
                   <div class="typeahead" id="interestTypeahead"></div>
                 </div>
 
@@ -2745,6 +2876,10 @@ section#S11_PLANS .card[data-plan].is-current{
                     <div class="personProfilePanel">
                       <div class="sectionTitle" id="personInterestsTitle" data-i18n="profileInterests.title">Zainteresowania</div>
                       <div class="chips" id="personInterests"></div>
+                    </div>
+
+                    <div class="personProfilePanel personTrainerPanel" id="personTrainerPanel" hidden>
+                      <div id="personTrainerContent"></div>
                     </div>
 
                     <div class="personProfilePanel">
@@ -3582,6 +3717,7 @@ section#S11_PLANS .card[data-plan].is-current{
                   <li data-i18n="plans.user.premium.feature3">Dodawanie znajomych do grup</li>
                   <li data-i18n="plans.user.premium.feature4">Do 20 zainteresowań w profilu</li>
                   <li data-i18n="plans.user.premium.feature5">15 awatarów AI miesięcznie</li>
+                  <li data-i18n="plans.user.premium.feature6">Oznaczenie trenera w maks. 2 zainteresowaniach</li>
                 </ul>
                 <button class="btn secondary mt16" type="button" onclick="setUserPlan('premium')" data-i18n="plans.choose">Wybierz</button>
               </div>
@@ -3601,6 +3737,7 @@ section#S11_PLANS .card[data-plan].is-current{
                   <li data-i18n="plans.user.vip.feature3">Dodawanie znajomych do grup</li>
                   <li data-i18n="plans.user.vip.feature4">Nieograniczona liczba zainteresowań</li>
                   <li data-i18n="plans.user.vip.feature5">30 awatarów AI miesięcznie</li>
+                  <li data-i18n="plans.user.vip.feature6">Oznaczenie trenera w maks. 5 zainteresowaniach</li>
                 </ul>
                 <button class="btn secondary mt16" type="button" onclick="setUserPlan('vip')" data-i18n="plans.choose">Wybierz</button>
                 </div>

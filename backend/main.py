@@ -1158,7 +1158,7 @@ def delete_account(
 def protected_route(current_user: User = Depends(get_current_user)):
     return {
         "ok": True,
-        "user_id": user_id,
+        "user_id": current_user.id,
         "email": account_email,
         "role": current_user.role,
     }
@@ -1206,6 +1206,13 @@ def users_me(current_user: User = Depends(require_role("user"))):
             except Exception:
                 zainteresowania = []
 
+        trainer_interests = []
+        if profile.trainer_interests_json:
+            try:
+                trainer_interests = json.loads(profile.trainer_interests_json) or []
+            except Exception:
+                trainer_interests = []
+
         return ok(
             {
                 "user_id": current_user.id,
@@ -1213,6 +1220,7 @@ def users_me(current_user: User = Depends(require_role("user"))):
                 "miasto": profile.miasto,
                 "bio": profile.bio,
                 "zainteresowania": zainteresowania,
+                "trainer_interests": trainer_interests,
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
                 "nearby_radius_km": profile.nearby_radius_km,
@@ -1329,7 +1337,9 @@ def users_nearby(
                 continue
 
             other_tags = norm_tags(profile.zainteresowania_json)
+            other_trainer_tags = norm_tags(profile.trainer_interests_json)
             shared_tags = sorted(my_tags & other_tags)
+            shared_trainer_tags = sorted(my_tags & other_trainer_tags)
 
             other_age = calc_age(user.dob)
             other_pref_min = profile.age_min
@@ -1357,7 +1367,9 @@ def users_nearby(
                     "miasto": profile.miasto,
                     "bio": profile.bio,
                     "zainteresowania": sorted(other_tags),
+                    "trainer_interests": sorted(other_trainer_tags),
                     "shared_zainteresowania": shared_tags,
+                    "shared_trainer_interests": shared_trainer_tags,
                     "shared_count": len(shared_tags),
                     "age": other_age,
                     "age_min": profile.age_min,
@@ -1441,6 +1453,13 @@ def users_profile_by_id(
             except Exception:
                 zainteresowania = []
 
+        trainer_interests = []
+        if profile.trainer_interests_json:
+            try:
+                trainer_interests = json.loads(profile.trainer_interests_json) or []
+            except Exception:
+                trainer_interests = []
+
         age = None
         if user.dob:
             today = date.today()
@@ -1455,6 +1474,7 @@ def users_profile_by_id(
                 "miasto": profile.miasto,
                 "bio": profile.bio,
                 "zainteresowania": zainteresowania,
+                "trainer_interests": trainer_interests,
                 "age": age,
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
@@ -1475,6 +1495,7 @@ class UserMePatch(BaseModel):
     miasto: Optional[str] = Field(default=None)
     bio: Optional[str] = Field(default=None, max_length=300)
     zainteresowania: Optional[List[str]] = Field(default=None)
+    trainer_interests: Optional[List[str]] = Field(default=None)
     age_min: Optional[int] = Field(default=None, ge=16, le=120)
     age_max: Optional[int] = Field(default=None, ge=16, le=120)
     nearby_radius_km: Optional[int] = Field(default=None, ge=1, le=200)
@@ -1561,8 +1582,7 @@ def users_me_patch(
                 "vip": None,
             }
 
-            current_plan = payload.plan if payload.plan is not None else profile.plan
-            current_plan = (current_plan or "free").lower()
+            current_plan = (profile.plan or "free").lower()
             interest_limit = interest_limits.get(current_plan, 5)
 
             if interest_limit is not None and len(cleaned) > interest_limit:
@@ -1572,6 +1592,54 @@ def users_me_patch(
                 )
 
             profile.zainteresowania_json = json.dumps(cleaned, ensure_ascii=False)
+
+            existing_trainer = []
+            if profile.trainer_interests_json:
+                try:
+                    existing_trainer = json.loads(profile.trainer_interests_json) or []
+                except Exception:
+                    existing_trainer = []
+            cleaned_lower = {x.lower() for x in cleaned}
+            kept_trainer = [x for x in existing_trainer if str(x).strip().lower() in cleaned_lower]
+            profile.trainer_interests_json = json.dumps(kept_trainer, ensure_ascii=False) if kept_trainer else None
+
+        if payload.trainer_interests is not None:
+            current_plan = (profile.plan or "free").lower()
+            if current_plan not in {"premium", "vip"}:
+                raise HTTPException(status_code=403, detail="TRAINER_INTERESTS_REQUIRE_PREMIUM_OR_VIP")
+
+            current_interests = []
+            if profile.zainteresowania_json:
+                try:
+                    current_interests = json.loads(profile.zainteresowania_json) or []
+                except Exception:
+                    current_interests = []
+
+            interests_by_lower = {str(x).strip().lower(): str(x).strip() for x in current_interests if str(x).strip()}
+            cleaned_trainer = []
+            seen_trainer = set()
+
+            for item in payload.trainer_interests:
+                if item is None:
+                    continue
+                key = str(item).strip().lower()
+                if not key:
+                    continue
+                if key not in interests_by_lower:
+                    raise HTTPException(status_code=422, detail="TRAINER_INTEREST_MUST_BE_PROFILE_INTEREST")
+                if key not in seen_trainer:
+                    cleaned_trainer.append(interests_by_lower[key])
+                    seen_trainer.add(key)
+
+            trainer_limits = {
+                "premium": 2,
+                "vip": 5,
+            }
+            trainer_limit = trainer_limits.get(current_plan, 0)
+            if len(cleaned_trainer) > trainer_limit:
+                raise HTTPException(status_code=422, detail="TOO_MANY_TRAINER_INTERESTS")
+
+            profile.trainer_interests_json = json.dumps(cleaned_trainer, ensure_ascii=False) if cleaned_trainer else None
 
         if payload.avatar_url is not None:
             profile.avatar_url = _trim(payload.avatar_url)
@@ -1608,6 +1676,13 @@ def users_me_patch(
             except Exception:
                 zainteresowania = []
 
+        trainer_interests = []
+        if profile.trainer_interests_json:
+            try:
+                trainer_interests = json.loads(profile.trainer_interests_json) or []
+            except Exception:
+                trainer_interests = []
+
         return ok(
             {
                 "user_id": current_user.id,
@@ -1615,6 +1690,7 @@ def users_me_patch(
                 "miasto": profile.miasto,
                 "bio": profile.bio,
                 "zainteresowania": zainteresowania,
+                "trainer_interests": trainer_interests,
                 "age_min": profile.age_min,
                 "age_max": profile.age_max,
                 "nearby_radius_km": profile.nearby_radius_km,
@@ -1722,7 +1798,7 @@ def partners_me_patch(
 
         return ok(
             {
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "nazwa": profile.nazwa,
                 "miasto": profile.miasto,
                 "kategoria": profile.kategoria,
@@ -6284,6 +6360,10 @@ def admin_update_user_plan(
             profile.plan_source = plan_source
             profile.plan_status = plan_status
             profile.plan_updated_at = now
+
+            if plan not in {"premium", "vip"}:
+                profile.trainer_interests_json = None
+
             profile.updated_at = now
             db.add(profile)
 

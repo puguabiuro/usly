@@ -155,6 +155,14 @@ class UserProfile(Base):
         default=None,
     )
 
+    # zainteresowania oznaczone jako trenerskie/coach, JSON subset zainteresowania_json.
+    # Funkcja dostępna tylko dla planów premium/vip i egzekwowana w backendzie.
+    trainer_interests_json: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
     # zakres wieku
     age_min: Mapped[int | None] = mapped_column(
         nullable=True,

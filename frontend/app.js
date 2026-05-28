@@ -110,11 +110,13 @@ const I18N = {
     "plans.user.premium.feature3": "Dodawanie znajomych do grup",
     "plans.user.premium.feature4": "Do 20 zainteresowań w profilu",
     "plans.user.premium.feature5": "15 awatarów AI miesięcznie",
+    "plans.user.premium.feature6": "Oznaczenie trenera w maks. 2 zainteresowaniach",
     "plans.user.vip.feature1": "Tworzenie grup bez limitu",
     "plans.user.vip.feature2": "Brak limitów w grupach i kontaktach",
     "plans.user.vip.feature3": "Dodawanie znajomych do grup",
     "plans.user.vip.feature4": "Nieograniczona liczba zainteresowań",
     "plans.user.vip.feature5": "30 awatarów AI miesięcznie",
+    "plans.user.vip.feature6": "Oznaczenie trenera w maks. 5 zainteresowaniach",
     "plans.price.free": "0 zł",
     "plans.partner.free.price": "0 zł",
     "plans.partner.pro.price": "129 zł / miesiąc",
@@ -186,6 +188,15 @@ const I18N = {
     "profileInterests.placeholder": "np. kawa, joga, koncerty...",
     "profileInterests.limitPlaceholder": "Limit osiągnięty • Odblokuj więcej w PLUS",
     "profileInterests.limitToast": "Odblokuj więcej zainteresowań w planie PLUS",
+    "profileInterests.trainerTitle": "Jesteś trenerem?",
+    "profileInterests.trainerSubtitle": "Wyróżnij zainteresowania, w których jesteś trenerem lub prowadzisz innych.",
+    "profileInterests.trainerPremiumLimit": "Premium: maks. 2 oznaczenia trenerskie",
+    "profileInterests.trainerVipLimit": "VIP: maks. 5 oznaczeń trenerskich",
+    "profileInterests.trainerLocked": "Opcja dostępna w planach Premium i VIP",
+    "profileInterests.trainerBadge": "Trener",
+    "profileInterests.leadsClassesTitle": "Prowadzi zajęcia w:",
+    "profileInterests.leadsNearbyLabel": "Prowadzi zajęcia",
+    "profileInterests.trainerLimitToast": "Osiągnięto limit oznaczeń trenerskich w Twoim planie",
     "profileInterests.alreadyAdded": "To zainteresowanie już jest dodane",
     "profileInterests.addedToast": "Dodano #{{tag}}",
     "profileInterests.removedToast": "Usunięto #{{tag}}",
@@ -531,6 +542,15 @@ const I18N = {
     "partnerCreate.resume": "Wznów wydarzenie",
     "partnerCreate.publishExisting": "Opublikuj",
     "partnerEvent.featured": "Wyróżnione",
+    "partnerEvent.signupsShort": "{{count}} zapisów",
+    "partnerEvent.observersShort": "{{count}} obserwacji",
+    "partnerEvent.capacityShort": "{{used}}/{{capacity}} miejsc",
+    "partnerEvent.noCapacityLimit": "Bez limitu miejsc",
+    "partnerEvent.freeSpotsShort": "Wolne: {{count}}",
+    "partnerEvent.participantsAction": "Uczestnicy",
+    "partnerEvent.closeShort": "Zamknij",
+    "partnerEvent.archiveShort": "Zarchiwizuj",
+    "partnerEvent.emptySection": "Brak wydarzeń w tej sekcji",
     "partnerEvents.title": "Twoje wydarzenia",
     "partnerParticipants.title": "Uczestnicy wydarzenia",
     "partnerParticipants.notifyAll": "Powiadom wszystkich uczestników",
@@ -604,6 +624,7 @@ const I18N = {
     "partnerParticipants.send": "Wyślij do uczestników",
     "partnerParticipants.savedUsers": "Zapisani uczestnicy",
     "partnerParticipants.savedUsersSub": "Osoby, które kliknęły „wezmę udział” dla tego wydarzenia.",
+    "partnerParticipants.empty": "Na razie nikt się nie zapisał.",
     "settings.title": "Ustawienia",
     "settings.profile": "Twój profil",
     "settings.profileSub": "Uzupełnij profil, aby poprawić dopasowania.",
@@ -975,11 +996,13 @@ const I18N = {
     "plans.user.premium.feature3": "Add friends to groups",
     "plans.user.premium.feature4": "Up to 20 interests in your profile",
     "plans.user.premium.feature5": "15 AI avatars per month",
+    "plans.user.premium.feature6": "Trainer badge in up to 2 interests",
     "plans.user.vip.feature1": "Unlimited group creation",
     "plans.user.vip.feature2": "No limits in groups and contacts",
     "plans.user.vip.feature3": "Add friends to groups",
     "plans.user.vip.feature4": "Unlimited number of interests",
     "plans.user.vip.feature5": "30 AI avatars per month",
+    "plans.user.vip.feature6": "Trainer badge in up to 5 interests",
     "plans.price.free": "0 PLN",
     "plans.partner.free.price": "0 PLN",
     "plans.partner.pro.price": "129 PLN / month",
@@ -1051,6 +1074,15 @@ const I18N = {
     "profileInterests.placeholder": "e.g. coffee, yoga, concerts...",
     "profileInterests.limitPlaceholder": "Limit reached • Unlock more in PLUS",
     "profileInterests.limitToast": "Unlock more interests in the PLUS plan",
+    "profileInterests.trainerTitle": "Are you a trainer?",
+    "profileInterests.trainerSubtitle": "Highlight the interests where you coach or guide others.",
+    "profileInterests.trainerPremiumLimit": "Premium: up to 2 trainer badges",
+    "profileInterests.trainerVipLimit": "VIP: up to 5 trainer badges",
+    "profileInterests.trainerLocked": "Available in Premium and VIP plans",
+    "profileInterests.trainerBadge": "Trainer",
+    "profileInterests.leadsClassesTitle": "Runs classes in:",
+    "profileInterests.leadsNearbyLabel": "Runs classes",
+    "profileInterests.trainerLimitToast": "Trainer badge limit reached for your plan",
     "profileFriends.title": "Friends",
     "profileFriends.search_placeholder": "Search for a friend...",
     "profileInvites.title": "Invitations",
@@ -1344,6 +1376,15 @@ const I18N = {
     "partnerCreate.resume": "Resume event",
     "partnerCreate.publishExisting": "Publish",
     "partnerEvent.featured": "Featured",
+    "partnerEvent.signupsShort": "{{count}} signups",
+    "partnerEvent.observersShort": "{{count}} observers",
+    "partnerEvent.capacityShort": "{{used}}/{{capacity}} spots",
+    "partnerEvent.noCapacityLimit": "Unlimited spots",
+    "partnerEvent.freeSpotsShort": "Free: {{count}}",
+    "partnerEvent.participantsAction": "Participants",
+    "partnerEvent.closeShort": "Close",
+    "partnerEvent.archiveShort": "Archive",
+    "partnerEvent.emptySection": "No events in this section",
     "partnerEvents.title": "Your events",
     "partnerParticipants.title": "Event participants",
     "partnerParticipants.notifyAll": "Notify all participants",
@@ -1417,6 +1458,7 @@ const I18N = {
     "partnerParticipants.send": "Send to participants",
     "partnerParticipants.savedUsers": "Signed-up participants",
     "partnerParticipants.savedUsersSub": "People who selected “I’m going” for this event.",
+    "partnerParticipants.empty": "No one has signed up yet.",
     "settings.title": "Settings",
     "settings.profile": "Your profile",
     "settings.profileSub": "Complete your profile to improve matches.",
@@ -1810,6 +1852,7 @@ const App = {
     age: "",
     bio: "",
     interests: [],
+    trainerInterests: [],
     prefAgeFrom: 18,
     prefAgeTo: 35,
     geo: { lat: "", lng: "" },
@@ -2319,6 +2362,7 @@ async function loginPrimary() {
         const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
 
         App.user.interests = backendInterests;
+        App.user.trainerInterests = Array.isArray(profile.data.trainer_interests) ? profile.data.trainer_interests : [];
         try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
         App.user.plan = profile.data.plan || App.user.plan;
         App.user.avatarUrl = profile.data.avatar_url ?? "";
@@ -2588,6 +2632,7 @@ async function registerPrimary() {
         App.user.bio = profile.data.bio || "";
           const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
           App.user.interests = backendInterests;
+          App.user.trainerInterests = Array.isArray(profile.data.trainer_interests) ? profile.data.trainer_interests : [];
           try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
         App.user.plan = profile.data.plan || App.user.plan;
         App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
@@ -2657,8 +2702,6 @@ async function setUserPlan(plan, silent = false) {
   if (!allowed.includes(plan)) return;
 
   const prevPlan = App.user.plan;
-  App.user.plan = plan;
-  try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, plan); } catch(_) {}
 
   const btnIds = [
     "uplan_free", "uplan_plus", "uplan_premium", "uplan_vip",
@@ -2696,7 +2739,7 @@ async function setUserPlan(plan, silent = false) {
         throw new Error(data?.error?.message || t("plans.toast.saveFailed"));
       }
 
-      App.user.plan = data.data.plan || plan;
+      App.user.plan = data.data.plan || prevPlan || "free";
       try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch(_) {}
       safeSetText("planPillSetup", App.user.plan.toUpperCase());
       refreshUserPlanCardsUi();
@@ -3161,12 +3204,14 @@ async function saveSettings() {
   const t = Number($("setPrefAgeTo")?.value || App.user.prefAgeTo);
   const ageMin = ageAny ? null : Math.min(f, t);
   const ageMax = ageAny ? null : Math.max(f, t);
+  const nearbyRadiusKm = Number($("setNearbyRadiusKm")?.value || App.user.nearbyRadiusKm || 25);
 
   const payload = {
     nick: nick,
     miasto: city,
     bio: bio,
     zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+    trainer_interests: Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [],
     age_min: ageMin,
     age_max: ageMax,
     nearby_radius_km: nearbyRadiusKm,
@@ -3196,6 +3241,7 @@ async function saveSettings() {
     App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(data.data, "age_min") ? data.data.age_min : ageMin;
     App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(data.data, "age_max") ? data.data.age_max : ageMax;
     App.user.interests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : (Array.isArray(App.user.interests) ? App.user.interests : []);
+    App.user.trainerInterests = Array.isArray(data.data.trainer_interests) ? data.data.trainer_interests : (Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : []);
 
     await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
 
@@ -3535,6 +3581,10 @@ async function finishPartnerSetup() {
 
 /* ------------------------- Profile Setup -------------------------- */
 async function finishProfileSetup() {
+  if (App.role === "partner") {
+    return finishPartnerSetup();
+  }
+
   const nick = $("setupNick")?.value?.trim() || App.user.nick;
   const city = normalizeCity($("setupCity")?.value) || App.user.city;
   const bio = $("setupBio")?.value?.trim() || "";
@@ -3551,6 +3601,7 @@ async function finishProfileSetup() {
     miasto: city,
     bio: bio,
     zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+    trainer_interests: Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [],
     age_min: ageMin,
     age_max: ageMax,
     nearby_radius_km: nearbyRadiusKm,
@@ -3580,6 +3631,7 @@ async function finishProfileSetup() {
     App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(data.data, "age_min") ? data.data.age_min : ageMin;
     App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(data.data, "age_max") ? data.data.age_max : ageMax;
     App.user.interests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : (Array.isArray(App.user.interests) ? App.user.interests : []);
+    App.user.trainerInterests = Array.isArray(data.data.trainer_interests) ? data.data.trainer_interests : (Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : []);
 
     await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
 
@@ -3864,6 +3916,7 @@ function openPerson(personId) {
       }
       chips.appendChild(chip);
     });
+    renderPersonTrainerInterests(p);
   }
 
   go("S5_PERSON_PROFILE");
@@ -3918,6 +3971,7 @@ function openPerson(personId) {
           }
           fullChips.appendChild(chip);
         });
+        renderPersonTrainerInterests(full);
       }
 
       const idx = (App.people || []).findIndex(x => String(x.id) === String(full.id));
@@ -6333,23 +6387,33 @@ function initPartnerPricingFields() {
 function syncPartnerEventSubmitBtn() {
   const btn = getPartnerEventSubmitBtn();
   const draftBtn = document.querySelector('#S9_PARTNER_CREATE button[onclick="savePartnerEventDraft()"]');
+  const titleEl = document.querySelector('#S9_PARTNER_CREATE [data-i18n="partnerCreate.title"]');
   if (!btn) return;
 
   if (App.partnerEventFormMode === "published_edit") {
     btn.textContent = "Zaktualizuj wydarzenie";
+    if (titleEl) titleEl.textContent = "Edytuj wydarzenie";
     if (draftBtn) draftBtn.style.display = "none";
     return;
   }
 
   if (App.partnerEventFormMode === "archived_edit") {
     btn.textContent = t("partnerCreate.resume");
+    if (titleEl) titleEl.textContent = "Wznów wydarzenie";
     if (draftBtn) draftBtn.style.display = "none";
     return;
   }
 
-  if (draftBtn) draftBtn.style.display = "";
+  if (App.partnerEventFormMode === "draft_edit") {
+    btn.textContent = t("partnerCreate.publishExisting");
+    if (titleEl) titleEl.textContent = "Edytuj szkic";
+    if (draftBtn) draftBtn.style.display = "";
+    return;
+  }
 
-  btn.textContent = App.selectedPartnerEventId ? t("partnerCreate.publishExisting") : t("partnerCreate.publish");
+  if (draftBtn) draftBtn.style.display = "";
+  if (titleEl) titleEl.textContent = t("partnerCreate.title");
+  btn.textContent = t("partnerCreate.publish");
 }
 
 function resetPartnerEventFormMode() {
@@ -6404,7 +6468,7 @@ async function renderPartnerEventParticipants() {
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
 
     if (!items.length) {
-      list.innerHTML = '<div class="tMuted">Na razie nikt się nie zapisał.</div>';
+      list.innerHTML = `<div class="tMuted">${t("partnerParticipants.empty")}</div>`;
       return;
     }
 
@@ -7168,6 +7232,9 @@ async function publishPartnerEvent() {
 
       await loadPartnerEvents();
       toast(t("partnerEvent.createdAndPublished"));
+      openPartnerEventEditor(createdEventId);
+      go("S9_PARTNER_CREATE");
+      return;
     }
 
     resetPartnerEventFormMode();
@@ -7912,6 +7979,10 @@ function renderNearby() {
             <div class="listAvatar nearbyPersonAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<div class="userAvatarFallback" style="${premiumAvatarStyle(getAvatarGradient(p.nick || "U"))}" data-name="${escapeHtml(p.nick || "U")}">${avatarInitial(p.nick || "U")}</div>`}</div>
             <div style="min-width:0;">
               <div class="listTitle">${escapeHtml(p.nick || t("friends.defaultUser", { id: p.id || "—" }))}</div>
+              ${(() => {
+                const tags = Array.isArray(p.trainerInterests) ? p.trainerInterests : [];
+                return tags.length ? `<div class="nearbyTrainerLine">🎓 ${t("profileInterests.leadsNearbyLabel")}</div>` : "";
+              })()}
               <div class="listMeta">${p.distance_km != null ? (p.distance_km < 1 ? t("nearby.distanceUnder1", "< 1 km od Ciebie") : t("nearby.distanceKm", { km: String(p.distance_km).replace(".", ",") })) : t("nearby.inArea", "W okolicy")}${p.age ? ` • ${t("personProfile.ageYears", { age: p.age })}` : ""}</div>
             </div>
           </div>
@@ -8352,6 +8423,20 @@ function renderPartnerEvents() {
 
     const renderEventCard = (ev) => {
       const isFeatured = getPartnerPlanRules().canFeatureEvents;
+      const signups = Number(ev.signups_count || 0);
+      const saves = Number(ev.saves_count || 0);
+      const capacityText = ev.capacity != null
+        ? t("partnerEvent.capacityShort", { used: signups, capacity: ev.capacity })
+        : t("partnerEvent.noCapacityLimit");
+      const freeSpotsText = ev.capacity != null
+        ? t("partnerEvent.freeSpotsShort", { count: ev.spots_left != null ? ev.spots_left : "—" })
+        : "";
+      const archiveLabel = (() => {
+        const endAt = ev?.end_at ? new Date(ev.end_at) : null;
+        return endAt && !Number.isNaN(endAt.getTime()) && endAt < now
+          ? t("partnerEvent.archiveShort")
+          : t("partnerEvent.closeShort");
+      })();
       return `
       <div class="listItem ${isFeatured ? "isFeatured" : ""}" onclick="openPartnerEventEditor('${ev.id}')">
         <div class="listTop">
@@ -8359,7 +8444,8 @@ function renderPartnerEvents() {
             <div class="listAvatar">${premiumIcon("calendar", "Wydarzenie")}</div>
             <div style="min-width:0;">
               <div class="listTitle">${ev.title || "Bez nazwy"}</div>
-              <div class="listMeta">${ev.city || "—"} • ${ev.where || "—"} • ${formatWhen(ev.start_at)}</div>
+              <div class="listMeta">📅 ${formatWhen(ev.start_at)}</div>
+              <div class="listMeta">📍 ${ev.where || "Brak miejsca"}${ev.city ? ` · ${ev.city}` : ""}</div>
               ${isFeatured ? `<div class="mt12"><span class="listTag featured">${t("partnerEvent.featured")}</span></div>` : ""}
             </div>
           </div>
@@ -8367,28 +8453,22 @@ function renderPartnerEvents() {
             <div class="listTag ${ev.pricing_type === 'free' ? '' : 'paid'}">${priceText(ev)}</div>
           </div>
         </div>
-        <div class="listBody">
-          <span class="eventStatusBadge">${getLifecycleLabel(ev)}</span> • Zapisy: ${Number(ev.signups_count || 0)}
-          ${ev.capacity != null ? ` • Wolne miejsca: ${ev.spots_left != null ? ev.spots_left : "—"}` : ""}
+        <div class="listBody" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          <span class="eventStatusBadge">${getLifecycleLabel(ev)}</span>
+          <span class="listTag">👥 ${t("partnerEvent.signupsShort", { count: signups })}</span>
+          <span class="listTag">👁 ${t("partnerEvent.observersShort", { count: saves })}</span>
+          <span class="listTag">${capacityText}</span>
+          ${freeSpotsText ? `<span class="listTag">${freeSpotsText}</span>` : ""}
         </div>
-        ${String(ev.status || "").toLowerCase() !== "draft" ? `
-          <div class="row mt12">
-            <button class="btn secondary" type="button" onclick="event.stopPropagation(); openPartnerEventParticipantsView('${ev.id}')">Uczestnicy</button>
-          </div>
-        ` : ""}
         ${String(ev.status || "").toLowerCase() === "draft" ? `
           <div class="row mt12">
             <button class="btn" type="button" onclick="event.stopPropagation(); quickPublishPartnerEvent('${ev.id}')">Opublikuj</button>
           </div>
         ` : ""}
-        ${String(ev.status || "").toLowerCase() === "published" ? `
-          <div class="row mt12">
-            <button class="btn secondary" type="button" onclick="event.stopPropagation(); quickArchivePartnerEvent('${ev.id}')">${(() => {
-              const endAt = ev?.end_at ? new Date(ev.end_at) : null;
-              return endAt && !Number.isNaN(endAt.getTime()) && endAt < now
-                ? "Zarchiwizuj"
-                : "Zamknij wydarzenie";
-            })()}</button>
+        ${String(ev.status || "").toLowerCase() !== "draft" ? `
+          <div class="row mt12" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button class="btn secondary small" type="button" onclick="event.stopPropagation(); openPartnerEventParticipantsView('${ev.id}')">${t("partnerEvent.participantsAction")}</button>
+            ${String(ev.status || "").toLowerCase() === "published" ? `<button class="btn secondary small" style="border-color:rgba(255,120,160,.42);" type="button" onclick="event.stopPropagation(); quickArchivePartnerEvent('${ev.id}')">${archiveLabel}</button>` : ""}
           </div>
         ` : ""}
       </div>
@@ -8470,7 +8550,7 @@ function renderPartnerEvents() {
           <div class="col mt12">
             ${items.length
               ? items.map(renderEventCard).join("")
-              : '<div class="tMuted">Brak wydarzeń w tej sekcji</div>'}
+              : `<div class="tMuted">${t("partnerEvent.emptySection")}</div>`}
           </div>
         ` : ""}
       </div>
@@ -8911,16 +8991,19 @@ async function syncUserInterests() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+        trainer_interests: Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [],
       }),
     });
 
     if (data?.success && data?.data) {
       const backendInterests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : [];
       App.user.interests = backendInterests;
+      App.user.trainerInterests = Array.isArray(data.data.trainer_interests) ? data.data.trainer_interests : [];
       try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
       renderInterestChips("setInterestChips");
       renderInterestChips("interestChips");
       renderInterestChips("regInterestChips");
+      renderTrainerInterestBoxes();
     }
   } catch (err) {
     console.error("syncUserInterests failed", err);
@@ -8951,6 +9034,8 @@ function addUserInterest(tag, chipsId) {
 function removeUserInterest(tag, chipsId) {
   const t = normalizeTag(tag);
   App.user.interests = App.user.interests.filter(x => x.toLowerCase() !== t.toLowerCase());
+  App.user.trainerInterests = (Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [])
+    .filter(x => String(x).toLowerCase() !== t.toLowerCase());
   try { localStorage.setItem("usly_user_interests", JSON.stringify(App.user.interests)); } catch(_) {}
   refreshInterestUi();
   renderInterestChips(chipsId);
@@ -8967,6 +9052,110 @@ function renderInterestChips(chipsId) {
     const chip = makeChip(`#${t}`, () => removeUserInterest(t, chipsId));
     box.appendChild(chip);
   });
+  renderTrainerInterestBoxes();
+}
+
+function getTrainerInterestLimit() {
+  const plan = String(App.user?.plan || "free").toLowerCase();
+  if (plan === "vip") return 5;
+  if (plan === "premium") return 2;
+  return 0;
+}
+
+function isTrainerPlan() {
+  return getTrainerInterestLimit() > 0;
+}
+
+function toggleTrainerInterest(tag) {
+  const clean = normalizeTag(tag);
+  if (!clean || !isTrainerPlan()) return;
+
+  const current = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
+  const exists = current.some(x => String(x).toLowerCase() === clean.toLowerCase());
+
+  if (exists) {
+    App.user.trainerInterests = current.filter(x => String(x).toLowerCase() !== clean.toLowerCase());
+  } else {
+    const limit = getTrainerInterestLimit();
+    if (current.length >= limit) {
+      toast(t("profileInterests.trainerLimitToast"));
+      return;
+    }
+    App.user.trainerInterests = [...current, clean];
+  }
+
+  renderTrainerInterestBoxes();
+  syncUserInterests();
+}
+
+function renderTrainerInterestBox(boxId) {
+  const box = $(boxId);
+  if (!box) return;
+
+  const interests = Array.isArray(App.user.interests) ? App.user.interests : [];
+  const trainerInterests = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
+  const limit = getTrainerInterestLimit();
+
+  if (!interests.length) {
+    box.innerHTML = "";
+    return;
+  }
+
+  if (!isTrainerPlan()) {
+    box.innerHTML = `
+      <div class="trainerInterestHeader">
+        <div class="trainerInterestTitle">🎓 ${t("profileInterests.trainerTitle")}</div>
+        <div class="trainerInterestSub">${t("profileInterests.trainerLocked")}</div>
+      </div>
+    `;
+    return;
+  }
+
+  const limitText = String(App.user?.plan || "").toLowerCase() === "vip"
+    ? t("profileInterests.trainerVipLimit")
+    : t("profileInterests.trainerPremiumLimit");
+
+  box.innerHTML = `
+    <div class="trainerInterestHeader">
+      <div class="trainerInterestTitle">🎓 ${t("profileInterests.trainerTitle")}</div>
+      <div class="trainerInterestSub">${t("profileInterests.trainerSubtitle")}</div>
+      <div class="trainerInterestLimit">${limitText} • ${trainerInterests.length}/${limit}</div>
+    </div>
+    <div class="trainerInterestChoices">
+      ${interests.map(tag => {
+        const active = trainerInterests.some(x => String(x).toLowerCase() === String(tag).toLowerCase());
+        return `<button class="trainerInterestChip ${active ? "active" : ""}" type="button" onclick="toggleTrainerInterest(decodeURIComponent('${encodeURIComponent(String(tag))}'))">${active ? "🎓 " : ""}#${escapeHtml(tag)}</button>`;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderTrainerInterestBoxes() {
+  renderTrainerInterestBox("setTrainerInterestBox");
+  renderTrainerInterestBox("setupTrainerInterestBox");
+}
+
+function renderPersonTrainerInterests(person) {
+  const panel = $("personTrainerPanel");
+  const content = $("personTrainerContent");
+  if (!panel || !content) return;
+
+  const trainerTags = Array.isArray(person?.trainerInterests) ? person.trainerInterests : [];
+  if (!trainerTags.length) {
+    panel.hidden = true;
+    content.innerHTML = "";
+    return;
+  }
+
+  panel.hidden = false;
+  content.innerHTML = `
+    <div class="personTrainerBox">
+      <div class="personTrainerTitle">🎓 ${t("profileInterests.leadsClassesTitle")}</div>
+      <div class="personTrainerChips">
+        ${trainerTags.map(tag => `<span class="personTrainerChip">#${escapeHtml(tag)}</span>`).join("")}
+      </div>
+    </div>
+  `;
 }
 
 function makeChip(text, onRemove) {
@@ -9310,6 +9499,8 @@ function mapApiPersonToViewModel(p) {
     age: Number.isFinite(Number(p.age)) ? Number(p.age) : 0,
     emoji: "",
     interests: Array.isArray(p.zainteresowania) ? p.zainteresowania : [],
+    trainerInterests: Array.isArray(p.trainer_interests) ? p.trainer_interests : [],
+    sharedTrainerInterests: Array.isArray(p.shared_trainer_interests) ? p.shared_trainer_interests : [],
     bio: p.bio || "",
     avatarUrl: p.avatar_url || "",
     distance_km: p.distance_km ?? null,
@@ -9770,6 +9961,11 @@ function renderAll() {
   if (App.role === "partner") refreshPartnerMsgBadgeCount();
   if (App.currentView === "S12_NOTIFICATIONS") renderNotifications();
 
+  // Keep dynamic partner event form labels after i18n re-render
+  if (App.currentView === "S9_PARTNER_CREATE") {
+    syncPartnerEventSubmitBtn();
+  }
+
   // tabbar active
   updateTabbars();
 }
@@ -9979,10 +10175,13 @@ function renderNearbyMapMarkers() {
       ? (String(person.avatarUrl).startsWith("http") ? person.avatarUrl : `${API_BASE_URL}${person.avatarUrl}`)
       : "";
 
+    const hasTrainerBadge = Array.isArray(person.trainerInterests) && person.trainerInterests.length > 0;
+
     const dynamicIcon = L.divIcon({
       className: "nearby-person-marker",
       html: `<div style="position:relative;width:48px;height:56px;display:flex;align-items:flex-start;justify-content:center;">
         <div style="width:40px;height:40px;border-radius:999px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:900;background:${personBg};border:3px solid rgba(110,231,255,.96);box-shadow:0 12px 28px rgba(0,0,0,.34),0 0 0 4px rgba(110,231,255,.16);">${personAvatarSrc ? `<img src="${personAvatarSrc}" alt="${escapeHtml(person.nick || t("chat.defaultUser"))}" style="width:100%;height:100%;object-fit:cover;" />` : personInitial}</div>
+        ${hasTrainerBadge ? `<div style="position:absolute;right:0;top:-7px;width:23px;height:23px;border-radius:999px;background:linear-gradient(135deg,#fff4b8,#ffbf3f);border:2px solid rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1;box-shadow:0 8px 18px rgba(0,0,0,.34),0 0 0 4px rgba(255,215,102,.18);z-index:4;">🎓</div>` : ""}</div>
         <div style="position:absolute;left:19px;top:36px;width:10px;height:10px;background:#fff;transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,.18);"></div>
       </div>`,
       iconSize: [48, 56],
@@ -10354,3 +10553,12 @@ document.addEventListener("click", (e) => {
 
   resetSingleEventTag();
 });
+
+/* ------------------------- Global CTA bindings ------------------------- */
+window.finishProfileSetup = finishProfileSetup;
+window.finishPartnerSetup = finishPartnerSetup;
+window.saveSettings = saveSettings;
+window.toggleTrainerInterest = toggleTrainerInterest;
+window.savePartnerSettings = savePartnerSettings;
+window.publishPartnerEvent = publishPartnerEvent;
+window.savePartnerEventDraft = savePartnerEventDraft;
