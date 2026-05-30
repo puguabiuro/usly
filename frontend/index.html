@@ -1981,7 +1981,42 @@ section#S11_PLANS .card[data-plan].is-current{
     .groupPeopleStat small{display:block;margin-top:6px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.66);line-height:1.15}
     .groupPeopleNotice{margin:0 0 12px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.76);font-size:12px;font-weight:750;line-height:1.25}
 
-  </style>
+  
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:calc(78px + env(safe-area-inset-bottom));
+  transform:translate(-50%, 10px) scale(.98);
+  z-index:99999;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:auto;
+  min-width:0;
+  max-width:calc(100vw - 72px);
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(14,18,28,.82);
+  border:1px solid rgba(255,255,255,.16);
+  color:rgba(247,251,255,.96);
+  font-size:12px;
+  font-weight:850;
+  line-height:1.15;
+  white-space:nowrap;
+  text-align:center;
+  box-shadow:0 10px 24px rgba(0,0,0,.24),0 0 14px rgba(58,224,255,.07);
+  backdrop-filter:blur(16px) saturate(1.18);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .16s ease, transform .16s ease;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%, 0) scale(1);
+}
+
+</style>
 
 </head>
 <body>

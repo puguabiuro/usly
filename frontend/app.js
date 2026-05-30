@@ -2134,10 +2134,48 @@ let toastTimer = null;
 function toast(message) {
   const el = $("toast");
   if (!el) return;
-  el.textContent = message;
-  el.classList.add("show");
+
+  el.textContent = message || "";
+  el.style.cssText = [
+    "position:fixed",
+    "left:50%",
+    "right:auto",
+    "top:auto",
+    "bottom:calc(92px + env(safe-area-inset-bottom))",
+    "width:fit-content",
+    "min-width:0",
+    "max-width:280px",
+    "height:auto",
+    "min-height:0",
+    "padding:9px 13px",
+    "border-radius:16px",
+    "background:rgba(14,18,28,.92)",
+    "border:1px solid rgba(255,255,255,.18)",
+    "color:rgba(247,251,255,.96)",
+    "font-size:12px",
+    "font-weight:850",
+    "line-height:1.25",
+    "text-align:center",
+    "white-space:normal",
+    "box-shadow:0 12px 28px rgba(0,0,0,.28),0 0 16px rgba(58,224,255,.08)",
+    "backdrop-filter:blur(16px) saturate(1.18)",
+    "z-index:99999",
+    "pointer-events:none",
+    "opacity:0",
+    "transform:translate(-50%, 10px)",
+    "transition:opacity .16s ease, transform .16s ease"
+  ].join(";");
+
+  requestAnimationFrame(() => {
+    el.style.opacity = "1";
+    el.style.transform = "translate(-50%, 0)";
+  });
+
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+  toastTimer = setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transform = "translate(-50%, 10px)";
+  }, 2200);
 }
 
 /* ------------------------- Modal -------------------------- */
@@ -2306,6 +2344,21 @@ function selectRole(role) {
 }
 
 /* ------------------------- Login / Signup -------------------------- */
+function syncAccountEmail(email) {
+  const cleanEmail = String(email || "").trim();
+  if (!cleanEmail) return;
+
+  if (App.role === "partner") {
+    App.partner.email = cleanEmail;
+    const el = $("setOrgEmail");
+    if (el) el.value = cleanEmail;
+  } else {
+    App.user.email = cleanEmail;
+    const el = $("setEmail");
+    if (el) el.value = cleanEmail;
+  }
+}
+
 async function loginPrimary() {
   const email = $("loginId")?.value?.trim();
   const password = $("loginPass")?.value?.trim();
@@ -2341,15 +2394,7 @@ async function loginPrimary() {
     }
 
     const accountEmail = meData.email || "";
-    if (App.role === "user") {
-      App.user.email = accountEmail;
-      const el = $("setEmail");
-      if (el) el.value = accountEmail;
-    } else {
-      App.partner.email = accountEmail;
-      const el = $("setOrgEmail");
-      if (el) el.value = accountEmail;
-    }
+    syncAccountEmail(accountEmail);
 
     if (App.role === "user") {
       const profile = await apiFetch("/users/me");
@@ -2359,6 +2404,7 @@ async function loginPrimary() {
         App.user.bio = profile.data.bio || "";
         App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(profile.data, "age_min") ? profile.data.age_min : App.user.prefAgeFrom;
         App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(profile.data, "age_max") ? profile.data.age_max : App.user.prefAgeTo;
+        App.user.nearbyRadiusKm = Object.prototype.hasOwnProperty.call(profile.data, "nearby_radius_km") ? profile.data.nearby_radius_km : App.user.nearbyRadiusKm;
         const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
 
         App.user.interests = backendInterests;
@@ -3200,10 +3246,10 @@ async function saveSettings() {
   const city = normalizeCity($("setCity")?.value) || App.user.city;
 
   const ageAny = !!$("setAgeAny")?.checked;
-  const f = Number($("setPrefAgeFrom")?.value || App.user.prefAgeFrom);
-  const t = Number($("setPrefAgeTo")?.value || App.user.prefAgeTo);
-  const ageMin = ageAny ? null : Math.min(f, t);
-  const ageMax = ageAny ? null : Math.max(f, t);
+  const fromAge = Number($("setPrefAgeFrom")?.value || App.user.prefAgeFrom);
+  const toAge = Number($("setPrefAgeTo")?.value || App.user.prefAgeTo);
+  const ageMin = ageAny ? null : Math.min(fromAge, toAge);
+  const ageMax = ageAny ? null : Math.max(fromAge, toAge);
   const nearbyRadiusKm = Number($("setNearbyRadiusKm")?.value || App.user.nearbyRadiusKm || 25);
 
   const payload = {
@@ -3243,9 +3289,8 @@ async function saveSettings() {
     App.user.interests = Array.isArray(data.data.zainteresowania) ? data.data.zainteresowania : (Array.isArray(App.user.interests) ? App.user.interests : []);
     App.user.trainerInterests = Array.isArray(data.data.trainer_interests) ? data.data.trainer_interests : (Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : []);
 
-    await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
-
     toast(t("settings.toast.saved"));
+    await Promise.allSettled([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
     renderAll();
   } catch (err) {
     toast(err?.userMessage || t("settings.toast.saveFailed"));
@@ -3280,8 +3325,8 @@ async function savePartnerSettings() {
     App.partner.city = data.data.miasto || city;
     App.partner.about = data.data.bio || about;
 
-    toast(t("partnerSettings.toastSaved"));
     renderAll();
+    setTimeout(() => toast(t("partnerSettings.toastSaved")), 80);
   } catch (err) {
     toast(err?.userMessage || t("partnerSettings.toastSaveFailed"));
   }
@@ -4823,7 +4868,7 @@ async function renderChatThread() {
         createdAt: m.createdAt || null,
         isRead: false,
         pending: false,
-        blockedReason: m.blockedReason || t("chat.blocked.content"),
+        blockedReason: normalizeBlockedReason(m.blockedReason, "chat.blocked.content"),
       })),
       ...localPendingMessages.map(m => ({
         kind: "local",
@@ -5626,7 +5671,7 @@ async function openGroup(groupId) {
           createdAt: m.createdAt || null,
           isRead: false,
           pending: false,
-          blockedReason: m.blockedReason || t("chat.blocked.content"),
+          blockedReason: normalizeBlockedReason(m.blockedReason, "chat.blocked.content"),
         })),
         ...localPendingGroupMessages.map(m => ({
           kind: "local",
@@ -7232,8 +7277,8 @@ async function publishPartnerEvent() {
 
       await loadPartnerEvents();
       toast(t("partnerEvent.createdAndPublished"));
-      openPartnerEventEditor(createdEventId);
-      go("S9_PARTNER_CREATE");
+      resetPartnerEventFormMode();
+      go("S9_PARTNER_EVENTS");
       return;
     }
 
@@ -8000,7 +8045,7 @@ function renderNearby() {
   const eList = $("nearbyEventsList");
   if (eList) {
     const events = App.events
-      .filter(ev => matchesUserEventInterest(ev) && isEventInMyCity(ev))
+      .filter(ev => matchesUserEventInterest(ev) && isEventInNearbyRadius(ev))
       .slice(0, 8);
 
     if (!events.length) {
@@ -8048,7 +8093,7 @@ function renderEventsList() {
   } else {
     events = events.filter(e =>
       matchesUserEventInterest(e) &&
-      !isEventInMyCity(e) &&
+      !isEventInNearbyRadius(e) &&
       !e.saved &&
       !e.interested
     );
@@ -9407,11 +9452,11 @@ function setActiveTabs() {
     else if (v.startsWith("S8")) $("tabGroups")?.classList.add("active");
     else if (v.startsWith("S10")) $("tabSettingsUser")?.classList.add("active");
   } else {
-    // Partner tabs
+    // Partner tabs — keep behavior consistent with user tabbar on nested partner views.
     if (v === "S9_PARTNER") $("ptabDash")?.classList.add("active");
     else if (v === "S9_PARTNER_CREATE") $("ptabCreate")?.classList.add("active");
-    else if (v === "S9_PARTNER_EVENTS") $("ptabMyEvents")?.classList.add("active");
-    else if (v === "S9_PARTNER_MESSAGES") $("ptabMsgs")?.classList.add("active");
+    else if (v.startsWith("S9_PARTNER_EVENT") || v === "S9_PARTNER_EVENTS") $("ptabMyEvents")?.classList.add("active");
+    else if (v.startsWith("S9_PARTNER_MESSAGE")) $("ptabMsgs")?.classList.add("active");
     else if (v.startsWith("S10")) $("ptabSettings")?.classList.add("active");
   }
 }
@@ -9429,6 +9474,17 @@ function sharedScore(person) {
   return Math.min(99, Math.round((common / base) * 100));
 }
 
+
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function formatDistanceFromMe(person) {
   const rawMyLat = App.user?.geo?.lat;
@@ -9481,8 +9537,29 @@ function matchesUserEventInterest(ev) {
   return !!tag && mine.includes(tag);
 }
 
-function isEventInMyCity(ev) {
-  return String(ev?.city || "").trim().toLowerCase() === String(App.user.city || "").trim().toLowerCase();
+function getUserNearbyRadiusKm() {
+  const raw = App.user?.nearbyRadiusKm || App.user?.nearby_radius_km || 25;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 25;
+}
+
+function getEventDistanceKm(ev) {
+  const myLat = Number(App.user?.geo?.lat);
+  const myLng = Number(App.user?.geo?.lng);
+  const evLat = Number(ev?.location_lat);
+  const evLng = Number(ev?.location_lng);
+
+  if (!Number.isFinite(myLat) || !Number.isFinite(myLng) || !Number.isFinite(evLat) || !Number.isFinite(evLng)) {
+    return null;
+  }
+
+  return distanceKm(myLat, myLng, evLat, evLng);
+}
+
+function isEventInNearbyRadius(ev) {
+  const d = getEventDistanceKm(ev);
+  if (d == null) return false;
+  return d <= getUserNearbyRadiusKm();
 }
 
 function priceLabel(ev) {
@@ -9507,6 +9584,28 @@ function mapApiPersonToViewModel(p) {
     location_lat: p.location_lat ?? null,
     location_lng: p.location_lng ?? null,
   };
+}
+
+function normalizeBlockedReason(reason, fallbackKey = "chat.blocked.content") {
+  const value = String(reason || "").trim();
+  if (!value) return t(fallbackKey);
+
+  const lower = value.toLowerCase();
+  if (
+    lower.includes("the content was blocked by usly moderation") ||
+    lower.includes("content was blocked")
+  ) {
+    return t(fallbackKey);
+  }
+
+  if (
+    lower.includes("links are currently blocked") ||
+    lower.includes("message was not delivered")
+  ) {
+    return t("chat.blocked.link");
+  }
+
+  return value;
 }
 
 function mapApiGroupToViewModel(g) {
@@ -9783,6 +9882,10 @@ function renderAll() {
       btn.textContent = cardPlan === "enterprise" ? t("plans.contact_us", "Napisz do nas") : (isCurrent ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz"));
     }
   });
+
+  if (App.currentView === "S10B_PROFILE_EDIT") {
+    if ($("setNearbyRadiusKm")) $("setNearbyRadiusKm").value = String(App.user.nearbyRadiusKm || 25);
+  }
 
   if (App.currentView === "S3_PROFILE_SETUP") {
     if ($("setupNick")) $("setupNick").value = App.user.nick || "";
@@ -10068,6 +10171,7 @@ async function init() {
       App.currentUserId = me?.id ?? me?.data?.id ?? null;
       App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
       selectRole(App.role);
+      syncAccountEmail(me?.data?.email || me?.email || "");
       App.isLoggedIn = true;
       $("appRoot")?.classList.add("isLoggedIn");
       updateTabbars();
@@ -10081,6 +10185,7 @@ async function init() {
           App.user.interests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
           App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(profile.data, "age_min") ? profile.data.age_min : App.user.prefAgeFrom;
           App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(profile.data, "age_max") ? profile.data.age_max : App.user.prefAgeTo;
+        App.user.nearbyRadiusKm = Object.prototype.hasOwnProperty.call(profile.data, "nearby_radius_km") ? profile.data.nearby_radius_km : App.user.nearbyRadiusKm;
           App.user.plan = profile.data.plan || App.user.plan;
           App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
           try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
@@ -10196,7 +10301,7 @@ function renderNearbyMapMarkers() {
   });
 
   const nearbyEventsForMap = (App.events || [])
-    .filter(ev => matchesUserEventInterest(ev) && isEventInMyCity(ev));
+    .filter(ev => matchesUserEventInterest(ev) && isEventInNearbyRadius(ev));
 
   nearbyEventsForMap.forEach((ev, index) => {
     const lat = Number(ev.location_lat);
@@ -10212,7 +10317,7 @@ function renderNearbyMapMarkers() {
     const marker = L.marker([markerLat, markerLng], { icon: buildEventIcon(ev) })
       .addTo(nearbyMap);
 
-    marker.on("click", () => openMapMarker("event", index));
+    marker.on("click", () => openEvent(ev.id));
     nearbyMarkers.push(marker);
   });
 
