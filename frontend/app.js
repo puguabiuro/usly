@@ -3642,9 +3642,9 @@ async function finishProfileSetup() {
 
   const ageAny = !!$("setupAgeAny")?.checked;
   const f = Number($("setupPrefAgeFrom")?.value || App.user.prefAgeFrom);
-  const t = Number($("setupPrefAgeTo")?.value || App.user.prefAgeTo);
-  const ageMin = ageAny ? null : Math.min(f, t);
-  const ageMax = ageAny ? null : Math.max(f, t);
+  const toAge = Number($("setupPrefAgeTo")?.value || App.user.prefAgeTo);
+  const ageMin = ageAny ? null : Math.min(f, toAge);
+  const ageMax = ageAny ? null : Math.max(f, toAge);
 
   const payload = {
     nick: nick,
@@ -9073,9 +9073,9 @@ async function syncUserInterests() {
 }
 
 function addUserInterest(tag, chipsId) {
-  const t = normalizeTag(tag);
-  if (!t) return;
-  const exists = App.user.interests.some(x => x.toLowerCase() === t.toLowerCase());
+  const cleanTag = normalizeTag(tag);
+  if (!cleanTag) return;
+  const exists = App.user.interests.some(x => x.toLowerCase() === cleanTag.toLowerCase());
   if (exists) {
     toast(t("profileInterests.alreadyAdded"));
     return;
@@ -9086,11 +9086,11 @@ function addUserInterest(tag, chipsId) {
     return;
   }
 
-  App.user.interests.push(t);
+  App.user.interests.push(cleanTag);
   try { localStorage.setItem("usly_user_interests", JSON.stringify(App.user.interests)); } catch(_) {}
   renderInterestChips(chipsId);
   syncUserInterests();
-  toast(t("profileInterests.addedToast", { tag: t }));
+  toast(t("profileInterests.addedToast", { tag: cleanTag }));
 }
 
 function removeUserInterest(tag, chipsId) {

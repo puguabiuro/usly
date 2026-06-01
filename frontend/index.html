@@ -503,6 +503,20 @@
 }
 
 
+/* === Mobile datetime input fix === */
+.mobileDateTimeInput{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  min-height:48px;
+  line-height:1.2;
+  white-space:normal;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  appearance:auto;
+  -webkit-appearance:auto;
+}
+
 /* === iOS-style inputs (Towarzysz) === */
 .iosInput{
   border-radius:16px !important;
@@ -3328,7 +3342,7 @@ section#S11_PLANS .card[data-plan].is-current{
               <input id="peCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" />
   
               <label class="mt12" data-i18n="partnerCreate.when">Kiedy *</label>
-              <input id="peWhen" type="datetime-local" />
+              <input id="peWhen" class="mobileDateTimeInput" type="datetime-local" />
   
               <label class="mt12" data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>
               <input id="peAddress" type="text" placeholder="np. Studio Aurora albo ul. Słoneczna 12" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
