@@ -3257,11 +3257,16 @@ async function saveSettings() {
     miasto: city,
     bio: bio,
     zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
-    trainer_interests: Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [],
     age_min: ageMin,
     age_max: ageMax,
     nearby_radius_km: nearbyRadiusKm,
   };
+
+  const trainerPlan = ["premium", "vip"].includes(String(App.user.plan || "").toLowerCase());
+  const trainerInterests = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
+  if (trainerPlan && trainerInterests.length) {
+    payload.trainer_interests = trainerInterests;
+  }
 
   if (App.user?.geo?.lat && App.user?.geo?.lng) {
     payload.location_lat = Number(App.user.geo.lat);
@@ -3646,11 +3651,16 @@ async function finishProfileSetup() {
     miasto: city,
     bio: bio,
     zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
-    trainer_interests: Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [],
     age_min: ageMin,
     age_max: ageMax,
     nearby_radius_km: nearbyRadiusKm,
   };
+
+  const trainerPlan = ["premium", "vip"].includes(String(App.user.plan || "").toLowerCase());
+  const trainerInterests = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
+  if (trainerPlan && trainerInterests.length) {
+    payload.trainer_interests = trainerInterests;
+  }
 
   if (App.user?.geo?.lat && App.user?.geo?.lng) {
     payload.location_lat = Number(App.user.geo.lat);
@@ -9034,10 +9044,17 @@ async function syncUserInterests() {
     const data = await apiFetch("/users/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
-        trainer_interests: Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [],
-      }),
+      body: JSON.stringify((() => {
+        const payload = {
+          zainteresowania: Array.isArray(App.user.interests) ? App.user.interests : [],
+        };
+        const trainerPlan = ["premium", "vip"].includes(String(App.user.plan || "").toLowerCase());
+        const trainerInterests = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
+        if (trainerPlan && trainerInterests.length) {
+          payload.trainer_interests = trainerInterests;
+        }
+        return payload;
+      })()),
     });
 
     if (data?.success && data?.data) {
