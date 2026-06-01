@@ -188,15 +188,15 @@ const I18N = {
     "profileInterests.placeholder": "np. kawa, joga, koncerty...",
     "profileInterests.limitPlaceholder": "Limit osiągnięty • Odblokuj więcej w PLUS",
     "profileInterests.limitToast": "Odblokuj więcej zainteresowań w planie PLUS",
-    "profileInterests.trainerTitle": "Jesteś trenerem?",
-    "profileInterests.trainerSubtitle": "Wyróżnij zainteresowania, w których jesteś trenerem lub prowadzisz innych.",
-    "profileInterests.trainerPremiumLimit": "Premium: maks. 2 oznaczenia trenerskie",
-    "profileInterests.trainerVipLimit": "VIP: maks. 5 oznaczeń trenerskich",
+    "profileInterests.trainerTitle": "Prowadzisz zajęcia lub warsztaty?",
+    "profileInterests.trainerSubtitle": "Wyróżnij zainteresowania, w których prowadzisz zajęcia, warsztaty lub pomagasz innym rozwijać umiejętności.",
+    "profileInterests.trainerPremiumLimit": "Premium: maks. 2 oznaczenia prowadzącego",
+    "profileInterests.trainerVipLimit": "VIP: maks. 5 oznaczeń prowadzącego",
     "profileInterests.trainerLocked": "Opcja dostępna w planach Premium i VIP",
-    "profileInterests.trainerBadge": "Trener",
+    "profileInterests.trainerBadge": "Prowadzący",
     "profileInterests.leadsClassesTitle": "Prowadzi zajęcia w:",
     "profileInterests.leadsNearbyLabel": "Prowadzi zajęcia",
-    "profileInterests.trainerLimitToast": "Osiągnięto limit oznaczeń trenerskich w Twoim planie",
+    "profileInterests.trainerLimitToast": "Osiągnięto limit oznaczeń prowadzącego w Twoim planie",
     "profileInterests.alreadyAdded": "To zainteresowanie już jest dodane",
     "profileInterests.addedToast": "Dodano #{{tag}}",
     "profileInterests.removedToast": "Usunięto #{{tag}}",
@@ -996,13 +996,13 @@ const I18N = {
     "plans.user.premium.feature3": "Add friends to groups",
     "plans.user.premium.feature4": "Up to 20 interests in your profile",
     "plans.user.premium.feature5": "15 AI avatars per month",
-    "plans.user.premium.feature6": "Trainer badge in up to 2 interests",
+    "plans.user.premium.feature6": "Host badge in up to 2 interests",
     "plans.user.vip.feature1": "Unlimited group creation",
     "plans.user.vip.feature2": "No limits in groups and contacts",
     "plans.user.vip.feature3": "Add friends to groups",
     "plans.user.vip.feature4": "Unlimited number of interests",
     "plans.user.vip.feature5": "30 AI avatars per month",
-    "plans.user.vip.feature6": "Trainer badge in up to 5 interests",
+    "plans.user.vip.feature6": "Host badge in up to 5 interests",
     "plans.price.free": "0 PLN",
     "plans.partner.free.price": "0 PLN",
     "plans.partner.pro.price": "129 PLN / month",
@@ -1074,15 +1074,15 @@ const I18N = {
     "profileInterests.placeholder": "e.g. coffee, yoga, concerts...",
     "profileInterests.limitPlaceholder": "Limit reached • Unlock more in PLUS",
     "profileInterests.limitToast": "Unlock more interests in the PLUS plan",
-    "profileInterests.trainerTitle": "Are you a trainer?",
-    "profileInterests.trainerSubtitle": "Highlight the interests where you coach or guide others.",
-    "profileInterests.trainerPremiumLimit": "Premium: up to 2 trainer badges",
-    "profileInterests.trainerVipLimit": "VIP: up to 5 trainer badges",
+    "profileInterests.trainerTitle": "Do you run classes or workshops?",
+    "profileInterests.trainerSubtitle": "Highlight the interests where you run classes, workshops or help others build skills.",
+    "profileInterests.trainerPremiumLimit": "Premium: up to 2 host badges",
+    "profileInterests.trainerVipLimit": "VIP: up to 5 host badges",
     "profileInterests.trainerLocked": "Available in Premium and VIP plans",
-    "profileInterests.trainerBadge": "Trainer",
+    "profileInterests.trainerBadge": "Host",
     "profileInterests.leadsClassesTitle": "Runs classes in:",
     "profileInterests.leadsNearbyLabel": "Runs classes",
-    "profileInterests.trainerLimitToast": "Trainer badge limit reached for your plan",
+    "profileInterests.trainerLimitToast": "Host badge limit reached for your plan",
     "profileFriends.title": "Friends",
     "profileFriends.search_placeholder": "Search for a friend...",
     "profileInvites.title": "Invitations",
@@ -8810,7 +8810,11 @@ function initInterestInputs() {
   configs.forEach(cfg => {
     const input = $(cfg.inputId);
     if (!input) return;
-    const addBtn = cfg.inputId === "regInterestInput" ? $("regInterestAddBtn") : (cfg.inputId === "interestInput" ? $("interestAddBtn") : null);
+    const addBtn =
+      cfg.inputId === "regInterestInput" ? $("regInterestAddBtn") :
+      cfg.inputId === "interestInput" ? $("interestAddBtn") :
+      cfg.inputId === "setInterestInput" ? $("setInterestAddBtn") :
+      null;
     if (addBtn && !addBtn.dataset.bound) {
       addBtn.addEventListener("click", () => {
         const val = input.value.trim();
@@ -8842,9 +8846,14 @@ function initInterestInputs() {
         }
 
         const val = input.value.trim();
-        const cleaned = normalizeTag(val);
-        if (!cleaned) return;
-        addUserInterest(cleaned, cfg.chipsId);
+        const parts = val
+          .split(/[;,\n]+/)
+          .map(x => normalizeTag(x))
+          .filter(Boolean);
+
+        if (!parts.length) return;
+
+        parts.forEach(tag => addUserInterest(tag, cfg.chipsId));
         input.value = "";
         hideTypeahead(cfg.taId);
         renderAll();
@@ -10225,7 +10234,16 @@ async function init() {
     } catch (err) {
       console.error("init session restore failed", err);
       try { localStorage.removeItem("usly_token"); } catch (_) {}
+      try { localStorage.removeItem(USLY_STORAGE_KEYS.userPlan); } catch (_) {}
+      try { localStorage.removeItem(USLY_STORAGE_KEYS.partnerPlan); } catch (_) {}
+      try { localStorage.removeItem("usly_user_interests"); } catch (_) {}
       App.isLoggedIn = false;
+      App.currentUserId = null;
+      App.user.interests = [];
+      App.user.trainerInterests = [];
+      $("appRoot")?.classList.remove("isLoggedIn");
+      updateTabbars();
+      go("S0_WELCOME");
     }
   }
 
