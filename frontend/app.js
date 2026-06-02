@@ -7515,11 +7515,15 @@ async function renderNotifications() {
           createdAt: item.createdAt || null,
         }));
     } else {
-      const [reqRes, groupInvRes, eventNotifRes] = await Promise.all([
+      const [reqReq, groupInvReq, eventNotifReq] = await Promise.allSettled([
         apiFetch("/friends/requests"),
         apiFetch("/group-invitations"),
         apiFetch("/users/me/notifications?limit=50"),
       ]);
+
+      const reqRes = reqReq.status === "fulfilled" ? reqReq.value : null;
+      const groupInvRes = groupInvReq.status === "fulfilled" ? groupInvReq.value : null;
+      const eventNotifRes = eventNotifReq.status === "fulfilled" ? eventNotifReq.value : null;
 
       const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
       const incomingGroupInvites = Array.isArray(groupInvRes?.data?.incoming) ? groupInvRes.data.incoming : [];
@@ -7766,11 +7770,15 @@ async function refreshNotifBadgeCount() {
     const seenAtRaw = localStorage.getItem("usly_user_notifications_seen_at");
     const seenAt = parseUslyTimestamp(seenAtRaw);
 
-    const [reqRes, groupInvRes, eventNotifRes] = await Promise.all([
+    const [reqReq, groupInvReq, eventNotifReq] = await Promise.allSettled([
       apiFetch("/friends/requests"),
       apiFetch("/group-invitations"),
       apiFetch("/users/me/notifications?limit=50"),
     ]);
+
+    const reqRes = reqReq.status === "fulfilled" ? reqReq.value : null;
+    const groupInvRes = groupInvReq.status === "fulfilled" ? groupInvReq.value : null;
+    const eventNotifRes = eventNotifReq.status === "fulfilled" ? eventNotifReq.value : null;
 
     const incoming = Array.isArray(reqRes?.data?.incoming) ? reqRes.data.incoming : [];
     const incomingGroupInvites = Array.isArray(groupInvRes?.data?.incoming) ? groupInvRes.data.incoming : [];
