@@ -183,6 +183,8 @@ from backend.models import (
     Message,
     Friendship,
     GroupInvitation,
+    PromoCampaign,
+    PromoRedemption,
     PasswordResetToken,
     EmailVerificationToken,
     AiUsageLog,
@@ -7151,3 +7153,390 @@ def my_notifications(
     finally:
         db.close()
 
+
+
+@app.get("/admin/promo-campaigns")
+def admin_list_promo_campaigns(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "plans")
+
+    db = SessionLocal()
+    try:
+        campaigns = (
+            db.query(PromoCampaign)
+            .order_by(PromoCampaign.created_at.desc(), PromoCampaign.id.desc())
+            .limit(200)
+            .all()
+        )
+
+        return ok({
+            "items": [
+                {
+                    "id": c.id,
+                    "code": c.code,
+                    "name": c.name,
+                    "owner_user_id": c.owner_user_id,
+                    "target_role": c.target_role,
+                    "benefit_type": c.benefit_type,
+                    "benefit_value": c.benefit_value,
+                    "benefit_duration_months": c.benefit_duration_months,
+                    "reward_type": c.reward_type,
+                    "reward_value": c.reward_value,
+                    "max_uses": c.max_uses,
+                    "uses_count": c.uses_count,
+                    "valid_from": c.valid_from.isoformat() if c.valid_from else None,
+                    "valid_until": c.valid_until.isoformat() if c.valid_until else None,
+                    "status": c.status,
+                    "ios_offer_code": c.ios_offer_code,
+                    "android_promo_code": c.android_promo_code,
+                    "created_at": c.created_at.isoformat() if c.created_at else None,
+                    "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+                }
+                for c in campaigns
+            ]
+        })
+    finally:
+        db.close()
+
+
+@app.post("/admin/promo-campaigns")
+def admin_create_promo_campaign(
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    require_admin_permission(current_user, "plans")
+
+    code = str((payload or {}).get("code") or "").strip().upper()
+    name = str((payload or {}).get("name") or "").strip() or None
+    owner_user_id = (payload or {}).get("owner_user_id")
+    target_role = str((payload or {}).get("target_role") or "user").strip().lower()
+    benefit_type = str((payload or {}).get("benefit_type") or "discount_percent").strip().lower()
+    benefit_value = (payload or {}).get("benefit_value")
+    benefit_duration_months = (payload or {}).get("benefit_duration_months")
+    reward_type = str((payload or {}).get("reward_type") or "vip_months").strip().lower()
+    reward_value = (payload or {}).get("reward_value")
+    max_uses = (payload or {}).get("max_uses")
+    valid_until_raw = str((payload or {}).get("valid_until") or "").strip()
+    note = str((payload or {}).get("note") or "").strip() or None
+    ios_offer_code = str((payload or {}).get("ios_offer_code") or "").strip() or None
+    android_promo_code = str((payload or {}).get("android_promo_code") or "").strip() or None
+
+    if not code or len(code) < 3 or len(code) > 40 or not code.replace("-", "").replace("_", "").isalnum():
+        raise HTTPException(status_code=422, detail="INVALID_PROMO_CODE")
+
+    if target_role not in {"user", "partner", "both"}:
+        raise HTTPException(status_code=422, detail="INVALID_PROMO_TARGET_ROLE")
+
+    if benefit_type not in {"discount_percent", "trial_days", "free_months", "store_offer"}:
+        raise HTTPException(status_code=422, detail="INVALID_PROMO_BENEFIT_TYPE")
+
+    if reward_type not in {"vip_months", "none"}:
+        raise HTTPException(status_code=422, detail="INVALID_PROMO_REWARD_TYPE")
+
+    def _optional_positive_int(value, field_name: str):
+        if value in (None, ""):
+            return None
+        try:
+            parsed = int(value)
+        except Exception:
+            raise HTTPException(status_code=422, detail=f"INVALID_{field_name}")
+        if parsed < 0:
+            raise HTTPException(status_code=422, detail=f"INVALID_{field_name}")
+        return parsed
+
+    benefit_value = _optional_positive_int(benefit_value, "BENEFIT_VALUE")
+    benefit_duration_months = _optional_positive_int(benefit_duration_months, "BENEFIT_DURATION_MONTHS")
+    reward_value = _optional_positive_int(reward_value, "REWARD_VALUE")
+    max_uses = _optional_positive_int(max_uses, "MAX_USES")
+
+    if benefit_type == "discount_percent" and (benefit_value is None or benefit_value < 1 or benefit_value > 90):
+        raise HTTPException(status_code=422, detail="INVALID_DISCOUNT_PERCENT")
+
+    if benefit_type == "discount_percent" and (benefit_duration_months is None or benefit_duration_months < 1 or benefit_duration_months > 12):
+        raise HTTPException(status_code=422, detail="INVALID_DISCOUNT_DURATION")
+
+    valid_until = None
+    if valid_until_raw:
+        try:
+            valid_until = datetime.fromisoformat(valid_until_raw.replace("Z", "+00:00"))
+        except Exception:
+            raise HTTPException(status_code=422, detail="INVALID_VALID_UNTIL")
+
+    db = SessionLocal()
+    try:
+        existing = db.query(PromoCampaign).filter(PromoCampaign.code == code).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="PROMO_CODE_ALREADY_EXISTS")
+
+        if owner_user_id not in (None, ""):
+            try:
+                owner_user_id = int(owner_user_id)
+            except Exception:
+                raise HTTPException(status_code=422, detail="INVALID_OWNER_USER_ID")
+
+            owner = db.query(User).filter(User.id == owner_user_id).first()
+            if not owner:
+                raise HTTPException(status_code=404, detail="OWNER_USER_NOT_FOUND")
+        else:
+            owner_user_id = None
+
+        now = datetime.utcnow()
+        campaign = PromoCampaign(
+            code=code,
+            name=name,
+            owner_user_id=owner_user_id,
+            created_by_admin_id=current_user.id,
+            target_role=target_role,
+            benefit_type=benefit_type,
+            benefit_value=benefit_value,
+            benefit_duration_months=benefit_duration_months,
+            reward_type=reward_type,
+            reward_value=reward_value,
+            max_uses=max_uses,
+            valid_from=now,
+            valid_until=valid_until,
+            status="active",
+            note=note,
+            ios_offer_code=ios_offer_code,
+            android_promo_code=android_promo_code,
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(campaign)
+        db.add(AuditLog(
+            user_id=current_user.id,
+            action="admin_create_promo_campaign",
+            details=f"admin_id={current_user.id}; code={code}; owner_user_id={owner_user_id or '-'}; benefit={benefit_type}:{benefit_value}; duration_months={benefit_duration_months or '-'}; reward={reward_type}:{reward_value or '-'}",
+        ))
+        db.commit()
+        db.refresh(campaign)
+
+        return ok({
+            "id": campaign.id,
+            "code": campaign.code,
+            "status": campaign.status,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/promo-campaigns/validate/{code}")
+def validate_promo_campaign(code: str):
+    clean_code = str(code or "").strip().upper()
+
+    if not clean_code:
+        raise HTTPException(status_code=422, detail="INVALID_PROMO_CODE")
+
+    db = SessionLocal()
+    try:
+        campaign = db.query(PromoCampaign).filter(PromoCampaign.code == clean_code).first()
+        now = datetime.utcnow()
+
+        if not campaign or campaign.status != "active":
+            raise HTTPException(status_code=404, detail="PROMO_CODE_NOT_FOUND")
+
+        if campaign.valid_until and campaign.valid_until < now:
+            raise HTTPException(status_code=410, detail="PROMO_CODE_EXPIRED")
+
+        if campaign.max_uses is not None and campaign.uses_count >= campaign.max_uses:
+            raise HTTPException(status_code=409, detail="PROMO_CODE_LIMIT_REACHED")
+
+        return ok({
+            "code": campaign.code,
+            "name": campaign.name,
+            "target_role": campaign.target_role,
+            "benefit_type": campaign.benefit_type,
+            "benefit_value": campaign.benefit_value,
+            "benefit_duration_months": campaign.benefit_duration_months,
+            "reward_type": campaign.reward_type,
+            "reward_value": campaign.reward_value,
+            "ios_offer_code": campaign.ios_offer_code,
+            "android_promo_code": campaign.android_promo_code,
+            "valid_until": campaign.valid_until.isoformat() if campaign.valid_until else None,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/promo-campaigns/redeem")
+def redeem_promo_campaign(
+    payload: dict,
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    clean_code = str((payload or {}).get("code") or "").strip().upper()
+    platform = str((payload or {}).get("platform") or "").strip().lower() or None
+
+    if not clean_code:
+        raise HTTPException(status_code=422, detail="INVALID_PROMO_CODE")
+
+    if platform and platform not in {"ios", "android", "web"}:
+        raise HTTPException(status_code=422, detail="INVALID_PROMO_PLATFORM")
+
+    db = SessionLocal()
+    try:
+        campaign = db.query(PromoCampaign).filter(PromoCampaign.code == clean_code).first()
+        now = datetime.utcnow()
+
+        if not campaign or campaign.status != "active":
+            raise HTTPException(status_code=404, detail="PROMO_CODE_NOT_FOUND")
+
+        if campaign.valid_until and campaign.valid_until < now:
+            raise HTTPException(status_code=410, detail="PROMO_CODE_EXPIRED")
+
+        if campaign.max_uses is not None and campaign.uses_count >= campaign.max_uses:
+            raise HTTPException(status_code=409, detail="PROMO_CODE_LIMIT_REACHED")
+
+        if campaign.target_role != "both" and campaign.target_role != current_user.role:
+            raise HTTPException(status_code=403, detail="PROMO_CODE_NOT_FOR_THIS_ROLE")
+
+        existing = (
+            db.query(PromoRedemption)
+            .filter(
+                PromoRedemption.campaign_id == campaign.id,
+                PromoRedemption.user_id == current_user.id,
+            )
+            .first()
+        )
+        if existing:
+            return ok({
+                "id": existing.id,
+                "code": campaign.code,
+                "status": existing.status,
+                "already_redeemed": True,
+                "benefit_type": campaign.benefit_type,
+                "benefit_value": campaign.benefit_value,
+                "benefit_duration_months": campaign.benefit_duration_months,
+                "ios_offer_code": campaign.ios_offer_code,
+                "android_promo_code": campaign.android_promo_code,
+            })
+
+        redemption = PromoRedemption(
+            campaign_id=campaign.id,
+            user_id=current_user.id,
+            platform=platform,
+            status="reserved",
+            created_at=now,
+        )
+        campaign.uses_count = int(campaign.uses_count or 0) + 1
+        campaign.updated_at = now
+
+        db.add(redemption)
+        db.add(campaign)
+        db.add(AuditLog(
+            user_id=current_user.id,
+            action="promo_campaign_redeemed",
+            details=f"code={campaign.code}; campaign_id={campaign.id}; platform={platform or '-'}; status=reserved",
+        ))
+        db.commit()
+        db.refresh(redemption)
+
+        return ok({
+            "id": redemption.id,
+            "code": campaign.code,
+            "status": redemption.status,
+            "already_redeemed": False,
+            "benefit_type": campaign.benefit_type,
+            "benefit_value": campaign.benefit_value,
+            "benefit_duration_months": campaign.benefit_duration_months,
+            "ios_offer_code": campaign.ios_offer_code,
+            "android_promo_code": campaign.android_promo_code,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/admin/promo-campaigns/{campaign_id}")
+def admin_get_promo_campaign(
+    campaign_id: int,
+    current_user: User = Depends(require_role("admin")),
+):
+    require_admin_permission(current_user, "plans")
+
+    db = SessionLocal()
+    try:
+        campaign = db.query(PromoCampaign).filter(PromoCampaign.id == campaign_id).first()
+        if not campaign:
+            raise HTTPException(status_code=404, detail="PROMO_CAMPAIGN_NOT_FOUND")
+
+        redemption_rows = (
+            db.query(PromoRedemption, User, UserProfile, PartnerProfile)
+            .join(User, User.id == PromoRedemption.user_id)
+            .outerjoin(UserProfile, UserProfile.user_id == User.id)
+            .outerjoin(PartnerProfile, PartnerProfile.user_id == User.id)
+            .filter(PromoRedemption.campaign_id == campaign.id)
+            .order_by(PromoRedemption.created_at.desc(), PromoRedemption.id.desc())
+            .limit(300)
+            .all()
+        )
+
+        redemptions = []
+        active_count = 0
+        premium_count = 0
+        vip_count = 0
+
+        for redemption, user, user_profile, partner_profile in redemption_rows:
+            profile = partner_profile if user.role == UserRole.PARTNER.value else user_profile
+            plan = getattr(profile, "plan", None) or "free"
+            plan_status = getattr(profile, "plan_status", None) or "active"
+
+            if plan_status == "active":
+                active_count += 1
+            if plan == "premium":
+                premium_count += 1
+            if plan == "vip":
+                vip_count += 1
+
+            display_name = (
+                getattr(profile, "nick", None)
+                or getattr(profile, "nazwa", None)
+                or user.email
+                or f"User #{user.id}"
+            )
+
+            redemptions.append({
+                "id": redemption.id,
+                "user_id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "display_name": display_name,
+                "plan": plan,
+                "plan_status": plan_status,
+                "platform": redemption.platform,
+                "status": redemption.status,
+                "store_transaction_id": redemption.store_transaction_id,
+                "created_at": redemption.created_at.isoformat() if redemption.created_at else None,
+                "activated_at": redemption.activated_at.isoformat() if redemption.activated_at else None,
+            })
+
+        return ok({
+            "campaign": {
+                "id": campaign.id,
+                "code": campaign.code,
+                "name": campaign.name,
+                "owner_user_id": campaign.owner_user_id,
+                "target_role": campaign.target_role,
+                "benefit_type": campaign.benefit_type,
+                "benefit_value": campaign.benefit_value,
+                "benefit_duration_months": campaign.benefit_duration_months,
+                "reward_type": campaign.reward_type,
+                "reward_value": campaign.reward_value,
+                "max_uses": campaign.max_uses,
+                "uses_count": campaign.uses_count,
+                "valid_from": campaign.valid_from.isoformat() if campaign.valid_from else None,
+                "valid_until": campaign.valid_until.isoformat() if campaign.valid_until else None,
+                "status": campaign.status,
+                "ios_offer_code": campaign.ios_offer_code,
+                "android_promo_code": campaign.android_promo_code,
+                "note": campaign.note,
+                "created_at": campaign.created_at.isoformat() if campaign.created_at else None,
+                "updated_at": campaign.updated_at.isoformat() if campaign.updated_at else None,
+            },
+            "stats": {
+                "redemptions_count": len(redemptions),
+                "active_count": active_count,
+                "premium_count": premium_count,
+                "vip_count": vip_count,
+            },
+            "redemptions": redemptions,
+        })
+    finally:
+        db.close()

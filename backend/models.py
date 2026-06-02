@@ -1027,3 +1027,197 @@ class UserNotification(Base):
         nullable=True,
         default=None,
     )
+
+
+# =====================
+# PROMO / AMBASSADOR CODES
+# =====================
+
+class PromoCampaign(Base):
+    __tablename__ = "promo_campaigns"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    code: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    name: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+        default=None,
+    )
+
+    owner_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    created_by_admin_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    target_role: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="user",
+    )
+
+    benefit_type: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="discount_percent",
+    )
+
+    benefit_value: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        default=None,
+    )
+
+    benefit_duration_months: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        default=None,
+    )
+
+    reward_type: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+        default=None,
+    )
+
+    reward_value: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        default=None,
+    )
+
+    max_uses: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        default=None,
+    )
+
+    uses_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    valid_from: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    valid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="active",
+        index=True,
+    )
+
+    note: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
+    ios_offer_code: Mapped[str | None] = mapped_column(
+        String(80),
+        nullable=True,
+        default=None,
+    )
+
+    android_promo_code: Mapped[str | None] = mapped_column(
+        String(80),
+        nullable=True,
+        default=None,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        Index("ix_promo_campaigns_status_valid", "status", "valid_until"),
+        Index("ix_promo_campaigns_owner_status", "owner_user_id", "status"),
+    )
+
+
+class PromoRedemption(Base):
+    __tablename__ = "promo_redemptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    campaign_id: Mapped[int] = mapped_column(
+        ForeignKey("promo_campaigns.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    platform: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        default=None,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="reserved",
+        index=True,
+    )
+
+    store_transaction_id: Mapped[str | None] = mapped_column(
+        String(160),
+        nullable=True,
+        default=None,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    activated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("campaign_id", "user_id", name="uq_promo_redemptions_campaign_user"),
+        Index("ix_promo_redemptions_user_status", "user_id", "status"),
+        Index("ix_promo_redemptions_campaign_status", "campaign_id", "status"),
+    )
