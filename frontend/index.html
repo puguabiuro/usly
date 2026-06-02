@@ -898,6 +898,32 @@ section#S11_PLANS .card[data-plan].is-current{
     linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)) !important;
 }
 
+section#S11_PLANS .promoCodeCard{
+  padding:16px !important;
+  border-radius:22px !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035)) !important;
+}
+
+section#S11_PLANS .promoCodeRow{
+  display:grid !important;
+  grid-template-columns:1fr auto !important;
+  gap:10px !important;
+  align-items:center !important;
+}
+
+section#S11_PLANS .promoCodeInput{
+  min-height:46px !important;
+  border-radius:16px !important;
+}
+
+section#S11_PLANS .promoCodeRow .btn{
+  min-height:46px !important;
+  padding:0 16px !important;
+  border-radius:16px !important;
+  white-space:nowrap !important;
+}
+
 /* === PREMIUM: bottom nav glow (spójność z topbar) === */
 .tabbar button {
   position: relative;
@@ -3724,6 +3750,15 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="sectionSub" data-i18n="plans.user.subtitle">Wybierz poziom dostępu dopasowany do tego, jak chcesz korzystać z USLY.</div>
               </div>
 
+              <div class="card mt16 promoCodeCard">
+                <label class="fieldLabel" for="userPromoCodeInput" data-i18n="plans.promo.label">Kod promocyjny</label>
+                <div class="promoCodeRow mt8">
+                  <input class="fieldInput promoCodeInput" id="userPromoCodeInput" type="text" data-i18n-placeholder="plans.promo.placeholder" placeholder="Wpisz kod" />
+                  <button class="btn secondary small" type="button" onclick="applyPlanPromoCode('user')" data-i18n="plans.promo.apply">Zastosuj</button>
+                </div>
+                <div class="sectionSub mt8" id="userPromoCodeStatus"></div>
+              </div>
+
               <div class="card mt16" data-plan="free" data-plan-icon="FREE">
                 <div class="row" style="align-items:center;justify-content:space-between;">
                   <div class="sectionTitle">FREE</div>
@@ -3803,6 +3838,15 @@ section#S11_PLANS .card[data-plan].is-current{
                 <div class="card mt24">
                   <div class="sectionTitle" data-i18n="plans.partner.title">Plany Organizatora</div>
                   <div class="sectionSub" data-i18n="plans.partner.subtitle">Wybierz poziom widoczności, raportów i narzędzi dla swojego miejsca lub marki.</div>
+                </div>
+
+                <div class="card mt16 promoCodeCard">
+                  <label class="fieldLabel" for="partnerPromoCodeInput" data-i18n="plans.promo.label">Kod promocyjny</label>
+                  <div class="promoCodeRow mt8">
+                    <input class="fieldInput promoCodeInput" id="partnerPromoCodeInput" type="text" data-i18n-placeholder="plans.promo.placeholder" placeholder="Wpisz kod" />
+                    <button class="btn secondary small" type="button" onclick="applyPlanPromoCode('partner')" data-i18n="plans.promo.apply">Zastosuj</button>
+                  </div>
+                  <div class="sectionSub mt8" id="partnerPromoCodeStatus"></div>
                 </div>
 
                 <div class="card mt16" data-plan="free" data-plan-icon="FREE">

@@ -28,7 +28,7 @@ function adminCanView(view) {
   const level = adminLevel();
   if (level === "owner") return true;
   if (view === "owner-approval") return false;
-  if (level === "operations") return ["reports", "users", "events"].includes(view);
+  if (level === "operations") return ["reports", "users", "events", "promo"].includes(view);
   if (level === "moderation" || level === "support") return view === "reports";
   return view === "reports";
 }
@@ -2698,6 +2698,7 @@ function showAdminView(view) {
   const ownerApprovalView = document.getElementById("adminOwnerApprovalView");
   const usersView = document.getElementById("adminUsersView");
   const eventsView = document.getElementById("adminEventsView");
+  const promoView = document.getElementById("adminPromoView");
 
   document.querySelectorAll("[data-admin-view]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.adminView === view);
@@ -2708,12 +2709,14 @@ function showAdminView(view) {
   if (ownerApprovalView) ownerApprovalView.hidden = view !== "owner-approval";
   if (usersView) usersView.hidden = view !== "users";
   if (eventsView) eventsView.hidden = view !== "events";
+  if (promoView) promoView.hidden = view !== "promo";
 
   if (view === "dashboard" && typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
   if (view === "reports") reloadAdminReports().catch(() => {});
   if (view === "owner-approval" && typeof reloadOwnerApprovalQueue === "function") reloadOwnerApprovalQueue().catch(() => {});
   if (view === "users") reloadAdminUsers().catch(() => {});
   if (view === "events") reloadAdminEvents().catch(() => {});
+  if (view === "promo" && typeof reloadAdminPromoCampaigns === "function") reloadAdminPromoCampaigns().catch(() => {});
 }
 
 document.querySelectorAll("[data-admin-view]").forEach((btn) => {
@@ -2888,3 +2891,318 @@ document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) 
   startAdminAutoRefresh();
 })();
 
+
+function renderAdminPromoCampaigns(items) {
+  const el = document.getElementById("adminPromoList");
+  if (!el) return;
+
+  setAdminCount("adminPromoCount", items.length);
+
+  if (!items.length) {
+    el.innerHTML = adminEmpty("Brak kodów promocyjnych. Utwórz pierwszy kod dla ambasadora, Organizatora albo kampanii.");
+    return;
+  }
+
+  el.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>Kod</th>
+          <th>Dla kogo</th>
+          <th>Korzyść</th>
+          <th>Nagroda</th>
+          <th>Użycia</th>
+          <th>Status</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((c) => `
+          <tr>
+            <td><strong>${escapeAdmin(c.code || "—")}</strong><br><span>${escapeAdmin(c.name || "—")}</span></td>
+            <td>${escapeAdmin(c.target_role || "user")}</td>
+            <td>${escapeAdmin(c.benefit_type || "—")}<br><span>${escapeAdmin(c.benefit_value ?? "—")}${c.benefit_duration_months ? ` / ${escapeAdmin(c.benefit_duration_months)} mies.` : ""}</span></td>
+            <td>${escapeAdmin(c.reward_type || "—")}<br><span>${escapeAdmin(c.reward_value ?? "—")}</span></td>
+            <td>${escapeAdmin(c.uses_count || 0)}${c.max_uses ? ` / ${escapeAdmin(c.max_uses)}` : ""}</td>
+            <td>${adminStatusBadge(c.status || "active")}</td>
+            <td>
+              <button class="tableAction" type="button" onclick="openPromoCampaignPreview('${escapeAdmin(c.id)}')">Podgląd</button>
+              <button class="tableAction" type="button" onclick="openEditPromoDrawer('${escapeAdmin(c.id)}')">Edytuj</button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function reloadAdminPromoCampaigns() {
+  try {
+    const res = await window.apiFetch("/admin/promo-campaigns");
+    const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+    Admin.promoCampaigns = items;
+    renderAdminPromoCampaigns(items);
+  } catch (e) {
+    console.error("reloadAdminPromoCampaigns error", e);
+    adminToast(e?.userMessage || "Nie udało się pobrać kodów promocyjnych.");
+    renderAdminPromoCampaigns([]);
+  }
+}
+
+function openCreatePromoDrawer() {
+  openAdminDrawer(`
+    <h2>Utwórz kod promocyjny</h2>
+    <p class="adminSystemHint">Kod może działać dla Towarzyszy, Organizatorów albo obu ról. Nagrodą promotora powinny być miesiące VIP, nie prowizja pieniężna.</p>
+
+    <div class="adminDrawerGrid">
+      <label class="adminFieldLabel" for="promoCodeInput">Kod</label>
+      <input class="adminFieldInput" id="promoCodeInput" type="text" placeholder="np. AGA50" />
+
+      <label class="adminFieldLabel" for="promoNameInput">Nazwa kampanii</label>
+      <input class="adminFieldInput" id="promoNameInput" type="text" placeholder="np. Kampania TikTok Aga" />
+
+      <label class="adminFieldLabel" for="promoTargetRoleInput">Dla kogo</label>
+      <select class="adminFieldInput" id="promoTargetRoleInput">
+        <option value="user">Towarzysz</option>
+        <option value="partner">Organizator</option>
+        <option value="both">Obie role</option>
+      </select>
+
+      <label class="adminFieldLabel" for="promoBenefitTypeInput">Korzyść użytkownika</label>
+      <select class="adminFieldInput" id="promoBenefitTypeInput">
+        <option value="discount_percent">Zniżka procentowa</option>
+        <option value="free_months">Darmowe miesiące</option>
+        <option value="trial_days">Trial w dniach</option>
+        <option value="store_offer">Oferta sklepowa Apple/Google</option>
+      </select>
+
+      <label class="adminFieldLabel" for="promoBenefitValueInput">Wartość korzyści</label>
+      <input class="adminFieldInput" id="promoBenefitValueInput" type="number" min="0" placeholder="np. 50" />
+
+      <label class="adminFieldLabel" for="promoBenefitDurationInput">Czas korzyści w miesiącach</label>
+      <input class="adminFieldInput" id="promoBenefitDurationInput" type="number" min="1" max="12" value="1" />
+
+      <label class="adminFieldLabel" for="promoRewardValueInput">Nagroda promotora: miesiące VIP</label>
+      <input class="adminFieldInput" id="promoRewardValueInput" type="number" min="0" placeholder="np. 1" />
+
+      <label class="adminFieldLabel" for="promoMaxUsesInput">Limit użyć</label>
+      <input class="adminFieldInput" id="promoMaxUsesInput" type="number" min="0" placeholder="Puste = bez limitu" />
+
+      <label class="adminFieldLabel" for="promoNoteInput">Notatka</label>
+      <textarea class="adminFieldInput" id="promoNoteInput" placeholder="np. współpraca barterowa, influencer, kampania lokalna"></textarea>
+    </div>
+
+    <button class="adminPrimaryAction" type="button" onclick="submitCreatePromoCampaign()">Utwórz kod</button>
+  `);
+}
+
+document.getElementById("adminCreatePromoBtn")?.addEventListener("click", openCreatePromoDrawer);
+
+async function submitCreatePromoCampaign() {
+  const code = String(document.getElementById("promoCodeInput")?.value || "").trim().toUpperCase();
+  const name = String(document.getElementById("promoNameInput")?.value || "").trim();
+  const target_role = String(document.getElementById("promoTargetRoleInput")?.value || "user").trim();
+  const benefit_type = String(document.getElementById("promoBenefitTypeInput")?.value || "discount_percent").trim();
+  const benefit_value = String(document.getElementById("promoBenefitValueInput")?.value || "").trim();
+  const benefit_duration_months = String(document.getElementById("promoBenefitDurationInput")?.value || "").trim();
+  const reward_value = String(document.getElementById("promoRewardValueInput")?.value || "").trim();
+  const max_uses = String(document.getElementById("promoMaxUsesInput")?.value || "").trim();
+  const note = String(document.getElementById("promoNoteInput")?.value || "").trim();
+
+  if (!code || code.length < 3) {
+    adminToast("Kod musi mieć co najmniej 3 znaki.");
+    return;
+  }
+
+  try {
+    await window.apiFetch("/admin/promo-campaigns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code,
+        name,
+        target_role,
+        benefit_type,
+        benefit_value: benefit_value || null,
+        benefit_duration_months: benefit_duration_months || null,
+        reward_type: reward_value ? "vip_months" : "none",
+        reward_value: reward_value || null,
+        max_uses: max_uses || null,
+        note,
+      }),
+    });
+
+    adminToast("Kod promocyjny został utworzony.");
+    closeAdminDrawer();
+    await reloadAdminPromoCampaigns();
+  } catch (e) {
+    console.error("submitCreatePromoCampaign error", e);
+    adminToast(e?.userMessage || "Nie udało się utworzyć kodu.");
+  }
+}
+
+async function openPromoCampaignPreview(campaignId) {
+  try {
+    const res = await window.apiFetch(`/admin/promo-campaigns/${encodeURIComponent(campaignId)}`);
+    const data = res?.data || {};
+    const c = data.campaign || {};
+    const stats = data.stats || {};
+    const redemptions = Array.isArray(data.redemptions) ? data.redemptions : [];
+
+    openAdminDrawer(`
+      <h2>Kod ${escapeAdmin(c.code || "—")}</h2>
+      <p class="adminSystemHint">${escapeAdmin(c.name || "Kampania promocyjna")} · ${escapeAdmin(c.target_role || "—")} · ${escapeAdmin(c.status || "—")}</p>
+
+      <div class="adminStatsGrid">
+        <div><span>Użycia</span><strong>${escapeAdmin(stats.redemptions_count ?? 0)}</strong></div>
+        <div><span>Aktywne plany</span><strong>${escapeAdmin(stats.active_count ?? 0)}</strong></div>
+        <div><span>Premium</span><strong>${escapeAdmin(stats.premium_count ?? 0)}</strong></div>
+        <div><span>VIP</span><strong>${escapeAdmin(stats.vip_count ?? 0)}</strong></div>
+      </div>
+
+      <div class="adminInfoGrid mt16">
+        <div><span>Korzyść</span><strong>${escapeAdmin(c.benefit_type || "—")} ${escapeAdmin(c.benefit_value ?? "")}</strong></div>
+        <div><span>Czas korzyści</span><strong>${escapeAdmin(c.benefit_duration_months ?? "—")} mies.</strong></div>
+        <div><span>Nagroda promotora</span><strong>${escapeAdmin(c.reward_type || "—")} ${escapeAdmin(c.reward_value ?? "")}</strong></div>
+        <div><span>Limit użyć</span><strong>${escapeAdmin(c.max_uses ?? "bez limitu")}</strong></div>
+        <div><span>Apple Offer Code</span><strong>${escapeAdmin(c.ios_offer_code || "—")}</strong></div>
+        <div><span>Google Promo Code</span><strong>${escapeAdmin(c.android_promo_code || "—")}</strong></div>
+      </div>
+
+      <h3 class="mt16">Użycia kodu</h3>
+      <div class="adminTableBox">
+        ${
+          redemptions.length
+            ? `<table class="adminTable">
+                <thead>
+                  <tr>
+                    <th>Użytkownik</th>
+                    <th>Rola</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Platforma</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${redemptions.map((r) => `
+                    <tr>
+                      <td><strong>${escapeAdmin(r.display_name || "—")}</strong><br><span>${escapeAdmin(r.email || "—")}</span></td>
+                      <td>${escapeAdmin(r.role || "—")}</td>
+                      <td>${escapeAdmin(r.plan || "free")}</td>
+                      <td>${escapeAdmin(r.status || "—")}</td>
+                      <td>${escapeAdmin(r.platform || "—")}</td>
+                      <td>${escapeAdmin(r.created_at || "—")}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>`
+            : adminEmpty("Ten kod nie ma jeszcze użyć.")
+        }
+      </div>
+    `);
+  } catch (e) {
+    console.error("openPromoCampaignPreview error", e);
+    adminToast(e?.userMessage || "Nie udało się otworzyć podglądu kodu.");
+  }
+}
+
+
+async function openEditPromoDrawer(campaignId) {
+  try {
+    const res = await window.apiFetch(`/admin/promo-campaigns/${encodeURIComponent(campaignId)}`);
+    const data = res?.data || {};
+    const c = data.campaign || {};
+
+    openAdminDrawer(`
+      <h2>Edytuj kod ${escapeAdmin(c.code || "—")}</h2>
+      <p class="adminSystemHint">Tutaj zmieniamy logikę kampanii: status, role, korzyści, nagrody VIP i limity. Wygląd podglądu dopracujemy dopiero po domknięciu logiki.</p>
+
+      <div class="adminDrawerGrid">
+        <label class="adminFieldLabel" for="promoEditNameInput">Nazwa kampanii</label>
+        <input class="adminFieldInput" id="promoEditNameInput" type="text" value="${escapeAdmin(c.name || "")}" />
+
+        <label class="adminFieldLabel" for="promoEditStatusInput">Status</label>
+        <select class="adminFieldInput" id="promoEditStatusInput">
+          <option value="active" ${c.status === "active" ? "selected" : ""}>Aktywna</option>
+          <option value="paused" ${c.status === "paused" ? "selected" : ""}>Wstrzymana</option>
+          <option value="ended" ${c.status === "ended" ? "selected" : ""}>Zakończona</option>
+          <option value="expired" ${c.status === "expired" ? "selected" : ""}>Wygasła</option>
+        </select>
+
+        <label class="adminFieldLabel" for="promoEditTargetRoleInput">Dla kogo</label>
+        <select class="adminFieldInput" id="promoEditTargetRoleInput">
+          <option value="user" ${c.target_role === "user" ? "selected" : ""}>Towarzysz</option>
+          <option value="partner" ${c.target_role === "partner" ? "selected" : ""}>Organizator</option>
+          <option value="both" ${c.target_role === "both" ? "selected" : ""}>Obie role</option>
+        </select>
+
+        <label class="adminFieldLabel" for="promoEditBenefitTypeInput">Korzyść użytkownika</label>
+        <select class="adminFieldInput" id="promoEditBenefitTypeInput">
+          <option value="discount_percent" ${c.benefit_type === "discount_percent" ? "selected" : ""}>Zniżka procentowa</option>
+          <option value="free_months" ${c.benefit_type === "free_months" ? "selected" : ""}>Darmowe miesiące</option>
+          <option value="trial_days" ${c.benefit_type === "trial_days" ? "selected" : ""}>Trial w dniach</option>
+          <option value="store_offer" ${c.benefit_type === "store_offer" ? "selected" : ""}>Oferta sklepowa Apple/Google</option>
+        </select>
+
+        <label class="adminFieldLabel" for="promoEditBenefitValueInput">Wartość korzyści</label>
+        <input class="adminFieldInput" id="promoEditBenefitValueInput" type="number" min="0" value="${escapeAdmin(c.benefit_value ?? "")}" />
+
+        <label class="adminFieldLabel" for="promoEditBenefitDurationInput">Czas korzyści w miesiącach</label>
+        <input class="adminFieldInput" id="promoEditBenefitDurationInput" type="number" min="1" max="12" value="${escapeAdmin(c.benefit_duration_months ?? "")}" />
+
+        <label class="adminFieldLabel" for="promoEditRewardValueInput">Nagroda promotora: miesiące VIP</label>
+        <input class="adminFieldInput" id="promoEditRewardValueInput" type="number" min="0" value="${escapeAdmin(c.reward_value ?? "")}" />
+
+        <label class="adminFieldLabel" for="promoEditMaxUsesInput">Limit użyć</label>
+        <input class="adminFieldInput" id="promoEditMaxUsesInput" type="number" min="0" value="${escapeAdmin(c.max_uses ?? "")}" />
+
+        <label class="adminFieldLabel" for="promoEditNoteInput">Notatka</label>
+        <textarea class="adminFieldInput" id="promoEditNoteInput">${escapeAdmin(c.note || "")}</textarea>
+      </div>
+
+      <button class="adminPrimaryAction" type="button" onclick="submitEditPromoCampaign('${escapeAdmin(c.id)}')">Zapisz zmiany</button>
+    `);
+  } catch (e) {
+    console.error("openEditPromoDrawer error", e);
+    adminToast(e?.userMessage || "Nie udało się otworzyć edycji kodu.");
+  }
+}
+
+async function submitEditPromoCampaign(campaignId) {
+  const name = String(document.getElementById("promoEditNameInput")?.value || "").trim();
+  const status = String(document.getElementById("promoEditStatusInput")?.value || "active").trim();
+  const target_role = String(document.getElementById("promoEditTargetRoleInput")?.value || "user").trim();
+  const benefit_type = String(document.getElementById("promoEditBenefitTypeInput")?.value || "discount_percent").trim();
+  const benefit_value = String(document.getElementById("promoEditBenefitValueInput")?.value || "").trim();
+  const benefit_duration_months = String(document.getElementById("promoEditBenefitDurationInput")?.value || "").trim();
+  const reward_value = String(document.getElementById("promoEditRewardValueInput")?.value || "").trim();
+  const max_uses = String(document.getElementById("promoEditMaxUsesInput")?.value || "").trim();
+  const note = String(document.getElementById("promoEditNoteInput")?.value || "").trim();
+
+  try {
+    await window.apiFetch(`/admin/promo-campaigns/${encodeURIComponent(campaignId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        status,
+        target_role,
+        benefit_type,
+        benefit_value: benefit_value || null,
+        benefit_duration_months: benefit_duration_months || null,
+        reward_type: reward_value ? "vip_months" : "none",
+        reward_value: reward_value || null,
+        max_uses: max_uses || null,
+        note,
+      }),
+    });
+
+    adminToast("Kod promocyjny został zaktualizowany.");
+    closeAdminDrawer();
+    await reloadAdminPromoCampaigns();
+  } catch (e) {
+    console.error("submitEditPromoCampaign error", e);
+    adminToast(e?.userMessage || "Nie udało się zapisać zmian kodu.");
+  }
+}

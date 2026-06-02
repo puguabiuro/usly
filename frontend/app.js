@@ -85,6 +85,16 @@ const I18N = {
     "plans.partner.title": "Plany Organizatora",
     "plans.partner.subtitle": "Wybierz poziom widoczności, raportów i narzędzi dla swojego miejsca lub marki.",
     "plans.choose": "Wybierz",
+    "plans.promo.label": "Kod promocyjny",
+    "plans.promo.placeholder": "Wpisz kod",
+    "plans.promo.apply": "Zastosuj",
+    "plans.promo.applied": "Kod zastosowany",
+    "plans.promo.invalid": "Nie udało się zastosować kodu.",
+    "plans.promo.notActive": "Ten kod nie jest już aktywny.",
+    "plans.promo.expired": "Ten kod wygasł.",
+    "plans.promo.limitReached": "Limit użyć tego kodu został osiągnięty.",
+    "plans.promo.wrongRole": "Ten kod nie jest dostępny dla tej roli.",
+    "plans.promo.discount": "Zniżka {{value}}% przez {{months}} mies.",
     "plans.contact_us": "Napisz do nas",
     "plans.current": "Aktualny plan",
     "plans.user.free.desc": "Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.",
@@ -971,6 +981,16 @@ const I18N = {
     "plans.partner.title": "Organizer Plans",
     "plans.partner.subtitle": "Choose the visibility, reporting and tools level for your venue or brand.",
     "plans.choose": "Choose",
+    "plans.promo.label": "Promo code",
+    "plans.promo.placeholder": "Enter code",
+    "plans.promo.apply": "Apply",
+    "plans.promo.applied": "Code applied",
+    "plans.promo.invalid": "Could not apply the code.",
+    "plans.promo.notActive": "This code is no longer active.",
+    "plans.promo.expired": "This code has expired.",
+    "plans.promo.limitReached": "This code usage limit has been reached.",
+    "plans.promo.wrongRole": "This code is not available for this role.",
+    "plans.promo.discount": "{{value}}% off for {{months}} months",
     "plans.contact_us": "Contact us",
     "plans.current": "Current plan",
     "plans.user.free.desc": "Basic access to USLY and meeting people in your area.",
@@ -2740,6 +2760,78 @@ function refreshUserPlanCardsUi() {
 
   safeSetText("settingsProfilePlanPill", current.toUpperCase());
   safeSetText("settingsProfilePlanPillSecondary", current.toUpperCase());
+}
+
+
+async function applyPlanPromoCode(role) {
+  const normalizedRole = role === "partner" ? "partner" : "user";
+  const inputId = normalizedRole === "partner" ? "partnerPromoCodeInput" : "userPromoCodeInput";
+  const statusId = normalizedRole === "partner" ? "partnerPromoCodeStatus" : "userPromoCodeStatus";
+  const input = $(inputId);
+  const statusEl = $(statusId);
+  const code = String(input?.value || "").trim().toUpperCase();
+
+  if (statusEl) statusEl.textContent = "";
+
+  if (!code) {
+    toast(t("plans.promo.invalid"));
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`/promo-campaigns/validate/${encodeURIComponent(code)}`);
+    const promo = res?.data || {};
+
+    if (promo.target_role && promo.target_role !== "both" && promo.target_role !== normalizedRole) {
+      toast(t("plans.promo.invalid"));
+      if (statusEl) statusEl.textContent = t("plans.promo.invalid");
+      return;
+    }
+
+    const value = promo.benefit_value ?? "—";
+    const months = promo.benefit_duration_months ?? "—";
+    const label = promo.benefit_type === "discount_percent"
+      ? t("plans.promo.discount", { value, months })
+      : t("plans.promo.applied");
+
+    App.activePromoCode = {
+      code: promo.code || code,
+      role: normalizedRole,
+      benefit_type: promo.benefit_type || null,
+      benefit_value: promo.benefit_value ?? null,
+      benefit_duration_months: promo.benefit_duration_months ?? null,
+      reward_type: promo.reward_type || null,
+      reward_value: promo.reward_value ?? null,
+    };
+
+    if (statusEl) statusEl.textContent = `${t("plans.promo.applied")}: ${label}`;
+    toast(`${t("plans.promo.applied")}: ${promo.code || code}`);
+  } catch (err) {
+    App.activePromoCode = null;
+
+    const rawPromoError = String(
+      err?.data?.detail || err?.data?.error?.code || err?.code || err?.detail || err?.message || err?.userMessage || ""
+    );
+
+    let promoMessage = t("plans.promo.invalid");
+    if (rawPromoError.includes("PROMO_CODE_EXPIRED")) {
+      promoMessage = t("plans.promo.expired");
+    } else if (rawPromoError.includes("PROMO_CODE_LIMIT_REACHED")) {
+      promoMessage = t("plans.promo.limitReached");
+    } else if (rawPromoError.includes("PROMO_CODE_NOT_FOR_THIS_ROLE")) {
+      promoMessage = t("plans.promo.wrongRole");
+    } else if (
+      rawPromoError.includes("PROMO_CODE_INACTIVE") ||
+      rawPromoError.includes("PROMO_CODE_NOT_FOUND") ||
+      rawPromoError.includes("server") ||
+      rawPromoError.includes("serwera")
+    ) {
+      promoMessage = t("plans.promo.notActive");
+    }
+
+    if (statusEl) statusEl.textContent = promoMessage;
+    toast(promoMessage);
+  }
 }
 
 

@@ -37,6 +37,7 @@
       <button class="adminNav" type="button" data-admin-view="owner-approval">Do akceptacji</button>
       <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
       <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
+      <button class="adminNav" type="button" data-admin-view="promo">Program Ambasadorski</button>
     </aside>
 
     <section class="adminMain">
@@ -282,6 +283,25 @@
               <span id="adminEventsCount">0</span>
             </div>
             <div id="adminEventsList" class="adminTableBox">Ładowanie...</div>
+          </article>
+        </section>
+      </section>
+
+      <section id="adminPromoView" hidden>
+        <section class="adminFilters">
+          <button class="adminPrimary" type="button" id="adminCreatePromoBtn">Utwórz kod</button>
+        </section>
+
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Program Ambasadorski / Kody Promocyjne</h2>
+              <span id="adminPromoCount">0</span>
+            </div>
+            <div class="adminSystemHint">
+              Kody mogą działać dla Towarzyszy, Organizatorów albo obu ról. Finalne płatności nadal przechodzą przez App Store / Google Play.
+            </div>
+            <div id="adminPromoList" class="adminTableBox">Ładowanie...</div>
           </article>
         </section>
       </section>

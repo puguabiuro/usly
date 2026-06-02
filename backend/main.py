@@ -7319,6 +7319,143 @@ def admin_create_promo_campaign(
         db.close()
 
 
+@app.patch("/admin/promo-campaigns/{campaign_id}")
+def admin_update_promo_campaign(
+    campaign_id: int,
+    payload: dict,
+    current_user: User = Depends(require_role("admin")),
+):
+    require_admin_permission(current_user, "plans")
+
+    allowed_statuses = {"active", "paused", "ended", "expired"}
+    allowed_target_roles = {"user", "partner", "both"}
+    allowed_benefit_types = {"discount_percent", "trial_days", "free_months", "store_offer"}
+    allowed_reward_types = {"vip_months", "none"}
+
+    def _optional_str(value):
+        if value is None:
+            return None
+        cleaned = str(value).strip()
+        return cleaned or None
+
+    def _optional_positive_int(value, field_name: str):
+        if value in (None, ""):
+            return None
+        try:
+            parsed = int(value)
+        except Exception:
+            raise HTTPException(status_code=422, detail=f"INVALID_{field_name}")
+        if parsed < 0:
+            raise HTTPException(status_code=422, detail=f"INVALID_{field_name}")
+        return parsed
+
+    db = SessionLocal()
+    try:
+        campaign = db.query(PromoCampaign).filter(PromoCampaign.id == campaign_id).first()
+        if not campaign:
+            raise HTTPException(status_code=404, detail="PROMO_CAMPAIGN_NOT_FOUND")
+
+        data = payload or {}
+        now = datetime.utcnow()
+        changes = []
+
+        if "name" in data:
+            campaign.name = _optional_str(data.get("name"))
+            changes.append("name")
+
+        if "target_role" in data:
+            target_role = str(data.get("target_role") or "").strip().lower()
+            if target_role not in allowed_target_roles:
+                raise HTTPException(status_code=422, detail="INVALID_PROMO_TARGET_ROLE")
+            campaign.target_role = target_role
+            changes.append("target_role")
+
+        if "benefit_type" in data:
+            benefit_type = str(data.get("benefit_type") or "").strip().lower()
+            if benefit_type not in allowed_benefit_types:
+                raise HTTPException(status_code=422, detail="INVALID_PROMO_BENEFIT_TYPE")
+            campaign.benefit_type = benefit_type
+            changes.append("benefit_type")
+
+        if "benefit_value" in data:
+            campaign.benefit_value = _optional_positive_int(data.get("benefit_value"), "BENEFIT_VALUE")
+            changes.append("benefit_value")
+
+        if "benefit_duration_months" in data:
+            campaign.benefit_duration_months = _optional_positive_int(data.get("benefit_duration_months"), "BENEFIT_DURATION_MONTHS")
+            changes.append("benefit_duration_months")
+
+        if "reward_type" in data:
+            reward_type = str(data.get("reward_type") or "").strip().lower()
+            if reward_type not in allowed_reward_types:
+                raise HTTPException(status_code=422, detail="INVALID_PROMO_REWARD_TYPE")
+            campaign.reward_type = reward_type
+            changes.append("reward_type")
+
+        if "reward_value" in data:
+            campaign.reward_value = _optional_positive_int(data.get("reward_value"), "REWARD_VALUE")
+            changes.append("reward_value")
+
+        if "max_uses" in data:
+            campaign.max_uses = _optional_positive_int(data.get("max_uses"), "MAX_USES")
+            changes.append("max_uses")
+
+        if "valid_until" in data:
+            valid_until_raw = str(data.get("valid_until") or "").strip()
+            if valid_until_raw:
+                try:
+                    campaign.valid_until = datetime.fromisoformat(valid_until_raw.replace("Z", "+00:00"))
+                except Exception:
+                    raise HTTPException(status_code=422, detail="INVALID_VALID_UNTIL")
+            else:
+                campaign.valid_until = None
+            changes.append("valid_until")
+
+        if "status" in data:
+            status = str(data.get("status") or "").strip().lower()
+            if status not in allowed_statuses:
+                raise HTTPException(status_code=422, detail="INVALID_PROMO_STATUS")
+            campaign.status = status
+            changes.append("status")
+
+        if "note" in data:
+            campaign.note = _optional_str(data.get("note"))
+            changes.append("note")
+
+        if "ios_offer_code" in data:
+            campaign.ios_offer_code = _optional_str(data.get("ios_offer_code"))
+            changes.append("ios_offer_code")
+
+        if "android_promo_code" in data:
+            campaign.android_promo_code = _optional_str(data.get("android_promo_code"))
+            changes.append("android_promo_code")
+
+        if campaign.benefit_type == "discount_percent" and (campaign.benefit_value is None or campaign.benefit_value < 1 or campaign.benefit_value > 90):
+            raise HTTPException(status_code=422, detail="INVALID_DISCOUNT_PERCENT")
+
+        if campaign.benefit_type == "discount_percent" and (campaign.benefit_duration_months is None or campaign.benefit_duration_months < 1 or campaign.benefit_duration_months > 12):
+            raise HTTPException(status_code=422, detail="INVALID_DISCOUNT_DURATION")
+
+        campaign.updated_at = now
+        db.add(campaign)
+        db.add(AuditLog(
+            user_id=current_user.id,
+            action="admin_update_promo_campaign",
+            details=f"admin_id={current_user.id}; campaign_id={campaign.id}; code={campaign.code}; changes={','.join(changes) or '-'}",
+        ))
+        db.commit()
+        db.refresh(campaign)
+
+        return ok({
+            "id": campaign.id,
+            "code": campaign.code,
+            "status": campaign.status,
+            "updated_at": campaign.updated_at.isoformat() if campaign.updated_at else None,
+        })
+    finally:
+        db.close()
+
+
 @app.get("/promo-campaigns/validate/{code}")
 def validate_promo_campaign(code: str):
     clean_code = str(code or "").strip().upper()
@@ -7331,8 +7468,11 @@ def validate_promo_campaign(code: str):
         campaign = db.query(PromoCampaign).filter(PromoCampaign.code == clean_code).first()
         now = datetime.utcnow()
 
-        if not campaign or campaign.status != "active":
+        if not campaign:
             raise HTTPException(status_code=404, detail="PROMO_CODE_NOT_FOUND")
+
+        if campaign.status != "active":
+            raise HTTPException(status_code=409, detail="PROMO_CODE_INACTIVE")
 
         if campaign.valid_until and campaign.valid_until < now:
             raise HTTPException(status_code=410, detail="PROMO_CODE_EXPIRED")
