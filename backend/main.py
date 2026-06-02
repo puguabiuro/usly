@@ -4041,6 +4041,14 @@ def create_friend_request(
             status="pending",
         )
         db.add(fr)
+        db.flush()
+
+        db.add(UserNotification(
+            user_id=payload.addressee_user_id,
+            partner_user_id=current_user.id,
+            type="friend_request",
+        ))
+
         db.commit()
         db.refresh(fr)
 

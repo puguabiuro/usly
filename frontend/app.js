@@ -7445,6 +7445,7 @@ async function renderNotifications() {
 
       eventNotifItems.forEach((row) => {
         const notification = row?.notification || {};
+        if (notification.type === "friend_request") return;
         const event = row?.event || {};
 
         const userReportTitles = {
@@ -7693,7 +7694,9 @@ async function refreshNotifBadgeCount() {
         return createdAt > seenAt;
       }).length +
       eventNotifItems.filter((row) => {
-        const createdAt = parseUslyTimestamp(row?.notification?.created_at);
+        const notification = row?.notification || {};
+        if (notification.type === "friend_request") return false;
+        const createdAt = parseUslyTimestamp(notification?.created_at);
         return createdAt > seenAt;
       }).length;
 
@@ -9103,15 +9106,15 @@ function addUserInterest(tag, chipsId) {
 }
 
 function removeUserInterest(tag, chipsId) {
-  const t = normalizeTag(tag);
-  App.user.interests = App.user.interests.filter(x => x.toLowerCase() !== t.toLowerCase());
+  const cleanTag = normalizeTag(tag);
+  App.user.interests = App.user.interests.filter(x => x.toLowerCase() !== cleanTag.toLowerCase());
   App.user.trainerInterests = (Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [])
-    .filter(x => String(x).toLowerCase() !== t.toLowerCase());
+    .filter(x => String(x).toLowerCase() !== cleanTag.toLowerCase());
   try { localStorage.setItem("usly_user_interests", JSON.stringify(App.user.interests)); } catch(_) {}
   refreshInterestUi();
   renderInterestChips(chipsId);
   syncUserInterests();
-  toast(t("profileInterests.removedToast", { tag: t }));
+  toast(t("profileInterests.removedToast", { tag: cleanTag }));
 }
 
 function renderInterestChips(chipsId) {
@@ -10673,6 +10676,27 @@ function handlePasswordResetTokenFromUrl() {
 
 document.addEventListener("DOMContentLoaded", handlePasswordResetTokenFromUrl);
 
+function passwordEyeIconHtml(isVisible) {
+  return isVisible
+    ? `<span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M3.6 3.6l16.8 16.8"></path><path d="M10.4 6.3A9.8 9.8 0 0 1 12 6.2c5.8 0 9.2 5.8 9.2 5.8a15.8 15.8 0 0 1-3.1 3.6"></path><path d="M14.1 14.1A2.9 2.9 0 0 1 9.9 9.9"></path><path d="M6.4 6.9A15.8 15.8 0 0 0 2.8 12s3.4 5.8 9.2 5.8c1.2 0 2.3-.25 3.3-.66"></path></svg></span>`
+    : `<span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span>`;
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = $(inputId);
+  if (!input) return;
+
+  const show = input.type === "password";
+  input.type = show ? "text" : "password";
+
+  if (btn) {
+    btn.classList.toggle("is-visible", show);
+    btn.innerHTML = passwordEyeIconHtml(show);
+    btn.setAttribute("aria-label", show ? (btn.dataset.hideLabel || "Ukryj hasło") : (btn.dataset.showLabel || "Pokaż hasło"));
+  }
+}
+
+
 
 /* ------------------------- Admin reports recovery ------------------------- */
 
@@ -10702,3 +10726,4 @@ window.toggleTrainerInterest = toggleTrainerInterest;
 window.savePartnerSettings = savePartnerSettings;
 window.publishPartnerEvent = publishPartnerEvent;
 window.savePartnerEventDraft = savePartnerEventDraft;
+window.togglePasswordVisibility = togglePasswordVisibility;

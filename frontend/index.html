@@ -2242,7 +2242,10 @@ section#S11_PLANS .card[data-plan].is-current{
               <input id="loginId" type="text" placeholder="np. ola_88 / ola@email.com" data-i18n-placeholder="login.email_placeholder" autocomplete="username" />
   
               <label data-i18n="login.password">Hasło</label>
-              <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+              <div class="passwordField">
+                <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+                <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('loginPass', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+              </div>
   
               <button class="btn mt12" type="button" onclick="loginPrimary()" data-i18n="login.submit">Zaloguj się</button>
   
@@ -2357,10 +2360,16 @@ section#S11_PLANS .card[data-plan].is-current{
                 </div>
 
                 <label class="mt12" data-i18n="register.password">Hasło *</label>
-                <input id="regPass" type="password" placeholder="Minimum 8 znaków" data-i18n-placeholder="register.password_placeholder" autocomplete="new-password" />
+                <div class="passwordField">
+                  <input id="regPass" type="password" placeholder="Minimum 8 znaków" data-i18n-placeholder="register.password_placeholder" autocomplete="new-password" />
+                  <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPass', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                </div>
 
                 <label class="mt12" data-i18n="register.repeat_password">Powtórz hasło *</label>
-                <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" data-i18n-placeholder="register.repeat_password_placeholder" autocomplete="new-password" />
+                <div class="passwordField">
+                  <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" data-i18n-placeholder="register.repeat_password_placeholder" autocomplete="new-password" />
+                  <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPassRepeat', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                </div>
               </div>
 
               <div id="regUserBox">
@@ -2370,7 +2379,7 @@ section#S11_PLANS .card[data-plan].is-current{
                   
 
                   <label class="mt12" data-i18n="register.birthdate">Data urodzenia *</label>
-                  <input id="regBirthDate" type="date" required />
+                  <input id="regBirthDate" class="mobileDateTimeInput" type="date" required />
                   <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
                    Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
                   </div>

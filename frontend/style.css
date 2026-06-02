@@ -4846,3 +4846,73 @@ button[id^="notifBtn"]:active{
   font-weight: 1100 !important;
   letter-spacing: .04em !important;
 }
+
+/* === Password visibility toggle (login/register) === */
+.passwordField{
+  position: relative;
+  width: 100%;
+}
+
+.passwordField input{
+  padding-right: 48px;
+}
+
+.passwordToggleBtn{
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255,255,255,.08);
+  color: rgba(234,240,255,.86);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.passwordToggleBtn:active{
+  transform: translateY(-50%) scale(.96);
+}
+
+.passwordEyeIcon{
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+}
+
+.passwordEyeIcon svg{
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.passwordToggleBtn{
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.18), rgba(255,255,255,0) 54%),
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.045));
+  color: rgba(234,240,255,.72);
+  backdrop-filter: blur(10px);
+  transition: color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.passwordToggleBtn:hover,
+.passwordToggleBtn.is-visible{
+  color: rgba(247,251,255,.96);
+  border-color: rgba(52,230,255,.30);
+  box-shadow:
+    0 0 0 3px rgba(52,230,255,.08),
+    0 8px 20px rgba(0,0,0,.16);
+}
+
