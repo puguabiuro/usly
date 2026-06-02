@@ -10518,6 +10518,8 @@ function refreshInterestUi() {
       input.placeholder = t("profileInterests.limitPlaceholder");
       input.onclick = () => toast(t("profileInterests.limitToast"));
     } else {
+      const placeholderKey = input.getAttribute("data-i18n-placeholder");
+      if (placeholderKey) input.placeholder = t(placeholderKey);
       input.onclick = null;
     }
   });
