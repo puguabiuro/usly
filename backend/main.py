@@ -6780,6 +6780,29 @@ def admin_bug_reporter_context(
         db.close()
 
 
+@app.get("/admin/social-summary")
+def admin_social_summary(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "dashboard")
+
+    db = SessionLocal()
+    try:
+        groups_count = db.query(Group).count()
+        group_memberships_count = db.query(GroupMembership).count()
+        active_friendships_count = db.query(Friendship).filter(Friendship.status == "accepted").count()
+        pending_friend_requests_count = db.query(Friendship).filter(Friendship.status == "pending").count()
+        pending_group_invitations_count = db.query(GroupInvitation).filter(GroupInvitation.status == "pending").count()
+
+        return ok({
+            "groups_count": groups_count,
+            "group_memberships_count": group_memberships_count,
+            "active_friendships_count": active_friendships_count,
+            "pending_friend_requests_count": pending_friend_requests_count,
+            "pending_group_invitations_count": pending_group_invitations_count,
+        })
+    finally:
+        db.close()
+
+
 @app.get("/admin/users")
 def admin_list_users(current_user: User = Depends(require_role("admin"))):
     require_admin_permission(current_user, "users")

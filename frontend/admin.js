@@ -2184,12 +2184,13 @@ async function reloadAdminDashboard() {
   if (summaryBox) summaryBox.innerHTML = adminEmpty("Ładowanie danych dashboardu...");
 
   try {
-    const [usersRes, eventsRes, userReportsRes, eventReportsRes, bugReportsRes] = await Promise.all([
+    const [usersRes, eventsRes, userReportsRes, eventReportsRes, bugReportsRes, socialSummaryRes] = await Promise.all([
       window.apiFetch("/admin/users"),
       window.apiFetch("/admin/events"),
       window.apiFetch("/admin/user-reports"),
       window.apiFetch("/admin/event-reports"),
       window.apiFetch("/admin/bug-reports"),
+      window.apiFetch("/admin/social-summary"),
     ]);
 
     const users = Array.isArray(usersRes?.data?.items) ? usersRes.data.items : [];
@@ -2197,6 +2198,7 @@ async function reloadAdminDashboard() {
     const userReports = Array.isArray(userReportsRes?.data) ? userReportsRes.data : [];
     const eventReports = Array.isArray(eventReportsRes?.data) ? eventReportsRes.data : [];
     const bugReports = Array.isArray(bugReportsRes?.data) ? bugReportsRes.data : [];
+    const socialSummary = socialSummaryRes?.data || {};
 
     Admin.users = users;
     Admin.events = events;
@@ -2233,6 +2235,110 @@ async function reloadAdminDashboard() {
     const openReportStatuses = new Set(["new", "in_review", "accepted", "in_progress"]);
     const openReports = [...userReports, ...eventReports, ...bugReports].filter(r => openReportStatuses.has(String(r.status || "new")));
 
+    const normalizeAdminTag = (value) => String(value || "")
+      .replace(/^#+/, "")
+      .trim()
+      .toLowerCase();
+
+    const collectTopInterests = (sourceUsers, limit = 15) => {
+      const counts = new Map();
+      sourceUsers.forEach((u) => {
+        const interests = Array.isArray(u.interests) ? u.interests : [];
+        interests.forEach((raw) => {
+          const tag = normalizeAdminTag(raw);
+          if (!tag) return;
+          counts.set(tag, (counts.get(tag) || 0) + 1);
+        });
+      });
+      return Array.from(counts.entries())
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "pl"))
+        .slice(0, limit);
+    };
+
+    const renderTopInterestsChart = (title, items) => {
+      if (!items.length) {
+        return `
+          <div class="adminDashboardBlock">
+            <div class="adminMiniSectionTitle">${escapeAdmin(title)}</div>
+            ${adminEmpty("Brak danych o zainteresowaniach.")}
+          </div>
+        `;
+      }
+
+      const max = Math.max(...items.map(item => item.count), 1);
+      return `
+        <div class="adminDashboardBlock">
+          <div class="adminMiniSectionTitle">${escapeAdmin(title)}</div>
+          ${items.map(item => {
+            const pct = Math.max(4, Math.round((item.count / max) * 100));
+            return `
+              <div class="adminChartRow">
+                <div>
+                  <strong>#${escapeAdmin(item.tag)}</strong>
+                  <span>${item.count === 1 ? "1 użycie" : `${item.count} użyć`}</span>
+                </div>
+                <div class="adminChartBar"><i style="width:${pct}%"></i></div>
+                <b>${item.count}</b>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    };
+
+    const collectTopEventInterests = (sourceEvents, limit = 15) => {
+      const counts = new Map();
+      sourceEvents.forEach((ev) => {
+        const tag = normalizeAdminTag(ev.interest_tag);
+        if (!tag) return;
+        counts.set(tag, (counts.get(tag) || 0) + 1);
+      });
+      return Array.from(counts.entries())
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "pl"))
+        .slice(0, limit);
+    };
+
+    const companionUsers = users.filter(u => String(u.role || "") === "user");
+    const topInterestsUsers = collectTopInterests(companionUsers, 15);
+    const topInterestsEvents = collectTopEventInterests(events, 15);
+    const topInterestsAll = collectTopInterests(companionUsers, 15);
+    topInterestsEvents.forEach((evItem) => {
+      const existing = topInterestsAll.find(item => item.tag === evItem.tag);
+      if (existing) existing.count += evItem.count;
+      else topInterestsAll.push({ tag: evItem.tag, count: evItem.count });
+    });
+    topInterestsAll.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "pl"));
+    topInterestsAll.length = Math.min(topInterestsAll.length, 15);
+
+    const topInterestSets = {
+      all: topInterestsAll,
+      users: topInterestsUsers,
+      events: topInterestsEvents,
+    };
+
+    const renderTopInterestsSwitchChart = () => `
+      <div class="adminInterestTabs">
+        <button class="adminInterestTab is-active" type="button" data-admin-interest-mode="all">Razem</button>
+        <button class="adminInterestTab" type="button" data-admin-interest-mode="users">Towarzysze</button>
+        <button class="adminInterestTab" type="button" data-admin-interest-mode="events">Wydarzenia</button>
+      </div>
+      <div id="adminTopInterestsChart">
+        ${renderTopInterestsChart("Razem", topInterestSets.all)}
+      </div>
+    `;
+
+    window.renderAdminInterestMode = (mode) => {
+      const key = ["all", "users", "events"].includes(mode) ? mode : "all";
+      const title = key === "users" ? "Towarzysze" : key === "events" ? "Wydarzenia" : "Razem";
+      const box = document.getElementById("adminTopInterestsChart");
+      if (box) box.innerHTML = renderTopInterestsChart(title, topInterestSets[key]);
+      document.querySelectorAll("[data-admin-interest-mode]").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.adminInterestMode === key);
+      });
+    };
+
     if (updatedAt) updatedAt.textContent = new Date().toLocaleString("pl-PL");
 
     if (summaryBox) {
@@ -2252,6 +2358,17 @@ async function reloadAdminDashboard() {
           </div>
         </div>
 
+        <div class="adminDashboardBlock adminDashboardBlockHighlighted" data-admin-csv-section="Społeczność">
+          <div class="adminMiniSectionTitle">Społeczność</div>
+          <div class="adminMetricGrid">
+            <div class="adminMetricCard" data-admin-csv-metric="Grupy"><span>Grupy</span><strong>${Number(socialSummary.groups_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Członkostwa w grupach"><span>Członkostwa w grupach</span><strong>${Number(socialSummary.group_memberships_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Aktywne znajomości"><span>Aktywne znajomości</span><strong>${Number(socialSummary.active_friendships_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Oczekujące zaproszenia do znajomych"><span>Oczekujące zaproszenia do znajomych</span><strong>${Number(socialSummary.pending_friend_requests_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Oczekujące zaproszenia do grup"><span>Oczekujące zaproszenia do grup</span><strong>${Number(socialSummary.pending_group_invitations_count || 0)}</strong></div>
+          </div>
+        </div>
+
         <div class="adminDashboardBlock adminDashboardBlockHighlighted">
           <div class="adminMiniSectionTitle">W wybranym okresie: ${rangeValue === "all" ? "cały okres" : `ostatnie ${rangeValue} dni`}</div>
           <div class="adminMetricGrid">
@@ -2260,8 +2377,18 @@ async function reloadAdminDashboard() {
             <div class="adminMetricCard"><span>Zgłoszenia</span><strong>${reportsInRange.length}</strong></div>
           </div>
         </div>
+
+        <div class="adminDashboardBlock adminDashboardBlockHighlighted">
+          <div class="adminMiniSectionTitle">Top 15 zainteresowań #</div>
+          <div class="adminHistoryMeta">Przełącz widok: razem, zainteresowania Towarzyszy albo hashtagi wydarzeń. Pomaga planować treści na Instagram, TikTok i kampanie.</div>
+          ${renderTopInterestsSwitchChart()}
+        </div>
       `;
     }
+
+    document.querySelectorAll("[data-admin-interest-mode]").forEach((btn) => {
+      btn.addEventListener("click", () => window.renderAdminInterestMode(btn.dataset.adminInterestMode));
+    });
 
     
     const userPrices = { free: 0, plus: 19, premium: 39, vip: 79 };
@@ -2763,6 +2890,35 @@ function exportAdminDashboardCsv() {
 
       rows.push([]);
     });
+
+    document.querySelectorAll("[data-admin-csv-section]").forEach((section) => {
+      const sectionName = section.getAttribute("data-admin-csv-section") || "Sekcja";
+      rows.push([sectionName]);
+
+      section.querySelectorAll("[data-admin-csv-metric]").forEach((metric) => {
+        const label = metric.getAttribute("data-admin-csv-metric") || metric.querySelector("span")?.textContent?.trim() || "";
+        const value = metric.querySelector("strong")?.textContent?.trim() || "";
+        rows.push([label, value]);
+      });
+
+      rows.push([]);
+    });
+
+    const activeInterestMode = document.querySelector("[data-admin-interest-mode].is-active")?.textContent?.trim() || "Razem";
+    const interestRows = Array.from(document.querySelectorAll("#adminTopInterestsChart .adminChartRow"));
+
+    if (interestRows.length) {
+      rows.push([`TOP 15 ZAINTERESOWAŃ # - ${activeInterestMode}`]);
+      rows.push(["Hashtag", "Użycia"]);
+
+      interestRows.forEach((row) => {
+        const hashtag = row.querySelector("strong")?.textContent?.trim() || "";
+        const value = row.querySelector("b")?.textContent?.trim() || "";
+        rows.push([hashtag, value]);
+      });
+
+      rows.push([]);
+    }
 
     rows.push(["MRR TIMELINE"]);
     rows.push(["Month", "Total", "Towarzysze", "Organizatorzy"]);

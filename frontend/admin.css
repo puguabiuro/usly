@@ -1256,3 +1256,27 @@ body{
   cursor: not-allowed;
   pointer-events: auto;
 }
+
+.adminInterestTabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:12px 0 10px;
+}
+
+.adminInterestTab{
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);
+  color:#9fb0d1;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.adminInterestTab.is-active{
+  color:#fff;
+  border-color:rgba(88,211,255,.35);
+  background:rgba(88,211,255,.14);
+}
