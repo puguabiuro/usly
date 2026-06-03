@@ -2369,6 +2369,17 @@ async function reloadAdminDashboard() {
           </div>
         </div>
 
+        <div class="adminDashboardBlock adminDashboardBlockHighlighted" data-admin-csv-section="Bezpieczeństwo i zgodność">
+          <div class="adminMiniSectionTitle">Bezpieczeństwo i zgodność</div>
+          <div class="adminMetricGrid">
+            <div class="adminMetricCard" data-admin-csv-metric="Aktywne blokady użytkowników"><span>Aktywne blokady użytkowników</span><strong>${Number(socialSummary.user_blocks_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Zablokowane konta"><span>Zablokowane konta</span><strong>${Number(socialSummary.blocked_accounts_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Usunięte konta"><span>Usunięte konta</span><strong>${Number(socialSummary.deleted_accounts_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Aktywne konta bez weryfikacji e-mail"><span>Aktywne konta bez weryfikacji e-mail</span><strong>${Number(socialSummary.unverified_accounts_count || 0)}</strong></div>
+            <div class="adminMetricCard" data-admin-csv-metric="Otwarte zgłoszenia"><span>Otwarte zgłoszenia</span><strong>${openReports.length}</strong></div>
+          </div>
+        </div>
+
         <div class="adminDashboardBlock adminDashboardBlockHighlighted">
           <div class="adminMiniSectionTitle">W wybranym okresie: ${rangeValue === "all" ? "cały okres" : `ostatnie ${rangeValue} dni`}</div>
           <div class="adminMetricGrid">

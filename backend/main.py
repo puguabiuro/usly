@@ -1077,6 +1077,48 @@ def reset_password(payload: ResetPasswordRequest, request: Request):
 
 # =========================
 # AUTH  DELETE ACCOUNT (SOFT DELETE)
+def cleanup_user_social_relations_for_soft_delete(db, user_id: int):
+    db.query(Friendship).filter(
+        (Friendship.requester_user_id == user_id)
+        | (Friendship.addressee_user_id == user_id)
+    ).delete(synchronize_session=False)
+
+    db.query(GroupMembership).filter(
+        GroupMembership.user_id == user_id
+    ).delete(synchronize_session=False)
+
+    db.query(GroupInvitation).filter(
+        (GroupInvitation.inviter_user_id == user_id)
+        | (GroupInvitation.invitee_user_id == user_id)
+    ).delete(synchronize_session=False)
+
+    db.query(EventSignup).filter(
+        EventSignup.user_id == user_id
+    ).delete(synchronize_session=False)
+
+    db.query(EventSave).filter(
+        EventSave.user_id == user_id
+    ).delete(synchronize_session=False)
+
+    db.query(UserBlock).filter(
+        (UserBlock.blocker_user_id == user_id)
+        | (UserBlock.blocked_user_id == user_id)
+    ).delete(synchronize_session=False)
+
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user_id
+    ).delete(synchronize_session=False)
+
+    db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user_id
+    ).delete(synchronize_session=False)
+
+    db.query(UserNotification).filter(
+        (UserNotification.user_id == user_id)
+        | (UserNotification.partner_user_id == user_id)
+    ).delete(synchronize_session=False)
+
+
 # =========================
 @app.post("/auth/delete-account")
 def delete_account(
@@ -1103,10 +1145,7 @@ def delete_account(
         for g in owned_groups:
             db.delete(g)
 
-        db.query(Friendship).filter(
-            (Friendship.requester_user_id == current_user.id)
-            | (Friendship.addressee_user_id == current_user.id)
-        ).delete(synchronize_session=False)
+        cleanup_user_social_relations_for_soft_delete(db, current_user.id)
 
         original_email = user.email
         safe_email = f"deleted_{user.id}_{int(datetime.utcnow().timestamp())}@deleted.usly.local"
@@ -5922,6 +5961,8 @@ def admin_delete_user_account(
         for g in owned_groups:
             db.delete(g)
 
+        cleanup_user_social_relations_for_soft_delete(db, user.id)
+
         original_email = user.email
         safe_email = f"deleted_{user.id}_{int(datetime.utcnow().timestamp())}@deleted.usly.local"
 
@@ -6791,6 +6832,13 @@ def admin_social_summary(current_user: User = Depends(require_role("admin"))):
         active_friendships_count = db.query(Friendship).filter(Friendship.status == "accepted").count()
         pending_friend_requests_count = db.query(Friendship).filter(Friendship.status == "pending").count()
         pending_group_invitations_count = db.query(GroupInvitation).filter(GroupInvitation.status == "pending").count()
+        user_blocks_count = db.query(UserBlock).count()
+        blocked_accounts_count = db.query(User).filter(User.status == UserStatus.BLOCKED.value).count()
+        deleted_accounts_count = db.query(User).filter(User.status == UserStatus.DELETED.value).count()
+        unverified_accounts_count = db.query(User).filter(
+            User.status == UserStatus.ACTIVE.value,
+            User.email_verified_at.is_(None),
+        ).count()
 
         return ok({
             "groups_count": groups_count,
@@ -6798,6 +6846,10 @@ def admin_social_summary(current_user: User = Depends(require_role("admin"))):
             "active_friendships_count": active_friendships_count,
             "pending_friend_requests_count": pending_friend_requests_count,
             "pending_group_invitations_count": pending_group_invitations_count,
+            "user_blocks_count": user_blocks_count,
+            "blocked_accounts_count": blocked_accounts_count,
+            "deleted_accounts_count": deleted_accounts_count,
+            "unverified_accounts_count": unverified_accounts_count,
         })
     finally:
         db.close()
