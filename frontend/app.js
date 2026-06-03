@@ -2840,6 +2840,8 @@ async function setUserPlan(plan, silent = false) {
   if (!allowed.includes(plan)) return;
 
   const prevPlan = App.user.plan;
+  App.user.plan = plan;
+  try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, plan); } catch(_) {}
 
   const btnIds = [
     "uplan_free", "uplan_plus", "uplan_premium", "uplan_vip",
@@ -9227,6 +9229,7 @@ function renderInterestChips(chipsId) {
     box.appendChild(chip);
   });
   renderTrainerInterestBoxes();
+  refreshInterestUi();
 }
 
 function getTrainerInterestLimit() {
