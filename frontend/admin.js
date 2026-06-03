@@ -280,7 +280,13 @@ function renderAdminEvents(items) {
           <tr>
             <td><strong>#${escapeAdmin(ev.id)}</strong></td>
             <td>${escapeAdmin(ev.title || "Wydarzenie")}<br><span>${escapeAdmin(ev.interest_tag || "—")}</span></td>
-            <td>${escapeAdmin(ev.organizer_name || "—")}<br><span>${escapeAdmin(ev.organizer_email || "—")}</span></td>
+            <td>
+              ${escapeAdmin(ev.organizer_name || "—")}<br>
+              <span>${escapeAdmin(ev.organizer_email || "—")}</span><br>
+              <span style="font-size:12px;">
+                ${ev.organizer_email_verified ? "✅ Zweryfikowany e-mail" : "❌ Niezweryfikowany e-mail"}
+              </span>
+            </td>
             <td>${adminStatusBadge(ev.lifecycle_status || ev.status || "draft")}</td>
             <td>${escapeAdmin(ev.start_at || "—")}</td>
             <td>${escapeAdmin([ev.city, ev.where].filter(Boolean).join(", ") || "—")}</td>
@@ -352,8 +358,10 @@ function renderAdminUsers(items) {
           <th>Rola</th>
           <th>Status</th>
           <th>Pakiet</th>
+          <th>Aktywność</th>
           <th>Miasto</th>
           <th>Data ur.</th>
+          <th>E-mail</th>
           <th>Utworzono</th>
           <th>Akcje</th>
         </tr>
@@ -378,8 +386,17 @@ function renderAdminUsers(items) {
                 ? "—"
                 : `${escapeAdmin(u.plan || "free")}<br><span>${escapeAdmin(u.plan_source || "manual")}</span>`
             }</td>
+            <td>
+              Znajomi: ${escapeAdmin(u.friends_count ?? 0)}<br>
+              <span>Grupy: ${escapeAdmin(u.groups_count ?? 0)} · Eventy: ${escapeAdmin(u.event_signups_count ?? 0)} · Blokady: ${escapeAdmin(u.blocks_count ?? 0)}</span>
+            </td>
             <td>${escapeAdmin(u.city || "—")}</td>
             <td>${escapeAdmin(u.dob || "—")}</td>
+            <td>${
+              u.email_verified
+                ? `Zweryfikowany<br><span>${escapeAdmin(u.email_verified_at || "—")}</span>`
+                : `<span style="color:#b42318;font-weight:700;">Niezweryfikowany</span>`
+            }</td>
             <td>${escapeAdmin(u.created_at || "—")}</td>
             <td>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -401,6 +418,7 @@ async function reloadAdminUsers() {
     const roleFilter = String(document.getElementById("adminUsersRoleFilter")?.value || "all");
     const statusFilter = String(document.getElementById("adminUsersStatusFilter")?.value || "all");
     const planFilter = String(document.getElementById("adminUsersPlanFilter")?.value || "all");
+    const emailFilter = String(document.getElementById("adminUsersEmailFilter")?.value || "all");
 
     Admin.users = items;
 
@@ -419,6 +437,8 @@ async function reloadAdminUsers() {
       if (roleFilter !== "all" && String(u.role || "") !== roleFilter) return false;
       if (statusFilter !== "all" && String(u.status || "") !== statusFilter) return false;
       if (planFilter !== "all" && String(u.plan || "") !== planFilter) return false;
+      if (emailFilter === "verified" && !u.email_verified) return false;
+      if (emailFilter === "unverified" && u.email_verified) return false;
 
       return true;
     });
@@ -2873,6 +2893,7 @@ document.getElementById("adminUserSearch")?.addEventListener("input", reloadAdmi
 document.getElementById("adminUsersRoleFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersStatusFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersPlanFilter")?.addEventListener("change", reloadAdminUsers);
+document.getElementById("adminUsersEmailFilter")?.addEventListener("change", reloadAdminUsers);
 
 
 function exportAdminDashboardCsv() {

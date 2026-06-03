@@ -6863,7 +6863,12 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
 
     db = SessionLocal()
     try:
-        users = db.query(User).order_by(User.created_at.desc()).all()
+        users = (
+            db.query(User)
+            .filter(User.role != UserRole.ADMIN.value)
+            .order_by(User.created_at.desc())
+            .all()
+        )
 
         user_profiles = {
             profile.user_id: profile
@@ -6915,6 +6920,23 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                     avatar_url = getattr(user_profile, "avatar_url", None)
                     bio = getattr(user_profile, "bio", None)
 
+            friends_count = db.query(Friendship).filter(
+                Friendship.status == "accepted",
+                ((Friendship.requester_user_id == user.id) | (Friendship.addressee_user_id == user.id))
+            ).count()
+
+            blocks_count = db.query(UserBlock).filter(
+                (UserBlock.blocker_user_id == user.id) | (UserBlock.blocked_user_id == user.id)
+            ).count()
+
+            groups_count = db.query(GroupMembership).filter(
+                GroupMembership.user_id == user.id
+            ).count()
+
+            event_signups_count = db.query(EventSignup).filter(
+                EventSignup.user_id == user.id
+            ).count()
+
             items.append({
                 "id": user.id,
                 "email": user.email,
@@ -6925,6 +6947,8 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "admin_level": user.admin_level,
                 "city": city,
                 "dob": str(user.dob) if getattr(user, "dob", None) else None,
+                "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
+                "email_verified": bool(getattr(user, "email_verified_at", None)),
                 "created_at": str(user.created_at) if user.created_at else None,
                 "plan": plan,
                 "plan_source": plan_source,
@@ -6933,6 +6957,10 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "avatar_url": avatar_url,
                 "bio": bio,
                 "interests": interests,
+                "friends_count": friends_count,
+                "blocks_count": blocks_count,
+                "groups_count": groups_count,
+                "event_signups_count": event_signups_count,
             })
 
         return ok({"items": items, "count": len(items)})
@@ -7120,6 +7148,8 @@ def admin_list_events(current_user: User = Depends(require_role("admin"))):
                 "event_cover_url": getattr(ev, "event_cover_url", None),
                 "partner_user_id": ev.partner_user_id,
                 "organizer_email": getattr(organizer, "email", None),
+                "organizer_email_verified": bool(getattr(organizer, "email_verified_at", None)),
+                "organizer_email_verified_at": str(organizer.email_verified_at) if organizer and getattr(organizer, "email_verified_at", None) else None,
                 "organizer_name": getattr(organizer_profile, "nazwa", None) or getattr(organizer, "email", None),
                 "organizer_status": getattr(organizer, "status", None),
                 "organizer_plan": getattr(organizer_profile, "plan", None) if organizer_profile else None,
