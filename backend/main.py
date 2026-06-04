@@ -1078,14 +1078,50 @@ def reset_password(payload: ResetPasswordRequest, request: Request):
 # =========================
 # AUTH  DELETE ACCOUNT (SOFT DELETE)
 def cleanup_user_social_relations_for_soft_delete(db, user_id: int):
+    owned_event_ids = [
+        row[0]
+        for row in db.query(Event.id).filter(Event.partner_user_id == user_id).all()
+    ]
+
+    if owned_event_ids:
+        db.query(EventSignup).filter(
+            EventSignup.event_id.in_(owned_event_ids)
+        ).delete(synchronize_session=False)
+
+        db.query(EventSave).filter(
+            EventSave.event_id.in_(owned_event_ids)
+        ).delete(synchronize_session=False)
+
+        db.query(Event).filter(
+            Event.id.in_(owned_event_ids)
+        ).update(
+            {
+                Event.status: EventStatus.ARCHIVED.value,
+                Event.updated_at: datetime.utcnow(),
+            },
+            synchronize_session=False,
+        )
+
     db.query(Friendship).filter(
         (Friendship.requester_user_id == user_id)
         | (Friendship.addressee_user_id == user_id)
     ).delete(synchronize_session=False)
 
+    affected_group_ids = [
+        row[0]
+        for row in db.query(GroupMembership.group_id).filter(GroupMembership.user_id == user_id).all()
+    ]
+
     db.query(GroupMembership).filter(
         GroupMembership.user_id == user_id
     ).delete(synchronize_session=False)
+
+    for group_id in affected_group_ids:
+        count = db.query(GroupMembership).filter(GroupMembership.group_id == group_id).count()
+        db.query(Group).filter(Group.id == group_id).update(
+            {Group.members_count: count, Group.updated_at: datetime.utcnow()},
+            synchronize_session=False,
+        )
 
     db.query(GroupInvitation).filter(
         (GroupInvitation.inviter_user_id == user_id)
@@ -1103,6 +1139,11 @@ def cleanup_user_social_relations_for_soft_delete(db, user_id: int):
     db.query(UserBlock).filter(
         (UserBlock.blocker_user_id == user_id)
         | (UserBlock.blocked_user_id == user_id)
+    ).delete(synchronize_session=False)
+
+    db.query(Message).filter(
+        (Message.sender_user_id == user_id)
+        | (Message.recipient_user_id == user_id)
     ).delete(synchronize_session=False)
 
     db.query(PasswordResetToken).filter(
