@@ -6138,7 +6138,7 @@ def admin_create_user_account(
     plan_status = str((payload or {}).get("plan_status") or "active").strip().lower()
 
     allowed_plans = {"free", "plus", "premium", "vip", "pro", "enterprise"}
-    allowed_sources = {"manual", "paid", "barter", "promo", "test", "system"}
+    allowed_sources = {"manual", "paid", "barter", "promo", "ambassador", "test", "system"}
     allowed_statuses = {"active", "inactive", "expired", "trial"}
 
     if not email or "@" not in email:
@@ -6431,9 +6431,17 @@ def admin_update_user_plan(
     plan = str((payload or {}).get("plan") or "").strip().lower()
     plan_source = str((payload or {}).get("plan_source") or "manual").strip().lower()
     plan_status = str((payload or {}).get("plan_status") or "active").strip().lower()
+    plan_expires_at_raw = str((payload or {}).get("plan_expires_at") or "").strip()
+    plan_expires_at = None
+
+    if plan_expires_at_raw:
+        try:
+            plan_expires_at = datetime.fromisoformat(plan_expires_at_raw.replace("Z", "+00:00"))
+        except Exception:
+            raise HTTPException(status_code=422, detail="INVALID_PLAN_EXPIRES_AT")
 
     allowed_plans = {"free", "plus", "premium", "vip", "pro", "enterprise"}
-    allowed_sources = {"manual", "paid", "barter", "promo", "test", "system"}
+    allowed_sources = {"manual", "paid", "barter", "promo", "ambassador", "test", "system"}
     allowed_statuses = {"active", "inactive", "expired", "trial"}
 
     if plan not in allowed_plans:
@@ -6459,6 +6467,7 @@ def admin_update_user_plan(
             profile.plan_source = plan_source
             profile.plan_status = plan_status
             profile.plan_updated_at = now
+            profile.plan_expires_at = plan_expires_at
             profile.updated_at = now
             db.add(profile)
         else:
@@ -6469,6 +6478,7 @@ def admin_update_user_plan(
             profile.plan_source = plan_source
             profile.plan_status = plan_status
             profile.plan_updated_at = now
+            profile.plan_expires_at = plan_expires_at
 
             if plan not in {"premium", "vip"}:
                 profile.trainer_interests_json = None
@@ -6480,7 +6490,7 @@ def admin_update_user_plan(
             AuditLog(
                 user_id=user.id,
                 action="admin_update_user_plan",
-                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; plan={plan}; source={plan_source}; status={plan_status}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; plan={plan}; source={plan_source}; status={plan_status}; expires_at={plan_expires_at.isoformat() if plan_expires_at else '-'}",
             )
         )
         db.commit()
@@ -6491,6 +6501,7 @@ def admin_update_user_plan(
             "plan": plan,
             "plan_source": plan_source,
             "plan_status": plan_status,
+            "plan_expires_at": plan_expires_at.isoformat() if plan_expires_at else None,
         })
     finally:
         db.close()
@@ -6525,16 +6536,19 @@ def admin_user_preview(
             account_plan_source = getattr(partner_profile, "plan_source", None) or "manual"
             account_plan_status = getattr(partner_profile, "plan_status", None) or "active"
             account_plan_updated_at = str(partner_profile.plan_updated_at) if partner_profile and partner_profile.plan_updated_at else None
+            account_plan_expires_at = str(partner_profile.plan_expires_at) if partner_profile and getattr(partner_profile, "plan_expires_at", None) else None
         elif user.role == UserRole.ADMIN.value:
             account_plan = None
             account_plan_source = None
             account_plan_status = None
             account_plan_updated_at = None
+            account_plan_expires_at = None
         else:
             account_plan = getattr(profile, "plan", None) if profile else "free"
             account_plan_source = getattr(profile, "plan_source", None) if profile else None
             account_plan_status = getattr(profile, "plan_status", None) if profile else None
             account_plan_updated_at = str(profile.plan_updated_at) if profile and profile.plan_updated_at else None
+            account_plan_expires_at = str(profile.plan_expires_at) if profile and getattr(profile, "plan_expires_at", None) else None
 
         interests = []
         if profile and profile.zainteresowania_json:
@@ -6597,6 +6611,7 @@ def admin_user_preview(
             "plan_source": account_plan_source,
             "plan_status": account_plan_status,
             "plan_updated_at": account_plan_updated_at,
+            "plan_expires_at": account_plan_expires_at,
             "plan_history": [
                 {
                     "created_at": str(log.created_at) if log.created_at else None,
@@ -7009,6 +7024,38 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
             for profile in db.query(PartnerProfile).all()
         }
 
+        user_report_stats = {}
+        reports_file = Path(__file__).resolve().parent / "data" / "user_reports.jsonl"
+        if reports_file.exists():
+            with reports_file.open("r", encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        row = json.loads(line)
+                    except Exception:
+                        continue
+
+                    reported_user_id = int(row.get("reported_user_id") or 0)
+                    if not reported_user_id:
+                        continue
+
+                    stats = user_report_stats.setdefault(reported_user_id, {
+                        "reports_total": 0,
+                        "reports_open": 0,
+                        "warnings_count": 0,
+                        "moderation_decisions_count": 0,
+                    })
+
+                    status = str(row.get("status") or "new")
+                    warning_type = str(row.get("warning_type") or "").strip()
+
+                    stats["reports_total"] += 1
+                    if status not in {"resolved", "rejected", "archived"}:
+                        stats["reports_open"] += 1
+                    if warning_type:
+                        stats["warnings_count"] += 1
+                    if status in {"resolved", "rejected", "archived", "pending_owner_approval"}:
+                        stats["moderation_decisions_count"] += 1
+
         items = []
         for user in users:
             user_profile = user_profiles.get(user.id)
@@ -7028,6 +7075,7 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 plan_source = getattr(partner_profile, "plan_source", None)
                 plan_status = getattr(partner_profile, "plan_status", None)
                 plan_updated_at = str(partner_profile.plan_updated_at) if partner_profile and partner_profile.plan_updated_at else None
+                plan_expires_at = str(partner_profile.plan_expires_at) if partner_profile and getattr(partner_profile, "plan_expires_at", None) else None
                 avatar_url = getattr(partner_profile, "logo_url", None)
                 bio = getattr(partner_profile, "bio", None)
             else:
@@ -7040,6 +7088,7 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                     plan_source = None
                     plan_status = None
                     plan_updated_at = None
+                    plan_expires_at = None
                     avatar_url = None
                     bio = None
                 else:
@@ -7047,6 +7096,7 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                     plan_source = getattr(user_profile, "plan_source", None) if user_profile else None
                     plan_status = getattr(user_profile, "plan_status", None) if user_profile else None
                     plan_updated_at = str(user_profile.plan_updated_at) if user_profile and user_profile.plan_updated_at else None
+                    plan_expires_at = str(user_profile.plan_expires_at) if user_profile and getattr(user_profile, "plan_expires_at", None) else None
                     avatar_url = getattr(user_profile, "avatar_url", None)
                     bio = getattr(user_profile, "bio", None)
 
@@ -7067,6 +7117,13 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 EventSignup.user_id == user.id
             ).count()
 
+            moderation_stats = user_report_stats.get(user.id, {
+                "reports_total": 0,
+                "reports_open": 0,
+                "warnings_count": 0,
+                "moderation_decisions_count": 0,
+            })
+
             items.append({
                 "id": user.id,
                 "email": user.email,
@@ -7084,6 +7141,7 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "plan_source": plan_source,
                 "plan_status": plan_status,
                 "plan_updated_at": plan_updated_at,
+                "plan_expires_at": plan_expires_at,
                 "avatar_url": avatar_url,
                 "bio": bio,
                 "interests": interests,
@@ -7091,6 +7149,10 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "blocks_count": blocks_count,
                 "groups_count": groups_count,
                 "event_signups_count": event_signups_count,
+                "reports_total": moderation_stats["reports_total"],
+                "reports_open": moderation_stats["reports_open"],
+                "warnings_count": moderation_stats["warnings_count"],
+                "moderation_decisions_count": moderation_stats["moderation_decisions_count"],
             })
 
         return ok({"items": items, "count": len(items)})
@@ -7709,6 +7771,9 @@ def validate_promo_campaign(code: str):
         if campaign.status != "active":
             raise HTTPException(status_code=409, detail="PROMO_CODE_INACTIVE")
 
+        if campaign.valid_from and campaign.valid_from > now:
+            raise HTTPException(status_code=409, detail="PROMO_CODE_NOT_STARTED")
+
         if campaign.valid_until and campaign.valid_until < now:
             raise HTTPException(status_code=410, detail="PROMO_CODE_EXPIRED")
 
@@ -7726,7 +7791,10 @@ def validate_promo_campaign(code: str):
             "reward_value": campaign.reward_value,
             "ios_offer_code": campaign.ios_offer_code,
             "android_promo_code": campaign.android_promo_code,
+            "valid_from": campaign.valid_from.isoformat() if campaign.valid_from else None,
             "valid_until": campaign.valid_until.isoformat() if campaign.valid_until else None,
+            "max_uses": campaign.max_uses,
+            "uses_count": campaign.uses_count,
         })
     finally:
         db.close()

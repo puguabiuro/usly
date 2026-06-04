@@ -272,6 +272,7 @@ function renderAdminEvents(items) {
           <th>Miasto</th>
           <th>Zapisani</th>
           <th>Obserwujący</th>
+          <th>Audyt</th>
           <th>Akcje</th>
         </tr>
       </thead>
@@ -293,6 +294,12 @@ function renderAdminEvents(items) {
             <td>${escapeAdmin(ev.signups_count || 0)} / ${escapeAdmin(ev.capacity || "∞")}</td>
             <td>${escapeAdmin(ev.saves_count || 0)}</td>
             <td>
+              <strong>${escapeAdmin(ev.organizer_plan || "free")}</strong><br>
+              <span>Konto: ${escapeAdmin(ev.organizer_status || "—")}</span><br>
+              <span>Utw.: ${escapeAdmin(ev.created_at || "—")}</span><br>
+              <span>Akt.: ${escapeAdmin(ev.updated_at || "—")}</span>
+            </td>
+            <td>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button class="tableAction" type="button" onclick="openEventPreview('${escapeAdmin(ev.id)}')">Podgląd</button>
               </div>
@@ -301,6 +308,23 @@ function renderAdminEvents(items) {
         `).join("")}
       </tbody>
     </table>
+  `;
+}
+
+function renderAdminEventsMetrics(items) {
+  const box = document.getElementById("adminEventsMetrics");
+  if (!box) return;
+
+  const statusCount = (status) => items.filter((ev) => String(ev.lifecycle_status || ev.status || "").toLowerCase() === status).length;
+  const totalSignups = items.reduce((sum, ev) => sum + Number(ev.signups_count || 0), 0);
+  const totalSaves = items.reduce((sum, ev) => sum + Number(ev.saves_count || 0), 0);
+  const organizers = new Set(items.map((ev) => String(ev.partner_user_id || "")).filter(Boolean));
+
+  box.innerHTML = `
+    <div class="adminMetricCard"><span>Wydarzenia</span><strong>${items.length}</strong></div>
+    <div class="adminMetricCard"><span>Opublikowane / Zakończone / Archiwum</span><strong>${statusCount("published")} / ${statusCount("ended")} / ${statusCount("archived")}</strong></div>
+    <div class="adminMetricCard"><span>Zapisy / Obserwacje</span><strong>${totalSignups} / ${totalSaves}</strong></div>
+    <div class="adminMetricCard"><span>Organizatorzy</span><strong>${organizers.size}</strong></div>
   `;
 }
 
@@ -331,6 +355,7 @@ async function reloadAdminEvents() {
       return true;
     });
 
+    renderAdminEventsMetrics(filtered);
     renderAdminEvents(filtered);
   } catch (e) {
     console.error("reloadAdminEvents error", e);
@@ -359,6 +384,7 @@ function renderAdminUsers(items) {
           <th>Status</th>
           <th>Pakiet</th>
           <th>Aktywność</th>
+          <th>Moderacja</th>
           <th>Miasto</th>
           <th>Data ur.</th>
           <th>E-mail</th>
@@ -384,11 +410,15 @@ function renderAdminUsers(items) {
             <td>${
               String(u.role || "") === "admin"
                 ? "—"
-                : `${escapeAdmin(u.plan || "free")}<br><span>${escapeAdmin(u.plan_source || "manual")}</span>`
+                : `${escapeAdmin(u.plan || "free")}<br><span>${escapeAdmin(u.plan_source || "manual")} · ${escapeAdmin(u.plan_status || "active")}</span><br><span>Ważne do: ${escapeAdmin(String(u.plan_expires_at || "").slice(0, 10) || "—")}</span>`
             }</td>
             <td>
               Znajomi: ${escapeAdmin(u.friends_count ?? 0)}<br>
               <span>Grupy: ${escapeAdmin(u.groups_count ?? 0)} · Eventy: ${escapeAdmin(u.event_signups_count ?? 0)} · Blokady: ${escapeAdmin(u.blocks_count ?? 0)}</span>
+            </td>
+            <td>
+              Zgłoszenia: ${escapeAdmin(u.reports_total ?? 0)}<br>
+              <span>Otwarte: ${escapeAdmin(u.reports_open ?? 0)} · Ostrz.: ${escapeAdmin(u.warnings_count ?? 0)} · Decyzje: ${escapeAdmin(u.moderation_decisions_count ?? 0)}</span>
             </td>
             <td>${escapeAdmin(u.city || "—")}</td>
             <td>${escapeAdmin(u.dob || "—")}</td>
@@ -410,9 +440,63 @@ function renderAdminUsers(items) {
   `;
 }
 
+function getAdminStaffActivityStats(staffId) {
+  const logs = Array.isArray(Admin.staffAuditLog) ? Admin.staffAuditLog : [];
+  const staffLogs = logs.filter((log) => String(log.admin_id || "") === String(staffId || ""));
+  const closedReports = staffLogs.filter((log) => {
+    const action = String(log.action || "").toLowerCase();
+    const details = String(log.details || "").toLowerCase();
+    return (action.includes("report") || details.includes("report")) && (
+      details.includes("resolved") ||
+      details.includes("rejected") ||
+      details.includes("archived") ||
+      details.includes("zamk")
+    );
+  }).length;
+  const warnings = staffLogs.filter((log) => {
+    const action = String(log.action || "").toLowerCase();
+    const details = String(log.details || "").toLowerCase();
+    return action.includes("warning") || details.includes("warning") || details.includes("ostrze");
+  }).length;
+  const escalations = staffLogs.filter((log) => {
+    const action = String(log.action || "").toLowerCase();
+    const details = String(log.details || "").toLowerCase();
+    return action.includes("escal") || details.includes("pending_owner_approval") || details.includes("owner") || details.includes("eskal");
+  }).length;
+
+  return {
+    total: staffLogs.length,
+    closedReports,
+    warnings,
+    escalations,
+    lastActivity: staffLogs[0]?.created_at || null,
+  };
+}
+
+function renderAdminStaffMetrics(items) {
+  const box = document.getElementById("adminStaffMetrics");
+  if (!box) return;
+
+  const logs = Array.isArray(Admin.staffAuditLog) ? Admin.staffAuditLog : [];
+  const levelCount = (level) => items.filter((u) => String(u.admin_level || "owner").toLowerCase() === level).length;
+  const escalations = logs.filter((log) => {
+    const action = String(log.action || "").toLowerCase();
+    const details = String(log.details || "").toLowerCase();
+    return action.includes("escal") || details.includes("pending_owner_approval") || details.includes("owner") || details.includes("eskal");
+  }).length;
+
+  box.innerHTML = `
+    <div class="adminMetricCard"><span>Admini</span><strong>${items.length}</strong></div>
+    <div class="adminMetricCard"><span>Owner / Operations / Support</span><strong>${levelCount("owner")} / ${levelCount("operations")} / ${levelCount("support")}</strong></div>
+    <div class="adminMetricCard"><span>Działania w audit logu</span><strong>${logs.length}</strong></div>
+    <div class="adminMetricCard"><span>Eskalacje</span><strong>${escalations}</strong></div>
+  `;
+}
+
 function renderAdminStaff(items) {
   const box = document.getElementById("adminStaffList");
   setAdminCount("adminStaffCount", items.length);
+  renderAdminStaffMetrics(items);
 
   if (!box) return;
 
@@ -429,8 +513,10 @@ function renderAdminStaff(items) {
           <th>Admin</th>
           <th>Poziom</th>
           <th>Status</th>
+          <th>Aktywność</th>
           <th>E-mail</th>
           <th>Utworzono</th>
+          <th>Akcje</th>
         </tr>
       </thead>
       <tbody>
@@ -441,11 +527,20 @@ function renderAdminStaff(items) {
             <td>${escapeAdmin(u.admin_level || "owner")}</td>
             <td>${adminStatusBadge(u.status || "active")}</td>
             <td>${
+              (() => {
+                const stats = getAdminStaffActivityStats(u.id);
+                return `<strong>${stats.total}</strong> działań<br><span>Zamk.: ${stats.closedReports} · Ostrz.: ${stats.warnings} · Esk.: ${stats.escalations}</span><br><span>Ostatnio: ${escapeAdmin(stats.lastActivity || "—")}</span>`;
+              })()
+            }</td>
+            <td>${
               u.email_verified
                 ? `Zweryfikowany<br><span>${escapeAdmin(u.email_verified_at || "—")}</span>`
                 : `<span style="color:#b42318;font-weight:700;">Niezweryfikowany</span>`
             }</td>
             <td>${escapeAdmin(u.created_at || "—")}</td>
+            <td>
+              <button class="tableAction" type="button" onclick="openStaffPreview('${escapeAdmin(u.id)}')">Podgląd</button>
+            </td>
           </tr>
         `).join("")}
       </tbody>
@@ -506,6 +601,7 @@ async function reloadAdminStaffAuditLog() {
     const items = Array.isArray(res?.data?.items) ? res.data.items : [];
     Admin.staffAuditLog = items;
     renderAdminStaffAuditLog(items);
+    if (Array.isArray(Admin.staff)) renderAdminStaff(Admin.staff);
   } catch (e) {
     console.error("reloadAdminStaffAuditLog error", e);
     const box = document.getElementById("adminStaffAuditLog");
@@ -518,6 +614,7 @@ async function reloadAdminStaff() {
   try {
     const res = await window.apiFetch("/admin/staff");
     const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+    Admin.staff = items;
     renderAdminStaff(items);
   } catch (e) {
     console.error("reloadAdminStaff error", e);
@@ -958,6 +1055,8 @@ async function adminUpdateUserPlan(userId) {
   const plan = document.getElementById("adminUserPlanSelect")?.value || "free";
   const planSource = document.getElementById("adminUserPlanSourceSelect")?.value || "manual";
   const planStatus = document.getElementById("adminUserPlanStatusSelect")?.value || "active";
+  const planExpiresAtDate = document.getElementById("adminUserPlanExpiresAtInput")?.value || "";
+  const planExpiresAt = planExpiresAtDate ? `${planExpiresAtDate}T23:59:59` : "";
 
   try {
     await window.apiFetch(`/admin/users/${encodeURIComponent(userId)}/plan`, {
@@ -967,6 +1066,7 @@ async function adminUpdateUserPlan(userId) {
         plan,
         plan_source: planSource,
         plan_status: planStatus,
+        plan_expires_at: planExpiresAt,
       }),
     });
 
@@ -1035,6 +1135,143 @@ function closeAdminDrawer() {
 
 document.getElementById("adminDrawerClose")?.addEventListener("click", closeAdminDrawer);
 document.getElementById("adminDrawerBackdrop")?.addEventListener("click", closeAdminDrawer);
+
+
+function toggleStaffPreviewLogs(staffId) {
+  const key = String(staffId || "");
+  Admin.showAllStaffLogs = Admin.showAllStaffLogs || {};
+  Admin.showAllStaffLogs[key] = !Admin.showAllStaffLogs[key];
+  openStaffPreview(key);
+}
+
+
+function openStaffPreview(staffId) {
+  const staff = (Admin.staff || []).find((u) => String(u.id) === String(staffId));
+  if (!staff) {
+    adminToast("Nie znaleziono admina w załadowanej liście.");
+    return;
+  }
+
+  const level = String(staff.admin_level || "owner").toLowerCase();
+  const levelLabel = level === "owner"
+    ? "Owner — pełny dostęp"
+    : level === "operations"
+      ? "Operations — społeczność, wydarzenia, plany i zgłoszenia"
+      : "Support — zgłoszenia i obsługa";
+
+  const can = {
+    reports: ["owner", "operations", "moderation", "support"].includes(level),
+    users: ["owner", "operations"].includes(level),
+    events: ["owner", "operations"].includes(level),
+    plans: ["owner", "operations"].includes(level),
+    accountDelete: level === "owner",
+    adminManage: level === "owner",
+  };
+
+  const activityStats = getAdminStaffActivityStats(staff.id);
+
+  const allStaffLogs = (Admin.staffAuditLog || [])
+    .filter((log) => String(log.admin_id || "") === String(staff.id));
+  const showAllStaffLogs = Boolean(Admin.showAllStaffLogs?.[String(staff.id)]);
+  const staffLogs = showAllStaffLogs ? allStaffLogs : allStaffLogs.slice(0, 8);
+
+  const permissionRow = (label, allowed) => `
+    <div class="adminHistoryItem">
+      <div class="adminHistoryTitle">${escapeAdmin(label)}</div>
+      <div class="adminHistoryMeta">${allowed ? "✅ Dostęp" : "❌ Brak dostępu"}</div>
+    </div>
+  `;
+
+  const logRows = staffLogs.length
+    ? staffLogs.map((log) => `
+        <div class="adminHistoryItem">
+          <div class="adminHistoryTitle">${escapeAdmin(log.action || "—")}</div>
+          <div class="adminHistoryMeta">${escapeAdmin(log.created_at || "—")}</div>
+          <div class="adminHistoryMeta">${escapeAdmin(log.details || "—")}</div>
+        </div>
+      `).join("")
+    : `<div class="adminEmpty">Brak ostatnich działań w załadowanym audit logu.</div>`;
+
+  const logsToggle = allStaffLogs.length > staffLogs.length || showAllStaffLogs
+    ? `<div style="display:flex;justify-content:center;margin-top:14px;">
+        <button class="tableAction" type="button" onclick="toggleStaffPreviewLogs('${escapeAdmin(staff.id)}')">
+          ${showAllStaffLogs ? "Pokaż mniej" : "Pokaż więcej historii"}
+        </button>
+      </div>`
+    : "";
+
+  openAdminDrawer(`
+    <div class="adminPreviewCard">
+      <h2>${escapeAdmin(staff.admin_display_name || staff.email || "Admin")}</h2>
+      <p class="adminSystemHint">Podgląd konta admina, poziomu dostępu i ostatnich działań administracyjnych.</p>
+
+      <div class="adminMetricGrid">
+        <div class="adminMetricCard">
+          <span>Poziom</span>
+          <strong>${escapeAdmin(level)}</strong>
+        </div>
+        <div class="adminMetricCard">
+          <span>Status</span>
+          <strong>${escapeAdmin(staff.status || "—")}</strong>
+        </div>
+        <div class="adminMetricCard">
+          <span>E-mail</span>
+          <strong>${staff.email_verified ? "Zweryfikowany" : "Niezweryfikowany"}</strong>
+        </div>
+        <div class="adminMetricCard">
+          <span>Utworzono</span>
+          <strong>${escapeAdmin(staff.created_at || "—")}</strong>
+        </div>
+        <div class="adminMetricCard">
+          <span>Działania</span>
+          <strong>${activityStats.total}</strong>
+        </div>
+        <div class="adminMetricCard">
+          <span>Zamknięte zgłoszenia</span>
+          <strong>${activityStats.closedReports}</strong>
+        </div>
+        <div class="adminMetricCard">
+          <span>Ostrzeżenia</span>
+          <strong>${activityStats.warnings}</strong>
+        </div>
+        <div class="adminMetricCard">
+          <span>Eskalacje</span>
+          <strong>${activityStats.escalations}</strong>
+        </div>
+      </div>
+
+      <div class="adminPreviewGrid">
+        <div class="adminPreviewCard">
+          <h3>Dane konta</h3>
+          <p><strong>Email:</strong> ${escapeAdmin(staff.email || "—")}</p>
+          <p><strong>Poziom:</strong> ${escapeAdmin(levelLabel)}</p>
+          <p><strong>Weryfikacja e-mail:</strong> ${
+            staff.email_verified
+              ? `Zweryfikowany (${escapeAdmin(staff.email_verified_at || "—")})`
+              : "Niezweryfikowany"
+          }</p>
+        </div>
+
+        <div class="adminPreviewCard">
+          <h3>Uprawnienia</h3>
+          ${permissionRow("Zgłoszenia i moderacja", can.reports)}
+          ${permissionRow("Centrum użytkowników", can.users)}
+          ${permissionRow("Centrum wydarzeń", can.events)}
+          ${permissionRow("Plany i pakiety", can.plans)}
+          ${permissionRow("Usuwanie kont", can.accountDelete)}
+          ${permissionRow("Zarządzanie adminami", can.adminManage)}
+        </div>
+      </div>
+
+      <div class="adminPreviewCard">
+        <h3>Ostatnie działania</h3>
+        <p class="adminSystemHint">Ostatnia aktywność: ${escapeAdmin(activityStats.lastActivity || "—")} · Wczytane wpisy: ${staffLogs.length}/${allStaffLogs.length}</p>
+        ${logRows}
+        ${logsToggle}
+      </div>
+    </div>
+  `);
+}
 
 
 function openCreateStaffDrawer() {
@@ -2189,11 +2426,12 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
                       <label class="adminFieldLabel" for="adminUserPlanSourceSelect">Źródło pakietu</label>
                       <select class="adminFieldInput" id="adminUserPlanSourceSelect">
                         ${[
-                          ["manual", "Ręcznie"],
-                          ["paid", "Płatny"],
-                          ["barter", "Barter"],
-                          ["promo", "Promo"],
-                          ["test", "Test"],
+                          ["manual", "Ręcznie / korekta admina"],
+                          ["paid", "Płatność"],
+                          ["barter", "Barter / współpraca"],
+                          ["promo", "Kod promo / kampania"],
+                          ["ambassador", "Ambasador"],
+                          ["test", "Test / dostęp próbny"],
                         ].map(([source, label]) => `<option value="${source}" ${String(u.plan_source || "manual") === source ? "selected" : ""}>${label}</option>`).join("")}
                       </select>
 
@@ -2201,6 +2439,10 @@ async function openUserPreview(userId, reportTicket = '', reportStatus = 'new', 
                       <select class="adminFieldInput" id="adminUserPlanStatusSelect">
                         ${["active","inactive","expired","trial"].map(status => `<option value="${status}" ${String(u.plan_status || "active") === status ? "selected" : ""}>${status}</option>`).join("")}
                       </select>
+
+                      <label class="adminFieldLabel" for="adminUserPlanExpiresAtInput">Ważne do</label>
+                      <input class="adminFieldInput" id="adminUserPlanExpiresAtInput" type="date" value="${escapeAdmin(String(u.plan_expires_at || "").slice(0, 10))}" />
+                      <div class="adminWarnHint">Puste = bez ustawionej daty końca. Wybrany dzień jest ważny do końca tego dnia.</div>
 
                       <button class="adminPrimaryAction" type="button" onclick="adminUpdateUserPlan('${escapeAdmin(u.id)}')">
                         Zapisz pakiet
@@ -2784,6 +3026,8 @@ const buildPlanRows = (role, prices) => {
     const roleStats = (roleUsers, roleUsersInRange, prices) => {
       const paid = roleUsers.filter(u => isPaidAccount(u) && Number(prices[String(u.plan || "free").toLowerCase()] || 0) > 0);
       const barter = roleUsers.filter(u => String(u.plan_source || "").toLowerCase() === "barter");
+      const ambassador = roleUsers.filter(u => String(u.plan_source || "").toLowerCase() === "ambassador");
+      const promo = roleUsers.filter(u => String(u.plan_source || "").toLowerCase() === "promo");
       const free = roleUsers.filter(u => String(u.plan || "free").toLowerCase() === "free");
       const mrr = roleUsers.reduce((sum, u) => {
         const plan = String(u.plan || "free").toLowerCase();
@@ -2799,6 +3043,8 @@ const buildPlanRows = (role, prices) => {
         newCount: roleUsersInRange.length,
         paid: paid.length,
         barter: barter.length,
+        ambassador: ambassador.length,
+        promo: promo.length,
         free: free.length,
         mrr,
         newMrr,
@@ -2819,6 +3065,8 @@ const buildPlanRows = (role, prices) => {
             <div><span>Nowi w okresie</span><strong>${userStats.newCount}</strong></div>
             <div><span>Płatni</span><strong>${userStats.paid}</strong></div>
             <div><span>Barter</span><strong>${userStats.barter}</strong></div>
+            <div><span>Ambasador</span><strong>${userStats.ambassador}</strong></div>
+            <div><span>Promo</span><strong>${userStats.promo}</strong></div>
             <div><span>Free</span><strong>${userStats.free}</strong></div>
             <div><span>MRR</span><strong>${userStats.mrr} zł</strong></div>
             <div><span>Nowy MRR</span><strong>${userStats.newMrr} zł</strong></div>
@@ -2834,6 +3082,8 @@ const buildPlanRows = (role, prices) => {
             <div><span>Nowi w okresie</span><strong>${partnerStats.newCount}</strong></div>
             <div><span>Płatni</span><strong>${partnerStats.paid}</strong></div>
             <div><span>Barter</span><strong>${partnerStats.barter}</strong></div>
+            <div><span>Ambasador</span><strong>${partnerStats.ambassador}</strong></div>
+            <div><span>Promo</span><strong>${partnerStats.promo}</strong></div>
             <div><span>Free</span><strong>${partnerStats.free}</strong></div>
             <div><span>MRR</span><strong>${partnerStats.mrr} zł</strong></div>
             <div><span>Nowy MRR</span><strong>${partnerStats.newMrr} zł</strong></div>
