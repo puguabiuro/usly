@@ -453,6 +453,67 @@ function renderAdminStaff(items) {
   `;
 }
 
+function renderAdminStaffAuditLog(items, showAll = false) {
+  const box = document.getElementById("adminStaffAuditLog");
+  setAdminCount("adminStaffAuditCount", items.length);
+
+  if (!box) return;
+
+  if (!items.length) {
+    box.innerHTML = adminEmpty("Brak wpisów audit logu.");
+    return;
+  }
+
+  const visibleItems = showAll ? items : items.slice(0, 15);
+  const hasMore = items.length > visibleItems.length;
+
+  box.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Admin</th>
+          <th>Poziom</th>
+          <th>Akcja</th>
+          <th>Szczegóły</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${visibleItems.map((log) => `
+          <tr>
+            <td>${escapeAdmin(log.created_at || "—")}</td>
+            <td>${escapeAdmin(log.admin_display_name || log.admin_email || `User #${log.admin_id || "—"}`)}<br><span>${escapeAdmin(log.admin_email || "—")}</span></td>
+            <td>${escapeAdmin(log.admin_level || "—")}</td>
+            <td><strong>${escapeAdmin(log.action || "—")}</strong></td>
+            <td>${escapeAdmin(log.details || "—")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+    ${hasMore ? `
+      <div style="display:flex;justify-content:center;margin-top:14px;">
+        <button class="tableAction" type="button" onclick="renderAdminStaffAuditLog(Admin.staffAuditLog || [], true)">
+          Pokaż więcej historii
+        </button>
+      </div>
+    ` : ""}
+  `;
+}
+
+async function reloadAdminStaffAuditLog() {
+  try {
+    const res = await window.apiFetch("/admin/staff/audit-log");
+    const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+    Admin.staffAuditLog = items;
+    renderAdminStaffAuditLog(items);
+  } catch (e) {
+    console.error("reloadAdminStaffAuditLog error", e);
+    const box = document.getElementById("adminStaffAuditLog");
+    if (box) box.innerHTML = adminEmpty("Nie udało się pobrać historii działań adminów.");
+    adminToast(e?.userMessage || "Nie udało się pobrać historii adminów.");
+  }
+}
+
 async function reloadAdminStaff() {
   try {
     const res = await window.apiFetch("/admin/staff");
@@ -3042,7 +3103,10 @@ function showAdminView(view) {
   if (createStaffBtn) createStaffBtn.hidden = adminLevel() !== "owner";
 
   if (view === "users") reloadAdminUsers().catch(() => {});
-  if (view === "staff" && typeof reloadAdminStaff === "function") reloadAdminStaff().catch(() => {});
+  if (view === "staff" && typeof reloadAdminStaff === "function") {
+    reloadAdminStaff().catch(() => {});
+    if (typeof reloadAdminStaffAuditLog === "function") reloadAdminStaffAuditLog().catch(() => {});
+  }
   if (view === "events") reloadAdminEvents().catch(() => {});
   if (view === "promo" && typeof reloadAdminPromoCampaigns === "function") reloadAdminPromoCampaigns().catch(() => {});
 }

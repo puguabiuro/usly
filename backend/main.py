@@ -6872,6 +6872,46 @@ def admin_social_summary(current_user: User = Depends(require_role("admin"))):
         db.close()
 
 
+@app.get("/admin/staff/audit-log")
+def admin_staff_audit_log(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "admin_manage")
+
+    db = SessionLocal()
+    try:
+        logs = (
+            db.query(AuditLog)
+            .order_by(AuditLog.created_at.desc())
+            .limit(100)
+            .all()
+        )
+
+        admin_ids = [log.user_id for log in logs if log.user_id]
+        admins = {
+            user.id: user
+            for user in db.query(User).filter(User.id.in_(admin_ids)).all()
+        } if admin_ids else {}
+
+        items = []
+        for log in logs:
+            actor = admins.get(log.user_id)
+            items.append({
+                "id": log.id,
+                "created_at": str(log.created_at) if log.created_at else None,
+                "action": log.action,
+                "details": log.details,
+                "ip": log.ip,
+                "user_agent": log.user_agent,
+                "admin_id": actor.id if actor else log.user_id,
+                "admin_email": actor.email if actor else None,
+                "admin_display_name": (actor.admin_display_name or actor.email) if actor else None,
+                "admin_level": actor.admin_level if actor else None,
+            })
+
+        return ok({"items": items})
+    finally:
+        db.close()
+
+
 @app.get("/admin/staff")
 def admin_list_staff(current_user: User = Depends(require_role("admin"))):
     require_admin_permission(current_user, "admin_manage")

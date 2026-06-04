@@ -270,6 +270,64 @@
         <section class="adminGrid">
           <article class="adminPanel adminPanelWide">
             <div class="adminPanelHead">
+              <h2>Widok uprawnień</h2>
+              <span>Owner / Operations / Support</span>
+            </div>
+            <div class="adminSystemHint">
+              Podział dostępu w panelu administracyjnym. Support obsługuje zgłoszenia, Operations zarządza społecznością i wydarzeniami, Owner ma pełną kontrolę nad systemem.
+            </div>
+            <div class="adminTableBox">
+              <table class="adminTable">
+                <thead>
+                  <tr>
+                    <th>Poziom</th>
+                    <th>Zgłoszenia</th>
+                    <th>Użytkownicy</th>
+                    <th>Wydarzenia</th>
+                    <th>Plany</th>
+                    <th>Blokady/statusy</th>
+                    <th>Usuwanie kont</th>
+                    <th>Admini</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Owner</strong><br><span>pełny dostęp</span></td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅ tworzenie i zarządzanie</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Operations</strong><br><span>operacje i społeczność</span></td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌ owner-only</td>
+                    <td>❌ owner-only</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Support</strong><br><span>obsługa zgłoszeń</span></td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
               <h2>Admini</h2>
               <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                 <button class="adminPrimary" type="button" id="adminCreateStaffBtn">Utwórz admina</button>
@@ -279,7 +337,18 @@
             <div class="adminSystemHint">
               Personel systemu: Owner, Operations i Support. Docelowo tutaj będą tworzenie kont adminowych, uprawnienia, ostatnia aktywność i audit log.
             </div>
-            <div id="adminStaffList" class="adminTableBox">Moduł Admini w przygotowaniu.</div>
+            <div id="adminStaffList" class="adminTableBox">Ładowanie adminów...</div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Historia działań adminów</h2>
+              <span id="adminStaffAuditCount">0</span>
+            </div>
+            <div class="adminSystemHint">
+              Ostatnie działania zapisane w AuditLog. Ten widok pomaga ustalić, kto wykonał operację administracyjną.
+            </div>
+            <div id="adminStaffAuditLog" class="adminTableBox">Ładowanie historii...</div>
           </article>
         </section>
       </section>
