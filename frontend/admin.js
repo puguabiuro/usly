@@ -2840,7 +2840,7 @@ async function reloadAdminDashboard() {
             <div class="adminMetricCard"><span>Zakończone wydarzenia</span><strong>${endedEvents.length}</strong></div>
             <div class="adminMetricCard"><span>Szkice wydarzeń</span><strong>${draftEvents.length}</strong></div>
             <div class="adminMetricCard"><span>Archiwum wydarzeń</span><strong>${archivedEvents.length}</strong></div>
-            <div class="adminMetricCard"><span>Otwarte zgłoszenia</span><strong>${openReports.length}</strong></div>
+            <div><span>Otwarte zgłoszenia</span><strong>${openReports.length}</strong></div>
             <div class="adminMetricCard"><span>Bug reporty</span><strong>${bugReports.length}</strong></div>
           </div>
         </div>
@@ -3565,6 +3565,21 @@ document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) 
 })();
 
 
+function adminPromoOwnerOptions(selectedId = "") {
+  const users = Array.isArray(Admin.users) ? Admin.users : [];
+  const options = users
+    .filter((u) => String(u.role || "") !== "admin" && String(u.status || "active").toLowerCase() === "active")
+    .map((u) => {
+      const label = `${u.display_name || u.email || "Użytkownik"} (#${u.id}) — ${u.role || "user"} — ${u.email || "brak email"}`;
+      const selected = String(u.id) === String(selectedId || "") ? " selected" : "";
+      return `<option value="${escapeAdmin(u.id)}"${selected}>${escapeAdmin(label)}</option>`;
+    })
+    .join("");
+
+  return `<option value="">Brak — zwykły kod bez ambasadora</option>${options}`;
+}
+
+
 function renderAdminPromoCampaigns(items) {
   const el = document.getElementById("adminPromoList");
   if (!el) return;
@@ -3595,7 +3610,7 @@ function renderAdminPromoCampaigns(items) {
             <td><strong>${escapeAdmin(c.code || "—")}</strong><br><span>${escapeAdmin(c.name || "—")}</span></td>
             <td>${escapeAdmin(c.target_role || "user")}</td>
             <td>${escapeAdmin(c.benefit_type || "—")}<br><span>${escapeAdmin(c.benefit_value ?? "—")}${c.benefit_duration_months ? ` / ${escapeAdmin(c.benefit_duration_months)} mies.` : ""}</span></td>
-            <td>${escapeAdmin(c.reward_type || "—")}<br><span>${escapeAdmin(c.reward_value ?? "—")}</span></td>
+            <td>${escapeAdmin(c.reward_type || "—")}<br><span>${escapeAdmin(c.reward_value ?? "—")} mies. · próg ${escapeAdmin(c.reward_threshold ?? "—")}</span></td>
             <td>${escapeAdmin(c.uses_count || 0)}${c.max_uses ? ` / ${escapeAdmin(c.max_uses)}` : ""}</td>
             <td>${adminStatusBadge(c.status || "active")}</td>
             <td>
@@ -3634,6 +3649,12 @@ function openCreatePromoDrawer() {
       <label class="adminFieldLabel" for="promoNameInput">Nazwa kampanii</label>
       <input class="adminFieldInput" id="promoNameInput" type="text" placeholder="np. Kampania TikTok Aga" />
 
+      <label class="adminFieldLabel" for="promoOwnerUserIdInput">Właściciel kodu / ambasador</label>
+      <select class="adminFieldInput" id="promoOwnerUserIdInput">
+        ${adminPromoOwnerOptions()}
+      </select>
+      <div class="adminSystemHint">Puste = zwykły kod bez ambasadora. Wybranemu kontu przedłużymy dostęp po spełnieniu warunków ambasadorskich.</div>
+
       <label class="adminFieldLabel" for="promoTargetRoleInput">Dla kogo</label>
       <select class="adminFieldInput" id="promoTargetRoleInput">
         <option value="user">Towarzysz</option>
@@ -3655,8 +3676,12 @@ function openCreatePromoDrawer() {
       <label class="adminFieldLabel" for="promoBenefitDurationInput">Czas korzyści w miesiącach</label>
       <input class="adminFieldInput" id="promoBenefitDurationInput" type="number" min="1" max="12" value="1" />
 
-      <label class="adminFieldLabel" for="promoRewardValueInput">Nagroda promotora: miesiące VIP</label>
+      <label class="adminFieldLabel" for="promoRewardValueInput">Nagroda ambasadora: miesiące VIP</label>
       <input class="adminFieldInput" id="promoRewardValueInput" type="number" min="0" placeholder="np. 1" />
+
+      <label class="adminFieldLabel" for="promoRewardThresholdInput">Próg nagrody: aktywowane płatne plany</label>
+      <input class="adminFieldInput" id="promoRewardThresholdInput" type="number" min="10" value="10" placeholder="minimum 10" />
+      <div class="adminSystemHint">Minimum 10. Przykład: 10 + nagroda 1 mies. = co 10 opłaconych aktywacji ambasador dostaje +1 miesiąc.</div>
 
       <label class="adminFieldLabel" for="promoMaxUsesInput">Limit użyć</label>
       <input class="adminFieldInput" id="promoMaxUsesInput" type="number" min="0" placeholder="Puste = bez limitu" />
@@ -3674,11 +3699,13 @@ document.getElementById("adminCreatePromoBtn")?.addEventListener("click", openCr
 async function submitCreatePromoCampaign() {
   const code = String(document.getElementById("promoCodeInput")?.value || "").trim().toUpperCase();
   const name = String(document.getElementById("promoNameInput")?.value || "").trim();
+  const owner_user_id = String(document.getElementById("promoOwnerUserIdInput")?.value || "").trim();
   const target_role = String(document.getElementById("promoTargetRoleInput")?.value || "user").trim();
   const benefit_type = String(document.getElementById("promoBenefitTypeInput")?.value || "discount_percent").trim();
   const benefit_value = String(document.getElementById("promoBenefitValueInput")?.value || "").trim();
   const benefit_duration_months = String(document.getElementById("promoBenefitDurationInput")?.value || "").trim();
   const reward_value = String(document.getElementById("promoRewardValueInput")?.value || "").trim();
+  const reward_threshold = String(document.getElementById("promoRewardThresholdInput")?.value || "").trim();
   const max_uses = String(document.getElementById("promoMaxUsesInput")?.value || "").trim();
   const note = String(document.getElementById("promoNoteInput")?.value || "").trim();
 
@@ -3694,12 +3721,14 @@ async function submitCreatePromoCampaign() {
       body: JSON.stringify({
         code,
         name,
+        owner_user_id: owner_user_id || null,
         target_role,
         benefit_type,
         benefit_value: benefit_value || null,
         benefit_duration_months: benefit_duration_months || null,
         reward_type: reward_value ? "vip_months" : "none",
         reward_value: reward_value || null,
+        reward_threshold: reward_value ? (reward_threshold || "10") : null,
         max_uses: max_uses || null,
         note,
       }),
@@ -3714,6 +3743,33 @@ async function submitCreatePromoCampaign() {
   }
 }
 
+function adminPromoRoleLabel(role) {
+  const value = String(role || "").toLowerCase();
+  if (value === "both") return "Towarzysz + Organizator";
+  if (value === "partner") return "Organizator";
+  if (value === "user") return "Towarzysz";
+  return role || "—";
+}
+
+function adminPromoBenefitLabel(type, value, months) {
+  const benefitType = String(type || "").toLowerCase();
+  const benefitValue = value ?? "—";
+  const duration = months ? ` przez ${months} mies.` : "";
+  if (benefitType === "discount_percent") return `${benefitValue}% zniżki${duration}`;
+  if (benefitType === "free_months") return `${benefitValue} darmowe mies.`;
+  if (benefitType === "trial_days") return `${benefitValue} dni okresu próbnego`;
+  if (benefitType === "store_offer") return "Oferta App Store / Google Play";
+  return `${type || "—"} ${benefitValue}`;
+}
+
+function adminPromoRewardLabel(type, value) {
+  const rewardType = String(type || "").toLowerCase();
+  if (rewardType === "none") return "Brak nagrody";
+  if (rewardType === "vip_months") return `+${value || 0} mies. VIP`;
+  return `${type || "—"} ${value ?? ""}`;
+}
+
+
 async function openPromoCampaignPreview(campaignId) {
   try {
     const res = await window.apiFetch(`/admin/promo-campaigns/${encodeURIComponent(campaignId)}`);
@@ -3722,27 +3778,81 @@ async function openPromoCampaignPreview(campaignId) {
     const stats = data.stats || {};
     const redemptions = Array.isArray(data.redemptions) ? data.redemptions : [];
 
+    const paidActivations = Number(stats.paid_activations_count ?? 0);
+    const rewardThreshold = Number(c.reward_threshold || 0);
+    const progressToReward = rewardThreshold > 0 ? paidActivations % rewardThreshold : 0;
+    const missingToReward = rewardThreshold > 0 ? (progressToReward === 0 && paidActivations > 0 ? 0 : rewardThreshold - progressToReward) : null;
+    const rolePlanBreakdown = stats.role_plan_breakdown || {};
+    const userBreakdown = rolePlanBreakdown.user || {};
+    const partnerBreakdown = rolePlanBreakdown.partner || {};
+    const breakdownRows = [
+      ["Towarzysz", "Plus", userBreakdown.plus || 0],
+      ["Towarzysz", "Premium", userBreakdown.premium || 0],
+      ["Towarzysz", "VIP", userBreakdown.vip || 0],
+      ["Organizator", "Pro", partnerBreakdown.pro || 0],
+      ["Organizator", "Premium", partnerBreakdown.premium || 0],
+      ["Organizator", "Enterprise", partnerBreakdown.enterprise || 0],
+    ];
+
     openAdminDrawer(`
       <h2>Kod ${escapeAdmin(c.code || "—")}</h2>
-      <p class="adminSystemHint">${escapeAdmin(c.name || "Kampania promocyjna")} · ${escapeAdmin(c.target_role || "—")} · ${escapeAdmin(c.status || "—")}</p>
+      <p class="adminSystemHint">${escapeAdmin(c.name || "Kampania promocyjna")} · ${escapeAdmin(adminPromoRoleLabel(c.target_role))} · ${escapeAdmin(c.status || "—")}</p>
 
-      <div class="adminStatsGrid">
-        <div><span>Użycia</span><strong>${escapeAdmin(stats.redemptions_count ?? 0)}</strong></div>
-        <div><span>Aktywne plany</span><strong>${escapeAdmin(stats.active_count ?? 0)}</strong></div>
-        <div><span>Premium</span><strong>${escapeAdmin(stats.premium_count ?? 0)}</strong></div>
-        <div><span>VIP</span><strong>${escapeAdmin(stats.vip_count ?? 0)}</strong></div>
+      <div class="adminPreviewCard">
+        <h3>Podsumowanie kodu</h3>
+        <div class="adminInfoList">
+          <div><span>Korzyść dla użytkownika</span><strong>${escapeAdmin(adminPromoBenefitLabel(c.benefit_type, c.benefit_value, c.benefit_duration_months))}</strong></div>
+          <div><span>Limit użyć</span><strong>${escapeAdmin(c.max_uses ?? "bez limitu")}</strong></div>
+          <div><span>Oferta sklepowa Apple</span><strong>${escapeAdmin(c.ios_offer_code || "—")}</strong></div>
+          <div><span>Oferta sklepowa Google</span><strong>${escapeAdmin(c.android_promo_code || "—")}</strong></div>
+        </div>
       </div>
 
-      <div class="adminInfoGrid mt16">
-        <div><span>Korzyść</span><strong>${escapeAdmin(c.benefit_type || "—")} ${escapeAdmin(c.benefit_value ?? "")}</strong></div>
-        <div><span>Czas korzyści</span><strong>${escapeAdmin(c.benefit_duration_months ?? "—")} mies.</strong></div>
-        <div><span>Nagroda promotora</span><strong>${escapeAdmin(c.reward_type || "—")} ${escapeAdmin(c.reward_value ?? "")}</strong></div>
-        <div><span>Limit użyć</span><strong>${escapeAdmin(c.max_uses ?? "bez limitu")}</strong></div>
-        <div><span>Apple Offer Code</span><strong>${escapeAdmin(c.ios_offer_code || "—")}</strong></div>
-        <div><span>Google Promo Code</span><strong>${escapeAdmin(c.android_promo_code || "—")}</strong></div>
+      <div class="adminMetricGrid mt16">
+        <div class="adminMetricCard"><span>Użycia kodu</span><strong>${escapeAdmin(stats.redemptions_count ?? 0)}</strong></div>
+        <div class="adminMetricCard"><span>Aktywowane płatne plany</span><strong>${escapeAdmin(paidActivations)}</strong></div>
+        <div class="adminMetricCard"><span>Towarzysze płatne</span><strong>${escapeAdmin(stats.paid_user_count ?? 0)}</strong></div>
+        <div class="adminMetricCard"><span>Organizatorzy płatne</span><strong>${escapeAdmin(stats.paid_partner_count ?? 0)}</strong></div>
+      </div>
+
+      <div class="adminPreviewCard mt16">
+        <h3>Ambasador i nagroda</h3>
+        <div class="adminInfoList">
+          <div><span>Właściciel kodu</span><strong>${escapeAdmin(c.owner_display_name || "Brak — zwykły kod bez ambasadora")}</strong></div>
+          <div><span>E-mail / rola</span><strong>${escapeAdmin(c.owner_email || "—")} ${c.owner_role ? `· ${escapeAdmin(adminPromoRoleLabel(c.owner_role))}` : ""}</strong></div>
+          <div><span>Nagroda</span><strong>${escapeAdmin(adminPromoRewardLabel(c.reward_type, c.reward_value))}</strong></div>
+          <div><span>Próg nagrody</span><strong>${escapeAdmin(c.reward_threshold ?? "—")} aktywowanych płatnych planów</strong></div>
+          <div><span>Postęp do kolejnej nagrody</span><strong>${rewardThreshold ? `${escapeAdmin(progressToReward)} / ${escapeAdmin(rewardThreshold)}` : "—"}</strong></div>
+          <div><span>Brakuje do nagrody</span><strong>${missingToReward === null ? "—" : escapeAdmin(missingToReward)}</strong></div>
+        </div>
       </div>
 
       <h3 class="mt16">Użycia kodu</h3>
+      <div class="adminPreviewCard">
+        <h3>Zakupione pakiety z tego kodu</h3>
+        <div class="adminTableBox">
+          <table class="adminTable">
+            <thead>
+              <tr>
+                <th>Rola</th>
+                <th>Pakiet</th>
+                <th>Liczba aktywowanych płatnych planów</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${breakdownRows.map(([role, plan, count]) => `
+                <tr>
+                  <td>${escapeAdmin(role)}</td>
+                  <td>${escapeAdmin(plan)}</td>
+                  <td><strong>${escapeAdmin(count)}</strong></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 class="mt16">Historia użyć kodu</h3>
       <div class="adminTableBox">
         ${
           redemptions.length

@@ -1111,6 +1111,12 @@ class PromoCampaign(Base):
         default=None,
     )
 
+    reward_threshold: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        default=None,
+    )
+
     max_uses: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,

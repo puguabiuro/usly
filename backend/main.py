@@ -7478,6 +7478,7 @@ def admin_list_promo_campaigns(current_user: User = Depends(require_role("admin"
                     "benefit_duration_months": c.benefit_duration_months,
                     "reward_type": c.reward_type,
                     "reward_value": c.reward_value,
+                    "reward_threshold": c.reward_threshold,
                     "max_uses": c.max_uses,
                     "uses_count": c.uses_count,
                     "valid_from": c.valid_from.isoformat() if c.valid_from else None,
@@ -7511,6 +7512,7 @@ def admin_create_promo_campaign(
     benefit_duration_months = (payload or {}).get("benefit_duration_months")
     reward_type = str((payload or {}).get("reward_type") or "vip_months").strip().lower()
     reward_value = (payload or {}).get("reward_value")
+    reward_threshold = (payload or {}).get("reward_threshold")
     max_uses = (payload or {}).get("max_uses")
     valid_until_raw = str((payload or {}).get("valid_until") or "").strip()
     note = str((payload or {}).get("note") or "").strip() or None
@@ -7543,6 +7545,9 @@ def admin_create_promo_campaign(
     benefit_value = _optional_positive_int(benefit_value, "BENEFIT_VALUE")
     benefit_duration_months = _optional_positive_int(benefit_duration_months, "BENEFIT_DURATION_MONTHS")
     reward_value = _optional_positive_int(reward_value, "REWARD_VALUE")
+    reward_threshold = _optional_positive_int(reward_threshold, "REWARD_THRESHOLD")
+    if reward_type != "none" and reward_value and (reward_threshold is None or reward_threshold < 10):
+        raise HTTPException(status_code=422, detail="INVALID_REWARD_THRESHOLD")
     max_uses = _optional_positive_int(max_uses, "MAX_USES")
 
     if benefit_type == "discount_percent" and (benefit_value is None or benefit_value < 1 or benefit_value > 90):
@@ -7588,6 +7593,7 @@ def admin_create_promo_campaign(
             benefit_duration_months=benefit_duration_months,
             reward_type=reward_type,
             reward_value=reward_value,
+            reward_threshold=reward_threshold,
             max_uses=max_uses,
             valid_from=now,
             valid_until=valid_until,
@@ -7602,7 +7608,7 @@ def admin_create_promo_campaign(
         db.add(AuditLog(
             user_id=current_user.id,
             action="admin_create_promo_campaign",
-            details=f"admin_id={current_user.id}; code={code}; owner_user_id={owner_user_id or '-'}; benefit={benefit_type}:{benefit_value}; duration_months={benefit_duration_months or '-'}; reward={reward_type}:{reward_value or '-'}",
+            details=f"admin_id={current_user.id}; code={code}; owner_user_id={owner_user_id or '-'}; benefit={benefit_type}:{benefit_value}; duration_months={benefit_duration_months or '-'}; reward={reward_type}:{reward_value or '-'}; reward_threshold={reward_threshold or '-'}",
         ))
         db.commit()
         db.refresh(campaign)
@@ -7692,6 +7698,13 @@ def admin_update_promo_campaign(
         if "reward_value" in data:
             campaign.reward_value = _optional_positive_int(data.get("reward_value"), "REWARD_VALUE")
             changes.append("reward_value")
+
+        if "reward_threshold" in data:
+            reward_threshold = _optional_positive_int(data.get("reward_threshold"), "REWARD_THRESHOLD")
+            if campaign.reward_type != "none" and campaign.reward_value and (reward_threshold is None or reward_threshold < 10):
+                raise HTTPException(status_code=422, detail="INVALID_REWARD_THRESHOLD")
+            campaign.reward_threshold = reward_threshold
+            changes.append("reward_threshold")
 
         if "max_uses" in data:
             campaign.max_uses = _optional_positive_int(data.get("max_uses"), "MAX_USES")
@@ -7900,6 +7913,17 @@ def admin_get_promo_campaign(
         if not campaign:
             raise HTTPException(status_code=404, detail="PROMO_CAMPAIGN_NOT_FOUND")
 
+        owner_user = db.query(User).filter(User.id == campaign.owner_user_id).first() if campaign.owner_user_id else None
+        owner_user_profile = db.query(UserProfile).filter(UserProfile.user_id == owner_user.id).first() if owner_user and owner_user.role != UserRole.PARTNER.value else None
+        owner_partner_profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == owner_user.id).first() if owner_user and owner_user.role == UserRole.PARTNER.value else None
+        owner_profile = owner_partner_profile if owner_user and owner_user.role == UserRole.PARTNER.value else owner_user_profile
+        owner_display_name = (
+            getattr(owner_profile, "nick", None)
+            or getattr(owner_profile, "nazwa", None)
+            or (owner_user.admin_display_name if owner_user else None)
+            or (owner_user.email if owner_user else None)
+        )
+
         redemption_rows = (
             db.query(PromoRedemption, User, UserProfile, PartnerProfile)
             .join(User, User.id == PromoRedemption.user_id)
@@ -7912,21 +7936,32 @@ def admin_get_promo_campaign(
         )
 
         redemptions = []
-        active_count = 0
-        premium_count = 0
-        vip_count = 0
+        paid_activations_count = 0
+        paid_user_count = 0
+        paid_partner_count = 0
+        plan_breakdown = {}
+        role_plan_breakdown = {}
 
         for redemption, user, user_profile, partner_profile in redemption_rows:
             profile = partner_profile if user.role == UserRole.PARTNER.value else user_profile
-            plan = getattr(profile, "plan", None) or "free"
-            plan_status = getattr(profile, "plan_status", None) or "active"
+            plan = str(getattr(profile, "plan", None) or "free").lower()
+            plan_status = str(getattr(profile, "plan_status", None) or "active").lower()
+            is_paid_activation = (
+                str(redemption.status or "").lower() == "activated"
+                and plan_status == "active"
+                and plan != "free"
+            )
 
-            if plan_status == "active":
-                active_count += 1
-            if plan == "premium":
-                premium_count += 1
-            if plan == "vip":
-                vip_count += 1
+            if is_paid_activation:
+                paid_activations_count += 1
+                if user.role == UserRole.PARTNER.value:
+                    paid_partner_count += 1
+                else:
+                    paid_user_count += 1
+                plan_breakdown[plan] = plan_breakdown.get(plan, 0) + 1
+                role_key = "partner" if user.role == UserRole.PARTNER.value else "user"
+                role_plan_breakdown.setdefault(role_key, {})
+                role_plan_breakdown[role_key][plan] = role_plan_breakdown[role_key].get(plan, 0) + 1
 
             display_name = (
                 getattr(profile, "nick", None)
@@ -7956,12 +7991,16 @@ def admin_get_promo_campaign(
                 "code": campaign.code,
                 "name": campaign.name,
                 "owner_user_id": campaign.owner_user_id,
+                "owner_display_name": owner_display_name,
+                "owner_email": owner_user.email if owner_user else None,
+                "owner_role": owner_user.role if owner_user else None,
                 "target_role": campaign.target_role,
                 "benefit_type": campaign.benefit_type,
                 "benefit_value": campaign.benefit_value,
                 "benefit_duration_months": campaign.benefit_duration_months,
                 "reward_type": campaign.reward_type,
                 "reward_value": campaign.reward_value,
+                "reward_threshold": campaign.reward_threshold,
                 "max_uses": campaign.max_uses,
                 "uses_count": campaign.uses_count,
                 "valid_from": campaign.valid_from.isoformat() if campaign.valid_from else None,
@@ -7975,9 +8014,11 @@ def admin_get_promo_campaign(
             },
             "stats": {
                 "redemptions_count": len(redemptions),
-                "active_count": active_count,
-                "premium_count": premium_count,
-                "vip_count": vip_count,
+                "paid_activations_count": paid_activations_count,
+                "paid_user_count": paid_user_count,
+                "paid_partner_count": paid_partner_count,
+                "plan_breakdown": plan_breakdown,
+                "role_plan_breakdown": role_plan_breakdown,
             },
             "redemptions": redemptions,
         })
