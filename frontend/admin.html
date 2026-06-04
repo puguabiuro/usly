@@ -36,6 +36,7 @@
       <button class="adminNav" type="button" data-admin-view="reports">Zgłoszenia</button>
       <button class="adminNav" type="button" data-admin-view="owner-approval">Do akceptacji</button>
       <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
+      <button class="adminNav" type="button" data-admin-view="staff">Admini</button>
       <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
       <button class="adminNav" type="button" data-admin-view="promo">Program Ambasadorski</button>
     </aside>
@@ -216,7 +217,6 @@
               <option value="all">Wszystkie role</option>
               <option value="user">Towarzysz</option>
               <option value="partner">Organizator</option>
-              <option value="admin">Admin</option>
             </select>
           </label>
 
@@ -252,7 +252,7 @@
             </select>
           </label>
 
-          <button class="adminPrimary" type="button" id="adminCreateUserBtn">Utwórz konto</button>
+          <button class="adminPrimary" type="button" id="adminCreateUserBtn">Utwórz konto użytkownika</button>
         </section>
 
         <section class="adminGrid">
@@ -262,6 +262,24 @@
               <span id="adminUsersCount">0</span>
             </div>
             <div id="adminUsersList" class="adminTableBox">Ładowanie...</div>
+          </article>
+        </section>
+      </section>
+
+      <section id="adminStaffView" hidden>
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Admini</h2>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <button class="adminPrimary" type="button" id="adminCreateStaffBtn">Utwórz admina</button>
+                <span id="adminStaffCount">0</span>
+              </div>
+            </div>
+            <div class="adminSystemHint">
+              Personel systemu: Owner, Operations i Support. Docelowo tutaj będą tworzenie kont adminowych, uprawnienia, ostatnia aktywność i audit log.
+            </div>
+            <div id="adminStaffList" class="adminTableBox">Moduł Admini w przygotowaniu.</div>
           </article>
         </section>
       </section>

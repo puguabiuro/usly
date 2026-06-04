@@ -28,7 +28,7 @@ function adminCanView(view) {
   const level = adminLevel();
   if (level === "owner") return true;
   if (view === "owner-approval") return false;
-  if (level === "operations") return ["reports", "users", "events", "promo"].includes(view);
+  if (level === "operations") return ["reports", "users", "staff", "events", "promo"].includes(view);
   if (level === "moderation" || level === "support") return view === "reports";
   return view === "reports";
 }
@@ -408,6 +408,60 @@ function renderAdminUsers(items) {
       </tbody>
     </table>
   `;
+}
+
+function renderAdminStaff(items) {
+  const box = document.getElementById("adminStaffList");
+  setAdminCount("adminStaffCount", items.length);
+
+  if (!box) return;
+
+  if (!items.length) {
+    box.innerHTML = adminEmpty("Brak adminów.");
+    return;
+  }
+
+  box.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Admin</th>
+          <th>Poziom</th>
+          <th>Status</th>
+          <th>E-mail</th>
+          <th>Utworzono</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((u) => `
+          <tr>
+            <td><strong>#${escapeAdmin(u.id)}</strong></td>
+            <td>${escapeAdmin(u.admin_display_name || u.email || "Admin")}<br><span>${escapeAdmin(u.email || "—")}</span></td>
+            <td>${escapeAdmin(u.admin_level || "owner")}</td>
+            <td>${adminStatusBadge(u.status || "active")}</td>
+            <td>${
+              u.email_verified
+                ? `Zweryfikowany<br><span>${escapeAdmin(u.email_verified_at || "—")}</span>`
+                : `<span style="color:#b42318;font-weight:700;">Niezweryfikowany</span>`
+            }</td>
+            <td>${escapeAdmin(u.created_at || "—")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function reloadAdminStaff() {
+  try {
+    const res = await window.apiFetch("/admin/staff");
+    const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+    renderAdminStaff(items);
+  } catch (e) {
+    console.error("reloadAdminStaff error", e);
+    adminToast(e?.userMessage || "Nie udało się pobrać listy adminów.");
+  }
 }
 
 async function reloadAdminUsers() {
@@ -922,10 +976,84 @@ document.getElementById("adminDrawerClose")?.addEventListener("click", closeAdmi
 document.getElementById("adminDrawerBackdrop")?.addEventListener("click", closeAdminDrawer);
 
 
+function openCreateStaffDrawer() {
+  openAdminDrawer(`
+    <div class="adminPreviewCard">
+      <h2>Utwórz admina</h2>
+      <p class="adminSystemHint">Tworzenie kont adminowych jest dostępne wyłącznie dla ownera. Konto dostanie hasło tymczasowe i link resetu, jeśli SMTP jest skonfigurowany.</p>
+
+      <div class="adminActionStack">
+        <label class="adminFieldLabel" for="adminCreateStaffEmail">Email</label>
+        <input class="adminFieldInput" id="adminCreateStaffEmail" type="email" placeholder="admin@usly.dev" />
+
+        <label class="adminFieldLabel" for="adminCreateStaffDisplayName">Nazwa admina</label>
+        <input class="adminFieldInput" id="adminCreateStaffDisplayName" type="text" placeholder="np. Support Marta" />
+
+        <label class="adminFieldLabel" for="adminCreateStaffLevel">Poziom dostępu</label>
+        <select class="adminFieldInput" id="adminCreateStaffLevel">
+          <option value="operations">Operations — użytkownicy, wydarzenia, plany, zgłoszenia</option>
+          <option value="support">Support — zgłoszenia i obsługa</option>
+          <option value="owner">Owner — pełny dostęp</option>
+        </select>
+
+        <label class="adminFieldLabel" for="adminCreateStaffPassword">Hasło tymczasowe</label>
+        <input class="adminFieldInput" id="adminCreateStaffPassword" type="text" placeholder="Minimum 6 znaków" />
+
+        <button class="adminPrimaryAction" type="button" onclick="adminCreateStaffAccount()">
+          Utwórz admina
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+async function adminCreateStaffAccount() {
+  const email = String(document.getElementById("adminCreateStaffEmail")?.value || "").trim();
+  const password = String(document.getElementById("adminCreateStaffPassword")?.value || "").trim();
+  const admin_display_name = String(document.getElementById("adminCreateStaffDisplayName")?.value || "").trim();
+  const admin_level = String(document.getElementById("adminCreateStaffLevel")?.value || "").trim();
+
+  if (!email || !email.includes("@")) {
+    adminToast("Podaj poprawny email.");
+    return;
+  }
+
+  if (!admin_display_name) {
+    adminToast("Podaj nazwę admina, np. Support Marta.");
+    return;
+  }
+
+  if (!admin_level) {
+    adminToast("Wybierz poziom dostępu admina.");
+    return;
+  }
+
+  if (password.length < 6) {
+    adminToast("Hasło musi mieć minimum 6 znaków.");
+    return;
+  }
+
+  try {
+    await window.apiFetch("/admin/users/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role: "admin", password, admin_display_name, admin_level }),
+    });
+
+    adminToast("Admin utworzony.");
+    closeAdminDrawer();
+    await reloadAdminStaff();
+  } catch (e) {
+    console.error("adminCreateStaffAccount error", e);
+    adminToast(e?.userMessage || "Nie udało się utworzyć admina.");
+  }
+}
+
+
 function openCreateUserDrawer() {
   openAdminDrawer(`
     <div class="adminPreviewCard">
-      <h2>Utwórz konto</h2>
+      <h2>Utwórz konto użytkownika</h2>
       <p class="adminSystemHint">Konto utworzone z panelu admina powinno docelowo przejść potwierdzenie mailowe. Na tym etapie ustawiamy hasło tymczasowe i zapisujemy akcję w logach.</p>
 
       <div class="adminActionStack">
@@ -936,28 +1064,34 @@ function openCreateUserDrawer() {
         <select class="adminFieldInput" id="adminCreateUserRole">
           <option value="user">Towarzysz</option>
           <option value="partner">Organizator</option>
-          <option value="admin">Admin</option>
         </select>
 
         <label class="adminFieldLabel" for="adminCreateUserDob">Data urodzenia</label>
         <input class="adminFieldInput" id="adminCreateUserDob" type="date" />
-        <div class="adminWarnHint">Data urodzenia jest wymagana dla Towarzysza. Dla Organizatora/Admina może zostać pusta.</div>
+        <div class="adminWarnHint">Data urodzenia jest wymagana dla Towarzysza. Dla Organizatora może zostać pusta.</div>
 
-        <div class="adminInlineNotice">
-          <strong>Dane admina</strong>
-          <span>Uzupełnij tylko, jeśli tworzysz konto z rolą Admin. Tworzenie adminów jest dostępne wyłącznie dla ownera.</span>
-        </div>
+        <label class="adminFieldLabel" for="adminCreateUserPlan">Plan konta</label>
+        <select class="adminFieldInput" id="adminCreateUserPlan"></select>
+        <div class="adminWarnHint">Lista planów dopasuje się do wybranej roli.</div>
 
-        <label class="adminFieldLabel" for="adminCreateAdminDisplayName">Nazwa admina</label>
-        <input class="adminFieldInput" id="adminCreateAdminDisplayName" type="text" placeholder="np. Support Marta" />
-
-        <label class="adminFieldLabel" for="adminCreateAdminLevel">Poziom dostępu admina</label>
-        <select class="adminFieldInput" id="adminCreateAdminLevel">
-          <option value="">Wybierz poziom</option>
-          <option value="owner">Owner — pełny dostęp</option>
-          <option value="operations">Operations — użytkownicy, wydarzenia, plany, zgłoszenia</option>
-          <option value="support">Support — zgłoszenia i obsługa</option>
+        <label class="adminFieldLabel" for="adminCreateUserPlanSource">Źródło planu</label>
+        <select class="adminFieldInput" id="adminCreateUserPlanSource">
+          <option value="manual">Manual</option>
+          <option value="paid">Paid</option>
+          <option value="barter">Barter</option>
+          <option value="promo">Promo</option>
+          <option value="test">Test</option>
+          <option value="system">System</option>
         </select>
+
+        <label class="adminFieldLabel" for="adminCreateUserPlanStatus">Status planu</label>
+        <select class="adminFieldInput" id="adminCreateUserPlanStatus">
+          <option value="active">Aktywny</option>
+          <option value="trial">Trial</option>
+          <option value="inactive">Nieaktywny</option>
+          <option value="expired">Wygasły</option>
+        </select>
+
 
         <label class="adminFieldLabel" for="adminCreateUserPassword">Hasło tymczasowe</label>
         <input class="adminFieldInput" id="adminCreateUserPassword" type="text" placeholder="Minimum 6 znaków" />
@@ -968,6 +1102,33 @@ function openCreateUserDrawer() {
       </div>
     </div>
   `);
+
+  adminUpdateCreateUserPlanOptions();
+  document.getElementById("adminCreateUserRole")?.addEventListener("change", adminUpdateCreateUserPlanOptions);
+}
+
+function adminUpdateCreateUserPlanOptions() {
+  const role = String(document.getElementById("adminCreateUserRole")?.value || "user");
+  const planSelect = document.getElementById("adminCreateUserPlan");
+  if (!planSelect) return;
+
+  const plans = role === "partner"
+    ? [
+        ["free", "Free"],
+        ["pro", "Pro"],
+        ["premium", "Premium"],
+        ["enterprise", "Enterprise"],
+      ]
+    : [
+        ["free", "Free"],
+        ["plus", "Plus"],
+        ["premium", "Premium"],
+        ["vip", "VIP"],
+      ];
+
+  planSelect.innerHTML = plans
+    .map(([value, label]) => `<option value="${value}">${label}</option>`)
+    .join("");
 }
 
 async function adminCreateUserAccount() {
@@ -975,6 +1136,9 @@ async function adminCreateUserAccount() {
   const role = String(document.getElementById("adminCreateUserRole")?.value || "user");
   const dob = String(document.getElementById("adminCreateUserDob")?.value || "").trim();
   const password = String(document.getElementById("adminCreateUserPassword")?.value || "").trim();
+  const plan = String(document.getElementById("adminCreateUserPlan")?.value || "free").trim();
+  const plan_source = String(document.getElementById("adminCreateUserPlanSource")?.value || "manual").trim();
+  const plan_status = String(document.getElementById("adminCreateUserPlanStatus")?.value || "active").trim();
   const admin_display_name = String(document.getElementById("adminCreateAdminDisplayName")?.value || "").trim();
   const admin_level = String(document.getElementById("adminCreateAdminLevel")?.value || "").trim();
 
@@ -1007,7 +1171,7 @@ async function adminCreateUserAccount() {
     const res = await window.apiFetch("/admin/users/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role, dob, password, admin_display_name, admin_level }),
+      body: JSON.stringify({ email, role, dob, password, plan, plan_source, plan_status, admin_display_name, admin_level }),
     });
 
     adminToast("Konto utworzone.");
@@ -2855,6 +3019,7 @@ function showAdminView(view) {
   const reportsView = document.getElementById("adminReportsView");
   const ownerApprovalView = document.getElementById("adminOwnerApprovalView");
   const usersView = document.getElementById("adminUsersView");
+  const staffView = document.getElementById("adminStaffView");
   const eventsView = document.getElementById("adminEventsView");
   const promoView = document.getElementById("adminPromoView");
 
@@ -2866,13 +3031,18 @@ function showAdminView(view) {
   if (reportsView) reportsView.hidden = view !== "reports";
   if (ownerApprovalView) ownerApprovalView.hidden = view !== "owner-approval";
   if (usersView) usersView.hidden = view !== "users";
+  if (staffView) staffView.hidden = view !== "staff";
   if (eventsView) eventsView.hidden = view !== "events";
   if (promoView) promoView.hidden = view !== "promo";
 
   if (view === "dashboard" && typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
   if (view === "reports") reloadAdminReports().catch(() => {});
   if (view === "owner-approval" && typeof reloadOwnerApprovalQueue === "function") reloadOwnerApprovalQueue().catch(() => {});
+  const createStaffBtn = document.getElementById("adminCreateStaffBtn");
+  if (createStaffBtn) createStaffBtn.hidden = adminLevel() !== "owner";
+
   if (view === "users") reloadAdminUsers().catch(() => {});
+  if (view === "staff" && typeof reloadAdminStaff === "function") reloadAdminStaff().catch(() => {});
   if (view === "events") reloadAdminEvents().catch(() => {});
   if (view === "promo" && typeof reloadAdminPromoCampaigns === "function") reloadAdminPromoCampaigns().catch(() => {});
 }
@@ -2889,6 +3059,7 @@ document.querySelectorAll("[data-admin-view]").forEach((btn) => {
 
 document.getElementById("adminStatusFilter")?.addEventListener("change", reloadAdminReports);
 document.getElementById("adminCreateUserBtn")?.addEventListener("click", openCreateUserDrawer);
+document.getElementById("adminCreateStaffBtn")?.addEventListener("click", openCreateStaffDrawer);
 document.getElementById("adminUserSearch")?.addEventListener("input", reloadAdminUsers);
 document.getElementById("adminUsersRoleFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersStatusFilter")?.addEventListener("change", reloadAdminUsers);

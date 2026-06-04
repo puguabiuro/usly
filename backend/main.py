@@ -6092,6 +6092,13 @@ def admin_create_user_account(
     dob_raw = str((payload or {}).get("dob") or "").strip()
     admin_display_name = str((payload or {}).get("admin_display_name") or "").strip()
     admin_level = str((payload or {}).get("admin_level") or "").strip().lower()
+    plan = str((payload or {}).get("plan") or "free").strip().lower()
+    plan_source = str((payload or {}).get("plan_source") or "manual").strip().lower()
+    plan_status = str((payload or {}).get("plan_status") or "active").strip().lower()
+
+    allowed_plans = {"free", "plus", "premium", "vip", "pro", "enterprise"}
+    allowed_sources = {"manual", "paid", "barter", "promo", "test", "system"}
+    allowed_statuses = {"active", "inactive", "expired", "trial"}
 
     if not email or "@" not in email:
         raise HTTPException(status_code=422, detail="INVALID_EMAIL")
@@ -6099,6 +6106,13 @@ def admin_create_user_account(
         raise HTTPException(status_code=422, detail="INVALID_ROLE")
     if len(password) < 6:
         raise HTTPException(status_code=422, detail="PASSWORD_TOO_SHORT")
+    if role != "admin":
+        if plan not in allowed_plans:
+            raise HTTPException(status_code=422, detail="INVALID_PLAN")
+        if plan_source not in allowed_sources:
+            raise HTTPException(status_code=422, detail="INVALID_PLAN_SOURCE")
+        if plan_status not in allowed_statuses:
+            raise HTTPException(status_code=422, detail="INVALID_PLAN_STATUS")
 
     if role == "admin":
         require_admin_permission(current_user, "admin_create")
@@ -6145,9 +6159,9 @@ def admin_create_user_account(
         db.refresh(user)
 
         if role == "user":
-            db.add(UserProfile(user_id=user.id, plan="free", plan_source="manual", plan_status="active"))
+            db.add(UserProfile(user_id=user.id, plan=plan, plan_source=plan_source, plan_status=plan_status))
         elif role == "partner":
-            db.add(PartnerProfile(user_id=user.id, plan="free", plan_source="manual", plan_status="active"))
+            db.add(PartnerProfile(user_id=user.id, plan=plan, plan_source=plan_source, plan_status=plan_status))
 
         token = str(uuid4())
         reset_row = PasswordResetToken(
@@ -6212,7 +6226,7 @@ def admin_create_user_account(
             AuditLog(
                 user_id=user.id,
                 action="admin_create_user_account",
-                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; created_role={role}; created_admin_display_name={admin_display_name or '-'}; created_admin_level={admin_level or '-'}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; created_role={role}; created_admin_display_name={admin_display_name or '-'}; created_admin_level={admin_level or '-'}; plan={plan if role != 'admin' else '-'}; source={plan_source if role != 'admin' else '-'}; status={plan_status if role != 'admin' else '-'}; emailed={1 if emailed else 0}; email_error={email_error or '-'}",
             )
         )
         db.commit()
@@ -6222,6 +6236,9 @@ def admin_create_user_account(
             "email": user.email,
             "role": user.role,
             "status": user.status,
+            "plan": plan if role != "admin" else None,
+            "plan_source": plan_source if role != "admin" else None,
+            "plan_status": plan_status if role != "admin" else None,
             "emailed": emailed,
             "email_error": email_error,
         })
@@ -6851,6 +6868,38 @@ def admin_social_summary(current_user: User = Depends(require_role("admin"))):
             "deleted_accounts_count": deleted_accounts_count,
             "unverified_accounts_count": unverified_accounts_count,
         })
+    finally:
+        db.close()
+
+
+@app.get("/admin/staff")
+def admin_list_staff(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "admin_manage")
+
+    db = SessionLocal()
+    try:
+        staff = (
+            db.query(User)
+            .filter(User.role == UserRole.ADMIN.value)
+            .order_by(User.created_at.desc())
+            .all()
+        )
+
+        items = []
+        for user in staff:
+            items.append({
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "status": user.status,
+                "admin_display_name": user.admin_display_name or user.email,
+                "admin_level": user.admin_level or ADMIN_LEVEL_OWNER,
+                "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
+                "email_verified": bool(getattr(user, "email_verified_at", None)),
+                "created_at": str(user.created_at) if user.created_at else None,
+            })
+
+        return ok({"items": items})
     finally:
         db.close()
 
