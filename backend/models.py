@@ -1239,3 +1239,26 @@ class PromoRedemption(Base):
         Index("ix_promo_redemptions_user_status", "user_id", "status"),
         Index("ix_promo_redemptions_campaign_status", "campaign_id", "status"),
     )
+
+class AmbassadorRewardGrant(Base):
+    __tablename__ = "ambassador_reward_grants"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    campaign_id: Mapped[int] = mapped_column(ForeignKey("promo_campaigns.id", ondelete="CASCADE"), nullable=False, index=True)
+    ambassador_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    threshold: Mapped[int] = mapped_column(Integer, nullable=False)
+    reward_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    reward_months: Mapped[int] = mapped_column(Integer, nullable=False)
+    paid_activations_count: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    granted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow, index=True)
+    plan_expires_at_before: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+    plan_expires_at_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+
+    __table_args__ = (
+        UniqueConstraint("campaign_id", "reward_number", name="uq_ambassador_reward_campaign_number"),
+        Index("ix_ambassador_rewards_user_campaign", "ambassador_user_id", "campaign_id"),
+    )
+

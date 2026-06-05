@@ -3777,11 +3777,13 @@ async function openPromoCampaignPreview(campaignId) {
     const c = data.campaign || {};
     const stats = data.stats || {};
     const redemptions = Array.isArray(data.redemptions) ? data.redemptions : [];
+    const rewardGrants = Array.isArray(data.reward_grants) ? data.reward_grants : [];
 
     const paidActivations = Number(stats.paid_activations_count ?? 0);
-    const rewardThreshold = Number(c.reward_threshold || 0);
-    const progressToReward = rewardThreshold > 0 ? paidActivations % rewardThreshold : 0;
-    const missingToReward = rewardThreshold > 0 ? (progressToReward === 0 && paidActivations > 0 ? 0 : rewardThreshold - progressToReward) : null;
+    const rewardThreshold = Number(stats.reward_threshold || c.reward_threshold || 0);
+    const nextRewardAt = Number(stats.next_reward_at || 0);
+    const rewardProgressLabel = stats.current_reward_progress || (nextRewardAt ? `${paidActivations} / ${nextRewardAt}` : null);
+    const missingToReward = nextRewardAt ? Math.max(nextRewardAt - paidActivations, 0) : null;
     const rolePlanBreakdown = stats.role_plan_breakdown || {};
     const userBreakdown = rolePlanBreakdown.user || {};
     const partnerBreakdown = rolePlanBreakdown.partner || {};
@@ -3822,9 +3824,41 @@ async function openPromoCampaignPreview(campaignId) {
           <div><span>E-mail / rola</span><strong>${escapeAdmin(c.owner_email || "—")} ${c.owner_role ? `· ${escapeAdmin(adminPromoRoleLabel(c.owner_role))}` : ""}</strong></div>
           <div><span>Nagroda</span><strong>${escapeAdmin(adminPromoRewardLabel(c.reward_type, c.reward_value))}</strong></div>
           <div><span>Próg nagrody</span><strong>${escapeAdmin(c.reward_threshold ?? "—")} aktywowanych płatnych planów</strong></div>
-          <div><span>Postęp do kolejnej nagrody</span><strong>${rewardThreshold ? `${escapeAdmin(progressToReward)} / ${escapeAdmin(rewardThreshold)}` : "—"}</strong></div>
-          <div><span>Brakuje do nagrody</span><strong>${missingToReward === null ? "—" : escapeAdmin(missingToReward)}</strong></div>
+          <div><span>Postęp do kolejnej nagrody</span><strong>${rewardProgressLabel ? escapeAdmin(rewardProgressLabel) : "—"}</strong></div>
+          <div><span>Brakuje do kolejnej nagrody</span><strong>${missingToReward === null ? "—" : escapeAdmin(missingToReward)}</strong></div>
         </div>
+      </div>
+
+      <h3 class="mt16">Historia nagród ambasadora</h3>
+      <div class="adminTableBox">
+        ${
+          rewardGrants.length
+            ? `<table class="adminTable">
+                <thead>
+                  <tr>
+                    <th>Nr nagrody</th>
+                    <th>Próg</th>
+                    <th>Nagroda</th>
+                    <th>Aktywacje przy naliczeniu</th>
+                    <th>Ważność po nagrodzie</th>
+                    <th>Data naliczenia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rewardGrants.map((g) => `
+                    <tr>
+                      <td><strong>${escapeAdmin(g.reward_number || "—")}</strong></td>
+                      <td>${escapeAdmin(g.threshold || "—")}</td>
+                      <td>${escapeAdmin(g.reward_months || "—")} mies.</td>
+                      <td>${escapeAdmin(g.paid_activations_count || "—")}</td>
+                      <td>${escapeAdmin(g.plan_expires_at_after || "—")}</td>
+                      <td>${escapeAdmin(g.granted_at || "—")}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>`
+            : adminEmpty("Ambasador nie ma jeszcze naliczonych nagród.")
+        }
       </div>
 
       <h3 class="mt16">Użycia kodu</h3>

@@ -185,6 +185,7 @@ from backend.models import (
     GroupInvitation,
     PromoCampaign,
     PromoRedemption,
+    AmbassadorRewardGrant,
     PasswordResetToken,
     EmailVerificationToken,
     AiUsageLog,
@@ -266,6 +267,112 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+def _add_months_to_datetime(value: datetime, months: int) -> datetime:
+    if months <= 0:
+        return value
+
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+
+    days_in_month = [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    day = min(value.day, days_in_month[month - 1])
+
+    return value.replace(year=year, month=month, day=day)
+
+
+def _grant_ambassador_rewards_if_needed(db, campaign: PromoCampaign, now: datetime | None = None) -> int:
+    current_time = now or datetime.utcnow()
+
+    if not campaign.owner_user_id:
+        return 0
+
+    if str(campaign.reward_type or "none").lower() != "vip_months":
+        return 0
+
+    threshold = int(campaign.reward_threshold or 0)
+    reward_months = int(campaign.reward_value or 0)
+
+    if threshold < 10 or reward_months <= 0:
+        return 0
+
+    paid_activations_count = (
+        db.query(PromoRedemption)
+        .filter(
+            PromoRedemption.campaign_id == campaign.id,
+            PromoRedemption.status == "activated",
+        )
+        .count()
+    )
+
+    reward_target_count = paid_activations_count // threshold
+    if reward_target_count <= 0:
+        return 0
+
+    existing_reward_numbers = {
+        reward_number
+        for (reward_number,) in (
+            db.query(AmbassadorRewardGrant.reward_number)
+            .filter(AmbassadorRewardGrant.campaign_id == campaign.id)
+            .all()
+        )
+    }
+
+    owner = db.query(User).filter(User.id == campaign.owner_user_id).first()
+    if not owner:
+        return 0
+
+    if owner.role == UserRole.PARTNER.value:
+        owner_profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == owner.id).first()
+        reward_plan = "premium"
+    else:
+        owner_profile = db.query(UserProfile).filter(UserProfile.user_id == owner.id).first()
+        reward_plan = "vip"
+
+    if not owner_profile:
+        return 0
+
+    grants_created = 0
+
+    for reward_number in range(1, reward_target_count + 1):
+        if reward_number in existing_reward_numbers:
+            continue
+
+        before = getattr(owner_profile, "plan_expires_at", None)
+        base = before if before and before > current_time else current_time
+        after = _add_months_to_datetime(base, reward_months)
+
+        owner_profile.plan = reward_plan
+        owner_profile.plan_source = "ambassador"
+        owner_profile.plan_status = "active"
+        owner_profile.plan_updated_at = current_time
+        owner_profile.plan_expires_at = after
+        owner_profile.updated_at = current_time
+
+        db.add(owner_profile)
+        db.add(AmbassadorRewardGrant(
+            campaign_id=campaign.id,
+            ambassador_user_id=owner.id,
+            threshold=threshold,
+            reward_number=reward_number,
+            reward_months=reward_months,
+            paid_activations_count=paid_activations_count,
+            granted_at=current_time,
+            plan_expires_at_before=before,
+            plan_expires_at_after=after,
+        ))
+        db.add(AuditLog(
+            user_id=owner.id,
+            action="ambassador_reward_granted",
+            details=f"campaign_id={campaign.id}; code={campaign.code}; reward_number={reward_number}; threshold={threshold}; reward_months={reward_months}; paid_activations_count={paid_activations_count}; expires_before={before.isoformat() if before else '-'}; expires_after={after.isoformat() if after else '-'}",
+        ))
+        grants_created += 1
+
+    return grants_created
+
 
 # Healthcheck (for deploy / monitoring)
 @app.get("/healthz")
@@ -6486,11 +6593,40 @@ def admin_update_user_plan(
             profile.updated_at = now
             db.add(profile)
 
+        ambassador_grants_created = 0
+        activated_redemption_ids = []
+
+        if plan_status == "active" and plan_source == "paid" and plan != "free":
+            reserved_redemptions = (
+                db.query(PromoRedemption)
+                .join(PromoCampaign, PromoCampaign.id == PromoRedemption.campaign_id)
+                .filter(
+                    PromoRedemption.user_id == user.id,
+                    PromoRedemption.status == "reserved",
+                    PromoCampaign.status == "active",
+                )
+                .all()
+            )
+
+            for redemption in reserved_redemptions:
+                campaign = db.query(PromoCampaign).filter(PromoCampaign.id == redemption.campaign_id).first()
+                if not campaign:
+                    continue
+                if campaign.target_role != "both" and campaign.target_role != user.role:
+                    continue
+
+                redemption.status = "activated"
+                redemption.activated_at = now
+                db.add(redemption)
+                db.flush()
+                activated_redemption_ids.append(redemption.id)
+                ambassador_grants_created += _grant_ambassador_rewards_if_needed(db, campaign, now)
+
         db.add(
             AuditLog(
                 user_id=user.id,
                 action="admin_update_user_plan",
-                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; plan={plan}; source={plan_source}; status={plan_status}; expires_at={plan_expires_at.isoformat() if plan_expires_at else '-'}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; plan={plan}; source={plan_source}; status={plan_status}; expires_at={plan_expires_at.isoformat() if plan_expires_at else '-'}; activated_redemptions={activated_redemption_ids}; ambassador_grants_created={ambassador_grants_created}",
             )
         )
         db.commit()
@@ -6502,6 +6638,8 @@ def admin_update_user_plan(
             "plan_source": plan_source,
             "plan_status": plan_status,
             "plan_expires_at": plan_expires_at.isoformat() if plan_expires_at else None,
+            "activated_redemption_ids": activated_redemption_ids,
+            "ambassador_grants_created": ambassador_grants_created,
         })
     finally:
         db.close()
@@ -7985,6 +8123,31 @@ def admin_get_promo_campaign(
                 "activated_at": redemption.activated_at.isoformat() if redemption.activated_at else None,
             })
 
+        reward_grant_rows = (
+            db.query(AmbassadorRewardGrant)
+            .filter(AmbassadorRewardGrant.campaign_id == campaign.id)
+            .order_by(AmbassadorRewardGrant.reward_number.asc())
+            .all()
+        )
+        reward_grants = [
+            {
+                "id": grant.id,
+                "ambassador_user_id": grant.ambassador_user_id,
+                "threshold": grant.threshold,
+                "reward_number": grant.reward_number,
+                "reward_months": grant.reward_months,
+                "paid_activations_count": grant.paid_activations_count,
+                "granted_at": grant.granted_at.isoformat() if grant.granted_at else None,
+                "plan_expires_at_before": grant.plan_expires_at_before.isoformat() if grant.plan_expires_at_before else None,
+                "plan_expires_at_after": grant.plan_expires_at_after.isoformat() if grant.plan_expires_at_after else None,
+            }
+            for grant in reward_grant_rows
+        ]
+
+        reward_threshold = int(campaign.reward_threshold or 0)
+        next_reward_at = reward_threshold * ((paid_activations_count // reward_threshold) + 1) if reward_threshold >= 10 else None
+        current_reward_progress = f"{paid_activations_count} / {next_reward_at}" if next_reward_at else None
+
         return ok({
             "campaign": {
                 "id": campaign.id,
@@ -8019,8 +8182,13 @@ def admin_get_promo_campaign(
                 "paid_partner_count": paid_partner_count,
                 "plan_breakdown": plan_breakdown,
                 "role_plan_breakdown": role_plan_breakdown,
+                "reward_grants_count": len(reward_grants),
+                "reward_threshold": reward_threshold if reward_threshold >= 10 else None,
+                "next_reward_at": next_reward_at,
+                "current_reward_progress": current_reward_progress,
             },
             "redemptions": redemptions,
+            "reward_grants": reward_grants,
         })
     finally:
         db.close()
