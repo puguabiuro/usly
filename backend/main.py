@@ -171,6 +171,7 @@ from backend.models import (
     UserProfile,
     PartnerProfile,
     Event,
+    EventStatus,
     AuditLog,
     EventSignup,
     UserBlock,
@@ -268,6 +269,172 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
+USER_INTEREST_LIMITS = {
+    "free": 5,
+    "plus": 10,
+    "premium": 20,
+    "vip": None,
+}
+
+USER_TRAINER_INTEREST_LIMITS = {
+    "premium": 2,
+    "vip": 5,
+}
+
+PARTNER_ACTIVE_EVENT_LIMITS = {
+    "free": 2,
+    "pro": 5,
+    "premium": None,
+    "enterprise": None,
+}
+
+
+
+
+USER_PLAN_RANKS = {
+    "free": 0,
+    "plus": 1,
+    "premium": 2,
+    "vip": 3,
+}
+
+PARTNER_PLAN_RANKS = {
+    "free": 0,
+    "pro": 1,
+    "premium": 2,
+    "enterprise": 3,
+}
+
+
+def _apply_plan_limits_after_downgrade(db, user: User, target_plan: str, now: datetime | None = None) -> dict:
+    current_time = now or datetime.utcnow()
+    safe_plan = (target_plan or "free").strip().lower()
+
+    result = {
+        "target_plan": safe_plan,
+        "interests_trimmed_from": None,
+        "interests_trimmed_to": None,
+        "trainer_interests_trimmed_from": None,
+        "trainer_interests_trimmed_to": None,
+        "trainer_interests_disabled": False,
+        "events_moved_to_draft": [],
+    }
+
+    if user.role == UserRole.PARTNER.value:
+        event_limit = PARTNER_ACTIVE_EVENT_LIMITS.get(safe_plan, PARTNER_ACTIVE_EVENT_LIMITS["free"])
+        if event_limit is None:
+            return result
+
+        now_utc = datetime.now(timezone.utc)
+        published_events = (
+            db.query(Event)
+            .filter(Event.partner_user_id == user.id)
+            .filter(Event.status == EventStatus.PUBLISHED.value)
+            .filter(Event.end_at >= now_utc)
+            .order_by(Event.start_at.asc(), Event.id.asc())
+            .all()
+        )
+
+        keep_ids = {event.id for event in published_events[:event_limit]}
+        to_draft = [event for event in published_events if event.id not in keep_ids]
+
+        for event in to_draft:
+            event.status = EventStatus.DRAFT.value
+            event.updated_at = current_time
+            db.add(event)
+            result["events_moved_to_draft"].append(event.id)
+
+        return result
+
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+    if not profile:
+        return result
+
+    interest_limit = USER_INTEREST_LIMITS.get(safe_plan, USER_INTEREST_LIMITS["free"])
+    interests = []
+    if profile.zainteresowania_json:
+        try:
+            interests = json.loads(profile.zainteresowania_json) or []
+        except Exception:
+            interests = []
+
+    if interest_limit is not None and len(interests) > interest_limit:
+        result["interests_trimmed_from"] = len(interests)
+        interests = interests[:interest_limit]
+        result["interests_trimmed_to"] = len(interests)
+        profile.zainteresowania_json = json.dumps(interests, ensure_ascii=False)
+
+    trainer_limit = USER_TRAINER_INTEREST_LIMITS.get(safe_plan, 0)
+    trainer_interests = []
+    if profile.trainer_interests_json:
+        try:
+            trainer_interests = json.loads(profile.trainer_interests_json) or []
+        except Exception:
+            trainer_interests = []
+
+    if trainer_limit <= 0 and trainer_interests:
+        result["trainer_interests_trimmed_from"] = len(trainer_interests)
+        result["trainer_interests_trimmed_to"] = 0
+        result["trainer_interests_disabled"] = True
+        profile.trainer_interests_json = None
+    elif trainer_limit > 0 and len(trainer_interests) > trainer_limit:
+        result["trainer_interests_trimmed_from"] = len(trainer_interests)
+        trainer_interests = trainer_interests[:trainer_limit]
+        result["trainer_interests_trimmed_to"] = len(trainer_interests)
+        profile.trainer_interests_json = json.dumps(trainer_interests, ensure_ascii=False)
+
+    profile.updated_at = current_time
+    db.add(profile)
+    return result
+
+
+def _expire_profile_plan_if_needed(db, user: User, profile, now: datetime | None = None) -> dict | None:
+    current_time = now or datetime.utcnow()
+    expires_at = getattr(profile, "plan_expires_at", None)
+
+    if not expires_at:
+        return None
+
+    compare_expires_at = expires_at
+    compare_now = current_time
+
+    if getattr(compare_expires_at, "tzinfo", None) is not None:
+        compare_expires_at = compare_expires_at.astimezone(timezone.utc).replace(tzinfo=None)
+    if getattr(compare_now, "tzinfo", None) is not None:
+        compare_now = compare_now.astimezone(timezone.utc).replace(tzinfo=None)
+
+    current_plan = str(getattr(profile, "plan", None) or "free").strip().lower()
+    current_status = str(getattr(profile, "plan_status", None) or "active").strip().lower()
+
+    if current_plan == "free" or current_status == "expired" or compare_expires_at > compare_now:
+        return None
+
+    previous_plan = current_plan
+
+    profile.plan = "free"
+    profile.plan_source = "system"
+    profile.plan_status = "expired"
+    profile.plan_updated_at = current_time
+    profile.updated_at = current_time
+    db.add(profile)
+
+    limits_result = _apply_plan_limits_after_downgrade(db, user, "free", current_time)
+
+    db.add(AuditLog(
+        user_id=user.id,
+        action="plan_expired_auto_downgrade",
+        details=f"previous_plan={previous_plan}; new_plan=free; expired_at={expires_at.isoformat() if expires_at else '-'}; downgrade_limits={limits_result or '-'}",
+    ))
+
+    return {
+        "previous_plan": previous_plan,
+        "new_plan": "free",
+        "plan_status": "expired",
+        "plan_expires_at": expires_at.isoformat() if expires_at else None,
+        "downgrade_limits": limits_result,
+    }
 
 
 def _add_months_to_datetime(value: datetime, months: int) -> datetime:
@@ -1388,6 +1555,11 @@ def users_me(current_user: User = Depends(require_role("user"))):
             db.commit()
             db.refresh(profile)
 
+        plan_expiry_result = _expire_profile_plan_if_needed(db, current_user, profile)
+        if plan_expiry_result:
+            db.commit()
+            db.refresh(profile)
+
         zainteresowania = []
         if profile.zainteresowania_json:
             try:
@@ -1420,6 +1592,7 @@ def users_me(current_user: User = Depends(require_role("user"))):
                 "plan_source": profile.plan_source,
                 "plan_status": profile.plan_status,
                 "plan_updated_at": profile.plan_updated_at,
+                "plan_expires_at": profile.plan_expires_at,
             }
         )
     finally:
@@ -1915,6 +2088,11 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
             db.commit()
             db.refresh(profile)
 
+        plan_expiry_result = _expire_profile_plan_if_needed(db, current_user, profile)
+        if plan_expiry_result:
+            db.commit()
+            db.refresh(profile)
+
         return ok(
             {
                 "user_id": current_user.id,
@@ -1922,6 +2100,10 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
                 "miasto": profile.miasto,
                 "kategoria": profile.kategoria,
                 "plan": profile.plan,
+                "plan_source": profile.plan_source,
+                "plan_status": profile.plan_status,
+                "plan_updated_at": profile.plan_updated_at,
+                "plan_expires_at": profile.plan_expires_at,
                 "bio": profile.bio,
                 "logo_url": profile.logo_url,
             }
@@ -6246,7 +6428,7 @@ def admin_create_user_account(
 
     allowed_plans = {"free", "plus", "premium", "vip", "pro", "enterprise"}
     allowed_sources = {"manual", "paid", "barter", "promo", "ambassador", "test", "system"}
-    allowed_statuses = {"active", "inactive", "expired", "trial"}
+    allowed_statuses = {"active", "inactive", "expired", "trial", "cancelled"}
 
     if not email or "@" not in email:
         raise HTTPException(status_code=422, detail="INVALID_EMAIL")
@@ -6549,7 +6731,7 @@ def admin_update_user_plan(
 
     allowed_plans = {"free", "plus", "premium", "vip", "pro", "enterprise"}
     allowed_sources = {"manual", "paid", "barter", "promo", "ambassador", "test", "system"}
-    allowed_statuses = {"active", "inactive", "expired", "trial"}
+    allowed_statuses = {"active", "inactive", "expired", "trial", "cancelled"}
 
     if plan not in allowed_plans:
         raise HTTPException(status_code=422, detail="INVALID_PLAN")
@@ -6565,11 +6747,13 @@ def admin_update_user_plan(
             raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
 
         now = datetime.utcnow()
+        previous_plan = "free"
 
         if user.role == UserRole.PARTNER.value:
             profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == user.id).first()
             if not profile:
                 raise HTTPException(status_code=404, detail="PARTNER_PROFILE_NOT_FOUND")
+            previous_plan = (profile.plan or "free").lower()
             profile.plan = plan
             profile.plan_source = plan_source
             profile.plan_status = plan_status
@@ -6581,6 +6765,7 @@ def admin_update_user_plan(
             profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
             if not profile:
                 raise HTTPException(status_code=404, detail="USER_PROFILE_NOT_FOUND")
+            previous_plan = (profile.plan or "free").lower()
             profile.plan = plan
             profile.plan_source = plan_source
             profile.plan_status = plan_status
@@ -6592,6 +6777,14 @@ def admin_update_user_plan(
 
             profile.updated_at = now
             db.add(profile)
+
+        downgrade_limits_result = None
+        plan_ranks = PARTNER_PLAN_RANKS if user.role == UserRole.PARTNER.value else USER_PLAN_RANKS
+        previous_rank = plan_ranks.get(previous_plan, 0)
+        new_rank = plan_ranks.get(plan, 0)
+
+        if new_rank < previous_rank:
+            downgrade_limits_result = _apply_plan_limits_after_downgrade(db, user, plan, now)
 
         ambassador_grants_created = 0
         activated_redemption_ids = []
@@ -6626,7 +6819,7 @@ def admin_update_user_plan(
             AuditLog(
                 user_id=user.id,
                 action="admin_update_user_plan",
-                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; plan={plan}; source={plan_source}; status={plan_status}; expires_at={plan_expires_at.isoformat() if plan_expires_at else '-'}; activated_redemptions={activated_redemption_ids}; ambassador_grants_created={ambassador_grants_created}",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; previous_plan={previous_plan}; plan={plan}; source={plan_source}; status={plan_status}; expires_at={plan_expires_at.isoformat() if plan_expires_at else '-'}; downgrade_limits={downgrade_limits_result or '-'}; activated_redemptions={activated_redemption_ids}; ambassador_grants_created={ambassador_grants_created}",
             )
         )
         db.commit()
@@ -6640,6 +6833,7 @@ def admin_update_user_plan(
             "plan_expires_at": plan_expires_at.isoformat() if plan_expires_at else None,
             "activated_redemption_ids": activated_redemption_ids,
             "ambassador_grants_created": ambassador_grants_created,
+            "downgrade_limits": downgrade_limits_result,
         })
     finally:
         db.close()
