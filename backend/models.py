@@ -468,6 +468,12 @@ class Event(Base):
         index=True,
     )
 
+    interest_tags_json: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
     # trzymamy UTC, frontend wysyła ISO
     start_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

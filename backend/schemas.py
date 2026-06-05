@@ -161,6 +161,7 @@ class EventCreate(BaseModel):
     location_lat: Optional[float] = Field(default=None, ge=-90, le=90)
     location_lng: Optional[float] = Field(default=None, ge=-180, le=180)
     interest_tag: str = Field(min_length=2, max_length=40)
+    interest_tags: Optional[list[str]] = Field(default=None, max_length=10)
 
     start_at: datetime
     end_at: datetime
@@ -222,6 +223,7 @@ class EventUpdate(BaseModel):
     location_lat: Optional[float] = Field(default=None, ge=-90, le=90)
     location_lng: Optional[float] = Field(default=None, ge=-180, le=180)
     interest_tag: Optional[str] = Field(default=None, min_length=2, max_length=40)
+    interest_tags: Optional[list[str]] = Field(default=None, max_length=10)
 
     start_at: Optional[datetime] = None
     end_at: Optional[datetime] = None
@@ -300,6 +302,7 @@ class EventOut(BaseModel):
     location_lat: Optional[float] = None
     location_lng: Optional[float] = None
     interest_tag: str
+    interest_tags: Optional[list[str]] = None
 
     start_at: datetime
     end_at: datetime

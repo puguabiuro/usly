@@ -291,6 +291,52 @@ PARTNER_ACTIVE_EVENT_LIMITS = {
 }
 
 
+PARTNER_EVENT_INTEREST_TAG_LIMITS = {
+    "free": 1,
+    "pro": 2,
+    "premium": 5,
+    "enterprise": 10,
+}
+
+
+def _partner_event_interest_tag_limit(plan: str | None) -> int:
+    safe_plan = str(plan or "free").strip().lower()
+    return PARTNER_EVENT_INTEREST_TAG_LIMITS.get(safe_plan, PARTNER_EVENT_INTEREST_TAG_LIMITS["free"])
+
+
+def _normalize_event_interest_tags(raw_tags, fallback_tag: str | None = None) -> list[str]:
+    source = raw_tags
+    if source is None:
+        source = [fallback_tag] if fallback_tag else []
+
+    if isinstance(source, str):
+        source = [source]
+
+    result = []
+    seen = set()
+    for item in source or []:
+        tag = str(item or "").strip().lstrip("#")
+        if not tag:
+            continue
+        if len(tag) < 2 or len(tag) > 40:
+            raise HTTPException(status_code=422, detail="INVALID_EVENT_INTEREST_TAG")
+        key = tag.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(tag)
+
+    if not result and fallback_tag:
+        fallback = str(fallback_tag or "").strip().lstrip("#")
+        if fallback:
+            result.append(fallback)
+
+    if not result:
+        raise HTTPException(status_code=422, detail="EVENT_INTEREST_TAG_REQUIRED")
+
+    return result
+
+
 
 
 USER_PLAN_RANKS = {
@@ -2568,6 +2614,14 @@ def partner_create_event(
 
     db = SessionLocal()
     try:
+        partner_profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == current_user.id).first()
+        partner_plan = str(getattr(partner_profile, "plan", None) or "free").lower()
+        tag_limit = _partner_event_interest_tag_limit(partner_plan)
+        interest_tags = _normalize_event_interest_tags(getattr(payload, "interest_tags", None), payload.interest_tag)
+
+        if len(interest_tags) > tag_limit:
+            raise HTTPException(status_code=422, detail="EVENT_INTEREST_TAG_LIMIT_REACHED")
+
         event = Event(
             partner_user_id=current_user.id,
             title=payload.title,
@@ -2577,7 +2631,8 @@ def partner_create_event(
             address=payload.address,
             location_lat=payload.location_lat,
             location_lng=payload.location_lng,
-            interest_tag=payload.interest_tag,
+            interest_tag=interest_tags[0],
+            interest_tags_json=json.dumps(interest_tags, ensure_ascii=False),
             start_at=_to_utc_naive(payload.start_at),
             end_at=_to_utc_naive(payload.end_at),
             capacity=payload.capacity,
@@ -2592,6 +2647,11 @@ def partner_create_event(
         db.commit()
         db.refresh(event)
 
+        response_interest_tags = _normalize_event_interest_tags(
+            json.loads(event.interest_tags_json) if event.interest_tags_json else None,
+            event.interest_tag,
+        )
+
         return ok(
             EventOut(
                 id=event.id,
@@ -2604,6 +2664,7 @@ def partner_create_event(
                 location_lat=event.location_lat,
                 location_lng=event.location_lng,
                 interest_tag=event.interest_tag,
+                interest_tags=response_interest_tags,
                 start_at=event.start_at,
                 end_at=event.end_at,
                 capacity=event.capacity,
@@ -2674,8 +2735,17 @@ def partner_update_event(
             event.location_lat = payload.location_lat
         if payload.location_lng is not None:
             event.location_lng = payload.location_lng
-        if payload.interest_tag is not None:
-            event.interest_tag = payload.interest_tag
+        if getattr(payload, "interest_tags", None) is not None or payload.interest_tag is not None:
+            partner_profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == current_user.id).first()
+            partner_plan = str(getattr(partner_profile, "plan", None) or "free").lower()
+            tag_limit = _partner_event_interest_tag_limit(partner_plan)
+            interest_tags = _normalize_event_interest_tags(getattr(payload, "interest_tags", None), payload.interest_tag or event.interest_tag)
+
+            if len(interest_tags) > tag_limit:
+                raise HTTPException(status_code=422, detail="EVENT_INTEREST_TAG_LIMIT_REACHED")
+
+            event.interest_tag = interest_tags[0]
+            event.interest_tags_json = json.dumps(interest_tags, ensure_ascii=False)
         if payload.start_at is not None:
             event.start_at = _to_utc_naive(payload.start_at)
         if payload.end_at is not None:
@@ -2751,6 +2821,11 @@ def partner_update_event(
         db.commit()
         db.refresh(event)
 
+        response_interest_tags = _normalize_event_interest_tags(
+            json.loads(event.interest_tags_json) if event.interest_tags_json else None,
+            event.interest_tag,
+        )
+
         return ok(
             EventOut(
                 id=event.id,
@@ -2763,6 +2838,7 @@ def partner_update_event(
                 location_lat=event.location_lat,
                 location_lng=event.location_lng,
                 interest_tag=event.interest_tag,
+                interest_tags=response_interest_tags,
                 start_at=event.start_at,
                 end_at=event.end_at,
                 capacity=event.capacity,
