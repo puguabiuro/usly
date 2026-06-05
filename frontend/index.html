@@ -776,6 +776,58 @@ section#S11_PLANS .card[data-plan] .planPill{
   font-weight: 1000 !important;
 }
 
+section#S11_PLANS .planPromoPrice{
+  text-align:right;
+  min-width: 116px;
+  max-width: 160px;
+  flex: 0 0 auto;
+  line-height:1.12;
+  position:relative;
+  z-index:1;
+}
+
+section#S11_PLANS .planPromoOld{
+  font-size:13px;
+  font-weight:1000;
+  color:rgba(241,246,255,.58);
+  text-decoration:line-through;
+  text-decoration-thickness:2px;
+  white-space:nowrap;
+}
+
+section#S11_PLANS .planPromoNew{
+  margin-top:4px;
+  font-size:18px;
+  font-weight:1100;
+  color:#ffffff;
+  letter-spacing:-.03em;
+  white-space:nowrap;
+}
+
+section#S11_PLANS .planPromoMeta{
+  margin-top:6px;
+  font-size:12px;
+  font-weight:950;
+  color:#b985ff;
+  line-height:1.18;
+}
+
+@media (max-width: 420px){
+  section#S11_PLANS .planPromoPrice{
+    min-width: 96px;
+    max-width: 126px;
+  }
+  section#S11_PLANS .planPromoOld{
+    font-size:11.5px;
+  }
+  section#S11_PLANS .planPromoNew{
+    font-size:15px;
+  }
+  section#S11_PLANS .planPromoMeta{
+    font-size:11px;
+  }
+}
+
 section#S11_PLANS .card[data-plan] p{
   margin: 0 0 8px 0 !important;
   font-size: 13px !important;

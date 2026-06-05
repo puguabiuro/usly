@@ -2744,6 +2744,72 @@ async function registerPrimary() {
 
 /* ------------------------- Plans -------------------------- */
 
+const PLAN_BASE_PRICES = {
+  user: {
+    plus: 29,
+    premium: 49,
+    vip: 89,
+  },
+  partner: {
+    pro: 129,
+    premium: 259,
+  },
+};
+
+function formatPlanPriceAmount(amount) {
+  const rounded = Math.max(0, Math.round(Number(amount) || 0));
+  return App.lang === "en" ? `${rounded} PLN / month` : `${rounded} zł / miesiąc`;
+}
+
+function clearPlanPromoPrices(role) {
+  const normalizedRole = role === "partner" ? "partner" : "user";
+  const scopeSelector = normalizedRole === "partner" ? "#plansPartnerOnly" : "#plansUserOnly";
+  document.querySelectorAll(`#S11_PLANS ${scopeSelector} .planPromoPrice`).forEach((el) => {
+    const baseLabel = el.dataset.basePriceLabel || "";
+    if (baseLabel) {
+      const pill = document.createElement("div");
+      pill.className = "planPill";
+      pill.textContent = baseLabel;
+      el.replaceWith(pill);
+    } else {
+      el.remove();
+    }
+  });
+}
+
+function refreshPlanPromoPrices(role) {
+  const normalizedRole = role === "partner" ? "partner" : "user";
+  clearPlanPromoPrices(normalizedRole);
+
+  const promo = App.activePromoCode;
+  if (!promo || promo.role !== normalizedRole || promo.benefit_type !== "discount_percent") return;
+
+  const discount = Number(promo.benefit_value || 0);
+  if (!discount || discount <= 0 || discount >= 100) return;
+
+  const scopeSelector = normalizedRole === "partner" ? "#plansPartnerOnly" : "#plansUserOnly";
+  const prices = PLAN_BASE_PRICES[normalizedRole] || {};
+
+  document.querySelectorAll(`#S11_PLANS ${scopeSelector} .card[data-plan]`).forEach((card) => {
+    const plan = String(card.dataset.plan || "").toLowerCase();
+    const basePrice = prices[plan];
+    const pill = card.querySelector(".planPill");
+    if (!pill || !basePrice) return;
+
+    const finalPrice = basePrice * (100 - discount) / 100;
+    const months = promo.benefit_duration_months || "—";
+    const info = document.createElement("div");
+    info.className = "planPromoPrice";
+    info.dataset.basePriceLabel = pill.textContent || formatPlanPriceAmount(basePrice);
+    info.innerHTML = `
+      <div class="planPromoOld">${formatPlanPriceAmount(basePrice)}</div>
+      <div class="planPromoNew">${formatPlanPriceAmount(finalPrice)}</div>
+      <div class="planPromoMeta">${t("plans.promo.discount", { value: discount, months })}</div>
+    `;
+    pill.replaceWith(info);
+  });
+}
+
 function refreshUserPlanCardsUi() {
   const current = String(App.user?.plan || "free").toLowerCase();
 
@@ -2760,6 +2826,7 @@ function refreshUserPlanCardsUi() {
 
   safeSetText("settingsProfilePlanPill", current.toUpperCase());
   safeSetText("settingsProfilePlanPillSecondary", current.toUpperCase());
+  refreshPlanPromoPrices("user");
 }
 
 
@@ -2804,10 +2871,24 @@ async function applyPlanPromoCode(role) {
       reward_value: promo.reward_value ?? null,
     };
 
+    let redemption = null;
+    if (App.isLoggedIn && App.role === normalizedRole) {
+      redemption = await apiFetch("/promo-campaigns/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promo.code || code, platform: "web" }),
+      });
+      App.activePromoCode.redemption_id = redemption?.data?.id || null;
+      App.activePromoCode.redemption_status = redemption?.data?.status || "reserved";
+      App.activePromoCode.already_redeemed = !!redemption?.data?.already_redeemed;
+    }
+
+    refreshPlanPromoPrices(normalizedRole);
     if (statusEl) statusEl.textContent = `${t("plans.promo.applied")}: ${label}`;
     toast(`${t("plans.promo.applied")}: ${promo.code || code}`);
   } catch (err) {
     App.activePromoCode = null;
+    clearPlanPromoPrices(normalizedRole);
 
     const rawPromoError = String(
       err?.data?.detail || err?.data?.error?.code || err?.code || err?.detail || err?.message || err?.userMessage || ""
@@ -2940,6 +3021,7 @@ async function setPartnerPlan(plan, silent = false) {
   document.querySelectorAll("#partnerPlanPill").forEach((el) => {
     el.textContent = plan.toUpperCase();
   });
+  refreshPlanPromoPrices("partner");
 
   const isAuthSetupFlow = ["S1_LOGIN", "S2_REGISTER", "S3_PROFILE_SETUP", "S3B_PARTNER_SETUP"].includes(App.currentView);
 
