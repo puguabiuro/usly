@@ -6985,6 +6985,8 @@ def admin_update_user_plan(
             profile.plan_status = plan_status
             profile.plan_updated_at = now
             profile.plan_expires_at = plan_expires_at
+            profile.plan_expiry_notice_14d_sent_at = None
+            profile.plan_expiry_notice_7d_sent_at = None
             profile.updated_at = now
             db.add(profile)
         else:
@@ -6997,6 +6999,8 @@ def admin_update_user_plan(
             profile.plan_status = plan_status
             profile.plan_updated_at = now
             profile.plan_expires_at = plan_expires_at
+            profile.plan_expiry_notice_14d_sent_at = None
+            profile.plan_expiry_notice_7d_sent_at = None
 
             if plan not in {"premium", "vip"}:
                 profile.trainer_interests_json = None
