@@ -483,6 +483,94 @@ def _expire_profile_plan_if_needed(db, user: User, profile, now: datetime | None
     }
 
 
+def _normalize_datetime_for_compare(value: datetime | None) -> datetime | None:
+    if not value:
+        return None
+    if getattr(value, "tzinfo", None) is not None:
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
+def _plan_expiry_notice_copy(role: str, plan: str, days_left: int, expires_at: datetime) -> tuple[str, str]:
+    role_label = "Organizatora" if role == "partner" else "Towarzysza"
+    date_label = expires_at.strftime("%Y-%m-%d")
+
+    subject = f"USLY — Twój plan wygasa za {days_left} dni"
+    body = (
+        f"Cześć,\n\n"
+        f"Twój plan {role_label} w USLY ({plan.upper()}) wygasa za {days_left} dni, czyli {date_label}.\n\n"
+        "Jeśli plan nie zostanie przedłużony, po wygaśnięciu konto zostanie automatycznie przeniesione na plan FREE, "
+        "a limity planu FREE zostaną zastosowane zgodnie z zasadami USLY.\n\n"
+        "Dane nie zostaną usunięte, ale część płatnych możliwości może zostać ograniczona po zakończeniu planu.\n\n"
+        "Zespół USLY"
+    )
+    return subject, body
+
+
+async def _send_plan_expiry_notices(db, now: datetime | None = None) -> dict:
+    current_time = now or datetime.utcnow()
+    compare_now = _normalize_datetime_for_compare(current_time) or datetime.utcnow()
+    sent = {"user_14d": 0, "user_7d": 0, "partner_14d": 0, "partner_7d": 0}
+
+    rules = [
+        (14, "plan_expiry_notice_14d_sent_at"),
+        (7, "plan_expiry_notice_7d_sent_at"),
+    ]
+
+    profile_sets = [
+        ("user", UserProfile, "user"),
+        ("partner", PartnerProfile, "partner"),
+    ]
+
+    for role, model, counter_prefix in profile_sets:
+        profiles = (
+            db.query(model)
+            .join(User, User.id == model.user_id)
+            .filter(model.plan_expires_at.isnot(None))
+            .filter(model.plan != "free")
+            .all()
+        )
+
+        for profile in profiles:
+            expires_at = _normalize_datetime_for_compare(getattr(profile, "plan_expires_at", None))
+            if not expires_at:
+                continue
+
+            current_status = str(getattr(profile, "plan_status", None) or "active").strip().lower()
+            if current_status in {"expired", "cancelled", "inactive"}:
+                continue
+
+            days_until_expiry = (expires_at.date() - compare_now.date()).days
+
+            for days_left, sent_field in rules:
+                if days_until_expiry != days_left:
+                    continue
+                if getattr(profile, sent_field, None):
+                    continue
+
+                user = db.query(User).filter(User.id == profile.user_id).first()
+                if not user or not user.email:
+                    continue
+
+                plan = str(getattr(profile, "plan", None) or "paid").strip().lower()
+                subject, body = _plan_expiry_notice_copy(role, plan, days_left, expires_at)
+
+                await send_user_email(user.email, subject, body)
+
+                setattr(profile, sent_field, current_time)
+                profile.updated_at = current_time
+                db.add(profile)
+                db.add(AuditLog(
+                    user_id=user.id,
+                    action=f"plan_expiry_notice_{days_left}d_sent",
+                    details=f"role={role}; plan={plan}; expires_at={expires_at.isoformat()}",
+                ))
+                sent[f"{counter_prefix}_{days_left}d"] += 1
+
+    db.commit()
+    return sent
+
+
 def _add_months_to_datetime(value: datetime, months: int) -> datetime:
     if months <= 0:
         return value
@@ -588,6 +676,28 @@ def _grant_ambassador_rewards_if_needed(db, campaign: PromoCampaign, now: dateti
 
 
 # Healthcheck (for deploy / monitoring)
+
+async def _plan_expiry_notice_scheduler() -> None:
+    # Lightweight MVP scheduler: run once after backend startup, then once daily.
+    while True:
+        db = SessionLocal()
+        try:
+            result = await _send_plan_expiry_notices(db)
+            if any(result.values()):
+                print("PLAN EXPIRY NOTICES SENT:", result)
+        except Exception as exc:
+            print("PLAN EXPIRY NOTICE SCHEDULER ERROR:", exc)
+        finally:
+            db.close()
+
+        await asyncio.sleep(24 * 60 * 60)
+
+
+@app.on_event("startup")
+async def start_plan_expiry_notice_scheduler() -> None:
+    asyncio.create_task(_plan_expiry_notice_scheduler())
+
+
 @app.get("/healthz")
 def healthz():
     return {"status": "ok"}
