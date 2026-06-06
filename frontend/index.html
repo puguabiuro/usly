@@ -986,6 +986,55 @@ section#S11_PLANS .promoCodeRow .btn{
   white-space:nowrap !important;
 }
 
+
+#peInterestSelected{
+  display:block;
+  margin-top:10px;
+}
+
+#peInterestSelected[hidden]{
+  display:none !important;
+}
+
+#peInterestSelected .chip{
+  display:inline-flex;
+  align-items:center;
+  margin:0 8px 8px 0;
+  border-radius:999px;
+  padding:8px 11px;
+  font-size:13px;
+  font-weight:900;
+  color:#f7fbff;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+}
+
+#peInterestRemoveBtn{
+  display:none !important;
+}
+
+
+#peInterestSelected .eventInterestChip{
+  gap:8px;
+  padding-right:7px;
+}
+
+#peInterestSelected .eventInterestChipRemove{
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  font-size:15px;
+  font-weight:1000;
+  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+
 /* === PREMIUM: bottom nav glow (spójność z topbar) === */
 .tabbar button {
   position: relative;
@@ -3462,9 +3511,9 @@ section#S11_PLANS .promoCodeRow .btn{
                 <input id="peInterest" type="text" placeholder="np. muzyka" data-i18n-placeholder="partnerCreate.interestPlaceholder" list="interestsDatalist" />
               </div>
 
-              <div id="peInterestSelected" class="eventSelectedTag" hidden>
+              <div id="peInterestSelected" hidden>
                 <span id="peInterestSelectedText"></span>
-                <button type="button" id="peInterestRemoveBtn" aria-label="Remove hashtag">×</button>
+                <button type="button" id="peInterestRemoveBtn" aria-label="Remove hashtag" hidden>×</button>
               </div>
   
               <label class="mt12" data-i18n="partnerCreate.description">Opis</label>
@@ -3922,6 +3971,7 @@ section#S11_PLANS .promoCodeRow .btn{
                     <li data-i18n="plans.partner.free.feature2">Podstawowy podgląd panelu: aktywne wydarzenia</li>
                     <li data-i18n="plans.partner.free.feature3">Brak wiadomości do uczestników</li>
                     <li data-i18n="plans.partner.free.feature4">Brak broadcastu i brak wyróżnienia wydarzeń</li>
+                    <li data-i18n="plans.partner.free.feature5">1 hashtag/kategoria na wydarzenie</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('free')" data-i18n="plans.choose">Wybierz</button>
                 </div>
@@ -3937,6 +3987,7 @@ section#S11_PLANS .promoCodeRow .btn{
                     <li data-i18n="plans.partner.pro.feature2">Rozszerzony podgląd panelu: aktywne, szkice i zapisy łącznie</li>
                     <li data-i18n="plans.partner.pro.feature3">Możliwość pisania do uczestników</li>
                     <li data-i18n="plans.partner.pro.feature4">Bez broadcastu i bez wyróżnienia wydarzeń</li>
+                    <li data-i18n="plans.partner.pro.feature5">Do 2 hashtagów/kategorii na wydarzenie</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('pro')" data-i18n="plans.choose">Wybierz</button>
                 </div>
@@ -3952,6 +4003,7 @@ section#S11_PLANS .promoCodeRow .btn{
                     <li data-i18n="plans.partner.premium.feature2">Pełny podgląd panelu: aktywne, szkice, zapisy łącznie i frekwencja</li>
                     <li data-i18n="plans.partner.premium.feature3">Możliwość wysyłki broadcastu do uczestników</li>
                     <li data-i18n="plans.partner.premium.feature4">Wyróżnienie wydarzeń w aplikacji</li>
+                    <li data-i18n="plans.partner.premium.feature5">Do 5 hashtagów/kategorii na wydarzenie</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="setPartnerPlan('premium')" data-i18n="plans.choose">Wybierz</button>
                 </div>
@@ -3967,6 +4019,7 @@ section#S11_PLANS .promoCodeRow .btn{
                     <li data-i18n="plans.partner.enterprise.feature2">Obsługa wielu scenariuszy i działań niestandardowych</li>
                     <li data-i18n="plans.partner.enterprise.feature3">Najpełniejszy zakres raportowania i komunikacji</li>
                     <li data-i18n="plans.partner.enterprise.feature4">Zakres wdrożenia ustalany indywidualnie</li>
+                    <li data-i18n="plans.partner.enterprise.feature5">Indywidualny zakres hashtagów/kategorii wydarzeń</li>
                   </ul>
                   <button class="btn secondary mt16" type="button" onclick="contactEnterprisePlan()" data-i18n="plans.contact_us">Napisz do nas</button>
                 </div>

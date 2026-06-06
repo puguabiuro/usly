@@ -136,18 +136,22 @@ const I18N = {
     "plans.partner.free.feature2": "Podstawowy podgląd panelu: aktywne wydarzenia",
     "plans.partner.free.feature3": "Brak wiadomości do uczestników",
     "plans.partner.free.feature4": "Brak broadcastu i brak wyróżnienia wydarzeń",
+    "plans.partner.free.feature5": "1 hashtag/kategoria na wydarzenie",
     "plans.partner.pro.feature1": "Maksymalnie 5 aktywnych wydarzeń jednocześnie",
     "plans.partner.pro.feature2": "Rozszerzony podgląd panelu: aktywne, szkice i zapisy łącznie",
     "plans.partner.pro.feature3": "Możliwość pisania do uczestników",
     "plans.partner.pro.feature4": "Bez broadcastu i bez wyróżnienia wydarzeń",
+    "plans.partner.pro.feature5": "Do 2 hashtagów/kategorii na wydarzenie",
     "plans.partner.premium.feature1": "Nielimitowana liczba aktywnych wydarzeń",
     "plans.partner.premium.feature2": "Pełny podgląd panelu: aktywne, szkice, zapisy łącznie i frekwencja",
     "plans.partner.premium.feature3": "Możliwość wysyłki broadcastu do uczestników",
     "plans.partner.premium.feature4": "Wyróżnienie wydarzeń w aplikacji",
+    "plans.partner.premium.feature5": "Do 5 hashtagów/kategorii na wydarzenie",
     "plans.partner.enterprise.feature1": "Wszystko z planu PREMIUM",
     "plans.partner.enterprise.feature2": "Obsługa wielu scenariuszy i działań niestandardowych",
     "plans.partner.enterprise.feature3": "Najpełniejszy zakres raportowania i komunikacji",
     "plans.partner.enterprise.feature4": "Zakres wdrożenia ustalany indywidualnie",
+    "plans.partner.enterprise.feature5": "Indywidualny zakres hashtagów/kategorii wydarzeń",
     "enterprise.modal.title": "Plan Enterprise",
     "enterprise.modal.heading": "Porozmawiajmy o pakiecie dla Twojej marki",
     "enterprise.modal.subtitle": "Zostaw kontakt i zaznacz, czego potrzebujesz. Przygotujemy indywidualną propozycję dla Twojego miejsca, wydarzeń lub sieci lokalizacji.",
@@ -715,6 +719,7 @@ const I18N = {
     "partnerEvent.partnerOnly": "To jest dostępne tylko dla organizatora",
     "partnerEvent.draftRequired": "Aby zapisać szkic, uzupełnij: nazwa, miasto, kiedy, gdzie, hashtag",
     "partnerEvent.invalidDate": "Podaj poprawną datę wydarzenia",
+    "partnerEvent.interestLimitReached": "Ten plan pozwala dodać maks. {{limit}} hashtagów do wydarzenia.",
     "partnerEvent.invalidCapacity": "Podaj poprawną liczbę miejsc",
     "partnerEvent.ticketRequired": "Dodaj link do biletów / rezerwacji",
     "partnerEvent.invalidPrice": "Podaj poprawną cenę",
@@ -1032,18 +1037,22 @@ const I18N = {
     "plans.partner.free.feature2": "Basic dashboard view: active events",
     "plans.partner.free.feature3": "No participant messaging",
     "plans.partner.free.feature4": "No broadcast and no event highlighting",
+    "plans.partner.free.feature5": "1 hashtag/category per event",
     "plans.partner.pro.feature1": "Up to 5 active events at the same time",
     "plans.partner.pro.feature2": "Extended dashboard view: active events, drafts and signups combined",
     "plans.partner.pro.feature3": "Ability to message participants",
     "plans.partner.pro.feature4": "No broadcast and no event highlighting",
+    "plans.partner.pro.feature5": "Up to 2 hashtags/categories per event",
     "plans.partner.premium.feature1": "Unlimited active events",
     "plans.partner.premium.feature2": "Full dashboard view: active events, drafts, signups and attendance",
     "plans.partner.premium.feature3": "Ability to send broadcasts to participants",
     "plans.partner.premium.feature4": "Event highlighting in the app",
+    "plans.partner.premium.feature5": "Up to 5 hashtags/categories per event",
     "plans.partner.enterprise.feature1": "Everything in the PREMIUM plan",
     "plans.partner.enterprise.feature2": "Support for multiple scenarios and custom activities",
     "plans.partner.enterprise.feature3": "The fullest scope of reporting and communication",
     "plans.partner.enterprise.feature4": "Implementation scope agreed individually",
+    "plans.partner.enterprise.feature5": "Custom scope of event hashtags/categories",
     "enterprise.modal.title": "Enterprise Plan",
     "enterprise.modal.heading": "Let’s talk about a package for your brand",
     "enterprise.modal.subtitle": "Leave your contact details and select what you need. We will prepare a custom proposal for your venue, events or location network.",
@@ -1559,6 +1568,7 @@ const I18N = {
     "partnerEvent.partnerOnly": "This is available only for organizers",
     "partnerEvent.draftRequired": "To save a draft, fill in: name, city, date, place and hashtag",
     "partnerEvent.invalidDate": "Enter a valid event date",
+    "partnerEvent.interestLimitReached": "This plan allows up to {{limit}} event hashtags.",
     "partnerEvent.invalidCapacity": "Enter a valid number of spots",
     "partnerEvent.ticketRequired": "Add a ticket / reservation link",
     "partnerEvent.invalidPrice": "Enter a valid price",
@@ -6659,6 +6669,8 @@ function resetPartnerEventFormMode() {
 
 function clearPartnerEventForm() {
   resetPartnerEventFormMode();
+  setPartnerEventInterestTags([]);
+  renderPartnerEventInterestTags();
   ["peTitle","peCity","peWhen","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink","peCapacity"].forEach(id => {
     const el = $(id);
     if (el) el.value = "";
@@ -6672,6 +6684,7 @@ function clearPartnerEventForm() {
 function openNewPartnerEventForm() {
   clearPartnerEventForm();
   go("S9_PARTNER_CREATE");
+  setTimeout(renderPartnerEventInterestTags, 0);
 }
 
 async function renderPartnerEventParticipants() {
@@ -6993,6 +7006,69 @@ function renderPartnerPlaceResults(results = []) {
 
 
 
+const PARTNER_EVENT_INTEREST_TAG_LIMITS = {
+  free: 1,
+  pro: 2,
+  premium: 5,
+  enterprise: 10,
+};
+
+function getPartnerEventInterestTagLimit() {
+  const plan = String(App.partner?.plan || "free").toLowerCase();
+  return PARTNER_EVENT_INTEREST_TAG_LIMITS[plan] || PARTNER_EVENT_INTEREST_TAG_LIMITS.free;
+}
+
+function getPartnerEventInterestTags() {
+  if (!Array.isArray(App.partnerEventInterestTags)) {
+    App.partnerEventInterestTags = [];
+  }
+  return App.partnerEventInterestTags;
+}
+
+function setPartnerEventInterestTags(tags) {
+  const clean = [];
+  const seen = new Set();
+  (tags || []).forEach((raw) => {
+    const tag = normalizeTag(String(raw || "").replaceAll("#", " ").trim());
+    if (!tag || seen.has(tag.toLowerCase())) return;
+    seen.add(tag.toLowerCase());
+    clean.push(tag);
+  });
+  App.partnerEventInterestTags = clean;
+  return clean;
+}
+
+function renderPartnerEventInterestTags() {
+  const selected = $("peInterestSelected");
+  const selectedText = $("peInterestSelectedText");
+  const input = $("peInterest");
+  const wrap = $("peInterestInputWrap");
+  if (!selected || !selectedText || !input || !wrap) return;
+
+  const tags = getPartnerEventInterestTags();
+  const limit = getPartnerEventInterestTagLimit();
+
+  selected.hidden = false;
+  selectedText.innerHTML = tags.map((tag, index) => `
+    <span class="chip eventInterestChip">
+      #${escapeHtml(tag)}
+      <button type="button" class="eventInterestChipRemove" data-index="${index}" aria-label="Usuń hashtag">×</button>
+    </span>
+  `).join("");
+
+  input.disabled = tags.length >= limit;
+  wrap.style.display = tags.length >= limit ? "none" : "";
+
+  let counter = $("peInterestCounter");
+  if (!counter) {
+    counter = document.createElement("div");
+    counter.id = "peInterestCounter";
+    counter.className = "sectionSub mt8";
+    selected.insertAdjacentElement("afterend", counter);
+  }
+  counter.textContent = `${tags.length}/${limit}`;
+}
+
 function getSingleEventTagValue() {
   const input = $("peInterest");
   if (!input) return "";
@@ -7006,35 +7082,40 @@ function getSingleEventTagValue() {
 
 function commitSingleEventTag() {
   const input = $("peInterest");
-  const selected = $("peInterestSelected");
-  const selectedText = $("peInterestSelectedText");
-  const wrap = $("peInterestInputWrap");
-
-  if (!input || !selected || !selectedText || !wrap) return;
+  if (!input) return;
 
   const tag = getSingleEventTagValue();
   if (!tag) return;
 
-  input.value = tag;
-  input.disabled = true;
-  wrap.style.display = "none";
+  const tags = getPartnerEventInterestTags();
+  const limit = getPartnerEventInterestTagLimit();
 
-  selected.hidden = false;
-  selectedText.textContent = `#${tag}`;
+  if (tags.map(x => x.toLowerCase()).includes(tag.toLowerCase())) {
+    input.value = "";
+    renderPartnerEventInterestTags();
+    return;
+  }
+
+  if (tags.length >= limit) {
+    toast(t("partnerEvent.interestLimitReached", { limit }));
+    input.value = "";
+    renderPartnerEventInterestTags();
+    return;
+  }
+
+  setPartnerEventInterestTags([...tags, tag]);
+  input.value = "";
+  renderPartnerEventInterestTags();
 }
 
 function resetSingleEventTag() {
   const input = $("peInterest");
-  const selected = $("peInterestSelected");
-  const wrap = $("peInterestInputWrap");
+  if (!input) return;
 
-  if (!input || !selected || !wrap) return;
-
+  setPartnerEventInterestTags([]);
   input.disabled = false;
   input.value = "";
-  wrap.style.display = "";
-
-  selected.hidden = true;
+  renderPartnerEventInterestTags();
 
   setTimeout(() => input.focus(), 50);
 }
@@ -7094,7 +7175,9 @@ function openPartnerEventEditor(eventId) {
   if ($("peResolvedAddress")) $("peResolvedAddress").value = ev.address || "";
   if ($("peLocationLat")) $("peLocationLat").value = ev.location_lat ?? "";
   if ($("peLocationLng")) $("peLocationLng").value = ev.location_lng ?? "";
-  if ($("peInterest")) $("peInterest").value = ev.interest_tag || ev.interest || "";
+  setPartnerEventInterestTags(Array.isArray(ev.interest_tags) && ev.interest_tags.length ? ev.interest_tags : [ev.interest_tag || ev.interest || ""]);
+  if ($("peInterest")) $("peInterest").value = "";
+  renderPartnerEventInterestTags();
   if ($("peDesc")) $("peDesc").value = ev.description || "";
 
   const pricingTypeMap = {
@@ -7131,7 +7214,8 @@ async function savePartnerEventDraft() {
   const address = $("peResolvedAddress")?.value?.trim() || $("peAddress")?.value?.trim() || null;
   const locationLat = $("peLocationLat")?.value ? Number($("peLocationLat")?.value) : null;
   const locationLng = $("peLocationLng")?.value ? Number($("peLocationLng")?.value) : null;
-  const interest = normalizeTag($("peInterest")?.value?.trim());
+  const interestTags = getPartnerEventInterestTags();
+  const interest = interestTags[0] || normalizeTag($("peInterest")?.value?.trim());
   const desc = $("peDesc")?.value?.trim();
 
   if (!title || !city || !when || !where || !interest) {
@@ -7204,6 +7288,7 @@ async function savePartnerEventDraft() {
     location_lat: locationLat,
     location_lng: locationLng,
     interest_tag: interest,
+    interest_tags: interestTags.length ? interestTags : [interest],
     start_at: toLocalApiDateTime(when),
     end_at: addHourToLocalDateTime(when),
     pricing_type: pricingTypeMap[paidMode] || "free",
@@ -7250,6 +7335,8 @@ async function savePartnerEventDraft() {
     }
 
     resetPartnerEventFormMode();
+    setPartnerEventInterestTags([]);
+    renderPartnerEventInterestTags();
     ["peTitle","peCity","peWhen","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink"].forEach(id => {
       const el = $(id);
       if (el) el.value = "";
@@ -7295,7 +7382,8 @@ async function publishPartnerEvent() {
   const address = $("peResolvedAddress")?.value?.trim() || $("peAddress")?.value?.trim() || null;
   const locationLat = $("peLocationLat")?.value ? Number($("peLocationLat")?.value) : null;
   const locationLng = $("peLocationLng")?.value ? Number($("peLocationLng")?.value) : null;
-  const interest = normalizeTag($("peInterest")?.value?.trim());
+  const interestTags = getPartnerEventInterestTags();
+  const interest = interestTags[0] || normalizeTag($("peInterest")?.value?.trim());
   const desc = $("peDesc")?.value?.trim();
 
   if (App.selectedPartnerEventId) {
@@ -7375,6 +7463,7 @@ async function publishPartnerEvent() {
     location_lat: locationLat,
     location_lng: locationLng,
     interest_tag: interest,
+    interest_tags: interestTags.length ? interestTags : [interest],
     start_at: toLocalApiDateTime(when),
     end_at: addHourToLocalDateTime(when),
     pricing_type: pricingTypeMap[paidMode] || "free",
@@ -9746,9 +9835,13 @@ function suggestPeopleByInterest(tag) {
 }
 
 function matchesUserEventInterest(ev) {
-  const mine = (App.user.interests || []).map(x => String(x).toLowerCase());
-  const tag = String(ev?.interest || "").toLowerCase();
-  return !!tag && mine.includes(tag);
+  const mine = (App.user.interests || []).map(x => normalizeTag(String(x || ""))).filter(Boolean);
+  const eventTags = Array.isArray(ev?.interests) && ev.interests.length
+    ? ev.interests
+    : [ev?.interest];
+
+  const normalizedEventTags = eventTags.map(x => normalizeTag(String(x || ""))).filter(Boolean);
+  return normalizedEventTags.some(tag => mine.includes(tag));
 }
 
 function getUserNearbyRadiusKm() {
@@ -9870,6 +9963,10 @@ function mapApiEventToViewModel(e) {
         })
       : t("personProfile.eventSoon");
 
+  const eventInterests = Array.isArray(e.interest_tags) && e.interest_tags.length
+    ? e.interest_tags.map(x => normalizeTag(String(x || ""))).filter(Boolean)
+    : [normalizeTag(e.interest_tag || e.interest || e.category || e.tag || "wydarzenie")].filter(Boolean);
+
   return {
     id: String(e.id),
     title: e.title || "Wydarzenie",
@@ -9879,13 +9976,8 @@ function mapApiEventToViewModel(e) {
     address: e.address || "",
     location_lat: e.location_lat ?? null,
     location_lng: e.location_lng ?? null,
-    interest: normalizeTag(
-      e.interest_tag ||
-      e.interest ||
-      e.category ||
-      e.tag ||
-      "wydarzenie"
-    ),
+    interest: eventInterests[0] || "wydarzenie",
+    interests: eventInterests,
     desc: e.description || "",
     status: e.status || "draft",
     start_at: e.start_at || null,
@@ -10899,6 +10991,17 @@ function escapeAdminHtml(value) {
 
 
 document.addEventListener("click", (e) => {
+  const chipRemove = e.target?.closest?.(".eventInterestChipRemove");
+  if (chipRemove) {
+    const index = Number(chipRemove.dataset.index);
+    const tags = getPartnerEventInterestTags();
+    if (Number.isInteger(index) && index >= 0 && index < tags.length) {
+      setPartnerEventInterestTags(tags.filter((_, i) => i !== index));
+      renderPartnerEventInterestTags();
+    }
+    return;
+  }
+
   const removeBtn = e.target?.closest?.("#peInterestRemoveBtn");
   if (!removeBtn) return;
 

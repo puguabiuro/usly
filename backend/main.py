@@ -3066,8 +3066,17 @@ def list_events(
         scored = []
 
         for e in events:
-            event_tag = norm_tag(e.interest_tag)
-            score = 1 if event_tag and event_tag in user_interest_set else 0
+            event_tags = []
+            if getattr(e, "interest_tags_json", None):
+                try:
+                    event_tags = json.loads(e.interest_tags_json) or []
+                except Exception:
+                    event_tags = []
+            if not event_tags:
+                event_tags = [e.interest_tag]
+
+            normalized_event_tags = {norm_tag(tag) for tag in event_tags if tag and str(tag).strip()}
+            score = 1 if normalized_event_tags & user_interest_set else 0
             scored.append((score, e))
 
         scored.sort(key=lambda x: (-x[0], x[1].start_at, x[1].id))
@@ -3108,6 +3117,7 @@ def list_events(
                     "location_lat": e.location_lat,
                     "location_lng": e.location_lng,
                     "interest_tag": e.interest_tag,
+                    "interest_tags": event_tags,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
                     "capacity": e.capacity,
@@ -3179,6 +3189,15 @@ def get_event_details(
         if event.capacity is not None:
             spots_left = max(event.capacity - signups_count, 0)
 
+        event_tags = []
+        if getattr(event, "interest_tags_json", None):
+            try:
+                event_tags = json.loads(event.interest_tags_json) or []
+            except Exception:
+                event_tags = []
+        if not event_tags:
+            event_tags = [event.interest_tag]
+
         return ok(
             {
                 "id": event.id,
@@ -3190,6 +3209,7 @@ def get_event_details(
                 "description": event.description,
                 "city": event.city,
                 "interest_tag": event.interest_tag,
+                "interest_tags": event_tags,
                 "start_at": event.start_at,
                 "end_at": event.end_at,
                 "capacity": event.capacity,
@@ -3289,6 +3309,15 @@ def partner_list_events(
 
         items = []
         for e in events:
+            event_tags = []
+            if getattr(e, "interest_tags_json", None):
+                try:
+                    event_tags = json.loads(e.interest_tags_json) or []
+                except Exception:
+                    event_tags = []
+            if not event_tags:
+                event_tags = [e.interest_tag]
+
             items.append(
                 {
                     "id": e.id,
@@ -3301,6 +3330,7 @@ def partner_list_events(
                     "location_lat": e.location_lat,
                     "location_lng": e.location_lng,
                     "interest_tag": e.interest_tag,
+                    "interest_tags": event_tags,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
                     "capacity": e.capacity,
@@ -3347,6 +3377,15 @@ def partner_get_event_details(
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
 
+        event_tags = []
+        if getattr(event, "interest_tags_json", None):
+            try:
+                event_tags = json.loads(event.interest_tags_json) or []
+            except Exception:
+                event_tags = []
+        if not event_tags:
+            event_tags = [event.interest_tag]
+
         return ok(
             {
                 "id": event.id,
@@ -3359,6 +3398,7 @@ def partner_get_event_details(
                 "location_lat": event.location_lat,
                 "location_lng": event.location_lng,
                 "interest_tag": event.interest_tag,
+                "interest_tags": event_tags,
                 "start_at": event.start_at,
                 "end_at": event.end_at,
                 "capacity": event.capacity,
