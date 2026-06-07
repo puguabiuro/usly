@@ -1005,10 +1005,6 @@ def _audit(db, *, action: str, request: Request, user_id: int | None, details: s
     db.add(log)
     db.commit()
 
-@app.get("/crash-test")
-def crash_test():
-    1 / 0
-
 
 def _is_at_least_18(dob: date) -> bool:
     today = date.today()
