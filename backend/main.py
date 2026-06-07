@@ -6,6 +6,7 @@ from backend.request_id_middleware import RequestIdMiddleware
 # -*- coding: utf-8 -*-
 
 import os
+import asyncio
 import base64
 from pathlib import Path
 from dotenv import load_dotenv

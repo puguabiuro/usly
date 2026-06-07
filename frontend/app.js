@@ -2972,7 +2972,7 @@ async function setUserPlan(plan, silent = false) {
 
       App.user.plan = data.data.plan || prevPlan || "free";
       try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch(_) {}
-      safeSetText("planPillSetup", App.user.plan.toUpperCase());
+      safeSetText("planPillSetup", String(App.user.plan || "free").toUpperCase());
       refreshUserPlanCardsUi();
       renderAll();
       if (!silent) toast(t("plans.toast.selected", { plan: App.user.plan.toUpperCase() }));
