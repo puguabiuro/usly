@@ -7287,6 +7287,15 @@ def admin_event_preview(
                         if str(row.get("status") or "new") not in {"resolved", "rejected", "archived"}:
                             reports_open += 1
 
+        event_tags = []
+        if getattr(event, "interest_tags_json", None):
+            try:
+                event_tags = json.loads(event.interest_tags_json) or []
+            except Exception:
+                event_tags = []
+        if not event_tags and event.interest_tag:
+            event_tags = [event.interest_tag]
+
         return ok({
             "id": event.id,
             "partner_user_id": event.partner_user_id,
@@ -7321,6 +7330,7 @@ def admin_event_preview(
             "city": event.city,
             "where": getattr(event, "where", None),
             "interest_tag": getattr(event, "interest_tag", None),
+            "interest_tags": event_tags,
             "start_at": str(event.start_at) if event.start_at else None,
             "end_at": str(event.end_at) if event.end_at else None,
             "capacity": event.capacity,
@@ -7878,6 +7888,15 @@ def admin_list_events(current_user: User = Depends(require_role("admin"))):
             organizer = partners.get(ev.partner_user_id)
             organizer_profile = partner_profiles.get(ev.partner_user_id)
 
+            event_tags = []
+            if getattr(ev, "interest_tags_json", None):
+                try:
+                    event_tags = json.loads(ev.interest_tags_json) or []
+                except Exception:
+                    event_tags = []
+            if not event_tags and ev.interest_tag:
+                event_tags = [ev.interest_tag]
+
             items.append({
                 "id": ev.id,
                 "title": ev.title,
@@ -7885,6 +7904,7 @@ def admin_list_events(current_user: User = Depends(require_role("admin"))):
                 "city": ev.city,
                 "where": ev.where,
                 "interest_tag": ev.interest_tag,
+                "interest_tags": event_tags,
                 "start_at": str(ev.start_at) if ev.start_at else None,
                 "end_at": str(ev.end_at) if ev.end_at else None,
                 "capacity": ev.capacity,

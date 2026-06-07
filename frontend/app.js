@@ -4005,6 +4005,18 @@ function getEventTagIcon(tag = "") {
   return "🎟️";
 }
 
+function getEventTagsLabel(ev) {
+  const tags = Array.isArray(ev?.interests) && ev.interests.length
+    ? ev.interests
+    : [ev?.interest || ev?.interest_tag || "wydarzenie"];
+
+  return tags
+    .map(tag => normalizeTag(String(tag || "")))
+    .filter(Boolean)
+    .map(tag => `#${tag}`)
+    .join(" ");
+}
+
 function openPerson(personId) {
   const p = resolvePersonById(personId);
   if (!p) return;
@@ -5291,7 +5303,11 @@ function openEvent(eventId) {
   const chips = $("evInterestChips");
   if (chips) {
     chips.innerHTML = "";
-    chips.appendChild(makeChip(`#${ev.interest}`, null));
+    const tags = Array.isArray(ev.interests) && ev.interests.length ? ev.interests : [ev.interest];
+    tags
+      .map(tag => normalizeTag(String(tag || "")))
+      .filter(Boolean)
+      .forEach(tag => chips.appendChild(makeChip(`#${tag}`, null)));
   }
 
   safeSetText("evDesc", ev.desc);

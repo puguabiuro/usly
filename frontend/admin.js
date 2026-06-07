@@ -97,6 +97,20 @@ function escapeAdmin(value) {
     .replaceAll("'", "&#039;");
 }
 
+function getAdminEventTags(ev) {
+  const tags = Array.isArray(ev?.interest_tags) && ev.interest_tags.length
+    ? ev.interest_tags
+    : [ev?.interest_tag || "event"];
+
+  return tags
+    .map(tag => String(tag || "").trim().replace(/^#/, ""))
+    .filter(Boolean);
+}
+
+function getAdminEventTagsLabel(ev) {
+  return getAdminEventTags(ev).map(tag => `#${tag}`).join(" ");
+}
+
 function adminStatusLabel(status) {
   const labels = {
     new: "Nowe",
@@ -2014,7 +2028,7 @@ async function openEventPreview(eventId, reportTicket = "", reportStatus = "new"
 
             <div class="adminUserMetaRow">
               ${adminStatusBadge(ev.lifecycle_status || ev.status || "—")}
-              <span class="adminUserRole">${escapeAdmin(ev.interest_tag || "event")}</span>
+              <span class="adminUserRole">${escapeAdmin(getAdminEventTagsLabel(ev))}</span>
             </div>
           </div>
         </div>
