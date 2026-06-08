@@ -2662,12 +2662,18 @@ async def upload_logo(
     ext = ext_map.get(file.content_type, "bin")
 
     filename = f"{uuid4().hex}.{ext}"
-    path = LOGOS_DIR / filename
 
-    with open(path, "wb") as f:
-        f.write(content)
-
-    logo_url = f"/uploads/static/logos/{filename}"
+    if r2_enabled():
+        logo_url = upload_media_to_r2(
+            key=f"logos/{filename}",
+            content=content,
+            content_type=file.content_type,
+        )
+    else:
+        path = LOGOS_DIR / filename
+        with open(path, "wb") as f:
+            f.write(content)
+        logo_url = f"/uploads/static/logos/{filename}"
 
     db = SessionLocal()
     try:
