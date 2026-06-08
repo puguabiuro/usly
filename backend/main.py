@@ -2592,12 +2592,18 @@ async def generate_ai_avatar(
 
         content = base64.b64decode(b64_image)
         filename = f"ai_{current_user.id}_{uuid4().hex}.png"
-        path = AVATARS_DIR / filename
 
-        with open(path, "wb") as f:
-            f.write(content)
-
-        avatar_url = f"/uploads/static/avatars/{filename}"
+        if r2_enabled():
+            avatar_url = upload_media_to_r2(
+                key=f"avatars/{filename}",
+                content=content,
+                content_type="image/png",
+            )
+        else:
+            path = AVATARS_DIR / filename
+            with open(path, "wb") as f:
+                f.write(content)
+            avatar_url = f"/uploads/static/avatars/{filename}"
 
         profile.avatar_url = avatar_url
         profile.updated_at = datetime.utcnow()
