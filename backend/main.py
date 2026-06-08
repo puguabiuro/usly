@@ -162,7 +162,7 @@ from fastapi import (
     Query,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -1215,39 +1215,95 @@ def register(request: Request, payload: RegisterRequest):
 # =========================
 # AUTH  VERIFY EMAIL
 # =========================
+def _verify_email_token(db, token: str):
+    token_value = str(token or "").strip()
+    if not token_value:
+        raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_REQUIRED")
+
+    verify_row = (
+        db.query(EmailVerificationToken)
+        .filter(EmailVerificationToken.token == token_value)
+        .first()
+    )
+
+    if not verify_row or verify_row.used_at is not None:
+        raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_INVALID")
+
+    if verify_row.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_EXPIRED")
+
+    user = db.query(User).filter(User.id == verify_row.user_id).first()
+    if not user or user.status == UserStatus.DELETED.value:
+        raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+    now = datetime.utcnow().replace(microsecond=0)
+    user.email_verified_at = user.email_verified_at or now
+    verify_row.used_at = now
+
+    db.add(user)
+    db.add(verify_row)
+    db.commit()
+
+    return {"verified": True}
+
+
+@app.get("/verify-email", response_class=HTMLResponse)
+def verify_email_web(token: str):
+    db = SessionLocal()
+    try:
+        _verify_email_token(db, token)
+        return HTMLResponse("""
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>USLY — email potwierdzony</title>
+</head>
+<body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#fff7fb; color:#20131a; display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0; padding:24px;">
+  <main style="max-width:520px; background:white; border-radius:24px; padding:32px; box-shadow:0 18px 60px rgba(90,40,80,.14); text-align:center;">
+    <h1 style="margin:0 0 12px;">Email potwierdzony ✨</h1>
+    <p style="font-size:17px; line-height:1.5;">Twój adres email został potwierdzony. Możesz wrócić do aplikacji USLY.</p>
+  </main>
+</body>
+</html>
+""")
+    except HTTPException as exc:
+        detail = str(exc.detail or "EMAIL_VERIFY_ERROR")
+        if detail == "EMAIL_VERIFY_TOKEN_EXPIRED":
+            title = "Link wygasł"
+            body = "Ten link weryfikacyjny stracił ważność. Wróć do aplikacji USLY i poproś o nowy link."
+        elif detail == "EMAIL_VERIFY_TOKEN_INVALID":
+            title = "Link jest nieważny"
+            body = "Ten link został już użyty albo jest nieprawidłowy."
+        else:
+            title = "Nie udało się potwierdzić emaila"
+            body = "Sprawdź link albo wróć do aplikacji USLY."
+        return HTMLResponse(f"""
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>USLY — {title}</title>
+</head>
+<body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#fff7fb; color:#20131a; display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0; padding:24px;">
+  <main style="max-width:520px; background:white; border-radius:24px; padding:32px; box-shadow:0 18px 60px rgba(90,40,80,.14); text-align:center;">
+    <h1 style="margin:0 0 12px;">{title}</h1>
+    <p style="font-size:17px; line-height:1.5;">{body}</p>
+  </main>
+</body>
+</html>
+""", status_code=exc.status_code)
+    finally:
+        db.close()
+
+
 @app.get("/auth/verify-email")
 def verify_email(token: str):
     db = SessionLocal()
     try:
-        token_value = str(token or "").strip()
-        if not token_value:
-            raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_REQUIRED")
-
-        verify_row = (
-            db.query(EmailVerificationToken)
-            .filter(EmailVerificationToken.token == token_value)
-            .first()
-        )
-
-        if not verify_row or verify_row.used_at is not None:
-            raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_INVALID")
-
-        if verify_row.expires_at < datetime.utcnow():
-            raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_EXPIRED")
-
-        user = db.query(User).filter(User.id == verify_row.user_id).first()
-        if not user or user.status == UserStatus.DELETED.value:
-            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
-
-        now = datetime.utcnow().replace(microsecond=0)
-        user.email_verified_at = user.email_verified_at or now
-        verify_row.used_at = now
-
-        db.add(user)
-        db.add(verify_row)
-        db.commit()
-
-        return ok({"verified": True})
+        return ok(_verify_email_token(db, token))
     finally:
         db.close()
 
