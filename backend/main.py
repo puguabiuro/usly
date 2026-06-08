@@ -2439,12 +2439,18 @@ async def upload_avatar(
     ext = ext_map.get(file.content_type, "bin")
 
     filename = f"{uuid4().hex}.{ext}"
-    path = AVATARS_DIR / filename
 
-    with open(path, "wb") as f:
-        f.write(content)
-
-    avatar_url = f"/uploads/static/avatars/{filename}"
+    if r2_enabled():
+        avatar_url = upload_media_to_r2(
+            key=f"avatars/{filename}",
+            content=content,
+            content_type=file.content_type,
+        )
+    else:
+        path = AVATARS_DIR / filename
+        with open(path, "wb") as f:
+            f.write(content)
+        avatar_url = f"/uploads/static/avatars/{filename}"
 
     db = SessionLocal()
     try:
