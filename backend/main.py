@@ -1233,14 +1233,19 @@ def _verify_email_token(db, token: str):
     if not verify_row or verify_row.used_at is not None:
         raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_INVALID")
 
-    if verify_row.expires_at < datetime.utcnow():
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0)
+    expires_at = verify_row.expires_at
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at and expires_at < now_utc:
         raise HTTPException(status_code=400, detail="EMAIL_VERIFY_TOKEN_EXPIRED")
 
     user = db.query(User).filter(User.id == verify_row.user_id).first()
     if not user or user.status == UserStatus.DELETED.value:
         raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
 
-    now = datetime.utcnow().replace(microsecond=0)
+    now = now_utc
     user.email_verified_at = user.email_verified_at or now
     verify_row.used_at = now
 
