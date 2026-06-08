@@ -5429,6 +5429,13 @@ def invite_to_group(
             status="pending",
         )
         db.add(inv)
+        db.add(
+            UserNotification(
+                user_id=payload.invitee_user_id,
+                partner_user_id=current_user.id,
+                type="group_invitation",
+            )
+        )
         db.commit()
         db.refresh(inv)
 
