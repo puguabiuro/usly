@@ -54,7 +54,7 @@ const IS_CAPACITOR_APP = !!window.Capacitor;
 const API_BASE_URL =
   window.USLY_API_BASE_URL ||
   (IS_CAPACITOR_APP || location.hostname.includes("onrender.com") || location.hostname === "uslyapp.pl" || location.hostname === "www.uslyapp.pl"
-    ? "https://usly-backend-v2.onrender.com"
+    ? "https://api.uslyapp.pl"
     : "http://127.0.0.1:8000");
 
 // expose for api.js (plain scripts)
