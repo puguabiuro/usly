@@ -145,6 +145,8 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
+import boto3
+from botocore.exceptions import ClientError
 import os
 import aiosmtplib
 from email.message import EmailMessage
@@ -704,6 +706,31 @@ def healthz():
     return {"status": "ok"}
 
 
+@app.get("/admin/r2/health")
+def admin_r2_health(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "plans")
+
+    if not r2_enabled():
+        return ok({"enabled": False})
+
+    try:
+        client = r2_client()
+        client.head_bucket(Bucket=R2_BUCKET_NAME)
+        return ok({
+            "enabled": True,
+            "bucket": R2_BUCKET_NAME,
+            "public_base_url": R2_PUBLIC_BASE_URL,
+        })
+    except ClientError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "code": "R2_HEALTHCHECK_FAILED",
+                "message": str(exc),
+            },
+        )
+
+
 # =========================
 # MVP: JOIN EVENT
 # =========================
@@ -879,6 +906,52 @@ def leave_event(
 UPLOADS_DIR = Path("uploads")
 UPLOADS_DIR.mkdir(exist_ok=True)
 app.mount("/uploads/static", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
+# =========================
+# Cloudflare R2 media storage
+# =========================
+R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "").strip()
+R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "").strip()
+R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY", "").strip()
+R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "").strip()
+R2_PUBLIC_BASE_URL = os.getenv("R2_PUBLIC_BASE_URL", "").rstrip("/")
+
+def r2_enabled() -> bool:
+    return all([
+        R2_ACCOUNT_ID,
+        R2_ACCESS_KEY_ID,
+        R2_SECRET_ACCESS_KEY,
+        R2_BUCKET_NAME,
+        R2_PUBLIC_BASE_URL,
+    ])
+
+
+def r2_client():
+    if not r2_enabled():
+        return None
+
+    return boto3.client(
+        "s3",
+        endpoint_url=f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+        aws_access_key_id=R2_ACCESS_KEY_ID,
+        aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+        region_name="auto",
+    )
+
+
+def upload_media_to_r2(key: str, content: bytes, content_type: str) -> str:
+    client = r2_client()
+    if not client:
+        raise RuntimeError("R2 is not configured")
+
+    client.put_object(
+        Bucket=R2_BUCKET_NAME,
+        Key=key,
+        Body=content,
+        ContentType=content_type,
+    )
+    return f"{R2_PUBLIC_BASE_URL}/{key}"
+
 
 # =========================
 # Static frontend / admin
