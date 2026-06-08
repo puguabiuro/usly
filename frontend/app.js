@@ -7984,7 +7984,7 @@ async function refreshNotifBadgeCount() {
       }).length +
       eventNotifItems.filter((row) => {
         const notification = row?.notification || {};
-        if (notification.type === "friend_request") return false;
+        if (notification.type === "friend_request" || notification.type === "group_invitation") return false;
         const createdAt = parseUslyTimestamp(notification?.created_at);
         return createdAt > seenAt;
       }).length;
