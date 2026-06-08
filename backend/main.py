@@ -3455,12 +3455,18 @@ async def upload_event_cover(
     ext = ext_map.get(file.content_type, "bin")
 
     filename = f"{uuid4().hex}.{ext}"
-    path = EVENT_COVERS_DIR / filename
 
-    with open(path, "wb") as f:
-        f.write(content)
-
-    event_cover_url = f"/uploads/static/event-covers/{filename}"
+    if r2_enabled():
+        event_cover_url = upload_media_to_r2(
+            key=f"event-covers/{filename}",
+            content=content,
+            content_type=file.content_type,
+        )
+    else:
+        path = EVENT_COVERS_DIR / filename
+        with open(path, "wb") as f:
+            f.write(content)
+        event_cover_url = f"/uploads/static/event-covers/{filename}"
 
     return ok({"event_cover_url": event_cover_url})
 
