@@ -1146,9 +1146,7 @@ def register(request: Request, payload: RegisterRequest):
             db.add(verify_row)
             db.commit()
 
-            verify_link_base = os.getenv("EMAIL_VERIFY_LINK_BASE", "usly://verify-email").strip() or "usly://verify-email"
-            verify_separator = "&" if "?" in verify_link_base else "?"
-            verify_link = f"{verify_link_base}{verify_separator}token={verify_token}"
+            verify_link = _build_email_verify_link(verify_token)
 
             verify_subject = "USLY — potwierdź adres email"
             verify_body = (
@@ -1215,6 +1213,12 @@ def register(request: Request, payload: RegisterRequest):
 # =========================
 # AUTH  VERIFY EMAIL
 # =========================
+def _build_email_verify_link(token: str) -> str:
+    verify_link_base = os.getenv("EMAIL_VERIFY_LINK_BASE", "usly://verify-email").strip() or "usly://verify-email"
+    verify_separator = "&" if "?" in verify_link_base else "?"
+    return f"{verify_link_base}{verify_separator}token={token}"
+
+
 def _verify_email_token(db, token: str):
     token_value = str(token or "").strip()
     if not token_value:
@@ -1245,6 +1249,67 @@ def _verify_email_token(db, token: str):
     db.commit()
 
     return {"verified": True}
+
+
+@app.post("/auth/resend-verification-email")
+def resend_verification_email(current_user: User = Depends(require_role("user", "partner"))):
+    if getattr(current_user, "email_verified_at", None):
+        return ok({"sent": False, "already_verified": True})
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user or user.status == UserStatus.DELETED.value:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        if getattr(user, "email_verified_at", None):
+            return ok({"sent": False, "already_verified": True})
+
+        now = datetime.utcnow().replace(microsecond=0)
+
+        (
+            db.query(EmailVerificationToken)
+            .filter(
+                EmailVerificationToken.user_id == user.id,
+                EmailVerificationToken.used_at.is_(None),
+            )
+            .delete(synchronize_session=False)
+        )
+
+        verify_token = str(uuid4())
+        verify_row = EmailVerificationToken(
+            user_id=user.id,
+            token=verify_token,
+            expires_at=now + timedelta(hours=24),
+            used_at=None,
+        )
+        db.add(verify_row)
+        db.commit()
+
+        verify_link = _build_email_verify_link(verify_token)
+        verify_subject = "USLY — potwierdź adres email"
+        verify_body = (
+            "Potwierdź swój adres email, aby zabezpieczyć konto USLY.\n\n"
+            f"Otwórz ten link:\n{verify_link}\n\n"
+            "Link jest jednorazowy i ważny przez 24 godziny.\n\n"
+            "Jeśli to nie Ty prosisz o link weryfikacyjny, zignoruj tę wiadomość albo napisz do nas:\n"
+            "kontakt@uslyapp.pl"
+        )
+
+        try:
+            import asyncio
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(send_user_email(user.email, verify_subject, verify_body))
+            except RuntimeError:
+                asyncio.run(send_user_email(user.email, verify_subject, verify_body))
+        except Exception as mail_error:
+            print("VERIFY RESEND MAIL ERROR:", mail_error)
+            raise HTTPException(status_code=500, detail="EMAIL_SEND_FAILED")
+
+        return ok({"sent": True, "already_verified": False})
+    finally:
+        db.close()
 
 
 @app.get("/verify-email", response_class=HTMLResponse)
