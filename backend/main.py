@@ -1003,6 +1003,30 @@ def serve_frontend_index():
 def serve_admin_html():
     return FileResponse(FRONTEND_DIR / "admin.html")
 
+@app.get("/.well-known/assetlinks.json", include_in_schema=False)
+def serve_android_assetlinks():
+    android_package = os.getenv("ANDROID_PACKAGE_NAME", "com.usly.app").strip() or "com.usly.app"
+    sha256_fingerprints = [
+        item.strip()
+        for item in os.getenv("ANDROID_SHA256_CERT_FINGERPRINTS", "").split(",")
+        if item.strip()
+    ]
+
+    if not sha256_fingerprints:
+        return JSONResponse([], media_type="application/json")
+
+    return JSONResponse([
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": android_package,
+                "sha256_cert_fingerprints": sha256_fingerprints,
+            },
+        }
+    ], media_type="application/json")
+
+
 @app.get("/app.js", include_in_schema=False)
 def serve_app_js():
     return FileResponse(FRONTEND_DIR / "app.js")
