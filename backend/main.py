@@ -999,7 +999,10 @@ FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
 @app.get("/", include_in_schema=False)
 def serve_frontend_index():
-    return FileResponse(FRONTEND_DIR / "index.html")
+    return FileResponse(
+        FRONTEND_DIR / "index.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 @app.get("/admin.html", include_in_schema=False)
 def serve_admin_html():
