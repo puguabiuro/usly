@@ -89,6 +89,10 @@ def ensure_event_reminder_notifications(db, current_time=None):
     )
 
     for event in published_events:
+        event_start = event.start_at
+        if getattr(event_start, "tzinfo", None) is not None:
+            event_start = event_start.astimezone(timezone.utc).replace(tzinfo=None)
+
         signup_user_ids = {
             user_id
             for (user_id,) in (
@@ -110,7 +114,10 @@ def ensure_event_reminder_notifications(db, current_time=None):
         target_user_ids = signup_user_ids | saved_user_ids
 
         for notif_type, delta in reminder_rules:
-            target_from = event.start_at - delta
+            if event_start is None:
+                continue
+
+            target_from = event_start - delta
             target_to = target_from + timedelta(hours=24)
 
             if not (target_from <= now < target_to):
