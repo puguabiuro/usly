@@ -10960,9 +10960,14 @@ async function loadResetPasswordScreen(token) {
 
 function handlePasswordResetTokenFromUrl() {
   try {
+    const path = String(window.location.pathname || "").toLowerCase();
+    const hash = String(window.location.hash || "").toLowerCase();
     const params = new URLSearchParams(window.location.search || "");
-    const token = (params.get("token") || "").trim();
-    if (!token) return;
+    const token = (params.get("reset_token") || params.get("token") || "").trim();
+    const isResetLink = path.includes("reset-password") || hash.includes("reset-password") || params.has("reset_token");
+
+    if (!token || !isResetLink) return;
+
     setTimeout(() => {
       loadResetPasswordScreen(token).catch(() => {});
     }, 0);
