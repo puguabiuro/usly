@@ -5277,7 +5277,7 @@ function setEventsTab(tab) {
 }
 
 function openEvent(eventId) {
-  const ev = App.events.find(e => e.id === eventId);
+  const ev = App.events.find(e => String(e.id) === String(eventId));
   if (!ev) return;
   App.selectedEventId = eventId;
 
@@ -5454,7 +5454,7 @@ function escapeIcsText(value = "") {
 }
 
 function addSelectedEventToCalendar() {
-  const ev = App.events.find(e => e.id === App.selectedEventId);
+  const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
   if (!ev) return;
 
   if (!ev.start_at) {
@@ -5507,7 +5507,7 @@ function addSelectedEventToCalendar() {
 }
 
 async function toggleSaveEvent() {
-  const ev = App.events.find(e => e.id === App.selectedEventId);
+  const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
   if (!ev) return;
 
   try {
@@ -5547,7 +5547,7 @@ async function toggleSaveEvent() {
 }
 
 async function toggleInterestedEvent() {
-  const ev = App.events.find(e => e.id === App.selectedEventId);
+  const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
   if (!ev) return;
 
   try {
@@ -5670,7 +5670,7 @@ function openEventMenu() {
 }
 
 function openEventOrganizerProfile() {
-  const ev = App.events.find(e => e.id === App.selectedEventId);
+  const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
   if (!ev || !ev.organizer?.id) return;
 
   const organizerId = String(ev.organizer.id);
@@ -5717,7 +5717,7 @@ function openEventOrganizerProfile() {
 }
 
 function openChatWithOrganizer() {
-  const ev = App.events.find(e => e.id === App.selectedEventId);
+  const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
   if (!ev || !ev.organizer?.id) return;
 
   const organizerId = String(ev.organizer.id);

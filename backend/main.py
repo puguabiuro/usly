@@ -3504,6 +3504,15 @@ def list_events(
 
         items = []
         for score, e in paged:
+            event_tags = []
+            if getattr(e, "interest_tags_json", None):
+                try:
+                    event_tags = json.loads(e.interest_tags_json) or []
+                except Exception:
+                    event_tags = []
+            if not event_tags:
+                event_tags = [e.interest_tag]
+
             partner_profile = (
                 db.query(PartnerProfile)
                 .filter(PartnerProfile.user_id == e.partner_user_id)
