@@ -117,6 +117,7 @@
       CANNOT_MODERATE_ADMIN: "Tylko owner może zmieniać status innych administratorów.",
       CANNOT_DELETE_ADMIN: "Konta administratora nie można usunąć z tego poziomu panelu.",
       CANNOT_BLOCK_LAST_OWNER: "Nie można zablokować ostatniego aktywnego ownera systemu.",
+      PAID_PLAN_REQUIRES_STORE_PURCHASE: "Ten plan wymaga zakupu w App Store lub Google Play.",
       UNKNOWN_ERROR: "Coś poszło nie tak. Spróbuj ponownie.",
     },
     en: {
@@ -130,6 +131,7 @@
       CANNOT_MODERATE_ADMIN: "Only the owner can change another administrator’s status.",
       CANNOT_DELETE_ADMIN: "An administrator account cannot be deleted from this admin panel level.",
       CANNOT_BLOCK_LAST_OWNER: "You cannot block the last active owner of the system.",
+      PAID_PLAN_REQUIRES_STORE_PURCHASE: "This plan requires a purchase through the App Store or Google Play.",
       UNKNOWN_ERROR: "Something went wrong. Please try again.",
     },
   };

@@ -2444,11 +2444,14 @@ def users_me_patch(
             profile.avatar_url = _trim(payload.avatar_url)
 
         if payload.plan is not None:
-            allowed_plans = {"free", "plus", "premium", "vip"}
-            if payload.plan not in allowed_plans:
-                raise HTTPException(status_code=422, detail="INVALID_PLAN")
-            profile.plan = payload.plan
+            requested_plan = str(payload.plan or "").strip().lower()
+            if requested_plan != "free":
+                raise HTTPException(status_code=403, detail="PAID_PLAN_REQUIRES_STORE_PURCHASE")
+            profile.plan = "free"
+            profile.plan_source = "manual"
+            profile.plan_status = "active"
             profile.plan_updated_at = datetime.utcnow()
+            profile.plan_expires_at = None
 
         # Przybliżona lokalizacja (anonimizowana)
         if payload.location_lat is not None and payload.location_lng is not None:
@@ -2590,7 +2593,14 @@ def partners_me_patch(
             profile.kategoria = _trim(payload.kategoria)
 
         if payload.plan is not None:
-            profile.plan = _trim(payload.plan).lower()
+            requested_plan = _trim(payload.plan).lower()
+            if requested_plan != "free":
+                raise HTTPException(status_code=403, detail="PAID_PLAN_REQUIRES_STORE_PURCHASE")
+            profile.plan = "free"
+            profile.plan_source = "manual"
+            profile.plan_status = "active"
+            profile.plan_updated_at = datetime.utcnow()
+            profile.plan_expires_at = None
 
         if payload.bio is not None:
             profile.bio = _trim(payload.bio)
