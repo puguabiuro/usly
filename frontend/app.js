@@ -10958,23 +10958,89 @@ async function loadResetPasswordScreen(token) {
   }
 }
 
-function handlePasswordResetTokenFromUrl() {
+async function verifyEmailFromToken(token) {
+  const tokenValue = String(token || "").trim();
+
+  if (!tokenValue) {
+    toast("Brak tokenu weryfikacyjnego.");
+    return false;
+  }
+
   try {
-    const path = String(window.location.pathname || "").toLowerCase();
-    const hash = String(window.location.hash || "").toLowerCase();
-    const params = new URLSearchParams(window.location.search || "");
+    const res = await apiFetch(`/auth/verify-email?token=${encodeURIComponent(tokenValue)}`);
+    if (res?.success) {
+      toast("Email został potwierdzony. Możesz się zalogować.");
+      go("S1_LOGIN");
+      return true;
+    }
+
+    toast("Nie udało się potwierdzić emaila.");
+    return false;
+  } catch (err) {
+    toast(err?.userMessage || "Nie udało się potwierdzić emaila.");
+    return false;
+  }
+}
+
+function handleAuthLinkUrl(rawUrl) {
+  try {
+    const current = window.location.href || "https://uslyapp.pl/";
+    const url = new URL(String(rawUrl || current), current);
+    const path = String(url.pathname || "").toLowerCase();
+    const hash = String(url.hash || "").toLowerCase();
+    const params = url.searchParams;
     const token = (params.get("reset_token") || params.get("token") || "").trim();
+
+    if (!token) return false;
+
     const isResetLink = path.includes("reset-password") || hash.includes("reset-password") || params.has("reset_token");
+    const isVerifyLink = path.includes("verify-email") || hash.includes("verify-email");
 
-    if (!token || !isResetLink) return;
-
-    setTimeout(() => {
+    if (isResetLink) {
       loadResetPasswordScreen(token).catch(() => {});
-    }, 0);
+      return true;
+    }
+
+    if (isVerifyLink) {
+      verifyEmailFromToken(token).catch(() => {});
+      return true;
+    }
+
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+function handleAuthLinkFromUrl() {
+  setTimeout(() => {
+    handleAuthLinkUrl(window.location.href);
+  }, 0);
+}
+
+function setupCapacitorAuthLinkListener() {
+  try {
+    const CapacitorApp = window.Capacitor?.Plugins?.App;
+    if (!CapacitorApp?.addListener) return;
+
+    CapacitorApp.addListener("appUrlOpen", (event) => {
+      if (event?.url) handleAuthLinkUrl(event.url);
+    });
+
+    if (CapacitorApp.getLaunchUrl) {
+      CapacitorApp.getLaunchUrl()
+        .then((event) => {
+          if (event?.url) handleAuthLinkUrl(event.url);
+        })
+        .catch(() => {});
+    }
   } catch (_) {}
 }
 
-document.addEventListener("DOMContentLoaded", handlePasswordResetTokenFromUrl);
+document.addEventListener("DOMContentLoaded", () => {
+  handleAuthLinkFromUrl();
+  setupCapacitorAuthLinkListener();
+});
 
 function passwordEyeIconHtml(isVisible) {
   return isVisible
