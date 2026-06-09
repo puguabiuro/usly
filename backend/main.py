@@ -70,7 +70,9 @@ def _reverse_geocode_city(lat: float, lng: float) -> str | None:
 
 
 def ensure_event_reminder_notifications(db, current_time=None):
-    now = current_time or datetime.now(timezone.utc)
+    now = current_time or datetime.utcnow()
+    if getattr(now, "tzinfo", None) is not None:
+        now = now.replace(tzinfo=None)
 
     reminder_rules = [
         ("event_reminder_2d", timedelta(days=2)),
