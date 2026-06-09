@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from pydantic import BaseModel
+from fastapi.encoders import jsonable_encoder
 
 from backend.error_codes import ErrorCode
 from backend.i18n import message_for
@@ -21,7 +22,7 @@ class ApiResponse(BaseModel):
 
 
 def ok(data: Any = None) -> dict:
-    return ApiResponse(success=True, data=data, error=None).model_dump()
+    return jsonable_encoder(ApiResponse(success=True, data=data, error=None).model_dump())
 
 
 def fail(
