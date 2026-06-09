@@ -10543,10 +10543,15 @@ async function init() {
     }
   }
 
-  Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]).finally(() => {
+  if (App.isLoggedIn) {
+    Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]).finally(() => {
+      renderAll();
+      bindMessageInputs();
+    });
+  } else {
     renderAll();
     bindMessageInputs();
-  });
+  }
 }
 
 

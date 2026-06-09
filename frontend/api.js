@@ -142,7 +142,14 @@
 
     if (status === 0) return dict.NETWORK_ERROR;
 
-    const code = (data && (data.error_code || data.code || (data.error && data.error.code) || data.detail)) || null;
+    const detail = data && data.detail;
+    const code = (data && (
+      data.error_code ||
+      data.code ||
+      (data.error && data.error.code) ||
+      (detail && typeof detail === "object" && (detail.code || detail.detail)) ||
+      (typeof detail === "string" ? detail : null)
+    )) || null;
     if (code && dict[code]) return dict[code];
 
     if ((status === 401 || status === 403) && dict.UNAUTHORIZED) {
