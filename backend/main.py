@@ -678,6 +678,42 @@ def _grant_ambassador_rewards_if_needed(db, campaign: PromoCampaign, now: dateti
     return grants_created
 
 
+def _activate_reserved_promo_redemptions_after_paid_plan(db, user: User, now: datetime | None = None) -> tuple[list[int], int]:
+    current_time = now or datetime.utcnow()
+    activated_redemption_ids: list[int] = []
+    ambassador_grants_created = 0
+
+    if not user or not user.id:
+        return activated_redemption_ids, ambassador_grants_created
+
+    reserved_redemptions = (
+        db.query(PromoRedemption)
+        .join(PromoCampaign, PromoCampaign.id == PromoRedemption.campaign_id)
+        .filter(
+            PromoRedemption.user_id == user.id,
+            PromoRedemption.status == "reserved",
+            PromoCampaign.status == "active",
+        )
+        .all()
+    )
+
+    for redemption in reserved_redemptions:
+        campaign = db.query(PromoCampaign).filter(PromoCampaign.id == redemption.campaign_id).first()
+        if not campaign:
+            continue
+        if campaign.target_role != "both" and campaign.target_role != user.role:
+            continue
+
+        redemption.status = "activated"
+        redemption.activated_at = current_time
+        db.add(redemption)
+        db.flush()
+        activated_redemption_ids.append(redemption.id)
+        ambassador_grants_created += _grant_ambassador_rewards_if_needed(db, campaign, current_time)
+
+    return activated_redemption_ids, ambassador_grants_created
+
+
 # Healthcheck (for deploy / monitoring)
 
 async def _plan_expiry_notice_scheduler() -> None:
@@ -7247,30 +7283,7 @@ def admin_update_user_plan(
         activated_redemption_ids = []
 
         if plan_status == "active" and plan_source == "paid" and plan != "free":
-            reserved_redemptions = (
-                db.query(PromoRedemption)
-                .join(PromoCampaign, PromoCampaign.id == PromoRedemption.campaign_id)
-                .filter(
-                    PromoRedemption.user_id == user.id,
-                    PromoRedemption.status == "reserved",
-                    PromoCampaign.status == "active",
-                )
-                .all()
-            )
-
-            for redemption in reserved_redemptions:
-                campaign = db.query(PromoCampaign).filter(PromoCampaign.id == redemption.campaign_id).first()
-                if not campaign:
-                    continue
-                if campaign.target_role != "both" and campaign.target_role != user.role:
-                    continue
-
-                redemption.status = "activated"
-                redemption.activated_at = now
-                db.add(redemption)
-                db.flush()
-                activated_redemption_ids.append(redemption.id)
-                ambassador_grants_created += _grant_ambassador_rewards_if_needed(db, campaign, now)
+            activated_redemption_ids, ambassador_grants_created = _activate_reserved_promo_redemptions_after_paid_plan(db, user, now)
 
         db.add(
             AuditLog(
