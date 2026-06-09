@@ -1027,6 +1027,29 @@ def serve_android_assetlinks():
     ], media_type="application/json")
 
 
+@app.get("/.well-known/apple-app-site-association", include_in_schema=False)
+def serve_apple_app_site_association():
+    apple_team_id = os.getenv("APPLE_TEAM_ID", "").strip()
+    ios_bundle_id = os.getenv("IOS_BUNDLE_ID", "com.usly.app").strip() or "com.usly.app"
+    app_id = f"{apple_team_id}.{ios_bundle_id}" if apple_team_id else ""
+
+    details = []
+    if app_id:
+        details.append({
+            "appIDs": [app_id],
+            "components": [
+                {"/": "/verify-email*"},
+                {"/": "/reset-password*"},
+            ],
+        })
+
+    return JSONResponse({
+        "applinks": {
+            "details": details,
+        },
+    }, media_type="application/json")
+
+
 @app.get("/app.js", include_in_schema=False)
 def serve_app_js():
     return FileResponse(FRONTEND_DIR / "app.js")
