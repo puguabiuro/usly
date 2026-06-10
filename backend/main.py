@@ -971,6 +971,16 @@ def r2_enabled() -> bool:
     ])
 
 
+def require_r2_or_allow_local_uploads() -> bool:
+    if r2_enabled():
+        return True
+
+    if _ENV.strip().lower() == "prod":
+        raise HTTPException(status_code=503, detail="R2_STORAGE_NOT_CONFIGURED")
+
+    return False
+
+
 def r2_client():
     if not r2_enabled():
         return None
@@ -1004,12 +1014,23 @@ def upload_media_to_r2(key: str, content: bytes, content_type: str) -> str:
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
-@app.get("/", include_in_schema=False)
-def serve_frontend_index():
+def _serve_frontend_index_file():
     return FileResponse(
         FRONTEND_DIR / "index.html",
         headers={"Cache-Control": "no-store, max-age=0"},
     )
+
+
+@app.get("/", include_in_schema=False)
+def serve_frontend_index():
+    return _serve_frontend_index_file()
+
+
+@app.get("/app", include_in_schema=False)
+@app.get("/app/", include_in_schema=False)
+def serve_frontend_app():
+    return _serve_frontend_index_file()
+
 
 @app.get("/admin.html", include_in_schema=False)
 def serve_admin_html():
@@ -2671,7 +2692,7 @@ async def upload_avatar(
 
     filename = f"{uuid4().hex}.{ext}"
 
-    if r2_enabled():
+    if require_r2_or_allow_local_uploads():
         avatar_url = upload_media_to_r2(
             key=f"avatars/{filename}",
             content=content,
@@ -2824,7 +2845,7 @@ async def generate_ai_avatar(
         content = base64.b64decode(b64_image)
         filename = f"ai_{current_user.id}_{uuid4().hex}.png"
 
-        if r2_enabled():
+        if require_r2_or_allow_local_uploads():
             avatar_url = upload_media_to_r2(
                 key=f"avatars/{filename}",
                 content=content,
@@ -2894,7 +2915,7 @@ async def upload_logo(
 
     filename = f"{uuid4().hex}.{ext}"
 
-    if r2_enabled():
+    if require_r2_or_allow_local_uploads():
         logo_url = upload_media_to_r2(
             key=f"logos/{filename}",
             content=content,
