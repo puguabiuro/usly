@@ -7276,6 +7276,110 @@ def admin_reset_user_password(
         db.close()
 
 
+@app.post("/store/verify-purchase")
+def verify_store_purchase(
+    payload: dict,
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    verification_mode = os.getenv("STORE_PURCHASE_VERIFICATION_MODE", "").strip().lower()
+    if verification_mode != "test":
+        raise HTTPException(status_code=503, detail="STORE_VERIFICATION_NOT_CONFIGURED")
+
+    platform = str((payload or {}).get("platform") or "").strip().lower()
+    plan = str((payload or {}).get("plan") or "").strip().lower()
+    product_id = str((payload or {}).get("product_id") or "").strip()
+    transaction_id = str((payload or {}).get("transaction_id") or "").strip()
+    expires_at_raw = str((payload or {}).get("expires_at") or "").strip()
+
+    if platform not in {"ios", "android"}:
+        raise HTTPException(status_code=422, detail="INVALID_STORE_PLATFORM")
+
+    if not product_id:
+        raise HTTPException(status_code=422, detail="INVALID_STORE_PRODUCT_ID")
+
+    if not transaction_id:
+        raise HTTPException(status_code=422, detail="INVALID_STORE_TRANSACTION_ID")
+
+    allowed_user_plans = {"plus", "premium", "vip"}
+    allowed_partner_plans = {"pro", "premium", "enterprise"}
+    allowed_plans = allowed_partner_plans if current_user.role == UserRole.PARTNER.value else allowed_user_plans
+
+    if plan not in allowed_plans:
+        raise HTTPException(status_code=422, detail="INVALID_STORE_PLAN")
+
+    now = datetime.utcnow()
+    plan_expires_at = None
+
+    if expires_at_raw:
+        try:
+            plan_expires_at = datetime.fromisoformat(expires_at_raw.replace("Z", "+00:00"))
+            if getattr(plan_expires_at, "tzinfo", None) is not None:
+                plan_expires_at = plan_expires_at.astimezone(timezone.utc).replace(tzinfo=None)
+        except Exception:
+            raise HTTPException(status_code=422, detail="INVALID_PLAN_EXPIRES_AT")
+    else:
+        plan_expires_at = _add_months_to_datetime(now, 1)
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        if user.role == UserRole.PARTNER.value:
+            profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == user.id).first()
+            if not profile:
+                raise HTTPException(status_code=404, detail="PARTNER_PROFILE_NOT_FOUND")
+        else:
+            profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+            if not profile:
+                raise HTTPException(status_code=404, detail="USER_PROFILE_NOT_FOUND")
+
+        profile.plan = plan
+        profile.plan_source = "paid"
+        profile.plan_status = "active"
+        profile.plan_updated_at = now
+        profile.plan_expires_at = plan_expires_at
+        profile.plan_expiry_notice_14d_sent_at = None
+        profile.plan_expiry_notice_7d_sent_at = None
+        profile.updated_at = now
+        db.add(profile)
+
+        activated_redemption_ids, ambassador_grants_created = _activate_reserved_promo_redemptions_after_paid_plan(db, user, now)
+
+        if activated_redemption_ids:
+            (
+                db.query(PromoRedemption)
+                .filter(PromoRedemption.id.in_(activated_redemption_ids))
+                .update(
+                    {PromoRedemption.store_transaction_id: transaction_id},
+                    synchronize_session=False,
+                )
+            )
+
+        db.add(AuditLog(
+            user_id=user.id,
+            action="store_purchase_verified_test",
+            details=f"platform={platform}; plan={plan}; product_id={product_id}; transaction_id={transaction_id}; expires_at={plan_expires_at.isoformat() if plan_expires_at else '-'}; activated_redemptions={activated_redemption_ids}; ambassador_grants_created={ambassador_grants_created}",
+        ))
+
+        db.commit()
+
+        return ok({
+            "verified": True,
+            "mode": verification_mode,
+            "platform": platform,
+            "plan": plan,
+            "plan_source": "paid",
+            "plan_status": "active",
+            "plan_expires_at": plan_expires_at.isoformat() if plan_expires_at else None,
+            "activated_redemption_ids": activated_redemption_ids,
+            "ambassador_grants_created": ambassador_grants_created,
+        })
+    finally:
+        db.close()
+
+
 @app.post("/admin/users/{user_id}/plan")
 def admin_update_user_plan(
     user_id: int,
