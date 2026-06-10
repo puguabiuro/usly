@@ -1022,8 +1022,11 @@ def _serve_frontend_index_file():
 
 
 @app.get("/", include_in_schema=False)
-def serve_frontend_index():
-    return _serve_frontend_index_file()
+def serve_landing_page():
+    return FileResponse(
+        FRONTEND_DIR / "landing.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 @app.get("/app", include_in_schema=False)
