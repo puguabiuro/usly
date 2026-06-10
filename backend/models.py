@@ -1292,3 +1292,73 @@ class AmbassadorRewardGrant(Base):
         Index("ix_ambassador_rewards_user_campaign", "ambassador_user_id", "campaign_id"),
     )
 
+
+class StorePurchase(Base):
+    __tablename__ = "store_purchases"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    platform: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        index=True,
+    )
+
+    product_id: Mapped[str] = mapped_column(
+        String(160),
+        nullable=False,
+    )
+
+    transaction_id: Mapped[str] = mapped_column(
+        String(180),
+        nullable=False,
+    )
+
+    plan: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="verified",
+        index=True,
+    )
+
+    verification_mode: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="test",
+    )
+
+    raw_payload: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
+    verified_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    plan_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("platform", "transaction_id", name="uq_store_purchases_platform_transaction"),
+        Index("ix_store_purchases_user_status", "user_id", "status"),
+    )
+

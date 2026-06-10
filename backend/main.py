@@ -199,6 +199,7 @@ from backend.models import (
     PromoCampaign,
     PromoRedemption,
     AmbassadorRewardGrant,
+    StorePurchase,
     PasswordResetToken,
     EmailVerificationToken,
     AiUsageLog,
@@ -7368,6 +7369,19 @@ def verify_store_purchase(
         profile.plan_expiry_notice_7d_sent_at = None
         profile.updated_at = now
         db.add(profile)
+
+        db.add(StorePurchase(
+            user_id=user.id,
+            platform=platform,
+            product_id=product_id,
+            transaction_id=transaction_id,
+            plan=plan,
+            status="verified",
+            verification_mode=verification_mode,
+            raw_payload=json.dumps(payload or {}, ensure_ascii=False, default=str),
+            verified_at=now,
+            plan_expires_at=plan_expires_at,
+        ))
 
         activated_redemption_ids, ambassador_grants_created = _activate_reserved_promo_redemptions_after_paid_plan(db, user, now)
 
