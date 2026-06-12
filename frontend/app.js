@@ -2934,7 +2934,11 @@ async function chooseUserPlan(plan) {
     return setUserPlan("free");
   }
 
-  toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+  try {
+    await window.USLYBilling.purchasePlan({ role: "user", plan: normalizedPlan });
+  } catch (_) {
+    toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+  }
 }
 
 async function choosePartnerPlan(plan) {
@@ -2947,7 +2951,11 @@ async function choosePartnerPlan(plan) {
     return contactEnterprisePlan();
   }
 
-  toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+  try {
+    await window.USLYBilling.purchasePlan({ role: "partner", plan: normalizedPlan });
+  } catch (_) {
+    toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+  }
 }
 
 async function setUserPlan(plan, silent = false) {
