@@ -15,6 +15,12 @@
     return PRODUCT_IDS[String(role || "").toLowerCase()]?.[String(plan || "").toLowerCase()] || null;
   }
 
+  function getPlatform() {
+    const platform = window.Capacitor?.getPlatform?.();
+    if (platform === "ios" || platform === "android") return platform;
+    return "web";
+  }
+
   async function purchasePlan({ role, plan }) {
     const normalizedRole = String(role || "").toLowerCase();
     const normalizedPlan = String(plan || "").toLowerCase();
@@ -32,6 +38,7 @@
 
   window.USLYBilling = {
     getProductId,
+    getPlatform,
     purchasePlan,
   };
 })();
