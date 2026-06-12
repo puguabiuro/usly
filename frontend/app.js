@@ -96,6 +96,7 @@ const I18N = {
     "plans.promo.wrongRole": "Ten kod nie jest dostępny dla tej roli.",
     "plans.promo.discount": "Zniżka {{value}}% przez {{months}} mies.",
     "plans.contact_us": "Napisz do nas",
+    "plans.payment.storeComingSoon": "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play.",
     "plans.current": "Aktualny plan",
     "plans.user.free.desc": "Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.",
     "plans.user.plus.desc": "Większa swoboda w poznawaniu ludzi i korzystaniu z grup.",
@@ -997,6 +998,7 @@ const I18N = {
     "plans.promo.wrongRole": "This code is not available for this role.",
     "plans.promo.discount": "{{value}}% off for {{months}} months",
     "plans.contact_us": "Contact us",
+    "plans.payment.storeComingSoon": "Store payments are being prepared. This plan will be activated after purchase through the App Store or Google Play.",
     "plans.current": "Current plan",
     "plans.user.free.desc": "Basic access to USLY and meeting people in your area.",
     "plans.user.plus.desc": "More freedom to meet people and use groups.",
@@ -2925,6 +2927,28 @@ async function applyPlanPromoCode(role) {
   }
 }
 
+
+async function chooseUserPlan(plan) {
+  const normalizedPlan = String(plan || "").toLowerCase();
+  if (normalizedPlan === "free") {
+    return setUserPlan("free");
+  }
+
+  toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+}
+
+async function choosePartnerPlan(plan) {
+  const normalizedPlan = String(plan || "").toLowerCase();
+  if (normalizedPlan === "free") {
+    return setPartnerPlan("free");
+  }
+
+  if (normalizedPlan === "enterprise") {
+    return contactEnterprisePlan();
+  }
+
+  toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+}
 
 async function setUserPlan(plan, silent = false) {
   const allowed = ["free", "plus", "premium", "vip"];
