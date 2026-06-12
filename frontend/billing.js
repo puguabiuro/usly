@@ -49,11 +49,21 @@
     throw err;
   }
 
+  function debugState() {
+    return {
+      platform: getPlatform(),
+      appUserId: getAppUserId(),
+      hasCapacitor: !!window.Capacitor,
+      hasPurchasesPlugin: !!getNativePurchasesPlugin(),
+    };
+  }
+
   window.USLYBilling = {
     getProductId,
     getPlatform,
     getAppUserId,
     getNativePurchasesPlugin,
+    debugState,
     purchasePlan,
   };
 })();
