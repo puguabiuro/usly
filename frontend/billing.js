@@ -30,6 +30,10 @@
     return `usly_user_${id}`;
   }
 
+  function getNativePurchasesPlugin() {
+    return window.Capacitor?.Plugins?.Purchases || null;
+  }
+
   async function purchasePlan({ role, plan }) {
     const normalizedRole = String(role || "").toLowerCase();
     const normalizedPlan = String(plan || "").toLowerCase();
@@ -49,6 +53,7 @@
     getProductId,
     getPlatform,
     getAppUserId,
+    getNativePurchasesPlugin,
     purchasePlan,
   };
 })();
