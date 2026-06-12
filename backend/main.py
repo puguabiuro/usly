@@ -7360,6 +7360,28 @@ def verify_store_purchase(
             if not profile:
                 raise HTTPException(status_code=404, detail="USER_PROFILE_NOT_FOUND")
 
+        existing_purchase = (
+            db.query(StorePurchase)
+            .filter(
+                StorePurchase.platform == platform,
+                StorePurchase.transaction_id == transaction_id,
+            )
+            .first()
+        )
+        if existing_purchase:
+            return ok({
+                "verified": True,
+                "already_verified": True,
+                "mode": existing_purchase.verification_mode,
+                "platform": existing_purchase.platform,
+                "plan": existing_purchase.plan,
+                "plan_source": "paid",
+                "plan_status": "active",
+                "plan_expires_at": existing_purchase.plan_expires_at.isoformat() if existing_purchase.plan_expires_at else None,
+                "activated_redemption_ids": [],
+                "ambassador_grants_created": 0,
+            })
+
         profile.plan = plan
         profile.plan_source = "paid"
         profile.plan_status = "active"
