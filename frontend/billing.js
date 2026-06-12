@@ -21,6 +21,15 @@
     return "web";
   }
 
+  function getAppUserId(role) {
+    const id = window.App?.currentUserId;
+    if (!id) return null;
+
+    const normalizedRole = String(role || window.App?.role || "").toLowerCase();
+    if (normalizedRole === "partner") return `usly_partner_${id}`;
+    return `usly_user_${id}`;
+  }
+
   async function purchasePlan({ role, plan }) {
     const normalizedRole = String(role || "").toLowerCase();
     const normalizedPlan = String(plan || "").toLowerCase();
@@ -39,6 +48,7 @@
   window.USLYBilling = {
     getProductId,
     getPlatform,
+    getAppUserId,
     purchasePlan,
   };
 })();
