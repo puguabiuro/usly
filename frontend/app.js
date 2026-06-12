@@ -1925,6 +1925,8 @@ const App = {
   selectedGroupId: null,
 };
 
+window.App = App;
+
 /* ------------------------- DOM Helpers -------------------------- */
 const $ = (id) => document.getElementById(id);
 
