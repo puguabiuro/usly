@@ -1320,6 +1320,26 @@ class StorePurchase(Base):
         nullable=False,
     )
 
+    original_transaction_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    purchase_token: Mapped[str | None] = mapped_column(
+        String(260),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    environment: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+        default=None,
+    )
+
     plan: Mapped[str] = mapped_column(
         String(40),
         nullable=False,
@@ -1352,6 +1372,18 @@ class StorePurchase(Base):
     )
 
     plan_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    revoked_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         default=None,
