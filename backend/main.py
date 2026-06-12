@@ -7314,6 +7314,9 @@ def verify_store_purchase(
     plan = str((payload or {}).get("plan") or "").strip().lower()
     product_id = str((payload or {}).get("product_id") or "").strip()
     transaction_id = str((payload or {}).get("transaction_id") or "").strip()
+    original_transaction_id = str((payload or {}).get("original_transaction_id") or "").strip() or None
+    purchase_token = str((payload or {}).get("purchase_token") or "").strip() or None
+    environment = str((payload or {}).get("environment") or "").strip().lower() or None
     expires_at_raw = str((payload or {}).get("expires_at") or "").strip()
 
     if platform not in {"ios", "android"}:
@@ -7397,6 +7400,9 @@ def verify_store_purchase(
             platform=platform,
             product_id=product_id,
             transaction_id=transaction_id,
+            original_transaction_id=original_transaction_id,
+            purchase_token=purchase_token,
+            environment=environment,
             plan=plan,
             status="verified",
             verification_mode=verification_mode,
