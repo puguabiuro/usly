@@ -1656,6 +1656,8 @@ def login(payload: LoginRequest, request: Request):
                     "email": user.email,
                     "role": user.role,
                     "status": user.status,
+                    "email_verified": bool(getattr(user, "email_verified_at", None)),
+                    "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
                 },
             }
         )
@@ -1687,6 +1689,8 @@ def auth_me(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "admin_display_name": current_user.admin_display_name,
         "admin_level": current_user.admin_level,
+        "email_verified": bool(getattr(current_user, "email_verified_at", None)),
+        "email_verified_at": str(current_user.email_verified_at) if getattr(current_user, "email_verified_at", None) else None,
     }
 
 
