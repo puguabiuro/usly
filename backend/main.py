@@ -2039,20 +2039,6 @@ def delete_account(
         db.close()
 
 
-
-# =========================
-# TEST: endpoint chroniony JWT
-# =========================
-@app.get("/protected")
-def protected_route(current_user: User = Depends(get_current_user)):
-    return {
-        "ok": True,
-        "user_id": current_user.id,
-        "email": account_email,
-        "role": current_user.role,
-    }
-
-
 # =========================
 # PROFILE  USER  GET /users/me
 # =========================
