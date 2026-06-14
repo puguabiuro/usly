@@ -3750,7 +3750,17 @@ def partner_list_events(
 ):
     db = SessionLocal()
     try:
-        q = db.query(Event).filter(Event.partner_user_id == current_user.id)
+        now_utc = datetime.now(timezone.utc)
+        partner_archive_cutoff = now_utc - timedelta(days=30)
+
+        q = (
+            db.query(Event)
+            .filter(Event.partner_user_id == current_user.id)
+            .filter(
+                (Event.status == EventStatus.DRAFT.value)
+                | (Event.end_at >= partner_archive_cutoff)
+            )
+        )
 
         if status is not None and status.strip() != "":
             st = status.strip()
@@ -3845,6 +3855,11 @@ def partner_get_event_details(
 
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        partner_archive_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        event_end_at = _ensure_utc(event.end_at)
+        if event_end_at and event_end_at < partner_archive_cutoff:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
         event_tags = []
         if getattr(event, "interest_tags_json", None):
