@@ -15,6 +15,7 @@ class RegisterRequest(BaseModel):
 
     # LEGAL
     accept_terms: bool = False
+    accept_privacy: bool = False
 
 
 class RegisterResponse(BaseModel):

@@ -2679,6 +2679,7 @@ async function registerPrimary() {
         dob,
         role: App.role === "partner" ? "partner" : "user",
         accept_terms: true,
+        accept_privacy: true,
       }),
     });
 

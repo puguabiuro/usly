@@ -1291,7 +1291,7 @@ def register(request: Request, payload: RegisterRequest):
                 raise ApiException(status_code=403, code=ErrorCode.AGE_TOO_LOW)
 
         # LEGAL — wymagane zgody
-        if not payload.accept_terms:
+        if not payload.accept_terms or not payload.accept_privacy:
             raise ApiException(status_code=422, code=ErrorCode.TERMS_REQUIRED)
 
         existing = db.query(User).filter(User.email == str(payload.email)).first()
