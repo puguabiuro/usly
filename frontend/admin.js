@@ -1304,6 +1304,7 @@ function openCreateStaffDrawer() {
         <label class="adminFieldLabel" for="adminCreateStaffLevel">Poziom dostępu</label>
         <select class="adminFieldInput" id="adminCreateStaffLevel">
           <option value="operations">Operations — użytkownicy, wydarzenia, plany, zgłoszenia</option>
+          <option value="moderation">Moderation — moderacja i zgłoszenia</option>
           <option value="support">Support — zgłoszenia i obsługa</option>
           <option value="owner">Owner — pełny dostęp</option>
         </select>

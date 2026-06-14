@@ -7221,7 +7221,7 @@ def admin_create_user_account(
         require_admin_permission(current_user, "admin_create")
         if not admin_display_name:
             raise HTTPException(status_code=422, detail="ADMIN_DISPLAY_NAME_REQUIRED")
-        if admin_level not in {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS, ADMIN_LEVEL_SUPPORT}:
+        if admin_level not in {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS, ADMIN_LEVEL_MODERATION, ADMIN_LEVEL_SUPPORT}:
             raise HTTPException(status_code=422, detail="INVALID_ADMIN_LEVEL")
     else:
         admin_display_name = ""
