@@ -4092,6 +4092,11 @@ def partner_event_participants(
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
 
+        partner_archive_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        event_end_at = _ensure_utc(event.end_at)
+        if event_end_at and event_end_at < partner_archive_cutoff:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
         blocked_rows = (
             db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
             .filter(
@@ -4178,6 +4183,11 @@ def partner_event_observers(
 
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        partner_archive_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        event_end_at = _ensure_utc(event.end_at)
+        if event_end_at and event_end_at < partner_archive_cutoff:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
         q = (
             db.query(EventSave, User)
@@ -4325,6 +4335,11 @@ def partner_event_stats(
         # 2) tylko waciciel
         if event.partner_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        partner_archive_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        event_end_at = _ensure_utc(event.end_at)
+        if event_end_at and event_end_at < partner_archive_cutoff:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
         blocked_rows = (
             db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
