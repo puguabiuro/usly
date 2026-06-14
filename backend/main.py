@@ -584,6 +584,39 @@ async def _send_plan_expiry_notices(db, now: datetime | None = None) -> dict:
     return sent
 
 
+def _expire_due_plans(db, now: datetime | None = None) -> dict:
+    current_time = now or datetime.utcnow()
+    result = {"user": 0, "partner": 0}
+
+    profile_sets = [
+        ("user", UserProfile),
+        ("partner", PartnerProfile),
+    ]
+
+    for role, model in profile_sets:
+        profiles = (
+            db.query(model)
+            .join(User, User.id == model.user_id)
+            .filter(model.plan_expires_at.isnot(None))
+            .filter(model.plan != "free")
+            .all()
+        )
+
+        for profile in profiles:
+            user = db.query(User).filter(User.id == profile.user_id).first()
+            if not user:
+                continue
+
+            expired = _expire_profile_plan_if_needed(db, user, profile, current_time)
+            if expired:
+                result[role] += 1
+
+    if any(result.values()):
+        db.commit()
+
+    return result
+
+
 def _add_months_to_datetime(value: datetime, months: int) -> datetime:
     if months <= 0:
         return value
@@ -731,6 +764,10 @@ async def _plan_expiry_notice_scheduler() -> None:
     while True:
         db = SessionLocal()
         try:
+            expired_result = _expire_due_plans(db)
+            if any(expired_result.values()):
+                print("PLANS AUTO-DOWNGRADED:", expired_result)
+
             result = await _send_plan_expiry_notices(db)
             if any(result.values()):
                 print("PLAN EXPIRY NOTICES SENT:", result)
