@@ -3721,7 +3721,7 @@ async def upload_event_cover(
 
     filename = f"{uuid4().hex}.{ext}"
 
-    if r2_enabled():
+    if require_r2_or_allow_local_uploads():
         event_cover_url = upload_media_to_r2(
             key=f"event-covers/{filename}",
             content=content,
