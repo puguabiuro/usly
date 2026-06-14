@@ -2054,22 +2054,6 @@ def protected_route(current_user: User = Depends(get_current_user)):
 
 
 # =========================
-# TEST: endpoint tylko dla admina
-# =========================
-@app.get("/admin-only")
-def admin_only(current_user: User = Depends(require_role("admin"))):
-    return {"ok": True, "msg": "Witaj admin!", "user_id": current_user.id}
-
-
-# =========================
-# TEST: endpoint dla partner lub admin
-# =========================
-@app.get("/partner-or-admin")
-def partner_or_admin(current_user: User = Depends(require_role("partner", "admin"))):
-    return {"ok": True, "msg": "Witaj partner/admin!", "user_id": user_id, "role": current_user.role}
-
-
-# =========================
 # PROFILE  USER  GET /users/me
 # =========================
 @app.get("/users/me")
