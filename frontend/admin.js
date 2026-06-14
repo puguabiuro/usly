@@ -1296,7 +1296,7 @@ function openCreateStaffDrawer() {
 
       <div class="adminActionStack">
         <label class="adminFieldLabel" for="adminCreateStaffEmail">Email</label>
-        <input class="adminFieldInput" id="adminCreateStaffEmail" type="email" placeholder="admin@usly.dev" />
+        <input class="adminFieldInput" id="adminCreateStaffEmail" type="email" placeholder="np. admin@firma.pl" />
 
         <label class="adminFieldLabel" for="adminCreateStaffDisplayName">Nazwa admina</label>
         <input class="adminFieldInput" id="adminCreateStaffDisplayName" type="text" placeholder="np. Support Marta" />
