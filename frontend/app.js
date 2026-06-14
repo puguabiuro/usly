@@ -2049,8 +2049,9 @@ function go(viewId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
+          const lat = approximateCoordinate(pos.coords.latitude);
+          const lng = approximateCoordinate(pos.coords.longitude);
+          if (lat == null || lng == null) return;
 
           App.user.geo = App.user.geo || {};
           App.user.geo.lat = String(lat);
@@ -2090,8 +2091,9 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
+          const lat = approximateCoordinate(pos.coords.latitude);
+          const lng = approximateCoordinate(pos.coords.longitude);
+          if (lat == null || lng == null) return;
 
           App.user.geo.lat = String(lat);
           App.user.geo.lng = String(lng);
@@ -2406,7 +2408,7 @@ async function loginPrimary() {
     const data = await apiFetch("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, expected_role: String(email).trim().toLowerCase() === "admin@usly.dev" ? "admin" : (App.role === "partner" ? "partner" : "user") }),
+      body: JSON.stringify({ email, password, expected_role: App.role === "partner" ? "partner" : "user" }),
     });
 
     if (!data?.success || !data?.data?.access_token) {
@@ -2688,7 +2690,7 @@ async function registerPrimary() {
     const loginData = await apiFetch("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: pass, expected_role: String(email).trim().toLowerCase() === "admin@usly.dev" ? "admin" : (App.role === "partner" ? "partner" : "user") }),
+      body: JSON.stringify({ email, password: pass, expected_role: App.role === "partner" ? "partner" : "user" }),
     });
 
     if (!loginData?.success || !loginData?.data?.access_token) {
@@ -9706,6 +9708,11 @@ function initCharCounters() {
 }
 
 /* ------------------------- Geolocation (punkt 12) -------------------------- */
+function approximateCoordinate(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 100) / 100 : null;
+}
+
 function initGeolocation() {
   // REQUIRED: bind by id="btnUseLocation" without inline onclick
   const btn = $("btnUseLocation");
@@ -9724,8 +9731,12 @@ function useCurrentLocationForCity() {
   toast(t("geo.fetching"));
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
+      const lat = approximateCoordinate(pos.coords.latitude);
+      const lng = approximateCoordinate(pos.coords.longitude);
+      if (lat == null || lng == null) {
+        toast(t("geo.failed"));
+        return;
+      }
 
       // Save to hidden fields (backend-ready)
       const latEl = $("regGeoLat");
