@@ -1067,6 +1067,30 @@ def serve_landing_page():
     )
 
 
+@app.get("/regulamin", include_in_schema=False)
+def serve_terms_page():
+    return FileResponse(
+        FRONTEND_DIR / "regulamin.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get("/polityka-prywatnosci", include_in_schema=False)
+def serve_privacy_page():
+    return FileResponse(
+        FRONTEND_DIR / "polityka-prywatnosci.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get("/kontakt", include_in_schema=False)
+def serve_contact_page():
+    return FileResponse(
+        FRONTEND_DIR / "kontakt.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.get("/app", include_in_schema=False)
 @app.get("/app/", include_in_schema=False)
 def serve_frontend_app():
@@ -6240,6 +6264,96 @@ kontakt@uslyapp.pl
     except Exception as e:
         emailed = False
         print("ENTERPRISE LEAD EMAIL QUEUE ERROR:", e)
+
+    return ok({"ticket": ticket, "saved": True, "emailed": emailed})
+
+
+
+@app.post("/contact")
+async def submit_public_contact(payload: dict):
+    from pathlib import Path
+    from datetime import datetime
+    import json
+    import asyncio
+
+    name = str((payload or {}).get("name") or "").strip()
+    email = str((payload or {}).get("email") or "").strip()
+    topic = str((payload or {}).get("topic") or "").strip()
+    message = str((payload or {}).get("message") or "").strip()
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=422, detail="INVALID_EMAIL")
+
+    if not topic:
+        raise HTTPException(status_code=422, detail="CONTACT_TOPIC_REQUIRED")
+
+    if not message or len(message) < 5:
+        raise HTTPException(status_code=422, detail="CONTACT_MESSAGE_REQUIRED")
+
+    now = datetime.utcnow()
+    ticket = f"WEB-{now.strftime('%Y%m%d%H%M%S')}"
+
+    entry = {
+        "ticket": ticket,
+        "created_at": now.isoformat(),
+        "name": name,
+        "email": email,
+        "topic": topic,
+        "message": message,
+    }
+
+    data_dir = Path(__file__).resolve().parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    contact_file = data_dir / "contact_messages.jsonl"
+    with contact_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    subject = f"[USLY Kontakt] Nowa wiadomość {ticket}"
+    body = f"""NOWA WIADOMOŚĆ ZE STRONY USLY
+
+Ticket: {ticket}
+Data: {now.strftime("%Y-%m-%d %H:%M UTC")}
+
+Imię / nazwa:
+{name or "—"}
+
+E-mail:
+{email}
+
+Temat:
+{topic}
+
+Wiadomość:
+{message}
+"""
+
+    autoresponder_subject = "USLY — Twoja wiadomość jest już u nas"
+    autoresponder_body = f"""Cześć,
+
+dziękujemy za kontakt z USLY 💜
+
+Twoja wiadomość trafiła już do naszego zespołu i wrócimy do Ciebie tak szybko, jak będzie to możliwe.
+
+Numer zgłoszenia:
+{ticket}
+
+Zachowaj ten numer, jeśli będziesz chciała/chciał kontynuować tę sprawę w przyszłości.
+
+Do usłyszenia!
+
+Zespół USLY
+
+kontakt@uslyapp.pl
+https://uslyapp.pl
+"""
+
+    try:
+        asyncio.create_task(send_bug_email(subject, body))
+        asyncio.create_task(send_user_email(email, autoresponder_subject, autoresponder_body))
+        emailed = "queued"
+    except Exception as e:
+        emailed = False
+        print("PUBLIC CONTACT EMAIL QUEUE ERROR:", e)
 
     return ok({"ticket": ticket, "saved": True, "emailed": emailed})
 

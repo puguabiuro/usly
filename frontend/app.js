@@ -3559,11 +3559,11 @@ async function savePartnerSettings() {
 
 /* ------------------------- Terms / Privacy -------------------------- */
 function openTerms() {
-  window.open("legal/terms_pl.docx", "_blank");
+  window.open("https://uslyapp.pl/regulamin", "_blank");
 }
 
 function openRodo() {
-  window.open("legal/privacy_pl.docx", "_blank");
+  window.open("https://uslyapp.pl/polityka-prywatnosci", "_blank");
 }
 
 async function uploadPartnerLogo(file) {

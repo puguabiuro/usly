@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kontakt – USLY</title>
+  <style>
+    :root {
+      --bg: #fff7fb;
+      --card: rgba(255,255,255,.78);
+      --text: #21131b;
+      --muted: #735d69;
+      --pink: #ff4fa3;
+      --pink2: #ff8ac7;
+      --violet: #7b4dff;
+      --line: rgba(33,19,27,.12);
+      --shadow: 0 24px 70px rgba(255,79,163,.18);
+      --radius: 30px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(255,79,163,.18), transparent 34%),
+        radial-gradient(circle at 85% 5%, rgba(123,77,255,.15), transparent 32%),
+        linear-gradient(180deg, #fff7fb 0%, #fff 58%, #fff7fb 100%);
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    header {
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(18px);
+      background: rgba(255,247,251,.74);
+      border-bottom: 1px solid rgba(255,255,255,.55);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 900; letter-spacing: -.04em; font-size: 24px; }
+    .brand img { width: 42px; height: 42px; object-fit: contain; border-radius: 14px; }
+    .navLinks { display: flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 700; font-size: 14px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 999px;
+      font-weight: 900;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.72);
+      box-shadow: 0 10px 28px rgba(33,19,27,.06);
+    }
+    .btn.primary {
+      color: white;
+      border: 0;
+      background: linear-gradient(135deg, var(--pink), var(--violet));
+      box-shadow: 0 16px 36px rgba(255,79,163,.28);
+    }
+    .hero { padding: 70px 0 44px; }
+    .heroGrid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 42px; align-items: center; }
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(44px, 7vw, 78px);
+      line-height: .94;
+      letter-spacing: -.07em;
+    }
+    .grad { background: linear-gradient(135deg, var(--pink), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead {
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 22px);
+      line-height: 1.55;
+      max-width: 650px;
+      font-weight: 600;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .note { margin-top: 16px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .phoneCard {
+      border-radius: 42px;
+      padding: 18px;
+      background: rgba(255,255,255,.6);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: var(--shadow);
+      transform: rotate(2deg);
+    }
+    .phone {
+      border-radius: 34px;
+      min-height: 560px;
+      padding: 24px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,247,251,.9)),
+        radial-gradient(circle at 50% 0%, rgba(255,79,163,.2), transparent 45%);
+      border: 1px solid var(--line);
+      overflow: hidden;
+      position: relative;
+    }
+    .screenTop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .pill { padding: 8px 12px; border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
+    .event {
+      margin-top: 14px;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.82);
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 32px rgba(33,19,27,.06);
+    }
+    .event strong { display:block; font-size: 18px; letter-spacing: -.03em; }
+    .event span { display:block; margin-top: 7px; color: var(--muted); font-weight: 700; font-size: 13px; }
+    .bubble {
+      margin-top: 22px;
+      padding: 18px;
+      border-radius: 28px;
+      color: white;
+      background: linear-gradient(135deg, var(--pink), var(--violet));
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: -.04em;
+    }
+    section { padding: 54px 0; }
+    .sectionTitle { font-size: clamp(32px, 4vw, 48px); line-height: 1; letter-spacing: -.06em; margin: 0 0 14px; }
+    .sectionLead { margin: 0; color: var(--muted); font-size: 18px; line-height: 1.55; font-weight: 600; max-width: 720px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 28px; }
+    .card {
+      padding: 24px;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 18px 48px rgba(33,19,27,.06);
+    }
+    .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 17px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(135deg, rgba(255,79,163,.14), rgba(123,77,255,.12));
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    .card h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: -.04em; }
+    .card p { margin: 0; color: var(--muted); line-height: 1.55; font-weight: 600; }
+    .cta {
+      margin: 28px 0 70px;
+      padding: 34px;
+      border-radius: 38px;
+      background: linear-gradient(135deg, rgba(255,79,163,.12), rgba(123,77,255,.12));
+      border: 1px solid rgba(255,255,255,.9);
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: center;
+    }
+    .cta h2 { margin:0; font-size: clamp(30px, 4vw, 44px); letter-spacing: -.06em; line-height: 1; }
+    .cta p { margin: 10px 0 0; color: var(--muted); font-weight: 700; line-height: 1.5; }
+    footer { padding: 30px 0 42px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .foot { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:22px; }
+    @media (max-width: 860px) {
+      .heroGrid { grid-template-columns: 1fr; }
+      .phoneCard { transform: none; }
+      .cards { grid-template-columns: 1fr; }
+      .cta { flex-direction: column; align-items: flex-start; }
+      .navLinks a:not(.btn) { display: none; }
+    }
+  
+    .contactShell {
+      display: grid;
+      grid-template-columns: 1.35fr .65fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-top: 34px;
+    }
+    .contactCard {
+      background: rgba(255,255,255,.82);
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      padding: 34px;
+      backdrop-filter: blur(16px);
+    }
+    .contactGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .contactField {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .contactField.full { grid-column: 1 / -1; }
+    .contactField label {
+      font-weight: 900;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .contactField input,
+    .contactField select,
+    .contactField textarea {
+      width: 100%;
+      border: 1px solid rgba(255,79,163,.28);
+      border-radius: 16px;
+      background: rgba(255,255,255,.78);
+      padding: 15px 16px;
+      font: inherit;
+      color: var(--text);
+      outline: none;
+      box-shadow: 0 8px 24px rgba(33,19,27,.04);
+    }
+    .contactField textarea { resize: vertical; min-height: 150px; }
+    .contactField input:focus,
+    .contactField select:focus,
+    .contactField textarea:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 4px rgba(255,79,163,.12);
+    }
+    .contactActions {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .contactNote {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 14px;
+      max-width: 360px;
+    }
+    .contactSide h3 { margin-top: 0; }
+    .contactTopic {
+      display: flex;
+      gap: 12px;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .contactTopic:last-child { border-bottom: 0; }
+    .contactIcon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,79,163,.10);
+      color: var(--pink);
+      flex: 0 0 38px;
+    }
+    .contactTopic strong { display: block; font-size: 14px; }
+    .contactTopic span { display: block; color: var(--muted); font-weight: 700; font-size: 13px; margin-top: 3px; }
+    @media (max-width: 860px) {
+      .contactShell { grid-template-columns: 1fr; }
+      .contactGrid { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="/">
+        <img src="/USLY logo.png" alt="USLY" />
+        <span>USLY</span>
+      </a>
+      <nav class="navLinks">
+        <a href="/">Strona główna</a>
+        <a class="btn primary" href="/app">Otwórz aplikację</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <span class="eyebrow">💌 Kontakt</span>
+        <h1>Napisz do USLY</h1>
+        <p class="sectionLead">Masz pytanie, pomysł na współpracę albo chcesz zgłosić sprawę dotyczącą aplikacji? Wybierz temat i zostaw wiadomość.</p>
+
+        <div class="contactShell">
+          <article class="contactCard">
+            <form id="contactForm">
+              <div class="contactGrid">
+                <div class="contactField">
+                  <label>Imię lub nazwa firmy</label>
+                  <input name="name" type="text" placeholder="Np. Agnieszka Kowalska / Klub Muzyczny XYZ" />
+                </div>
+
+                <div class="contactField">
+                  <label>E-mail</label>
+                  <input name="email" type="email" placeholder="kontakt@email.pl" required />
+                </div>
+
+                <div class="contactField full">
+                  <label>Temat wiadomości</label>
+                  <select name="topic" required>
+                    <option value="">Wybierz temat</option>
+                    <option value="general">Chcę zapytać o USLY</option>
+                    <option value="organizer">Jestem Organizatorem</option>
+                    <option value="cooperation">Współpraca / media</option>
+                    <option value="privacy">Sprawa prawna lub prywatność</option>
+                    <option value="support">Pomoc techniczna</option>
+                    <option value="other">Inne</option>
+                  </select>
+                </div>
+
+                <div class="contactField full">
+                  <label>Wiadomość</label>
+                  <textarea name="message" placeholder="Napisz, w czym możemy pomóc..." required></textarea>
+                </div>
+              </div>
+
+              <div class="contactActions">
+                <button class="btn primary" type="submit">Wyślij wiadomość ✈️</button>
+                <p class="contactNote">Twoje dane są u nas bezpieczne. Odpowiemy najszybciej, jak będzie to możliwe.</p>
+              </div>
+
+              <p id="contactStatus" class="contactNote" style="margin-top: 16px; font-weight: 900;"></p>
+            </form>
+          </article>
+
+          <aside class="contactCard contactSide">
+            <h3>Jak możemy pomóc?</h3>
+
+            <div class="contactTopic">
+              <div class="contactIcon">✨</div>
+              <div><strong>Chcę zapytać o USLY</strong><span>Ogólne pytania o aplikację</span></div>
+            </div>
+
+            <div class="contactTopic">
+              <div class="contactIcon">🎟️</div>
+              <div><strong>Jestem Organizatorem</strong><span>Wydarzenia, miejsca i współpraca</span></div>
+            </div>
+
+            <div class="contactTopic">
+              <div class="contactIcon">🤝</div>
+              <div><strong>Współpraca / media</strong><span>Partnerstwa, media, influencerzy</span></div>
+            </div>
+
+            <div class="contactTopic">
+              <div class="contactIcon">🛡️</div>
+              <div><strong>Sprawa prawna lub prywatność</strong><span>RODO, regulamin, polityka prywatności</span></div>
+            </div>
+
+            <div class="contactTopic">
+              <div class="contactIcon">🎧</div>
+              <div><strong>Pomoc techniczna</strong><span>Problemy z aplikacją, wsparcie</span></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <span>© 2026 USLY</span>
+      <span>
+        <a href="/regulamin">Regulamin</a> ·
+        <a href="/polityka-prywatnosci">Polityka prywatności</a> ·
+        <a href="/kontakt">Kontakt</a>
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    const contactForm = document.getElementById("contactForm");
+    const contactStatus = document.getElementById("contactStatus");
+
+    contactForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      contactStatus.textContent = "Wysyłamy wiadomość...";
+
+      const formData = new FormData(contactForm);
+      const payload = {
+        name: String(formData.get("name") || "").trim(),
+        email: String(formData.get("email") || "").trim(),
+        topic: String(formData.get("topic") || "").trim(),
+        message: String(formData.get("message") || "").trim(),
+      };
+
+      try {
+        const response = await fetch("/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error("CONTACT_SEND_FAILED");
+        }
+
+        contactForm.innerHTML = `
+          <div style="text-align:center; padding: 34px 20px;">
+            <div style="font-size: 44px; margin-bottom: 14px;">✅</div>
+            <h3 style="margin-bottom: 10px;">Wiadomość została wysłana</h3>
+            <p class="contactNote" style="max-width: 520px; margin: 0 auto 18px;">
+              Dziękujemy za kontakt z USLY. Potwierdzenie wysłaliśmy również na podany adres e-mail.
+            </p>
+            <a class="btn primary" href="/">Wróć do strony głównej</a>
+          </div>
+        `;
+      } catch (error) {
+        contactStatus.textContent = "Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę.";
+      }
+    });
+  </script>
+
+</body>
+</html>
