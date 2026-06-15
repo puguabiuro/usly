@@ -2238,7 +2238,7 @@ section#S11_PLANS .promoCodeRow .btn{
           </button>
           <button id="tabEvents" type="button" onclick="go('S7_EVENTS')">
             <div class="ico" aria-hidden="true">📅</div>
-            <div data-i18n="tabbar.events">Wydarzenia</div>
+            <div data-i18n="tabbar.eventsShort">Eventy</div>
           </button>
           <button id="tabGroups" type="button" onclick="go('S8_GROUPS')">
             <div class="ico" style="position:relative;" aria-hidden="true">
@@ -2262,7 +2262,7 @@ section#S11_PLANS .promoCodeRow .btn{
         <nav class="tabbar" id="tabbarPartner" aria-label="Dolna nawigacja — Organizator" data-i18n-aria-label="tabbar.partnerAria">
           <button id="ptabDash" type="button" onclick="go('S9_PARTNER')">
             <div class="ico" aria-hidden="true">📊</div>
-            <div data-i18n="tabbar.profile">Profil</div>
+            <div data-i18n="tabbar.partner.dashboardShort">Panel</div>
           </button>
           <button id="ptabCreate" type="button" onclick="openNewPartnerEventForm()">
             <div class="ico" aria-hidden="true">🎟️</div>
@@ -2270,19 +2270,19 @@ section#S11_PLANS .promoCodeRow .btn{
           </button>
           <button id="ptabMyEvents" type="button" onclick="go('S9_PARTNER_EVENTS')">
             <div class="ico" aria-hidden="true">📅</div>
-            <div data-i18n="tabbar.events">Wydarzenia</div>
+            <div data-i18n="tabbar.eventsShort">Eventy</div>
           </button>
           <button id="ptabMsgs" type="button" onclick="go('S9_PARTNER_MESSAGES')">
             <div class="ico" style="position:relative;" aria-hidden="true">
               ✉️
               <span class="pill" id="badgePartnerMsgs" style="position:absolute;right:-6px;top:-10px;min-width:22px;justify-content:center;display:none;">0</span>
             </div>
-            <div data-i18n="tabbar.messages">Wiadomości</div>
+            <div data-i18n="tabbar.partner.messagesShort">Chat</div>
           </button>
           <!-- USTAWIENIA: TYLKO KOŁO ZĘBATE -->
           <button id="ptabSettings" type="button" onclick="go('S10_SETTINGS')">
             <div class="ico" aria-hidden="true">⚙️</div>
-            <div data-i18n="tabbar.settings">Ustawienia</div>
+            <div data-i18n="tabbar.partner.settingsShort">Ustaw.</div>
           </button>
         </nav>
   
@@ -3487,7 +3487,11 @@ section#S11_PLANS .promoCodeRow .btn{
               <input id="peCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" />
   
               <label class="mt12" data-i18n="partnerCreate.when">Kiedy *</label>
-              <input id="peWhen" class="mobileDateTimeInput" type="datetime-local" />
+              <input id="peWhen" type="hidden" />
+              <div class="eventDateTimeGrid">
+                <input id="peDate" class="mobileDateTimeInput" type="date" aria-label="Data wydarzenia" />
+                <input id="peTime" class="mobileDateTimeInput" type="time" aria-label="Godzina wydarzenia" />
+              </div>
   
               <label class="mt12" data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>
               <input id="peAddress" type="text" placeholder="np. Studio Aurora albo ul. Słoneczna 12" data-i18n-placeholder="partnerCreate.addressPlaceholder" />

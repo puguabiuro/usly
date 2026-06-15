@@ -4946,3 +4946,17 @@ button[id^="notifBtn"]:active{
   width: 32px;
   height: 32px;
 }
+
+/* Store Ready fix: split organizer event date/time into stable mobile fields */
+.eventDateTimeGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width:100%;
+}
+
+.eventDateTimeGrid input{
+  min-width:0 !important;
+  width:100% !important;
+  max-width:100% !important;
+}

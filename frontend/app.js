@@ -576,6 +576,10 @@ const I18N = {
     "tabbar.nearby": "Okolica",
     "tabbar.chats": "Czaty",
     "tabbar.events": "Wydarzenia",
+    "tabbar.eventsShort": "Eventy",
+    "tabbar.partner.dashboardShort": "Panel",
+    "tabbar.partner.messagesShort": "Chat",
+    "tabbar.partner.settingsShort": "Ustaw.",
     "tabbar.groups": "Grupy",
     "tabbar.profile": "Profil",
     "tabbar.add": "Dodaj",
@@ -1426,6 +1430,10 @@ const I18N = {
     "tabbar.nearby": "Nearby",
     "tabbar.chats": "Chats",
     "tabbar.events": "Events",
+    "tabbar.eventsShort": "Events",
+    "tabbar.partner.dashboardShort": "Panel",
+    "tabbar.partner.messagesShort": "Chat",
+    "tabbar.partner.settingsShort": "Settings",
     "tabbar.groups": "Groups",
     "tabbar.profile": "Profile",
     "tabbar.add": "Add",
@@ -6724,7 +6732,7 @@ function clearPartnerEventForm() {
   resetPartnerEventFormMode();
   setPartnerEventInterestTags([]);
   renderPartnerEventInterestTags();
-  ["peTitle","peCity","peWhen","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink","peCapacity"].forEach(id => {
+  ["peTitle","peCity","peWhen","peDate","peTime","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink","peCapacity"].forEach(id => {
     const el = $(id);
     if (el) el.value = "";
   });
@@ -7161,6 +7169,23 @@ function commitSingleEventTag() {
   renderPartnerEventInterestTags();
 }
 
+function syncPartnerEventDateTimeFields() {
+  const date = $("peDate")?.value?.trim() || "";
+  const time = $("peTime")?.value?.trim() || "";
+  const hidden = $("peWhen");
+  if (!hidden) return;
+  hidden.value = date && time ? `${date}T${time}` : "";
+}
+
+function setPartnerEventDateTimeFields(value) {
+  const normalized = String(value || "").trim().replace(" ", "T").slice(0, 16);
+  const date = normalized.slice(0, 10);
+  const time = normalized.slice(11, 16);
+  if ($("peWhen")) $("peWhen").value = date && time ? `${date}T${time}` : "";
+  if ($("peDate")) $("peDate").value = date || "";
+  if ($("peTime")) $("peTime").value = time || "";
+}
+
 function resetSingleEventTag() {
   const input = $("peInterest");
   if (!input) return;
@@ -7192,8 +7217,14 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("change", (e) => {
-  if (e.target?.id !== "peInterest") return;
-  commitSingleEventTag();
+  if (e.target?.id === "peInterest") {
+    commitSingleEventTag();
+    return;
+  }
+
+  if (e.target?.id === "peDate" || e.target?.id === "peTime") {
+    syncPartnerEventDateTimeFields();
+  }
 });
 
 document.addEventListener("click", (e) => {
@@ -7216,12 +7247,10 @@ function openPartnerEventEditor(eventId) {
 
   if ($("peTitle")) $("peTitle").value = ev.title || "";
   if ($("peCity")) $("peCity").value = ev.city || "";
-  if ($("peWhen")) {
-    if (ev.start_at) {
-      $("peWhen").value = String(ev.start_at).trim().replace(" ", "T").slice(0, 16);
-    } else {
-      $("peWhen").value = "";
-    }
+  if (ev.start_at) {
+    setPartnerEventDateTimeFields(String(ev.start_at).trim().replace(" ", "T").slice(0, 16));
+  } else {
+    setPartnerEventDateTimeFields("");
   }
   if ($("peWhere")) $("peWhere").value = ev.where || ev.location || "";
   if ($("peAddress")) $("peAddress").value = ev.where || ev.address || ev.location || "";
@@ -7261,6 +7290,7 @@ async function savePartnerEventDraft() {
   }
 
   commitSingleEventTag();
+  syncPartnerEventDateTimeFields();
 
   const title = $("peTitle")?.value?.trim();
   const city = normalizeCity($("peCity")?.value);
@@ -7392,7 +7422,7 @@ async function savePartnerEventDraft() {
     resetPartnerEventFormMode();
     setPartnerEventInterestTags([]);
     renderPartnerEventInterestTags();
-    ["peTitle","peCity","peWhen","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink"].forEach(id => {
+    ["peTitle","peCity","peWhen","peDate","peTime","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink"].forEach(id => {
       const el = $(id);
       if (el) el.value = "";
     });
@@ -7613,7 +7643,7 @@ async function publishPartnerEvent() {
     }
 
     resetPartnerEventFormMode();
-    ["peTitle","peCity","peWhen","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink"].forEach(id => {
+    ["peTitle","peCity","peWhen","peDate","peTime","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink"].forEach(id => {
       const el = $(id);
       if (el) el.value = "";
     });
