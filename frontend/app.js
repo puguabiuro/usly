@@ -7260,6 +7260,8 @@ async function savePartnerEventDraft() {
     return;
   }
 
+  commitSingleEventTag();
+
   const title = $("peTitle")?.value?.trim();
   const city = normalizeCity($("peCity")?.value);
   const when = $("peWhen")?.value?.trim();

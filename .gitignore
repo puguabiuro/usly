@@ -39,3 +39,5 @@ backups/
 *.icloud
 *.bak
 node_modules/
+
+backend/venv_intel_backup/

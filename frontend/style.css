@@ -4917,3 +4917,32 @@ button[id^="notifBtn"]:active{
     0 8px 20px rgba(0,0,0,.16);
 }
 
+
+/* Store Ready fix: prevent native date/datetime inputs from overflowing on mobile */
+#regBirthDate,
+#peWhen{
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  padding-right: 8px !important;
+}
+
+/* Store Ready fix: keep organizer bottom navigation labels inside each tab */
+#tabbarPartner{
+  gap: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+#tabbarPartner button{
+  font-size: 9.5px;
+  padding-left: 3px;
+  padding-right: 3px;
+  white-space: nowrap;
+}
+
+#tabbarPartner button .ico{
+  width: 32px;
+  height: 32px;
+}
