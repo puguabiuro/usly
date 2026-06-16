@@ -4960,3 +4960,93 @@ button[id^="notifBtn"]:active{
   width:100% !important;
   max-width:100% !important;
 }
+
+/* Store Ready mobile/native fix: remove web phone mockup shell on real app screens */
+@media (max-width: 430px){
+  .stage{
+    min-height:100dvh;
+    display:block;
+    padding:0;
+  }
+
+  .phone{
+    width:100vw;
+    height:100dvh;
+    border-radius:0;
+    padding:0;
+    box-shadow:none;
+    background:transparent;
+  }
+
+  .phone::before{
+    display:none;
+  }
+
+  .screenHost{
+    height:100dvh;
+    border-radius:0;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+
+/* Store Ready iOS native safe-area + date input fix */
+@media (max-width: 430px){
+  .screenHost{
+    padding-top: env(safe-area-inset-top);
+    box-sizing: border-box;
+  }
+
+  .topbar{
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .backBtn{
+    flex:0 0 auto;
+  }
+
+  input.mobileDateTimeInput,
+  input.mobileDateTimeInput[type="date"],
+  input.mobileDateTimeInput[type="datetime-local"],
+  #regBirthDate{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    display:block !important;
+    appearance:none !important;
+    -webkit-appearance:none !important;
+  }
+}
+
+/* Store Ready iOS native topbar fix: keep all screen headers below status bar/notch */
+@media (max-width: 430px){
+  .topbar{
+    top:0;
+    height:calc(74px + env(safe-area-inset-top));
+    padding-top:calc(14px + env(safe-area-inset-top));
+    box-sizing:border-box;
+  }
+
+  .view{
+    padding-top:calc(74px + env(safe-area-inset-top));
+  }
+
+  #S0_WELCOME .topbar{
+    height:calc(112px + env(safe-area-inset-top));
+    padding-top:calc(18px + env(safe-area-inset-top));
+    padding-bottom:8px;
+  }
+
+  #S0_WELCOME .brandLogo{
+    width:84px;
+    height:84px;
+    margin-top:0;
+    margin-bottom:0;
+  }
+
+  #S0_WELCOME .content.hero{
+    padding-top:calc(112px + env(safe-area-inset-top));
+    margin-top:0;
+  }
+}

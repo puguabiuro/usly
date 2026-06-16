@@ -265,6 +265,8 @@ allowed_origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5501",
     "http://localhost:5501",
+    "capacitor://localhost",
+    "ionic://localhost",
     "https://uslyapp.pl",
     "https://www.uslyapp.pl",
     "https://usly-backend-v2.onrender.com",
