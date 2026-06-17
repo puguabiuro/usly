@@ -15,6 +15,10 @@
     "@capacitor/cli": "^7.6.5",
     "@capacitor/core": "^7.6.5",
     "@capacitor/ios": "^7.6.5",
+    "@capacitor/push-notifications": "^7.0.6",
     "@revenuecat/purchases-capacitor": "^11.3.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
   }
 }

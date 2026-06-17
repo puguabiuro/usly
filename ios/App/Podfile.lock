@@ -4,6 +4,8 @@ PODS:
   - CapacitorApp (7.1.2):
     - Capacitor
   - CapacitorCordova (7.6.5)
+  - CapacitorPushNotifications (7.0.6):
+    - Capacitor
   - PurchasesHybridCommon (17.25.0):
     - RevenueCat (= 5.51.1)
   - RevenueCat (5.51.1)
@@ -15,6 +17,7 @@ DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorPushNotifications (from `../../node_modules/@capacitor/push-notifications`)"
   - "RevenuecatPurchasesCapacitor (from `../../node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
@@ -29,6 +32,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/app"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorPushNotifications:
+    :path: "../../node_modules/@capacitor/push-notifications"
   RevenuecatPurchasesCapacitor:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
@@ -36,10 +41,11 @@ SPEC CHECKSUMS:
   Capacitor: e9708b186e71dc45f9b2ee72e826b7389fb79ff2
   CapacitorApp: f01a913211780e0718dae9750442c3e23f96e106
   CapacitorCordova: 2b36392a7292c3c451dcae154185ee8804d7b6b3
+  CapacitorPushNotifications: b8e30637549ce91468b8c4dddbef2657be831f4c
   PurchasesHybridCommon: 6a79a873ab52f777bfa36e9516f3fcd84d3b3428
   RevenueCat: eab035bbab271faccfef5c36eaff2a1ffef14dc0
   RevenuecatPurchasesCapacitor: fa376932f9967c7ab4b5eac477e824d90393b91a
 
-PODFILE CHECKSUM: 662f90cf9052715b0862b6f41d69799b0bff75d4
+PODFILE CHECKSUM: 3bf4642a33890b47cb4cb7bd93ffa1ffd660df56
 
 COCOAPODS: 1.16.2
