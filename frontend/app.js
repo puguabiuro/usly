@@ -531,6 +531,8 @@ const I18N = {
     "partnerCreate.city": "Miasto *",
     "partnerCreate.cityPlaceholder": "np. Warszawa",
     "partnerCreate.when": "Kiedy *",
+    "partnerCreate.dateHint": "DD.MM.RRRR",
+    "partnerCreate.timeHint": "GG:MM",
     "partnerCreate.where": "Gdzie odbywa się wydarzenie? *",
     "partnerCreate.addressPlaceholder": "np. Studio Aurora albo ul. Słoneczna 12",
     "partnerCreate.findPlace": "Znajdź miejsce na mapie",
@@ -865,6 +867,7 @@ const I18N = {
     "register.repeat_password_placeholder": "Powtórz hasło",
     "register.user.location_title": "Wiek i lokalizacja",
     "register.birthdate": "Data urodzenia *",
+    "register.birthdate_hint": "Format: DD.MM.RRRR",
     "register.age_required": "Wymagane 18+.",
     "register.location": "Lokalizacja *",
     "register.location_placeholder": "Pobieramy miasto...",
@@ -1385,6 +1388,8 @@ const I18N = {
     "partnerCreate.city": "City *",
     "partnerCreate.cityPlaceholder": "e.g. Warsaw",
     "partnerCreate.when": "When *",
+    "partnerCreate.dateHint": "DD.MM.YYYY",
+    "partnerCreate.timeHint": "HH:MM",
     "partnerCreate.where": "Where does the event take place? *",
     "partnerCreate.addressPlaceholder": "e.g. Aurora Studio or 12 Sunny Street",
     "partnerCreate.findPlace": "Find place on map",
@@ -1719,6 +1724,7 @@ const I18N = {
     "register.repeat_password_placeholder": "Repeat password",
     "register.user.location_title": "Age and location",
     "register.birthdate": "Date of birth *",
+    "register.birthdate_hint": "Format: DD.MM.YYYY",
     "register.age_required": "18+ required.",
     "register.location": "Location *",
     "register.location_placeholder": "Getting your city...",
@@ -8791,11 +8797,6 @@ function renderPartnerEvents() {
   if (!list) return;
 
   const events = Array.isArray(App.partnerEvents) ? App.partnerEvents : [];
-
-  if (!events.length) {
-    list.innerHTML = '<div class="tMuted">Brak wydarzeń organizatora</div>';
-    return;
-  }
 
   const now = new Date();
 

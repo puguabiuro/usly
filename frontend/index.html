@@ -2517,6 +2517,7 @@ section#S11_PLANS .promoCodeRow .btn{
 
                   <label class="mt12" data-i18n="register.birthdate">Data urodzenia *</label>
                   <input id="regBirthDate" class="mobileDateTimeInput" type="date" required />
+                  <div class="tMuted" style="text-align:left;font-size:12px;margin-top:6px;" data-i18n="register.birthdate_hint">Format: DD.MM.RRRR</div>
                   <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
                    Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
                   </div>
@@ -3491,6 +3492,10 @@ section#S11_PLANS .promoCodeRow .btn{
               <div class="eventDateTimeGrid">
                 <input id="peDate" class="mobileDateTimeInput" type="date" aria-label="Data wydarzenia" />
                 <input id="peTime" class="mobileDateTimeInput" type="time" aria-label="Godzina wydarzenia" />
+              </div>
+              <div class="eventDateTimeGrid tMuted" style="text-align:left;font-size:12px;margin-top:6px;">
+                <div data-i18n="partnerCreate.dateHint">DD.MM.RRRR</div>
+                <div data-i18n="partnerCreate.timeHint">GG:MM</div>
               </div>
   
               <label class="mt12" data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>

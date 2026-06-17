@@ -1062,6 +1062,13 @@ input[type="range"]::-moz-range-thumb{
   flex:1;
   min-height: 0;
 }
+
+#chatBubbles::after,
+#groupBubbles::after{
+  content:"";
+  display:block;
+  flex:0 0 72px;
+}
 .bubble{
   max-width: 78%;
   padding: 10px 12px;
@@ -5195,6 +5202,6 @@ button[id^="notifBtn"]:active{
 
   #S6B_CHAT_THREAD .chatContent,
   #S8B_GROUP_THREAD .chatContent{
-    padding-bottom:130px !important;
+    padding-bottom:220px !important;
   }
 }
