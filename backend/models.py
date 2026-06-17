@@ -1071,6 +1071,79 @@ class UserNotification(Base):
     )
 
 
+
+# =====================
+# DEVICE PUSH TOKENS
+# =====================
+
+class DevicePushToken(Base):
+    __tablename__ = "device_push_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    token: Mapped[str] = mapped_column(
+        String(512),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    platform: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        index=True,
+    )
+
+    device_id: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+        default=None,
+    )
+
+    app_version: Mapped[str | None] = mapped_column(
+        String(40),
+        nullable=True,
+        default=None,
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        Index("ix_device_push_tokens_user_active", "user_id", "is_active"),
+        Index("ix_device_push_tokens_platform_active", "platform", "is_active"),
+    )
+
 # =====================
 # PROMO / AMBASSADOR CODES
 # =====================
