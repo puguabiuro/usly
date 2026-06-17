@@ -4961,8 +4961,15 @@ button[id^="notifBtn"]:active{
   max-width:100% !important;
 }
 
-/* Store Ready mobile/native fix: remove web phone mockup shell on real app screens */
+
+
+/* Store Ready native shell fix: full-screen app, safe-area topbar and bottom tabbar */
 @media (max-width: 430px){
+  :root{
+    --nativeTopH: calc(74px + env(safe-area-inset-top));
+    --nativeTabH: calc(82px + env(safe-area-inset-bottom));
+  }
+
   .stage{
     min-height:100dvh;
     display:block;
@@ -4976,6 +4983,7 @@ button[id^="notifBtn"]:active{
     padding:0;
     box-shadow:none;
     background:transparent;
+    overflow:hidden;
   }
 
   .phone::before{
@@ -4987,22 +4995,58 @@ button[id^="notifBtn"]:active{
     border-radius:0;
     overflow:auto;
     -webkit-overflow-scrolling:touch;
-  }
-}
-
-/* Store Ready iOS native safe-area + date input fix */
-@media (max-width: 430px){
-  .screenHost{
-    padding-top: env(safe-area-inset-top);
-    box-sizing: border-box;
+    padding-top:0;
+    box-sizing:border-box;
   }
 
   .topbar{
-    padding-top: max(10px, env(safe-area-inset-top));
+    height:var(--nativeTopH) !important;
+    padding:calc(env(safe-area-inset-top) + 12px) 14px 10px !important;
+    box-sizing:border-box !important;
   }
 
-  .backBtn{
-    flex:0 0 auto;
+  .view{
+    padding-top:var(--nativeTopH) !important;
+  }
+
+  #S0_WELCOME{
+    padding-top:0 !important;
+  }
+
+  #S0_WELCOME .topbar{
+    height:calc(104px + env(safe-area-inset-top)) !important;
+    padding-top:calc(env(safe-area-inset-top) + 12px) !important;
+    padding-bottom:8px !important;
+  }
+
+  #S0_WELCOME .brandLogo{
+    width:76px !important;
+    height:76px !important;
+    margin:0 !important;
+  }
+
+  #S0_WELCOME .content.hero{
+    padding-top:calc(104px + env(safe-area-inset-top)) !important;
+    margin-top:0 !important;
+  }
+
+  #S0_WELCOME .heroCard{
+    margin-top:0 !important;
+    padding-top:42px !important;
+  }
+
+  .tabbar{
+    left:10px !important;
+    right:10px !important;
+    bottom:env(safe-area-inset-bottom) !important;
+    height:var(--nativeTabH) !important;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
+    box-sizing:border-box !important;
+    border-radius:26px 26px 0 0 !important;
+  }
+
+  #appRoot.isLoggedIn .view{
+    padding-bottom:calc(var(--nativeTabH) + 18px) !important;
   }
 
   input.mobileDateTimeInput,
@@ -5019,34 +5063,138 @@ button[id^="notifBtn"]:active{
   }
 }
 
-/* Store Ready iOS native topbar fix: keep all screen headers below status bar/notch */
+/* Store Ready native correction: visible tabbar + no iOS input zoom */
 @media (max-width: 430px){
-  .topbar{
-    top:0;
-    height:calc(74px + env(safe-area-inset-top));
-    padding-top:calc(14px + env(safe-area-inset-top));
-    box-sizing:border-box;
+  :root{
+    --nativeTabVisibleH: 94px;
+  }
+
+  .tabbar{
+    bottom: calc(env(safe-area-inset-bottom) + 10px) !important;
+    height: var(--nativeTabVisibleH) !important;
+    padding: 10px 10px 12px !important;
+    border-radius: 26px !important;
+    z-index: 999 !important;
+    pointer-events:auto !important;
+  }
+
+  #appRoot.isLoggedIn .view{
+    padding-bottom: calc(var(--nativeTabVisibleH) + env(safe-area-inset-bottom) + 34px) !important;
+  }
+
+  input,
+  textarea,
+  select{
+    font-size:16px !important;
+  }
+}
+
+/* Store Ready native final nav fix: tabbar fixed to viewport, views scroll underneath */
+@media (max-width: 430px){
+  .screenHost{
+    overflow:hidden !important;
   }
 
   .view{
-    padding-top:calc(74px + env(safe-area-inset-top));
+    overflow:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    height:100dvh !important;
+    box-sizing:border-box !important;
   }
 
-  #S0_WELCOME .topbar{
-    height:calc(112px + env(safe-area-inset-top));
-    padding-top:calc(18px + env(safe-area-inset-top));
-    padding-bottom:8px;
+  .tabbar{
+    position:fixed !important;
+    left:10px !important;
+    right:10px !important;
+    bottom:calc(env(safe-area-inset-bottom) + 10px) !important;
+    height:88px !important;
+    padding:8px 10px 10px !important;
+    border-radius:26px !important;
+    z-index:9999 !important;
+    pointer-events:auto !important;
   }
 
-  #S0_WELCOME .brandLogo{
-    width:84px;
-    height:84px;
-    margin-top:0;
-    margin-bottom:0;
+  #appRoot.isLoggedIn .view{
+    padding-bottom:calc(88px + env(safe-area-inset-bottom) + 28px) !important;
   }
 
-  #S0_WELCOME .content.hero{
-    padding-top:calc(112px + env(safe-area-inset-top));
-    margin-top:0;
+  .tabbar,
+  .tabbar *{
+    pointer-events:auto !important;
+  }
+}
+
+/* Store Ready native chat/group thread layout fix */
+@media (max-width: 430px){
+  #S6B_CHAT_THREAD.active,
+  #S8B_GROUP_THREAD.active{
+    display:flex !important;
+    flex-direction:column !important;
+    height:100dvh !important;
+    overflow:hidden !important;
+    padding-top:var(--nativeTopH) !important;
+    padding-bottom:calc(88px + env(safe-area-inset-bottom) + 16px) !important;
+    box-sizing:border-box !important;
+  }
+
+  #S6B_CHAT_THREAD .topbar,
+  #S8B_GROUP_THREAD .topbar{
+    position:absolute !important;
+    top:0 !important;
+    left:0 !important;
+    right:0 !important;
+    z-index:20 !important;
+  }
+
+  #S6B_CHAT_THREAD .chatContent,
+  #S8B_GROUP_THREAD .chatContent{
+    flex:1 1 auto !important;
+    min-height:0 !important;
+    overflow:auto !important;
+    padding:16px 16px 12px !important;
+    box-sizing:border-box !important;
+  }
+
+  #chatBubbles,
+  #groupBubbles{
+    flex:1 1 auto !important;
+    min-height:0 !important;
+  }
+
+  #S6B_CHAT_THREAD .inputDock,
+  #S8B_GROUP_THREAD .inputDock{
+    position:relative !important;
+    bottom:auto !important;
+    margin:0 16px 12px !important;
+    flex:0 0 auto !important;
+    z-index:10 !important;
+  }
+}
+
+/* Store Ready native chat polish */
+@media (max-width: 430px){
+  #S6B_CHAT_THREAD .inputDock,
+  #S8B_GROUP_THREAD .inputDock{
+    margin-bottom: 28px !important;
+  }
+}
+
+/* Store Ready native final message dock fix for user/partner chats and groups */
+@media (max-width: 430px){
+  #S6B_CHAT_THREAD .inputDock,
+  #S8B_GROUP_THREAD .inputDock{
+    position:fixed !important;
+    left:16px !important;
+    right:16px !important;
+    bottom:calc(env(safe-area-inset-bottom) + 108px) !important;
+    margin:0 !important;
+    width:auto !important;
+    box-sizing:border-box !important;
+    z-index:9998 !important;
+  }
+
+  #S6B_CHAT_THREAD .chatContent,
+  #S8B_GROUP_THREAD .chatContent{
+    padding-bottom:130px !important;
   }
 }
