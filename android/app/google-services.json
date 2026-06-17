@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "698442832607",
+    "project_id": "usly-ee74b",
+    "storage_bucket": "usly-ee74b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:698442832607:android:bd0d70d0c5db40bf5ae76a",
+        "android_client_info": {
+          "package_name": "com.usly.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYhe48Pt4K9zusamNEBXRbpTB3q_EjyQs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

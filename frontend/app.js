@@ -11121,9 +11121,47 @@ function setupCapacitorAuthLinkListener() {
   } catch (_) {}
 }
 
+
+async function setupPushNotifications() {
+  try {
+    const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
+    if (!PushNotifications) return;
+
+    const platform = window.Capacitor?.getPlatform?.();
+    if (platform !== "android" && platform !== "ios") return;
+
+    let permission = await PushNotifications.checkPermissions();
+    if (permission.receive !== "granted") {
+      permission = await PushNotifications.requestPermissions();
+    }
+    if (permission.receive !== "granted") return;
+
+    await PushNotifications.register();
+
+    PushNotifications.addListener("registration", (token) => {
+      console.info("USLY push token:", token?.value || token);
+    });
+
+    PushNotifications.addListener("registrationError", (error) => {
+      console.error("USLY push registration error", error);
+    });
+
+    PushNotifications.addListener("pushNotificationReceived", (notification) => {
+      console.info("USLY push received:", notification);
+    });
+
+    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      console.info("USLY push action:", action);
+    });
+  } catch (error) {
+    console.error("USLY push setup failed", error);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   handleAuthLinkFromUrl();
   setupCapacitorAuthLinkListener();
+  setupPushNotifications();
 });
 
 function passwordEyeIconHtml(isVisible) {
