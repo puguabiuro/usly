@@ -18,33 +18,63 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def _column_exists(table_name: str, column_name: str) -> bool:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    return any(col.get("name") == column_name for col in inspector.get_columns(table_name))
+
+
+def _index_exists(table_name: str, index_name: str) -> bool:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    return any(ix.get("name") == index_name for ix in inspector.get_indexes(table_name))
+
+
 def upgrade() -> None:
     """Upgrade schema."""
 
-    with op.batch_alter_table('events', schema=None) as batch_op:
-        batch_op.alter_column(
-            'interest_tag',
-            existing_type=sa.TEXT(),
-            type_=sa.String(length=40),
-            existing_nullable=False,
-            existing_server_default=sa.text("'eventy'"),
-        )
-        batch_op.create_index(
-            batch_op.f('ix_events_interest_tag'),
-            ['interest_tag'],
-            unique=False,
-        )
+    if not _column_exists("events", "interest_tag"):
+        with op.batch_alter_table("events", schema=None) as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "interest_tag",
+                    sa.String(length=40),
+                    nullable=False,
+                    server_default=sa.text("'eventy'"),
+                )
+            )
+    else:
+        with op.batch_alter_table("events", schema=None) as batch_op:
+            batch_op.alter_column(
+                "interest_tag",
+                existing_type=sa.TEXT(),
+                type_=sa.String(length=40),
+                existing_nullable=False,
+                existing_server_default=sa.text("'eventy'"),
+            )
+
+    if not _index_exists("events", "ix_events_interest_tag"):
+        with op.batch_alter_table("events", schema=None) as batch_op:
+            batch_op.create_index(
+                batch_op.f("ix_events_interest_tag"),
+                ["interest_tag"],
+                unique=False,
+            )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
 
-    with op.batch_alter_table('events', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_events_interest_tag'))
-        batch_op.alter_column(
-            'interest_tag',
-            existing_type=sa.String(length=40),
-            type_=sa.TEXT(),
-            existing_nullable=False,
-            existing_server_default=sa.text("'eventy'"),
-        )
+    if _index_exists("events", "ix_events_interest_tag"):
+        with op.batch_alter_table("events", schema=None) as batch_op:
+            batch_op.drop_index(batch_op.f("ix_events_interest_tag"))
+
+    if _column_exists("events", "interest_tag"):
+        with op.batch_alter_table("events", schema=None) as batch_op:
+            batch_op.alter_column(
+                "interest_tag",
+                existing_type=sa.String(length=40),
+                type_=sa.TEXT(),
+                existing_nullable=False,
+                existing_server_default=sa.text("'eventy'"),
+            )
