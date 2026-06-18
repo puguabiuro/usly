@@ -843,6 +843,12 @@ def admin_r2_health(current_user: User = Depends(require_role("admin"))):
             },
         )
 
+class AdminPushTestRequest(BaseModel):
+    user_id: int
+    title: str = Field(default="USLY", min_length=1, max_length=80)
+    body: str = Field(default="Test push notification", min_length=1, max_length=180)
+
+
 @app.post("/admin/push/test")
 def admin_push_test(
     payload: AdminPushTestRequest,
@@ -4496,12 +4502,6 @@ class PushTokenRegisterRequest(BaseModel):
     platform: str = Field(pattern="^(android|ios)$")
     device_id: str | None = Field(default=None, max_length=120)
     app_version: str | None = Field(default=None, max_length=40)
-
-
-class AdminPushTestRequest(BaseModel):
-    user_id: int
-    title: str = Field(default="USLY", min_length=1, max_length=80)
-    body: str = Field(default="Test push notification", min_length=1, max_length=180)
 
 
 @app.post("/push/register-token")
