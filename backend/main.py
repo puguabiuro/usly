@@ -156,7 +156,7 @@ from uuid import uuid4
 
 import boto3
 import firebase_admin
-from firebase_admin import credentials
+from firebase_admin import credentials, messaging
 from botocore.exceptions import ClientError
 import os
 import aiosmtplib
@@ -842,6 +842,28 @@ def admin_r2_health(current_user: User = Depends(require_role("admin"))):
                 "message": str(exc),
             },
         )
+
+@app.post("/admin/push/test")
+def admin_push_test(
+    payload: AdminPushTestRequest,
+    current_user: User = Depends(require_role("admin")),
+):
+    require_admin_permission(current_user, "plans")
+
+    db = SessionLocal()
+    try:
+        sent = send_push_to_user(
+            db,
+            payload.user_id,
+            payload.title,
+            payload.body,
+            {"type": "admin_push_test"},
+        )
+        return ok({"sent": sent})
+    finally:
+        db.close()
+
+
 
 
 # =========================
@@ -4476,6 +4498,12 @@ class PushTokenRegisterRequest(BaseModel):
     app_version: str | None = Field(default=None, max_length=40)
 
 
+class AdminPushTestRequest(BaseModel):
+    user_id: int
+    title: str = Field(default="USLY", min_length=1, max_length=80)
+    body: str = Field(default="Test push notification", min_length=1, max_length=180)
+
+
 @app.post("/push/register-token")
 def register_push_token(
     payload: PushTokenRegisterRequest,
@@ -6124,6 +6152,41 @@ def get_terms_en():
 
 
 # =========================
+
+def send_push_to_user(db, user_id: int, title: str, body: str, data: dict | None = None) -> bool:
+    if not firebase_admin._apps:
+        return False
+
+    tokens = (
+        db.query(DevicePushToken)
+        .filter(DevicePushToken.user_id == user_id)
+        .filter(DevicePushToken.is_active == True)
+        .all()
+    )
+
+    if not tokens:
+        return False
+
+    sent_any = False
+    payload_data = {str(k): str(v) for k, v in (data or {}).items()}
+
+    for token_row in tokens:
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=body,
+                ),
+                data=payload_data,
+                token=token_row.token,
+            )
+            messaging.send(message)
+            sent_any = True
+        except Exception as exc:
+            print("PUSH SEND ERROR:", exc)
+
+    return sent_any
+
 
 async def send_bug_email(subject: str, body: str):
     try:
