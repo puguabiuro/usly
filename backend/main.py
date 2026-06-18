@@ -858,6 +858,12 @@ def admin_push_test(
 
     db = SessionLocal()
     try:
+        token_count = (
+            db.query(DevicePushToken)
+            .filter(DevicePushToken.user_id == payload.user_id)
+            .filter(DevicePushToken.is_active == True)
+            .count()
+        )
         sent = send_push_to_user(
             db,
             payload.user_id,
@@ -865,7 +871,7 @@ def admin_push_test(
             payload.body,
             {"type": "admin_push_test"},
         )
-        return ok({"sent": sent})
+        return ok({"sent": sent, "token_count": token_count})
     finally:
         db.close()
 
