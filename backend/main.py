@@ -155,6 +155,8 @@ from typing import List, Optional
 from uuid import uuid4
 
 import boto3
+import firebase_admin
+from firebase_admin import credentials
 from botocore.exceptions import ClientError
 import os
 import aiosmtplib
@@ -761,6 +763,29 @@ def _activate_reserved_promo_redemptions_after_paid_plan(db, user: User, now: da
     return activated_redemption_ids, ambassador_grants_created
 
 
+
+def _init_firebase_admin() -> bool:
+    service_account_b64 = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_BASE64", "").strip()
+    if not service_account_b64:
+        print("FIREBASE ADMIN: disabled (missing FIREBASE_SERVICE_ACCOUNT_JSON_BASE64)")
+        return False
+
+    if firebase_admin._apps:
+        return True
+
+    try:
+        service_account_json = base64.b64decode(service_account_b64).decode("utf-8")
+        service_account_info = json.loads(service_account_json)
+        cred = credentials.Certificate(service_account_info)
+        firebase_admin.initialize_app(cred)
+        print("FIREBASE ADMIN: initialized")
+        return True
+    except Exception as exc:
+        print("FIREBASE ADMIN INIT ERROR:", exc)
+        return False
+
+
+
 # Healthcheck (for deploy / monitoring)
 
 async def _plan_expiry_notice_scheduler() -> None:
@@ -785,6 +810,7 @@ async def _plan_expiry_notice_scheduler() -> None:
 
 @app.on_event("startup")
 async def start_plan_expiry_notice_scheduler() -> None:
+    _init_firebase_admin()
     asyncio.create_task(_plan_expiry_notice_scheduler())
 
 
