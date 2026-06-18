@@ -11138,8 +11138,27 @@ async function setupPushNotifications() {
 
     await PushNotifications.register();
 
-    PushNotifications.addListener("registration", (token) => {
-      console.info("USLY push token:", token?.value || token);
+    PushNotifications.addListener("registration", async (token) => {
+      const tokenValue = token?.value || token;
+      console.info("USLY push token:", tokenValue);
+
+      if (!tokenValue || typeof window.apiFetch !== "function") return;
+
+      try {
+        await window.apiFetch("/push/register-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token: tokenValue,
+            platform,
+          }),
+        });
+        console.info("USLY push token registered");
+      } catch (error) {
+        console.error("USLY push token register failed", error);
+      }
     });
 
     PushNotifications.addListener("registrationError", (error) => {
