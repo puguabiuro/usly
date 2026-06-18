@@ -200,6 +200,7 @@ from backend.models import (
     PromoRedemption,
     AmbassadorRewardGrant,
     StorePurchase,
+    DevicePushToken,
     PasswordResetToken,
     EmailVerificationToken,
     AiUsageLog,
@@ -4440,6 +4441,67 @@ class FriendRequestRespond(BaseModel):
 
 class UserBlockCreate(BaseModel):
     blocked_user_id: int
+
+
+class PushTokenRegisterRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=512)
+    platform: str = Field(pattern="^(android|ios)$")
+    device_id: str | None = Field(default=None, max_length=120)
+    app_version: str | None = Field(default=None, max_length=40)
+
+
+@app.post("/push/register-token")
+def register_push_token(
+    payload: PushTokenRegisterRequest,
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    token_value = payload.token.strip()
+    if not token_value:
+        raise HTTPException(status_code=400, detail="INVALID_PUSH_TOKEN")
+
+    db = SessionLocal()
+    try:
+        existing = (
+            db.query(DevicePushToken)
+            .filter(DevicePushToken.token == token_value)
+            .first()
+        )
+
+        now = datetime.utcnow()
+
+        if existing:
+            existing.user_id = current_user.id
+            existing.platform = payload.platform
+            existing.device_id = payload.device_id
+            existing.app_version = payload.app_version
+            existing.is_active = True
+            existing.updated_at = now
+            existing.last_seen_at = now
+            token_row = existing
+        else:
+            token_row = DevicePushToken(
+                user_id=current_user.id,
+                token=token_value,
+                platform=payload.platform,
+                device_id=payload.device_id,
+                app_version=payload.app_version,
+                is_active=True,
+                created_at=now,
+                updated_at=now,
+                last_seen_at=now,
+            )
+            db.add(token_row)
+
+        db.commit()
+
+        return ok(
+            {
+                "registered": True,
+                "platform": token_row.platform,
+            }
+        )
+    finally:
+        db.close()
 
 
 @app.post("/blocks")
