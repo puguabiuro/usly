@@ -2437,6 +2437,7 @@ async function loginPrimary() {
     App.currentUserId = meData.id ?? null;
     App.role = meData.role === "admin" ? "admin" : (meData.role === "partner" ? "partner" : "user");
     App.isLoggedIn = true;
+    setupPushNotifications();
 
     if (App.role === "admin") {
       window.location.href = "admin.html";
@@ -11122,7 +11123,13 @@ function setupCapacitorAuthLinkListener() {
 }
 
 
+let pushNotificationsSetupStarted = false;
+
 async function setupPushNotifications() {
+  if (pushNotificationsSetupStarted) return;
+  if (!localStorage.getItem("usly_token")) return;
+  pushNotificationsSetupStarted = true;
+
   try {
     const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
     if (!PushNotifications) return;
@@ -11180,7 +11187,6 @@ async function setupPushNotifications() {
 document.addEventListener("DOMContentLoaded", () => {
   handleAuthLinkFromUrl();
   setupCapacitorAuthLinkListener();
-  setupPushNotifications();
 });
 
 function passwordEyeIconHtml(isVisible) {
