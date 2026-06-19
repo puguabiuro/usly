@@ -966,6 +966,63 @@ def admin_mfa_verify(
         db.close()
 
 
+@app.post("/admin/mfa/disable")
+def admin_mfa_disable(
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+):
+    if _admin_level(current_user) != "owner":
+        raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user or user.role != UserRole.ADMIN.value:
+            raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+        user.mfa_enabled = False
+        user.mfa_secret = None
+        user.mfa_backup_codes_hash = None
+        user.mfa_enabled_at = None
+        db.add(user)
+        db.commit()
+
+        _audit(db, action="ADMIN_MFA_DISABLED", request=request, user_id=user.id, details=None)
+
+        return ok({"mfa_enabled": False})
+    finally:
+        db.close()
+
+
+@app.post("/admin/mfa/backup-codes/regenerate")
+def admin_mfa_regenerate_backup_codes(
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+):
+    if _admin_level(current_user) != "owner":
+        raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user or user.role != UserRole.ADMIN.value:
+            raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+        if not user.mfa_enabled or not user.mfa_secret:
+            raise ApiException(status_code=400, code=ErrorCode.INVALID_INPUT)
+
+        backup_codes, backup_code_hashes = _generate_mfa_backup_codes()
+        user.mfa_backup_codes_hash = json.dumps(backup_code_hashes)
+        db.add(user)
+        db.commit()
+
+        _audit(db, action="ADMIN_MFA_BACKUP_CODES_REGENERATED", request=request, user_id=user.id, details=None)
+
+        return ok({"backup_codes": backup_codes})
+    finally:
+        db.close()
+
+
 
 
 # =========================
@@ -8567,6 +8624,40 @@ def admin_staff_audit_log(current_user: User = Depends(require_role("admin"))):
             })
 
         return ok({"items": items})
+    finally:
+        db.close()
+
+
+@app.post("/admin/staff/{admin_id}/mfa/reset")
+def admin_reset_staff_mfa(
+    admin_id: int,
+    current_user: User = Depends(require_role("admin")),
+):
+    require_admin_permission(current_user, "admin_manage")
+
+    db = SessionLocal()
+    try:
+        target = db.query(User).filter(User.id == admin_id).first()
+        if not target or target.role != UserRole.ADMIN.value:
+            raise HTTPException(status_code=404, detail="ADMIN_NOT_FOUND")
+        if target.id == current_user.id:
+            raise HTTPException(status_code=400, detail="CANNOT_RESET_OWN_MFA_HERE")
+
+        target.mfa_enabled = False
+        target.mfa_secret = None
+        target.mfa_backup_codes_hash = None
+        target.mfa_enabled_at = None
+        db.add(target)
+        db.add(
+            AuditLog(
+                user_id=target.id,
+                action="admin_reset_staff_mfa",
+                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; target_admin_id={target.id}; target_admin_email={target.email}",
+            )
+        )
+        db.commit()
+
+        return ok({"admin_id": target.id, "mfa_enabled": False})
     finally:
         db.close()
 
