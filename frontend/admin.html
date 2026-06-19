@@ -41,6 +41,41 @@
     </form>
   </section>
 
+  <section class="adminLogin" id="adminMfaSetupRequiredView" hidden>
+    <div class="adminLoginCard adminMfaRequiredCard">
+      <img src="USLY logo.png" alt="USLY" />
+      <h1>Skonfiguruj MFA</h1>
+      <p>Aby korzystać z panelu administratora USLY, musisz włączyć logowanie dwuetapowe.</p>
+
+      <div id="adminMfaRequiredBox" class="adminMfaBox">
+        <div class="adminMfaStep">
+          <h3>1. Zeskanuj kod QR</h3>
+          <p>Otwórz Google Authenticator, wybierz „Dodaj kod”, a następnie „Zeskanuj kod QR”.</p>
+          <div class="adminMfaQrWrap">
+            <img id="adminMfaRequiredQrImage" class="adminMfaQrImage" alt="Kod QR MFA dla Google Authenticator" hidden />
+          </div>
+          <p class="adminSystemHint">Jeżeli QR nie działa, użyj secretu poniżej.</p>
+          <div class="adminMfaSecretRow">
+            <code id="adminMfaRequiredSecret">—</code>
+          </div>
+        </div>
+
+        <form id="adminMfaRequiredVerifyForm" class="adminMfaStep">
+          <h3>2. Potwierdź kod z telefonu</h3>
+          <label>
+            Kod z aplikacji
+            <input id="adminMfaRequiredSetupCode" class="adminFieldInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-cyfrowy kod" required />
+          </label>
+          <button class="adminPrimary" type="submit">Włącz MFA i przejdź do panelu</button>
+        </form>
+
+        <div class="adminMfaStep" id="adminMfaRequiredBackupCodesBox" hidden></div>
+      </div>
+
+      <button class="adminSecondary adminMfaCopyBtn" id="adminMfaRequiredLogoutBtn" type="button">Wyloguj</button>
+    </div>
+  </section>
+
   <main class="adminShell" id="adminDashboardView" hidden>
     <aside class="adminSidebar">
       <div class="adminBrand"><img src="USLY logo.png" alt="USLY" /><span>Admin</span></div>
@@ -348,18 +383,36 @@
             <div class="adminSystemHint">
               Weryfikacja dwuetapowa dla kont owner/admin. Zeskanuj kod QR w Google Authenticator albo Authy, potwierdź kod i zapisz kody zapasowe.
             </div>
-            <div id="adminMfaSetupBox" class="adminTableBox" hidden>
-              <p><strong>Secret:</strong> <code id="adminMfaSecret">—</code></p>
-              <p class="adminSystemHint">QR będzie dostępny jako link provisioning URI. Jeżeli aplikacja nie zeskanuje linku automatycznie, wpisz secret ręcznie.</p>
-              <textarea id="adminMfaProvisioningUri" class="adminFieldInput" rows="3" readonly></textarea>
-              <form id="adminMfaVerifyForm" style="margin-top:12px;">
+            <div id="adminMfaSetupBox" class="adminMfaBox" hidden>
+              <div class="adminMfaStep">
+                <h3>1. Dodaj konto w Google Authenticator</h3>
+                <p>W aplikacji wybierz „Dodaj kod” → „Zeskanuj kod QR” i zeskanuj poniższy kod.</p>
+                <div class="adminMfaQrWrap">
+                  <img id="adminMfaQrImage" class="adminMfaQrImage" alt="Kod QR MFA dla Google Authenticator" hidden />
+                </div>
+                <p class="adminSystemHint">Jeżeli skanowanie QR nie zadziała, użyj awaryjnie secretu poniżej.</p>
+                <div class="adminMfaSecretRow">
+                  <code id="adminMfaSecret">—</code>
+                  <button class="adminSecondary adminMfaCopyBtn" type="button" id="adminMfaCopySecretBtn">Kopiuj secret</button>
+                </div>
+              </div>
+
+              <div class="adminMfaStep">
+                <h3>2. Techniczny link konfiguracji</h3>
+                <p>To zapasowy link provisioning URI. Docelowo zastąpimy go kodem QR.</p>
+                <textarea id="adminMfaProvisioningUri" class="adminFieldInput adminMfaUri" rows="3" readonly></textarea>
+              </div>
+
+              <form id="adminMfaVerifyForm" class="adminMfaStep">
+                <h3>3. Potwierdź kod z telefonu</h3>
                 <label>
                   Kod z aplikacji
                   <input id="adminMfaSetupCode" class="adminFieldInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-cyfrowy kod" required />
                 </label>
                 <button class="adminPrimary" type="submit">Włącz MFA</button>
               </form>
-              <div id="adminMfaBackupCodesBox" class="adminSystemHint" hidden></div>
+
+              <div class="adminMfaStep" id="adminMfaBackupCodesBox" hidden></div>
             </div>
           </article>
 
@@ -466,6 +519,6 @@
     window.API_BASE_URL = window.USLY_API_BASE_URL;
   </script>
   <script src="api.js"></script>
-  <script src="admin.js"></script>
+  <script src="admin.js?v=20260619-mfa"></script>
 </body>
 </html>

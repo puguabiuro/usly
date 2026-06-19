@@ -94,19 +94,68 @@ function setAdminMfaSetupBoxVisible(visible) {
   box.hidden = !visible;
 }
 
-function renderAdminMfaSetup(data) {
-  const secretEl = document.getElementById("adminMfaSecret");
-  const uriEl = document.getElementById("adminMfaProvisioningUri");
-  const codesBox = document.getElementById("adminMfaBackupCodesBox");
+function renderRequiredAdminMfaSetup(data) {
+  const secretEl = document.getElementById("adminMfaRequiredSecret");
+  const qrEl = document.getElementById("adminMfaRequiredQrImage");
+  const codesBox = document.getElementById("adminMfaRequiredBackupCodesBox");
 
   if (secretEl) secretEl.textContent = data?.secret || "—";
-  if (uriEl) uriEl.value = data?.provisioning_uri || "";
+
+  if (qrEl) {
+    if (data?.qr_data_url) {
+      qrEl.src = data.qr_data_url;
+      qrEl.hidden = false;
+    } else {
+      qrEl.removeAttribute("src");
+      qrEl.hidden = true;
+    }
+  }
 
   if (codesBox) {
     const codes = Array.isArray(data?.backup_codes) ? data.backup_codes : [];
     codesBox.hidden = codes.length === 0;
     codesBox.innerHTML = codes.length
-      ? `<strong>Kody zapasowe — zapisz je teraz:</strong><br>${codes.map((code) => `<code>${escapeAdmin(code)}</code>`).join("<br>")}`
+      ? `<h3>3. Kody zapasowe</h3><p class="adminMfaWarning">Zapisz je teraz. Każdy kod działa tylko raz, gdy nie masz dostępu do telefonu.</p><div class="adminMfaBackupGrid">${codes.map((code) => `<code class="adminMfaBackupCode">${escapeAdmin(code)}</code>`).join("")}</div>`
+      : "";
+  }
+}
+
+async function startRequiredAdminMfaSetup() {
+  try {
+    const res = await apiFetch("/admin/mfa/setup", { method: "POST" });
+    const data = res?.data || res || {};
+    renderRequiredAdminMfaSetup(data);
+    adminToast("Zeskanuj QR i potwierdź kod z aplikacji.");
+  } catch (err) {
+    console.error("required admin mfa setup error", err);
+    adminToast(err?.userMessage || "Nie udało się rozpocząć konfiguracji MFA.");
+  }
+}
+
+function renderAdminMfaSetup(data) {
+  const secretEl = document.getElementById("adminMfaSecret");
+  const uriEl = document.getElementById("adminMfaProvisioningUri");
+  const qrEl = document.getElementById("adminMfaQrImage");
+  const codesBox = document.getElementById("adminMfaBackupCodesBox");
+
+  if (secretEl) secretEl.textContent = data?.secret || "—";
+  if (uriEl) uriEl.value = data?.provisioning_uri || "";
+
+  if (qrEl) {
+    if (data?.qr_data_url) {
+      qrEl.src = data.qr_data_url;
+      qrEl.hidden = false;
+    } else {
+      qrEl.removeAttribute("src");
+      qrEl.hidden = true;
+    }
+  }
+
+  if (codesBox) {
+    const codes = Array.isArray(data?.backup_codes) ? data.backup_codes : [];
+    codesBox.hidden = codes.length === 0;
+    codesBox.innerHTML = codes.length
+      ? `<h3>4. Kody zapasowe</h3><p class="adminMfaWarning">Zapisz je teraz. Każdy kod działa tylko raz, gdy nie masz dostępu do telefonu.</p><div class="adminMfaBackupGrid">${codes.map((code) => `<code class="adminMfaBackupCode">${escapeAdmin(code)}</code>`).join("")}</div>`
       : "";
   }
 
@@ -114,11 +163,6 @@ function renderAdminMfaSetup(data) {
 }
 
 async function startAdminMfaSetup() {
-  if (adminLevel() !== "owner") {
-    adminToast("Tylko owner może konfigurować MFA.");
-    return;
-  }
-
   try {
     const res = await apiFetch("/admin/mfa/setup", { method: "POST" });
     const data = res?.data || res || {};
@@ -152,6 +196,14 @@ async function verifyAdminMfaSetup(code) {
 
     adminToast("MFA zostało włączone.");
     await loadCurrentAdmin();
+
+    document.getElementById("adminMfaSetupRequiredView")?.setAttribute("hidden", "hidden");
+    document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
+    document.getElementById("adminDashboardView")?.removeAttribute("hidden");
+
+    refreshAdminNavAccess();
+    showAdminView(defaultAdminView());
+    startAdminAutoRefresh();
   } catch (err) {
     console.error("admin mfa verify error", err);
     adminToast(err?.userMessage || "Nie udało się włączyć MFA.");
@@ -3578,6 +3630,20 @@ document.getElementById("adminMfaVerifyForm")?.addEventListener("submit", async 
   await verifyAdminMfaSetup(code);
 });
 
+document.getElementById("adminMfaRequiredVerifyForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const code = document.getElementById("adminMfaRequiredSetupCode")?.value?.trim();
+  await verifyAdminMfaSetup(code);
+});
+
+document.getElementById("adminMfaRequiredLogoutBtn")?.addEventListener("click", () => {
+  localStorage.removeItem("usly_token");
+  document.getElementById("adminMfaSetupRequiredView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminDashboardView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminLoginView")?.removeAttribute("hidden");
+  adminToast("Wylogowano.");
+});
+
 document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
   localStorage.removeItem("usly_token");
 
@@ -3610,6 +3676,19 @@ function showAdminMfaLogin(mfaToken) {
   document.getElementById("adminMfaCode")?.focus();
 }
 
+function adminRequiresMfaSetup() {
+  return Admin.me?.role === "admin" && Admin.me?.mfa_enabled === false;
+}
+
+async function showAdminMfaSetupOnly() {
+  document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminDashboardView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminMfaSetupRequiredView")?.removeAttribute("hidden");
+
+  adminToast("Najpierw skonfiguruj MFA, aby korzystać z panelu admina.");
+  await startRequiredAdminMfaSetup();
+}
+
 async function completeAdminLogin(accessToken, toastMessage = "Zalogowano do panelu administratora.") {
   localStorage.setItem("usly_token", accessToken);
   pendingAdminMfaToken = null;
@@ -3621,6 +3700,12 @@ async function completeAdminLogin(accessToken, toastMessage = "Zalogowano do pan
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
   await loadCurrentAdmin();
+
+  if (adminRequiresMfaSetup()) {
+    await showAdminMfaSetupOnly();
+    return;
+  }
+
   showAdminView(defaultAdminView());
 
   adminToast(toastMessage);
@@ -3650,17 +3735,19 @@ async function adminLogin(email, password) {
     body: JSON.stringify({ email, password, expected_role: "admin" }),
   });
 
-  if (res?.success && res?.data?.mfa_required && res?.data?.mfa_token) {
-    showAdminMfaLogin(res.data.mfa_token);
+  const loginData = res?.data || res || {};
+
+  if (loginData?.mfa_required && loginData?.mfa_token) {
+    showAdminMfaLogin(loginData.mfa_token);
     adminToast("Wpisz kod MFA, aby dokończyć logowanie.");
     return;
   }
 
-  if (!res?.success || !res?.data?.access_token) {
+  if (!loginData?.access_token) {
     throw new Error("LOGIN_FAILED");
   }
 
-  await completeAdminLogin(res.data.access_token);
+  await completeAdminLogin(loginData.access_token);
 }
 
 document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) => {
@@ -3709,16 +3796,21 @@ document.getElementById("adminMfaBackBtn")?.addEventListener("click", () => {
   showAdminPasswordLogin();
 });
 
-(function restoreAdminSession(){
+(async function restoreAdminSession(){
   const token = localStorage.getItem("usly_token");
   if (!token) return;
 
   document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
   document.getElementById("adminDashboardView")?.removeAttribute("hidden");
 
-  loadCurrentAdmin().catch(() => {});
-  showAdminView(defaultAdminView());
+  await loadCurrentAdmin().catch(() => {});
 
+  if (adminRequiresMfaSetup()) {
+    await showAdminMfaSetupOnly();
+    return;
+  }
+
+  showAdminView(defaultAdminView());
   startAdminAutoRefresh();
 })();
 

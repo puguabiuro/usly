@@ -1280,3 +1280,110 @@ body{
   border-color:rgba(88,211,255,.35);
   background:rgba(88,211,255,.14);
 }
+
+/* Admin MFA setup */
+.adminMfaBox{
+  display:grid;
+  gap:14px;
+  padding:18px;
+}
+
+.adminMfaStep{
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.045);
+  border-radius:18px;
+  padding:16px;
+}
+
+.adminMfaStep h3{
+  margin:0 0 8px;
+  color:var(--text);
+  font-size:15px;
+}
+
+.adminMfaStep p{
+  margin:0 0 12px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.45;
+}
+
+.adminMfaSecretRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.adminMfaSecretRow code,
+.adminMfaBackupCode{
+  display:inline-block;
+  border:1px solid rgba(88,211,255,.22);
+  background:rgba(88,211,255,.10);
+  color:#eaf8ff;
+  border-radius:12px;
+  padding:10px 12px;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.04em;
+  word-break:break-all;
+}
+
+.adminMfaCopyBtn{
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.07);
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+
+.adminMfaUri{
+  min-height:86px;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size:12px;
+  line-height:1.45;
+  word-break:break-all;
+}
+
+.adminMfaBackupGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+
+.adminMfaWarning{
+  color:#fde68a;
+  font-weight:800;
+}
+
+.adminMfaQrWrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  width:100%;
+  margin:14px 0;
+}
+
+.adminMfaQrImage{
+  width:220px;
+  height:220px;
+  padding:14px;
+  border-radius:18px;
+  background:#fff;
+  border:1px solid rgba(88,211,255,.25);
+  box-shadow:0 18px 50px rgba(0,0,0,.22);
+}
+
+.adminLoginCard .adminMfaQrImage{
+  width:220px;
+  height:220px;
+  max-width:220px;
+  aspect-ratio:1 / 1;
+  object-fit:contain;
+  margin:0;
+  display:block;
+}

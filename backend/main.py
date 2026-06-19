@@ -8,6 +8,7 @@ from backend.request_id_middleware import RequestIdMiddleware
 import os
 import asyncio
 import base64
+import io
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -36,6 +37,7 @@ import hashlib
 import secrets
 
 import pyotp
+import qrcode
 from jose import jwt
 
 import requests
@@ -888,9 +890,6 @@ def admin_mfa_setup(
     request: Request,
     current_user: User = Depends(require_role("admin")),
 ):
-    if _admin_level(current_user) != "owner":
-        raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
-
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.id == current_user.id).first()
@@ -913,10 +912,13 @@ def admin_mfa_setup(
             issuer_name="USLY Admin",
         )
 
+        qr_data_url = _create_mfa_qr_data_url(provisioning_uri)
+
         _audit(db, action="ADMIN_MFA_SETUP_STARTED", request=request, user_id=user.id, details=None)
 
         return ok({
             "provisioning_uri": provisioning_uri,
+            "qr_data_url": qr_data_url,
             "secret": secret,
             "backup_codes": backup_codes,
             "mfa_enabled": False,
@@ -941,9 +943,6 @@ def admin_mfa_verify(
     request: Request,
     current_user: User = Depends(require_role("admin")),
 ):
-    if _admin_level(current_user) != "owner":
-        raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
-
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.id == current_user.id).first()
@@ -1494,6 +1493,14 @@ def _generate_mfa_backup_codes(count: int = 8) -> tuple[list[str], list[str]]:
     return raw_codes, hashed_codes
 
 
+def _create_mfa_qr_data_url(provisioning_uri: str) -> str:
+    img = qrcode.make(provisioning_uri)
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
 def _consume_mfa_backup_code(user: User, code: str | None) -> bool:
     if not user or not code or not user.mfa_backup_codes_hash:
         return False
@@ -2038,6 +2045,7 @@ def auth_me(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "admin_display_name": current_user.admin_display_name,
         "admin_level": current_user.admin_level,
+        "mfa_enabled": bool(getattr(current_user, "mfa_enabled", False)) if current_user.role == UserRole.ADMIN.value else None,
         "email_verified": bool(getattr(current_user, "email_verified_at", None)),
         "email_verified_at": str(current_user.email_verified_at) if getattr(current_user, "email_verified_at", None) else None,
     }
