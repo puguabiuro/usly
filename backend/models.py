@@ -91,6 +91,30 @@ class User(Base):
         default=None,
     )
 
+    mfa_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    mfa_secret: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        default=None,
+    )
+
+    mfa_backup_codes_hash: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
+    mfa_enabled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

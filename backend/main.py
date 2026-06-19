@@ -32,6 +32,10 @@ if _SENTRY_DSN:
 
 import json
 import math
+import hashlib
+import secrets
+
+import pyotp
 
 import requests
 from openai import OpenAI
@@ -1322,6 +1326,29 @@ def _audit(db, *, action: str, request: Request, user_id: int | None, details: s
     )
     db.add(log)
     db.commit()
+
+
+def _generate_mfa_secret() -> str:
+    return pyotp.random_base32()
+
+
+def _verify_mfa_code(secret: str | None, code: str | None) -> bool:
+    if not secret or not code:
+        return False
+    normalized = str(code).strip().replace(" ", "")
+    if not normalized.isdigit() or len(normalized) != 6:
+        return False
+    return pyotp.TOTP(secret).verify(normalized, valid_window=1)
+
+
+def _hash_mfa_backup_code(code: str) -> str:
+    return hashlib.sha256(str(code).strip().encode("utf-8")).hexdigest()
+
+
+def _generate_mfa_backup_codes(count: int = 8) -> tuple[list[str], list[str]]:
+    raw_codes = [secrets.token_hex(4).upper() for _ in range(count)]
+    hashed_codes = [_hash_mfa_backup_code(code) for code in raw_codes]
+    return raw_codes, hashed_codes
 
 
 def _is_at_least_18(dob: date) -> bool:
