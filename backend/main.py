@@ -8694,6 +8694,9 @@ def admin_list_staff(current_user: User = Depends(require_role("admin"))):
                 "admin_level": user.admin_level or ADMIN_LEVEL_OWNER,
                 "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
                 "email_verified": bool(getattr(user, "email_verified_at", None)),
+                "mfa_enabled": bool(getattr(user, "mfa_enabled", False)),
+                "mfa_enabled_at": str(user.mfa_enabled_at) if getattr(user, "mfa_enabled_at", None) else None,
+                "last_login_at": str(getattr(user, "last_login_at", "")) if getattr(user, "last_login_at", None) else None,
                 "created_at": str(user.created_at) if user.created_at else None,
             })
 
@@ -8838,6 +8841,9 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "dob": str(user.dob) if getattr(user, "dob", None) else None,
                 "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
                 "email_verified": bool(getattr(user, "email_verified_at", None)),
+                "mfa_enabled": bool(getattr(user, "mfa_enabled", False)),
+                "mfa_enabled_at": str(user.mfa_enabled_at) if getattr(user, "mfa_enabled_at", None) else None,
+                "last_login_at": str(getattr(user, "last_login_at", "")) if getattr(user, "last_login_at", None) else None,
                 "created_at": str(user.created_at) if user.created_at else None,
                 "plan": plan,
                 "plan_source": plan_source,

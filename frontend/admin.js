@@ -1336,75 +1336,88 @@ function openStaffPreview(staffId) {
       </div>`
     : "";
 
-  openAdminDrawer(`
-    <div class="adminPreviewCard">
-      <h2>${escapeAdmin(staff.admin_display_name || staff.email || "Admin")}</h2>
-      <p class="adminSystemHint">Podgląd konta admina, poziomu dostępu i ostatnich działań administracyjnych.</p>
+  const displayName = staff.admin_display_name || staff.email || "Admin";
+  const adminInitial = String(displayName || "A").trim().charAt(0).toUpperCase() || "A";
 
-      <div class="adminMetricGrid">
-        <div class="adminMetricCard">
-          <span>Poziom</span>
-          <strong>${escapeAdmin(level)}</strong>
-        </div>
-        <div class="adminMetricCard">
-          <span>Status</span>
-          <strong>${escapeAdmin(staff.status || "—")}</strong>
-        </div>
-        <div class="adminMetricCard">
-          <span>E-mail</span>
-          <strong>${staff.email_verified ? "Zweryfikowany" : "Niezweryfikowany"}</strong>
-        </div>
-        <div class="adminMetricCard">
-          <span>Utworzono</span>
-          <strong>${escapeAdmin(staff.created_at || "—")}</strong>
-        </div>
-        <div class="adminMetricCard">
-          <span>Działania</span>
-          <strong>${activityStats.total}</strong>
-        </div>
-        <div class="adminMetricCard">
-          <span>Zamknięte zgłoszenia</span>
-          <strong>${activityStats.closedReports}</strong>
-        </div>
-        <div class="adminMetricCard">
-          <span>Ostrzeżenia</span>
-          <strong>${activityStats.warnings}</strong>
-        </div>
-        <div class="adminMetricCard">
-          <span>Eskalacje</span>
-          <strong>${activityStats.escalations}</strong>
+  openAdminDrawer(`
+    <div class="adminUserHero">
+      <div class="adminUserHeroLeft">
+        <div class="adminUserAvatar adminUserAvatarFallback">${escapeAdmin(adminInitial)}</div>
+        <div>
+          <div class="adminUserName">${escapeAdmin(displayName)}</div>
+          <div class="adminUserEmail">${escapeAdmin(staff.email || "—")}</div>
+          <div class="adminUserMetaRow">
+            <span class="adminUserRole">${escapeAdmin(levelLabel)}</span>
+            <span class="adminUserRole">${escapeAdmin(staff.status || "—")}</span>
+            <span class="adminUserRole">${staff.email_verified ? "E-mail zweryfikowany" : "E-mail niezweryfikowany"}</span>
+          </div>
         </div>
       </div>
 
-      <div class="adminPreviewGrid">
-        <div class="adminPreviewCard">
-          <h3>Dane konta</h3>
-          <p><strong>Email:</strong> ${escapeAdmin(staff.email || "—")}</p>
-          <p><strong>Poziom:</strong> ${escapeAdmin(levelLabel)}</p>
-          <p><strong>Weryfikacja e-mail:</strong> ${
+      <div class="adminUserQuickStats">
+        <div class="adminQuickStat">
+          <strong>${activityStats.total}</strong>
+          <span>Działania</span>
+        </div>
+        <div class="adminQuickStat">
+          <strong>${activityStats.closedReports}</strong>
+          <span>Zgłoszenia</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="adminMetricGrid">
+      <div class="adminMetricCard">
+        <span>Poziom dostępu</span>
+        <strong>${escapeAdmin(level)}</strong>
+      </div>
+      <div class="adminMetricCard">
+        <span>Status konta</span>
+        <strong>${escapeAdmin(staff.status || "—")}</strong>
+      </div>
+      <div class="adminMetricCard">
+        <span>MFA</span>
+        <strong>${staff.mfa_enabled ? "Aktywne" : "Nieaktywne"}</strong>
+      </div>
+      <div class="adminMetricCard">
+        <span>Ostatnie logowanie</span>
+        <strong>${escapeAdmin(staff.last_login_at || "Nieśledzone")}</strong>
+      </div>
+    </div>
+
+    <div class="adminPreviewGrid">
+      <div class="adminPreviewCard">
+        <h3>Dane konta</h3>
+        <div class="adminInfoList">
+          <div><span>Email</span><strong>${escapeAdmin(staff.email || "—")}</strong></div>
+          <div><span>Poziom</span><strong>${escapeAdmin(levelLabel)}</strong></div>
+          <div><span>Utworzono</span><strong>${escapeAdmin(staff.created_at || "—")}</strong></div>
+          <div><span>MFA</span><strong>${staff.mfa_enabled ? `Aktywne (${escapeAdmin(staff.mfa_enabled_at || "brak daty")})` : "Nieaktywne"}</strong></div>
+          <div><span>Ostatnie logowanie</span><strong>${escapeAdmin(staff.last_login_at || "Nieśledzone")}</strong></div>
+          <div><span>Weryfikacja e-mail</span><strong>${
             staff.email_verified
               ? `Zweryfikowany (${escapeAdmin(staff.email_verified_at || "—")})`
               : "Niezweryfikowany"
-          }</p>
-        </div>
-
-        <div class="adminPreviewCard">
-          <h3>Uprawnienia</h3>
-          ${permissionRow("Zgłoszenia i moderacja", can.reports)}
-          ${permissionRow("Centrum użytkowników", can.users)}
-          ${permissionRow("Centrum wydarzeń", can.events)}
-          ${permissionRow("Plany i pakiety", can.plans)}
-          ${permissionRow("Usuwanie kont", can.accountDelete)}
-          ${permissionRow("Zarządzanie adminami", can.adminManage)}
+          }</strong></div>
         </div>
       </div>
 
       <div class="adminPreviewCard">
-        <h3>Ostatnie działania</h3>
-        <p class="adminSystemHint">Ostatnia aktywność: ${escapeAdmin(activityStats.lastActivity || "—")} · Wczytane wpisy: ${staffLogs.length}/${allStaffLogs.length}</p>
-        ${logRows}
-        ${logsToggle}
+        <h3>Uprawnienia</h3>
+        ${permissionRow("Zgłoszenia i moderacja", can.reports)}
+        ${permissionRow("Centrum użytkowników", can.users)}
+        ${permissionRow("Centrum wydarzeń", can.events)}
+        ${permissionRow("Plany i pakiety", can.plans)}
+        ${permissionRow("Usuwanie kont", can.accountDelete)}
+        ${permissionRow("Zarządzanie adminami", can.adminManage)}
       </div>
+    </div>
+
+    <div class="adminPreviewCard">
+      <h3>Ostatnie działania</h3>
+      <p class="adminSystemHint">Ostatnia aktywność: ${escapeAdmin(activityStats.lastActivity || "—")} · Wczytane wpisy: ${staffLogs.length}/${allStaffLogs.length}</p>
+      ${logRows}
+      ${logsToggle}
     </div>
   `);
 }
