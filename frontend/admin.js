@@ -88,6 +88,76 @@ async function loadCurrentAdmin() {
   }
 }
 
+function setAdminMfaSetupBoxVisible(visible) {
+  const box = document.getElementById("adminMfaSetupBox");
+  if (!box) return;
+  box.hidden = !visible;
+}
+
+function renderAdminMfaSetup(data) {
+  const secretEl = document.getElementById("adminMfaSecret");
+  const uriEl = document.getElementById("adminMfaProvisioningUri");
+  const codesBox = document.getElementById("adminMfaBackupCodesBox");
+
+  if (secretEl) secretEl.textContent = data?.secret || "—";
+  if (uriEl) uriEl.value = data?.provisioning_uri || "";
+
+  if (codesBox) {
+    const codes = Array.isArray(data?.backup_codes) ? data.backup_codes : [];
+    codesBox.hidden = codes.length === 0;
+    codesBox.innerHTML = codes.length
+      ? `<strong>Kody zapasowe — zapisz je teraz:</strong><br>${codes.map((code) => `<code>${escapeAdmin(code)}</code>`).join("<br>")}`
+      : "";
+  }
+
+  setAdminMfaSetupBoxVisible(true);
+}
+
+async function startAdminMfaSetup() {
+  if (adminLevel() !== "owner") {
+    adminToast("Tylko owner może konfigurować MFA.");
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/admin/mfa/setup", { method: "POST" });
+    const data = res?.data || res || {};
+    renderAdminMfaSetup(data);
+    adminToast("Wygenerowano konfigurację MFA. Zapisz kody zapasowe.");
+  } catch (err) {
+    console.error("admin mfa setup error", err);
+    adminToast(err?.userMessage || "Nie udało się rozpocząć konfiguracji MFA.");
+  }
+}
+
+async function verifyAdminMfaSetup(code) {
+  if (!code) {
+    adminToast("Wpisz kod z aplikacji MFA.");
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/admin/mfa/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+
+    if (!res?.success) {
+      throw new Error("MFA_VERIFY_FAILED");
+    }
+
+    const input = document.getElementById("adminMfaSetupCode");
+    if (input) input.value = "";
+
+    adminToast("MFA zostało włączone.");
+    await loadCurrentAdmin();
+  } catch (err) {
+    console.error("admin mfa verify error", err);
+    adminToast(err?.userMessage || "Nie udało się włączyć MFA.");
+  }
+}
+
 function escapeAdmin(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -3498,6 +3568,16 @@ document.getElementById("adminDashboardRange")?.addEventListener("change", () =>
   if (typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
 });
 
+document.getElementById("adminMfaSetupBtn")?.addEventListener("click", () => {
+  startAdminMfaSetup();
+});
+
+document.getElementById("adminMfaVerifyForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const code = document.getElementById("adminMfaSetupCode")?.value?.trim();
+  await verifyAdminMfaSetup(code);
+});
+
 document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
   localStorage.removeItem("usly_token");
 
@@ -3513,6 +3593,39 @@ document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
 });
 
 let adminAutoRefreshTimer = null;
+let pendingAdminMfaToken = null;
+
+function showAdminPasswordLogin() {
+  pendingAdminMfaToken = null;
+  const mfaCodeInput = document.getElementById("adminMfaCode");
+  if (mfaCodeInput) mfaCodeInput.value = "";
+  document.getElementById("adminMfaForm")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminLoginForm")?.removeAttribute("hidden");
+}
+
+function showAdminMfaLogin(mfaToken) {
+  pendingAdminMfaToken = mfaToken;
+  document.getElementById("adminLoginForm")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminMfaForm")?.removeAttribute("hidden");
+  document.getElementById("adminMfaCode")?.focus();
+}
+
+async function completeAdminLogin(accessToken, toastMessage = "Zalogowano do panelu administratora.") {
+  localStorage.setItem("usly_token", accessToken);
+  pendingAdminMfaToken = null;
+
+  const mfaCodeInput = document.getElementById("adminMfaCode");
+  if (mfaCodeInput) mfaCodeInput.value = "";
+  document.getElementById("adminMfaForm")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminDashboardView")?.removeAttribute("hidden");
+
+  await loadCurrentAdmin();
+  showAdminView(defaultAdminView());
+
+  adminToast(toastMessage);
+  startAdminAutoRefresh();
+}
 
 function startAdminAutoRefresh() {
   if (adminAutoRefreshTimer) return;
@@ -3537,19 +3650,17 @@ async function adminLogin(email, password) {
     body: JSON.stringify({ email, password, expected_role: "admin" }),
   });
 
+  if (res?.success && res?.data?.mfa_required && res?.data?.mfa_token) {
+    showAdminMfaLogin(res.data.mfa_token);
+    adminToast("Wpisz kod MFA, aby dokończyć logowanie.");
+    return;
+  }
+
   if (!res?.success || !res?.data?.access_token) {
     throw new Error("LOGIN_FAILED");
   }
 
-  localStorage.setItem("usly_token", res.data.access_token);
-  document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
-  document.getElementById("adminDashboardView")?.removeAttribute("hidden");
-
-  await loadCurrentAdmin();
-  showAdminView(defaultAdminView());
-
-  adminToast("Zalogowano do panelu administratora.");
-  startAdminAutoRefresh();
+  await completeAdminLogin(res.data.access_token);
 }
 
 document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) => {
@@ -3564,6 +3675,38 @@ document.getElementById("adminLoginForm")?.addEventListener("submit", async (e) 
     console.error("admin login error", err);
     adminToast(err?.userMessage || "Nie udało się zalogować.");
   }
+});
+
+document.getElementById("adminMfaForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const code = document.getElementById("adminMfaCode")?.value?.trim();
+
+  if (!pendingAdminMfaToken || !code) {
+    adminToast("Wpisz kod MFA.");
+    return;
+  }
+
+  try {
+    const res = await window.apiFetch("/auth/login/mfa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mfa_token: pendingAdminMfaToken, code }),
+    });
+
+    if (!res?.success || !res?.data?.access_token) {
+      throw new Error("MFA_LOGIN_FAILED");
+    }
+
+    await completeAdminLogin(res.data.access_token, "Zalogowano z MFA.");
+  } catch (err) {
+    console.error("admin mfa login error", err);
+    adminToast(err?.userMessage || "Nie udało się potwierdzić kodu MFA.");
+  }
+});
+
+document.getElementById("adminMfaBackBtn")?.addEventListener("click", () => {
+  showAdminPasswordLogin();
 });
 
 (function restoreAdminSession(){

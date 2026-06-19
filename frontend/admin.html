@@ -25,6 +25,20 @@
 
       <button class="adminPrimary" type="submit">Zaloguj</button>
     </form>
+
+    <form class="adminLoginCard" id="adminMfaForm" hidden>
+      <img src="USLY logo.png" alt="USLY" />
+      <h1>Weryfikacja dwuetapowa</h1>
+      <p>Wpisz kod z aplikacji uwierzytelniającej albo jeden z kodów zapasowych.</p>
+
+      <label>
+        Kod MFA
+        <input id="adminMfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-cyfrowy kod" required />
+      </label>
+
+      <button class="adminPrimary" type="submit">Potwierdź kod</button>
+      <button class="adminSecondary" id="adminMfaBackBtn" type="button">Wróć do logowania</button>
+    </form>
   </section>
 
   <main class="adminShell" id="adminDashboardView" hidden>
@@ -323,6 +337,29 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Moje MFA</h2>
+              <button class="adminSecondary" type="button" id="adminMfaSetupBtn">Skonfiguruj MFA</button>
+            </div>
+            <div class="adminSystemHint">
+              Weryfikacja dwuetapowa dla kont owner/admin. Zeskanuj kod QR w Google Authenticator albo Authy, potwierdź kod i zapisz kody zapasowe.
+            </div>
+            <div id="adminMfaSetupBox" class="adminTableBox" hidden>
+              <p><strong>Secret:</strong> <code id="adminMfaSecret">—</code></p>
+              <p class="adminSystemHint">QR będzie dostępny jako link provisioning URI. Jeżeli aplikacja nie zeskanuje linku automatycznie, wpisz secret ręcznie.</p>
+              <textarea id="adminMfaProvisioningUri" class="adminFieldInput" rows="3" readonly></textarea>
+              <form id="adminMfaVerifyForm" style="margin-top:12px;">
+                <label>
+                  Kod z aplikacji
+                  <input id="adminMfaSetupCode" class="adminFieldInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-cyfrowy kod" required />
+                </label>
+                <button class="adminPrimary" type="submit">Włącz MFA</button>
+              </form>
+              <div id="adminMfaBackupCodesBox" class="adminSystemHint" hidden></div>
             </div>
           </article>
 
