@@ -880,6 +880,84 @@ def admin_push_test(
         db.close()
 
 
+@app.post("/admin/mfa/setup")
+def admin_mfa_setup(
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+):
+    if _admin_level(current_user) != "owner":
+        raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user or user.role != UserRole.ADMIN.value:
+            raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+        secret = _generate_mfa_secret()
+        backup_codes, backup_code_hashes = _generate_mfa_backup_codes()
+
+        user.mfa_secret = secret
+        user.mfa_backup_codes_hash = json.dumps(backup_code_hashes)
+        user.mfa_enabled = False
+        user.mfa_enabled_at = None
+        db.add(user)
+        db.commit()
+
+        label = user.admin_display_name or user.email
+        provisioning_uri = pyotp.TOTP(secret).provisioning_uri(
+            name=label,
+            issuer_name="USLY Admin",
+        )
+
+        _audit(db, action="ADMIN_MFA_SETUP_STARTED", request=request, user_id=user.id, details=None)
+
+        return ok({
+            "provisioning_uri": provisioning_uri,
+            "secret": secret,
+            "backup_codes": backup_codes,
+            "mfa_enabled": False,
+        })
+    finally:
+        db.close()
+
+
+
+class AdminMfaVerifyRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=12)
+
+
+@app.post("/admin/mfa/verify")
+def admin_mfa_verify(
+    payload: AdminMfaVerifyRequest,
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+):
+    if _admin_level(current_user) != "owner":
+        raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user or user.role != UserRole.ADMIN.value:
+            raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
+
+        if not _verify_mfa_code(user.mfa_secret, payload.code):
+            _audit(db, action="ADMIN_MFA_VERIFY_FAIL", request=request, user_id=user.id, details=None)
+            raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
+
+        user.mfa_enabled = True
+        user.mfa_enabled_at = datetime.utcnow()
+        db.add(user)
+        db.commit()
+
+        _audit(db, action="ADMIN_MFA_ENABLED", request=request, user_id=user.id, details=None)
+
+        return ok({"mfa_enabled": True})
+    finally:
+        db.close()
+
+
 
 
 # =========================
