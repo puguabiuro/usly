@@ -36,6 +36,7 @@ import hashlib
 import secrets
 
 import pyotp
+from jose import jwt
 
 import requests
 from openai import OpenAI
@@ -218,6 +219,8 @@ require_role,
 create_access_token,
     verify_password,
     get_current_user,
+    JWT_SECRET_KEY,
+    JWT_ALGORITHM,
 )
 
 app = FastAPI(title="USLY API")
@@ -927,6 +930,11 @@ class AdminMfaVerifyRequest(BaseModel):
     code: str = Field(min_length=6, max_length=12)
 
 
+class LoginMfaRequest(BaseModel):
+    mfa_token: str = Field(min_length=20, max_length=1000)
+    code: str = Field(min_length=6, max_length=12)
+
+
 @app.post("/admin/mfa/verify")
 def admin_mfa_verify(
     payload: AdminMfaVerifyRequest,
@@ -1429,6 +1437,50 @@ def _generate_mfa_backup_codes(count: int = 8) -> tuple[list[str], list[str]]:
     return raw_codes, hashed_codes
 
 
+def _consume_mfa_backup_code(user: User, code: str | None) -> bool:
+    if not user or not code or not user.mfa_backup_codes_hash:
+        return False
+    try:
+        stored_hashes = json.loads(user.mfa_backup_codes_hash)
+    except Exception:
+        return False
+    if not isinstance(stored_hashes, list):
+        return False
+
+    code_hash = _hash_mfa_backup_code(code)
+    if code_hash not in stored_hashes:
+        return False
+
+    stored_hashes.remove(code_hash)
+    user.mfa_backup_codes_hash = json.dumps(stored_hashes)
+    return True
+
+
+def _create_mfa_challenge_token(user_id: int) -> str:
+    expires_at = datetime.utcnow() + timedelta(minutes=5)
+    payload = {
+        "sub": str(user_id),
+        "purpose": "admin_mfa",
+        "exp": expires_at,
+    }
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def _decode_mfa_challenge_token(token: str | None) -> int | None:
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    except Exception:
+        return None
+    if payload.get("purpose") != "admin_mfa":
+        return None
+    try:
+        return int(payload.get("sub"))
+    except (TypeError, ValueError):
+        return None
+
+
 def _is_at_least_18(dob: date) -> bool:
     today = date.today()
     years = today.year - dob.year
@@ -1812,6 +1864,22 @@ def login(payload: LoginRequest, request: Request):
             )
             raise ApiException(status_code=403, code=ErrorCode.INSUFFICIENT_ROLE)
 
+        if user.role == UserRole.ADMIN.value and bool(getattr(user, "mfa_enabled", False)):
+            mfa_token = _create_mfa_challenge_token(user.id)
+            _audit(db, action="LOGIN_MFA_REQUIRED", request=request, user_id=user.id, details=f"email={email}")
+            return ok({
+                "mfa_required": True,
+                "mfa_token": mfa_token,
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "role": user.role,
+                    "status": user.status,
+                    "email_verified": bool(getattr(user, "email_verified_at", None)),
+                    "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
+                },
+            })
+
         access_token = create_access_token(user.id)
 
         _audit(db, action="LOGIN_SUCCESS", request=request, user_id=user.id, details=f"email={email}")
@@ -1830,6 +1898,61 @@ def login(payload: LoginRequest, request: Request):
                 },
             }
         )
+    finally:
+        db.close()
+
+
+@app.post("/auth/login/mfa")
+@limiter.limit("5/minute")
+def login_mfa(payload: LoginMfaRequest, request: Request):
+    db = SessionLocal()
+    try:
+        user_id = _decode_mfa_challenge_token(payload.mfa_token)
+        if not user_id:
+            raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user or user.role != UserRole.ADMIN.value:
+            raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
+
+        if user.status != UserStatus.ACTIVE.value:
+            raise ApiException(status_code=403, code=ErrorCode.ACCOUNT_INACTIVE)
+
+        if not user.mfa_enabled or not user.mfa_secret:
+            raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
+
+        used_backup_code = False
+        if _verify_mfa_code(user.mfa_secret, payload.code):
+            pass
+        elif _consume_mfa_backup_code(user, payload.code):
+            used_backup_code = True
+            db.add(user)
+            db.commit()
+        else:
+            _audit(db, action="LOGIN_MFA_FAIL", request=request, user_id=user.id, details=None)
+            raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
+
+        access_token = create_access_token(user.id)
+        _audit(
+            db,
+            action="LOGIN_MFA_SUCCESS",
+            request=request,
+            user_id=user.id,
+            details="backup_code" if used_backup_code else "totp",
+        )
+
+        return ok({
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "status": user.status,
+                "email_verified": bool(getattr(user, "email_verified_at", None)),
+                "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
+            },
+        })
     finally:
         db.close()
 
