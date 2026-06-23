@@ -1303,8 +1303,19 @@ def serve_contact_page():
 
 @app.get("/app", include_in_schema=False)
 @app.get("/app/", include_in_schema=False)
+@app.get("/reset-password", include_in_schema=False)
+@app.get("/reset-password/", include_in_schema=False)
 def serve_frontend_app():
     return _serve_frontend_index_file()
+
+
+@app.get("/admin-reset-password", include_in_schema=False)
+@app.get("/admin-reset-password/", include_in_schema=False)
+def serve_admin_reset_password():
+    return FileResponse(
+        FRONTEND_DIR / "admin.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 @app.get("/admin.html", include_in_schema=False)
@@ -2125,7 +2136,8 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request):
         db.add(reset_row)
         db.commit()
 
-        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", "usly://reset-password").strip() or "usly://reset-password"
+        default_link_base = "https://uslyapp.pl/admin-reset-password" if user.role == UserRole.ADMIN.value else "https://uslyapp.pl/reset-password"
+        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", default_link_base).strip() or default_link_base
         separator = "&" if "?" in link_base else "?"
         reset_link = f"{link_base}{separator}token={token}"
 
@@ -7703,7 +7715,8 @@ def admin_create_user_account(
         db.add(reset_row)
         db.commit()
 
-        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", "usly://reset-password").strip() or "usly://reset-password"
+        default_link_base = "https://uslyapp.pl/admin-reset-password" if user.role == UserRole.ADMIN.value else "https://uslyapp.pl/reset-password"
+        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", default_link_base).strip() or default_link_base
         separator = "&" if "?" in link_base else "?"
         reset_link = f"{link_base}{separator}token={token}"
 
@@ -7804,7 +7817,8 @@ def admin_send_user_reset_link(
         db.add(reset_row)
         db.commit()
 
-        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", "usly://reset-password").strip() or "usly://reset-password"
+        default_link_base = "https://uslyapp.pl/admin-reset-password" if user.role == UserRole.ADMIN.value else "https://uslyapp.pl/reset-password"
+        link_base = os.getenv("PASSWORD_RESET_LINK_BASE", default_link_base).strip() or default_link_base
         separator = "&" if "?" in link_base else "?"
         reset_link = f"{link_base}{separator}token={token}"
 

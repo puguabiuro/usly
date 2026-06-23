@@ -76,6 +76,32 @@
     </div>
   </section>
 
+  <section class="adminLogin" id="adminResetPasswordView" hidden>
+    <form class="adminLoginCard" id="adminResetPasswordForm">
+      <img src="USLY logo.png" alt="USLY" />
+      <h1>Ustaw nowe hasło</h1>
+      <p>To bezpieczny reset hasła do panelu administratora USLY.</p>
+
+      <label>
+        Email admina
+        <input id="adminResetPasswordEmail" type="email" placeholder="E-mail administratora" disabled />
+      </label>
+
+      <label>
+        Nowe hasło
+        <input id="adminResetPasswordNew" type="password" autocomplete="new-password" minlength="8" required />
+      </label>
+
+      <label>
+        Powtórz nowe hasło
+        <input id="adminResetPasswordRepeat" type="password" autocomplete="new-password" minlength="8" required />
+      </label>
+
+      <button class="adminPrimary" type="submit">Zmień hasło</button>
+      <button class="adminSecondary" id="adminResetPasswordBackBtn" type="button">Wróć do logowania</button>
+    </form>
+  </section>
+
   <main class="adminShell" id="adminDashboardView" hidden>
     <aside class="adminSidebar">
       <div class="adminBrand"><img src="USLY logo.png" alt="USLY" /><span>Admin</span></div>

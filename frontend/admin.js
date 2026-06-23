@@ -1162,6 +1162,35 @@ async function adminSendUserResetLink(userId) {
   }
 }
 
+async function adminSendStaffResetLink(adminId) {
+  adminToast("Tworzę link resetu hasła admina…");
+
+  try {
+    const res = await window.apiFetch(`/admin/users/${encodeURIComponent(adminId)}/send-reset-link`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    Admin.staffActionNotice = Admin.staffActionNotice || {};
+    Admin.staffActionNotice[String(adminId)] = res?.data?.emailed
+      ? "Link resetu hasła został wysłany na adres e-mail admina."
+      : "Link resetu hasła został utworzony, ale mail nie został wysłany. Sprawdź konfigurację SMTP.";
+
+    if (res?.data?.emailed) {
+      adminToast("Link resetu hasła admina wysłany.");
+    } else {
+      adminToast("Link resetu utworzony, ale mail nie został wysłany.");
+    }
+
+    await reloadAdminStaff();
+    openStaffPreview(adminId);
+  } catch (e) {
+    console.error("adminSendStaffResetLink error", e);
+    adminToast(e?.userMessage || "Nie udało się wysłać linku resetu hasła admina.");
+  }
+}
+
+
 async function adminResetUserPassword(userId) {
   const input = document.getElementById("adminTempPasswordInput");
   const newPassword = String(input?.value || "").trim();
@@ -1186,6 +1215,48 @@ async function adminResetUserPassword(userId) {
     adminToast(e?.userMessage || "Nie udało się ustawić hasła.");
   }
 }
+
+async function adminResetStaffMfa(adminId) {
+  const ok = confirm("Zresetować MFA tego admina? Przy następnym logowaniu będzie musiał skonfigurować MFA od nowa.");
+  if (!ok) return;
+
+  try {
+    await window.apiFetch(`/admin/staff/${encodeURIComponent(adminId)}/mfa/reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    adminToast("MFA admina zostało zresetowane.");
+    await reloadAdminStaff();
+    openStaffPreview(adminId);
+  } catch (e) {
+    console.error("adminResetStaffMfa error", e);
+    adminToast(e?.userMessage || "Nie udało się zresetować MFA admina.");
+  }
+}
+
+
+async function adminSetStaffStatus(adminId, status) {
+  const label = status === "blocked" ? "zablokować dostęp temu adminowi" : "odblokować dostęp temu adminowi";
+  const ok = confirm(`Czy na pewno chcesz ${label}?`);
+  if (!ok) return;
+
+  try {
+    await window.apiFetch(`/admin/users/${encodeURIComponent(adminId)}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+
+    adminToast(status === "blocked" ? "Dostęp admina został zablokowany." : "Dostęp admina został odblokowany.");
+    await reloadAdminStaff();
+    openStaffPreview(adminId);
+  } catch (e) {
+    console.error("adminSetStaffStatus error", e);
+    adminToast(e?.userMessage || "Nie udało się zmienić statusu admina.");
+  }
+}
+
 
 async function adminUpdateUserPlan(userId) {
   const plan = document.getElementById("adminUserPlanSelect")?.value || "free";
@@ -1338,6 +1409,7 @@ function openStaffPreview(staffId) {
 
   const displayName = staff.admin_display_name || staff.email || "Admin";
   const adminInitial = String(displayName || "A").trim().charAt(0).toUpperCase() || "A";
+  const staffActionNotice = Admin.staffActionNotice?.[String(staff.id)] || "";
 
   openAdminDrawer(`
     <div class="adminUserHero">
@@ -1383,6 +1455,18 @@ function openStaffPreview(staffId) {
         <span>Ostatnie logowanie</span>
         <strong>${escapeAdmin(staff.last_login_at || "Nieśledzone")}</strong>
       </div>
+    </div>
+
+    ${staffActionNotice ? `<div class="adminPreviewCard"><p class="adminSystemHint">${escapeAdmin(staffActionNotice)}</p></div>` : ""}
+
+    <div class="adminPreviewActions">
+      <button class="adminGhostAction" type="button" onclick="adminSendStaffResetLink('${escapeAdmin(staff.id)}')">Wyślij link resetu hasła</button>
+      <button class="adminGhostAction" type="button" onclick="adminResetStaffMfa('${escapeAdmin(staff.id)}')">Reset MFA</button>
+      ${
+        staff.status === "blocked"
+          ? `<button class="adminPrimaryAction" type="button" onclick="adminSetStaffStatus('${escapeAdmin(staff.id)}','active')">Odblokuj dostęp</button>`
+          : `<button class="adminDangerAction" type="button" onclick="adminSetStaffStatus('${escapeAdmin(staff.id)}','blocked')">Zablokuj dostęp</button>`
+      }
     </div>
 
     <div class="adminPreviewGrid">
@@ -3805,6 +3889,102 @@ document.getElementById("adminMfaForm")?.addEventListener("submit", async (e) =>
   }
 });
 
+let adminResetPasswordToken = null;
+
+function getAdminResetPasswordTokenFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    const path = String(url.pathname || "").toLowerCase();
+    if (!path.includes("admin-reset-password")) return "";
+    return String(url.searchParams.get("token") || "").trim();
+  } catch (_) {
+    return "";
+  }
+}
+
+async function showAdminResetPasswordView(token) {
+  adminResetPasswordToken = String(token || "").trim();
+
+  document.getElementById("adminLoginView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminMfaSetupRequiredView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminDashboardView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminResetPasswordView")?.removeAttribute("hidden");
+
+  if (!adminResetPasswordToken) {
+    adminToast("Brak tokenu resetu hasła.");
+    return;
+  }
+
+  try {
+    const res = await window.apiFetch("/auth/reset-password-info", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: adminResetPasswordToken }),
+    });
+
+    const email = res?.data?.email || "";
+    const emailInput = document.getElementById("adminResetPasswordEmail");
+    if (emailInput) emailInput.value = email;
+  } catch (e) {
+    console.error("showAdminResetPasswordView error", e);
+    adminToast(e?.userMessage || "Link resetu hasła jest nieprawidłowy albo wygasł.");
+  }
+}
+
+document.getElementById("adminResetPasswordBackBtn")?.addEventListener("click", () => {
+  adminResetPasswordToken = null;
+  document.getElementById("adminResetPasswordView")?.setAttribute("hidden", "hidden");
+  document.getElementById("adminLoginView")?.removeAttribute("hidden");
+});
+
+document.getElementById("adminResetPasswordForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const newPassword = String(document.getElementById("adminResetPasswordNew")?.value || "").trim();
+  const repeatPassword = String(document.getElementById("adminResetPasswordRepeat")?.value || "").trim();
+
+  if (!adminResetPasswordToken) {
+    adminToast("Brak tokenu resetu hasła.");
+    return;
+  }
+
+  if (!newPassword || !repeatPassword) {
+    adminToast("Wpisz i powtórz nowe hasło.");
+    return;
+  }
+
+  if (newPassword !== repeatPassword) {
+    adminToast("Hasła nie są takie same.");
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    adminToast("Nowe hasło musi mieć co najmniej 8 znaków.");
+    return;
+  }
+
+  try {
+    await window.apiFetch("/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: adminResetPasswordToken, new_password: newPassword }),
+    });
+
+    adminToast("Hasło admina zostało zmienione. Możesz się zalogować.");
+    adminResetPasswordToken = null;
+    document.getElementById("adminResetPasswordView")?.setAttribute("hidden", "hidden");
+    document.getElementById("adminLoginView")?.removeAttribute("hidden");
+  } catch (e) {
+    console.error("admin reset password error", e);
+    adminToast(e?.userMessage || "Nie udało się zmienić hasła.");
+  }
+});
+
+const adminResetTokenFromUrl = getAdminResetPasswordTokenFromUrl();
+if (adminResetTokenFromUrl) {
+  showAdminResetPasswordView(adminResetTokenFromUrl).catch(() => {});
+} else {
+
 document.getElementById("adminMfaBackBtn")?.addEventListener("click", () => {
   showAdminPasswordLogin();
 });
@@ -3827,6 +4007,7 @@ document.getElementById("adminMfaBackBtn")?.addEventListener("click", () => {
   startAdminAutoRefresh();
 })();
 
+}
 
 function adminPromoOwnerOptions(selectedId = "") {
   const users = Array.isArray(Admin.users) ? Admin.users : [];
@@ -4286,3 +4467,7 @@ async function submitEditPromoCampaign(campaignId) {
     adminToast(e?.userMessage || "Nie udało się zapisać zmian kodu.");
   }
 }
+
+window.adminSendStaffResetLink = adminSendStaffResetLink;
+window.adminResetStaffMfa = adminResetStaffMfa;
+window.adminSetStaffStatus = adminSetStaffStatus;
