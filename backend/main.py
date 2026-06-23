@@ -2148,14 +2148,31 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request):
             emailed = None
             import asyncio
 
-            reset_subject = "USLY — reset hasła"
-            reset_body = (
-                "Otrzymaliśmy prośbę o reset hasła do konta USLY.\n\n"
-                f"Otwórz ten link w aplikacji:\n{reset_link}\n\n"
-                "Link jest jednorazowy i ważny przez 60 minut.\n\n"
-                "Jeśli to nie Ty lub działanie wygląda podejrzanie, "
-                "skontaktuj się z nami: kontakt@uslyapp.pl"
-            )
+            if user.role == UserRole.ADMIN.value:
+                reset_subject = "USLY — reset hasła do panelu administratora"
+                reset_body = (
+                    "Cześć,\n\n"
+                    "otrzymaliśmy prośbę o zmianę hasła do panelu administratora USLY.\n\n"
+                    "Aby ustawić nowe hasło, kliknij poniższy link:\n"
+                    f"{reset_link}\n\n"
+                    "Link jest ważny przez 60 minut i można go wykorzystać tylko raz.\n\n"
+                    "Jeżeli nie prosiłaś/prosiłeś o reset hasła, zignoruj tę wiadomość "
+                    "lub skontaktuj się z właścicielem systemu.\n\n"
+                    "Do zobaczenia w panelu,\n"
+                    "Zespół USLY"
+                )
+            else:
+                reset_subject = "USLY — ustaw nowe hasło"
+                reset_body = (
+                    "Cześć,\n\n"
+                    "ktoś poprosił o zmianę hasła do konta USLY.\n\n"
+                    "Jeśli to była Twoja prośba, ustaw nowe hasło tutaj:\n"
+                    f"{reset_link}\n\n"
+                    "Link jest ważny przez 60 minut i działa tylko raz.\n\n"
+                    "Jeżeli nie próbowałaś/próbowałeś zmieniać hasła, po prostu zignoruj tę wiadomość.\n\n"
+                    "Miłego dnia,\n"
+                    "Zespół USLY"
+                )
 
             try:
                 loop = asyncio.get_running_loop()
@@ -7834,16 +7851,34 @@ def admin_send_user_reset_link(
         if smtp_host and smtp_from:
             try:
                 msg = EmailMessage()
-                msg["Subject"] = "USLY — reset hasła"
+                if user.role == UserRole.ADMIN.value:
+                    msg["Subject"] = "USLY — reset hasła do panelu administratora"
+                    body = (
+                        "Cześć,\n\n"
+                        "otrzymaliśmy prośbę o zmianę hasła do panelu administratora USLY.\n\n"
+                        "Aby ustawić nowe hasło, kliknij poniższy link:\n"
+                        f"{reset_link}\n\n"
+                        "Link jest ważny przez 60 minut i można go wykorzystać tylko raz.\n\n"
+                        "Jeżeli nie prosiłaś/prosiłeś o reset hasła, zignoruj tę wiadomość "
+                        "lub skontaktuj się z właścicielem systemu.\n\n"
+                        "Do zobaczenia w panelu,\n"
+                        "Zespół USLY"
+                    )
+                else:
+                    msg["Subject"] = "USLY — ustaw nowe hasło"
+                    body = (
+                        "Cześć,\n\n"
+                        "ktoś poprosił o zmianę hasła do konta USLY.\n\n"
+                        "Jeśli to była Twoja prośba, ustaw nowe hasło tutaj:\n"
+                        f"{reset_link}\n\n"
+                        "Link jest ważny przez 60 minut i działa tylko raz.\n\n"
+                        "Jeżeli nie próbowałaś/próbowałeś zmieniać hasła, po prostu zignoruj tę wiadomość.\n\n"
+                        "Miłego dnia,\n"
+                        "Zespół USLY"
+                    )
                 msg["From"] = smtp_from
                 msg["To"] = user.email
-                msg.set_content(
-                    "Otrzymujesz tę wiadomość, ponieważ poproszono o reset hasła do Twojego konta USLY.\n\n"
-                    "Kliknij lub otwórz poniższy link, aby ustawić nowe hasło:\n"
-                    f"{reset_link}\n\n"
-                    "Link jest jednorazowy i będzie ważny przez 60 minut.\n"
-                    "Jeśli nie prosiłaś/prosiłeś o reset hasła, skontaktuj się z supportem USLY."
-                )
+                msg.set_content(body)
 
                 context = ssl.create_default_context()
                 try:
