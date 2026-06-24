@@ -6,6 +6,8 @@ PODS:
   - CapacitorCordova (7.6.5)
   - CapacitorPushNotifications (7.0.6):
     - Capacitor
+  - EbarooniCapacitorCalendar (7.2.0):
+    - Capacitor
   - PurchasesHybridCommon (17.25.0):
     - RevenueCat (= 5.51.1)
   - RevenueCat (5.51.1)
@@ -18,6 +20,7 @@ DEPENDENCIES:
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorPushNotifications (from `../../node_modules/@capacitor/push-notifications`)"
+  - "EbarooniCapacitorCalendar (from `../../node_modules/@ebarooni/capacitor-calendar`)"
   - "RevenuecatPurchasesCapacitor (from `../../node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
@@ -34,6 +37,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorPushNotifications:
     :path: "../../node_modules/@capacitor/push-notifications"
+  EbarooniCapacitorCalendar:
+    :path: "../../node_modules/@ebarooni/capacitor-calendar"
   RevenuecatPurchasesCapacitor:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
@@ -42,10 +47,11 @@ SPEC CHECKSUMS:
   CapacitorApp: f01a913211780e0718dae9750442c3e23f96e106
   CapacitorCordova: 2b36392a7292c3c451dcae154185ee8804d7b6b3
   CapacitorPushNotifications: b8e30637549ce91468b8c4dddbef2657be831f4c
+  EbarooniCapacitorCalendar: 4568a8a318b940245bf6e257a8b115626581bb7d
   PurchasesHybridCommon: 6a79a873ab52f777bfa36e9516f3fcd84d3b3428
   RevenueCat: eab035bbab271faccfef5c36eaff2a1ffef14dc0
   RevenuecatPurchasesCapacitor: fa376932f9967c7ab4b5eac477e824d90393b91a
 
-PODFILE CHECKSUM: 3bf4642a33890b47cb4cb7bd93ffa1ffd660df56
+PODFILE CHECKSUM: 0e4bda1ace4e56df1e291aff5baa86b203e74dab
 
 COCOAPODS: 1.16.2

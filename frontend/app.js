@@ -435,6 +435,7 @@ const I18N = {
     "eventDetail.calendarDesc": "Dodano z aplikacji USLY.",
     "eventDetail.defaultSummary": "Wydarzenie USLY",
     "eventDetail.calendarDownloaded": "Pobrano plik kalendarza.",
+    "eventDetail.calendarNativeOpened": "Otworzono kalendarz. Zapisz wydarzenie, aby dodać je do swojego kalendarza.",
     "eventDetail.saveRemoveFailed": "Nie udało się usunąć z obserwowanych",
     "eventDetail.saveRemoved": "Usunięto z obserwowanych",
     "eventDetail.saveAddFailed": "Nie udało się dodać do obserwowanych",
@@ -1326,6 +1327,11 @@ const I18N = {
     "eventDetail.observe": "Follow",
     "eventDetail.interested": "I’m going",
     "eventDetail.addCalendar": "Add to calendar",
+    "eventDetail.noDateToast": "This event does not have a date yet.",
+    "eventDetail.calendarDesc": "Added from the USLY app.",
+    "eventDetail.defaultSummary": "USLY event",
+    "eventDetail.calendarDownloaded": "Calendar file downloaded.",
+    "eventDetail.calendarNativeOpened": "Calendar opened. Save the event to add it to your calendar.",
     "eventDetail.share": "Share",
     "eventDetail.shareTitle": "Share",
     "eventDetail.shareHeading": "Share event",
@@ -5505,7 +5511,7 @@ function escapeIcsText(value = "") {
     .replace(/;/g, "\\;");
 }
 
-function addSelectedEventToCalendar() {
+async function addSelectedEventToCalendar() {
   const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
   if (!ev) return;
 
@@ -5514,8 +5520,8 @@ function addSelectedEventToCalendar() {
     return;
   }
 
-  const start = formatIcsDate(ev.start_at);
-  const end = formatIcsDate(ev.end_at || new Date(new Date(ev.start_at).getTime() + 60 * 60 * 1000));
+  const startDate = new Date(ev.start_at);
+  const endDate = new Date(ev.end_at || new Date(startDate.getTime() + 60 * 60 * 1000));
 
   const location = [ev.where, ev.address, ev.city].filter(Boolean).join(", ");
   const description = [
@@ -5524,6 +5530,28 @@ function addSelectedEventToCalendar() {
     ev.organizer?.name ? `Organizator: ${ev.organizer.name}` : "",
     t("eventDetail.calendarDesc")
   ].filter(Boolean).join("\n");
+
+  const CapacitorCalendar = window.Capacitor?.Plugins?.CapacitorCalendar;
+  if (IS_CAPACITOR_APP && CapacitorCalendar?.createEventWithPrompt) {
+    try {
+      await CapacitorCalendar.createEventWithPrompt({
+        title: ev.title || t("eventDetail.defaultSummary"),
+        location,
+        startDate: startDate.getTime(),
+        endDate: endDate.getTime(),
+        isAllDay: false,
+        description,
+        url: `https://uslyapp.pl/app?event=${encodeURIComponent(ev.id)}`
+      });
+      toast(t("eventDetail.calendarNativeOpened"));
+      return;
+    } catch (err) {
+      console.warn("USLY native calendar failed, falling back to ICS", err);
+    }
+  }
+
+  const start = formatIcsDate(startDate);
+  const end = formatIcsDate(endDate);
 
   const ics = [
     "BEGIN:VCALENDAR",
