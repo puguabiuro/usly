@@ -4657,6 +4657,8 @@ async function addFriendFromProfile() {
 }
 
 async function refreshProfileRelations() {
+  if (App.role !== "user") return;
+
   const token = localStorage.getItem(USLY_STORAGE_KEYS.token) || localStorage.getItem("usly_token");
   if (!token) return;
 
@@ -8349,6 +8351,11 @@ async function refreshPartnerNotifBadgeCount() {
 
     const notifBatches = await Promise.all(events.map(async (ev) => {
       const out = [];
+      const endedAt = parseUslyTimestamp(ev?.end_at);
+      const archivedNotifCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      if (endedAt && endedAt < archivedNotifCutoff) {
+        return out;
+      }
 
       try {
         const res = await apiFetch(`/partners/events/${ev.id}/participants?limit=20`);
@@ -8357,7 +8364,9 @@ async function refreshPartnerNotifBadgeCount() {
           createdAt: row?.signup?.created_at || null,
         })));
       } catch (err) {
-        console.error(`partner notif badge participants failed for event ${ev.id}`, err);
+        if (![403, 404].includes(Number(err?.status))) {
+          console.warn(`partner notif badge participants failed for event ${ev.id}`, err);
+        }
       }
 
       try {
@@ -8367,7 +8376,9 @@ async function refreshPartnerNotifBadgeCount() {
           createdAt: row?.saved?.created_at || null,
         })));
       } catch (err) {
-        console.error(`partner notif badge observers failed for event ${ev.id}`, err);
+        if (![403, 404].includes(Number(err?.status))) {
+          console.warn(`partner notif badge observers failed for event ${ev.id}`, err);
+        }
       }
 
       return out;
@@ -10270,6 +10281,17 @@ async function loadPartnerEvents() {
 
     const enriched = await Promise.all(
       items.map(async (ev) => {
+        const endedAt = parseUslyTimestamp(ev?.end_at);
+        const archivedStatsCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        if (endedAt && endedAt < archivedStatsCutoff) {
+          return {
+            ...ev,
+            signups_count: 0,
+            spots_left: null,
+            capacity: ev?.capacity ?? null,
+          };
+        }
+
         try {
           const stats = await apiFetch(`/partners/events/${ev.id}/stats`);
           return {
