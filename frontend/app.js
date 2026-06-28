@@ -2493,15 +2493,22 @@ async function loginPrimary() {
 updateTabbars();
 
 if (App.role === "user") {
-  await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
+  renderAll();
+  bindMessageInputs();
+
+  toast(t("login.toast.success"));
+  go("S4_NEARBY");
+
+  Promise.allSettled([loadEvents(), loadMyGroups(), loadGroups(), renderChatList()])
+    .then(() => renderAll())
+    .catch((err) => console.error("post-login background refresh failed", err));
+} else {
+  renderAll();
+  bindMessageInputs();
+
+  toast(t("login.toast.success"));
+  go("S9_PARTNER");
 }
-
-renderAll();
-bindMessageInputs();
-
-toast(t("login.toast.success"));
-if (App.role === "user") go("S4_NEARBY");
-else go("S9_PARTNER");
   } catch (err) {
     const code = String(err?.code || err?.data?.error?.code || err?.data?.code || err?.data?.detail || err?.message || "");
     toast(code.includes("INSUFFICIENT_ROLE") ? t("login.toast.roleMismatch") : (err?.userMessage || t("login.toast.error")));
