@@ -2499,6 +2499,9 @@ def users_nearby(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     max_distance_km: int = Query(default=50, ge=1, le=200),
+    lat: Optional[float] = Query(default=None, ge=-90, le=90),
+    lng: Optional[float] = Query(default=None, ge=-180, le=180),
+    radius_km: Optional[int] = Query(default=None, ge=1, le=200),
     current_user: User = Depends(require_role("user")),
 ):
     db = SessionLocal()
@@ -2540,6 +2543,9 @@ def users_nearby(
         my_age = calc_age(current_user.dob)
         my_pref_min = my_profile.age_min
         my_pref_max = my_profile.age_max
+        origin_lat = lat if lat is not None else my_profile.location_lat
+        origin_lng = lng if lng is not None else my_profile.location_lng
+        user_radius = radius_km or my_profile.nearby_radius_km or 25
 
         rows = (
             db.query(User, UserProfile)
@@ -2573,21 +2579,20 @@ def users_nearby(
 
             # distance filter (Nearby)
             if (
-                my_profile.location_lat is None
-                or my_profile.location_lng is None
+                origin_lat is None
+                or origin_lng is None
                 or profile.location_lat is None
                 or profile.location_lng is None
             ):
                 continue
 
             dist_km = _distance_km(
-                my_profile.location_lat,
-                my_profile.location_lng,
+                origin_lat,
+                origin_lng,
                 profile.location_lat,
                 profile.location_lng,
             )
 
-            user_radius = my_profile.nearby_radius_km or 25
             if dist_km > user_radius:
                 continue
 
@@ -3870,6 +3875,9 @@ def list_events(
     date: Optional[date] = None,
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    lat: Optional[float] = Query(default=None, ge=-90, le=90),
+    lng: Optional[float] = Query(default=None, ge=-180, le=180),
+    radius_km: Optional[int] = Query(default=None, ge=1, le=200),
     current_user: User = Depends(get_current_user),
 ):
     db = SessionLocal()
@@ -3938,6 +3946,24 @@ def list_events(
         user_interest_set = {norm_tag(x) for x in raw_interests if x and str(x).strip()}
 
         events = q.all()
+
+        origin_lat = lat
+        origin_lng = lng
+        user_radius = radius_km or (profile.nearby_radius_km if profile else None) or 25
+
+        if origin_lat is not None and origin_lng is not None:
+            events = [
+                e for e in events
+                if e.location_lat is not None
+                and e.location_lng is not None
+                and _distance_km(
+                    origin_lat,
+                    origin_lng,
+                    e.location_lat,
+                    e.location_lng,
+                ) <= user_radius
+            ]
+
         scored = []
 
         for e in events:

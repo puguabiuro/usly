@@ -2108,6 +2108,11 @@ function go(viewId) {
 
 
 if (viewId === "S4_NEARBY" && App.role === "user") {
+    const pList = $("nearbyPeopleList");
+    const eList = $("nearbyEventsList");
+    if (pList) pList.innerHTML = `<div class="tMuted">${t("geo.fetching")}</div>`;
+    if (eList) eList.innerHTML = `<div class="tMuted">${t("geo.fetching")}</div>`;
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -2118,6 +2123,10 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
           App.user.geo.lat = String(lat);
           App.user.geo.lng = String(lng);
 
+          Promise.all([loadNearbyPeople(lat, lng), loadNearbyEvents(lat, lng)])
+            .then(() => renderNearby())
+            .catch((err) => console.error("nearby refresh failed", err));
+
           apiFetch("/users/me", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -2125,18 +2134,18 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
               location_lat: lat,
               location_lng: lng,
             }),
-          })
-            .then(() => loadNearbyPeople())
-            .then(() => renderNearby())
-            .catch((err) => console.error("location save failed", err));
+          }).catch((err) => console.error("location save failed", err));
 
           if (nearbyMap) {
             nearbyMap.setView([lat, lng], 12);
             renderNearbyMapMarkers();
           }
         },
-        () => {},
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+        (err) => {
+          console.warn("nearby geolocation failed", err);
+          toast(t("geo.failed"));
+        },
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }
       );
     }
   }
@@ -8450,7 +8459,7 @@ function renderNearby() {
   // Events list in nearby tab
   const eList = $("nearbyEventsList");
   if (eList) {
-    const events = App.events
+    const events = (App.nearbyEvents || [])
       .filter(ev => matchesUserEventInterest(ev) && isEventInNearbyRadius(ev))
       .slice(0, 8);
 
@@ -10142,9 +10151,15 @@ function mapApiEventToViewModel(e) {
 }
 
 
-async function loadNearbyPeople() {
+function nearbyLocationQuery(lat, lng) {
+  const radius = Number(App.user?.nearbyRadiusKm || 25);
+  if (lat == null || lng == null) return "";
+  return `&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius_km=${encodeURIComponent(radius)}`;
+}
+
+async function loadNearbyPeople(lat = null, lng = null) {
   try {
-    const data = await apiFetch("/users/nearby?limit=20");
+    const data = await apiFetch(`/users/nearby?limit=20${nearbyLocationQuery(lat, lng)}`);
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
     App.people = items.map(mapApiPersonToViewModel);
     return true;
@@ -10154,9 +10169,22 @@ async function loadNearbyPeople() {
   }
 }
 
-async function loadEvents() {
+async function loadNearbyEvents(lat, lng) {
   try {
-    const data = await apiFetch("/events?limit=100");
+    const data = await apiFetch(`/events?limit=100${nearbyLocationQuery(lat, lng)}`);
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    App.nearbyEvents = items.map(mapApiEventToViewModel);
+    return true;
+  } catch (err) {
+    console.error("loadNearbyEvents failed", err);
+    App.nearbyEvents = [];
+    return false;
+  }
+}
+
+async function loadEvents(lat = null, lng = null) {
+  try {
+    const data = await apiFetch(`/events?limit=100${nearbyLocationQuery(lat, lng)}`);
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
 
     let joinedIds = new Set();
@@ -10744,7 +10772,7 @@ function renderNearbyMapMarkers() {
     nearbyMarkers.push(marker);
   });
 
-  const nearbyEventsForMap = (App.events || [])
+  const nearbyEventsForMap = (App.nearbyEvents || [])
     .filter(ev => matchesUserEventInterest(ev) && isEventInNearbyRadius(ev));
 
   nearbyEventsForMap.forEach((ev, index) => {
