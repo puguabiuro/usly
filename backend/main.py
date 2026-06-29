@@ -1373,6 +1373,10 @@ def serve_apple_app_site_association():
 def serve_app_js():
     return FileResponse(FRONTEND_DIR / "app.js")
 
+@app.get("/billing.js", include_in_schema=False)
+def serve_billing_js():
+    return FileResponse(FRONTEND_DIR / "billing.js")
+
 @app.get("/api.js", include_in_schema=False)
 def serve_api_js():
     return FileResponse(FRONTEND_DIR / "api.js")
