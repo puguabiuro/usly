@@ -2485,8 +2485,7 @@ async function loginPrimary() {
         try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
       }
     } else {
-      await loadPartnerProfile();
-      await loadPartnerEvents();
+      // Partner data is loaded after first render to keep login fast.
     }
 
     $("appRoot")?.classList.add("isLoggedIn");
@@ -2508,6 +2507,10 @@ if (App.role === "user") {
 
   toast(t("login.toast.success"));
   go("S9_PARTNER");
+
+  Promise.allSettled([loadPartnerProfile(), loadPartnerEvents()])
+    .then(() => renderAll())
+    .catch((err) => console.error("partner post-login background refresh failed", err));
 }
   } catch (err) {
     const code = String(err?.code || err?.data?.error?.code || err?.data?.code || err?.data?.detail || err?.message || "");
@@ -7710,6 +7713,7 @@ async function publishPartnerEvent() {
 /* ------------------------- Notifications -------------------------- */
 
 let notificationsVisibleLimit = 10;
+let notificationsRenderInFlight = false;
 
 function getNotificationIcon(title = "", body = "") {
   const text = `${title} ${body}`.toLowerCase();
@@ -7766,6 +7770,8 @@ function showMoreNotifications() {
 async function renderNotifications() {
   const list = $("notifList");
   if (!list) return;
+  if (notificationsRenderInFlight) return;
+  notificationsRenderInFlight = true;
 
   let items = [];
   updateNotifBadges(0);
@@ -7777,6 +7783,11 @@ async function renderNotifications() {
 
       const notifBatches = await Promise.all(events.map(async (ev) => {
         const out = [];
+        const endedAt = parseUslyTimestamp(ev?.end_at);
+        const archivedNotificationsCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        if (endedAt && endedAt < archivedNotificationsCutoff) {
+          return out;
+        }
 
         try {
           const res = await apiFetch(`/partners/events/${ev.id}/participants?limit=20`);
@@ -7989,6 +8000,7 @@ async function renderNotifications() {
       </div>
     `;
     updateNotifBadges(0);
+    notificationsRenderInFlight = false;
     return;
   }
 
@@ -8039,6 +8051,8 @@ async function renderNotifications() {
     localStorage.setItem("usly_user_notifications_seen_at", new Date().toISOString());
     updateNotifBadges(0);
   }
+
+  notificationsRenderInFlight = false;
 }
 
 
@@ -10466,24 +10480,32 @@ function renderAll() {
     safeSetText("m_clicks_val", "—");
     safeSetText("m_conv_val", "—");
 
-    (App.role === "partner" ? apiFetch("/partners/dashboard/stats") : Promise.resolve(null))
-      .then((res) => {
-        if (!res?.success || !res?.data) return;
+    const canLoadPartnerStats =
+      App.isLoggedIn === true &&
+      App.role === "partner" &&
+      App.currentView === "S9_PARTNER" &&
+      !!localStorage.getItem("usly_token");
 
-        safeSetText("m_events_val", String(res.data.total_events ?? 0));
-        safeSetText("m_views_val", String(res.data.draft_events ?? 0));
-        safeSetText("m_clicks_val", String(res.data.total_signups ?? 0));
-        const signups = Number(res.data.total_signups ?? 0);
-        const capacity = Number(res.data.total_capacity ?? 0);
-        const freq = capacity > 0 ? Math.round((signups / capacity) * 100) : 0;
-        safeSetText("m_conv_val", capacity > 0 ? `${freq}%` : "—");
-      })
-      .catch(() => {
-        safeSetText("m_events_val", "—");
-        safeSetText("m_views_val", "—");
-        safeSetText("m_clicks_val", "—");
-        safeSetText("m_conv_val", "—");
-      });
+    if (canLoadPartnerStats) {
+      apiFetch("/partners/dashboard/stats")
+        .then((res) => {
+          if (!res?.success || !res?.data) return;
+
+          safeSetText("m_events_val", String(res.data.total_events ?? 0));
+          safeSetText("m_views_val", String(res.data.draft_events ?? 0));
+          safeSetText("m_clicks_val", String(res.data.total_signups ?? 0));
+          const signups = Number(res.data.total_signups ?? 0);
+          const capacity = Number(res.data.total_capacity ?? 0);
+          const freq = capacity > 0 ? Math.round((signups / capacity) * 100) : 0;
+          safeSetText("m_conv_val", capacity > 0 ? `${freq}%` : "—");
+        })
+        .catch(() => {
+          safeSetText("m_events_val", "—");
+          safeSetText("m_views_val", "—");
+          safeSetText("m_clicks_val", "—");
+          safeSetText("m_conv_val", "—");
+        });
+    }
   }
 
   // Setup avatar
