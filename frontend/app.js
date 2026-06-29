@@ -7714,6 +7714,9 @@ async function publishPartnerEvent() {
 
 let notificationsVisibleLimit = 10;
 let notificationsRenderInFlight = false;
+let partnerNotifBadgeRefreshInFlight = false;
+let partnerNotifBadgeLastRefreshAt = 0;
+const PARTNER_NOTIF_BADGE_REFRESH_MIN_INTERVAL_MS = 30000;
 
 function getNotificationIcon(title = "", body = "") {
   const text = `${title} ${body}`.toLowerCase();
@@ -8356,6 +8359,13 @@ async function refreshPartnerNotifBadgeCount() {
     return;
   }
 
+  const now = Date.now();
+  if (partnerNotifBadgeRefreshInFlight) return;
+  if (now - partnerNotifBadgeLastRefreshAt < PARTNER_NOTIF_BADGE_REFRESH_MIN_INTERVAL_MS) return;
+
+  partnerNotifBadgeRefreshInFlight = true;
+  partnerNotifBadgeLastRefreshAt = now;
+
   try {
     const seenAtRaw = localStorage.getItem("usly_partner_notifications_seen_at");
     const seenAt = seenAtRaw ? new Date(seenAtRaw).getTime() : 0;
@@ -8410,6 +8420,8 @@ async function refreshPartnerNotifBadgeCount() {
   } catch (e) {
     console.error("partner notif badge refresh error", e);
     updateNotifBadges(0);
+  } finally {
+    partnerNotifBadgeRefreshInFlight = false;
   }
 }
 
