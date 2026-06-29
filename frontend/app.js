@@ -7717,6 +7717,9 @@ let notificationsRenderInFlight = false;
 let partnerNotifBadgeRefreshInFlight = false;
 let partnerNotifBadgeLastRefreshAt = 0;
 const PARTNER_NOTIF_BADGE_REFRESH_MIN_INTERVAL_MS = 30000;
+let groupBadgeRefreshInFlight = false;
+let groupBadgeLastRefreshAt = 0;
+const GROUP_BADGE_REFRESH_MIN_INTERVAL_MS = 30000;
 
 function getNotificationIcon(title = "", body = "") {
   const text = `${title} ${body}`.toLowerCase();
@@ -8336,6 +8339,13 @@ async function refreshGroupBadgeCount() {
     return;
   }
 
+  const now = Date.now();
+  if (groupBadgeRefreshInFlight) return;
+  if (now - groupBadgeLastRefreshAt < GROUP_BADGE_REFRESH_MIN_INTERVAL_MS) return;
+
+  groupBadgeRefreshInFlight = true;
+  groupBadgeLastRefreshAt = now;
+
   try {
     const summary = await getGroupUnreadSummary();
     const count = Number(summary?.totalGroupsWithUnread || 0);
@@ -8345,6 +8355,8 @@ async function refreshGroupBadgeCount() {
   } catch (e) {
     console.error("group badge refresh error", e);
     badge.style.display = "none";
+  } finally {
+    groupBadgeRefreshInFlight = false;
   }
 }
 
