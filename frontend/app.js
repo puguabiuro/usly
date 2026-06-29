@@ -8729,6 +8729,37 @@ const membersLabel = m === 1
   }
 }
 
+async function refreshChatBadgeCount() {
+  const badge = $("badgeChats");
+  if (!badge) return;
+
+  if (!App.isLoggedIn || App.role !== "user") {
+    badge.style.display = "none";
+    return;
+  }
+
+  try {
+    const data = await apiFetch("/messages/private");
+    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    const unreadTotal = items.reduce((sum, c) => {
+      const chatId = `pm_${c?.other_user_id}`;
+      const muted = isChatMuted(chatId);
+      return sum + (muted ? 0 : Number(c?.unread_count || 0));
+    }, 0);
+
+    if (unreadTotal > 0) {
+      badge.textContent = String(unreadTotal);
+      badge.style.display = "inline-flex";
+    } else {
+      badge.textContent = "0";
+      badge.style.display = "none";
+    }
+  } catch (err) {
+    console.error("chat badge refresh error", err);
+    badge.style.display = "none";
+  }
+}
+
 async function renderChatList() {
   const list = $("chatList");
   const q = ($("chatSearch")?.value || "").trim().toLowerCase();
@@ -10644,7 +10675,11 @@ function initSearchBindings() {
           await renderNotifications();
         }
 
-        await renderChatList();
+        if (App.currentView === "S6_CHATS_LIST") {
+          await renderChatList();
+        } else {
+          await refreshChatBadgeCount();
+        }
         if (App.currentView === "S6B_CHAT_THREAD" && App.selectedChatUserId) {
           await renderChatThread();
         }
