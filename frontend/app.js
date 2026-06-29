@@ -10759,10 +10759,14 @@ async function init() {
           try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
           refreshUserPlanCardsUi();
           }
-        await Promise.all([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), renderChatList()]);
         renderAll();
         bindMessageInputs();
         go("S4_NEARBY");
+
+        Promise.allSettled([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), refreshChatBadgeCount()])
+          .then(() => renderAll())
+          .catch((err) => console.error("session restore background refresh failed", err));
+
         return;
       } else {
         await loadPartnerProfile();
