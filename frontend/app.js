@@ -3601,12 +3601,21 @@ async function savePartnerSettings() {
 }
 
 /* ------------------------- Terms / Privacy -------------------------- */
+function legalBaseUrl() {
+  const host = window.location.hostname;
+  const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  const isLocalWeb = !isNative && (host === "localhost" || host === "127.0.0.1");
+  return isLocalWeb ? window.location.origin : "https://uslyapp.pl";
+}
+
 function openTerms() {
-  window.open("https://uslyapp.pl/regulamin", "_blank");
+  const path = App.lang === "en" ? "/regulamin/en" : "/regulamin";
+  window.open(`${legalBaseUrl()}${path}`, "_blank");
 }
 
 function openRodo() {
-  window.open("https://uslyapp.pl/polityka-prywatnosci", "_blank");
+  const path = App.lang === "en" ? "/privacy-policy" : "/polityka-prywatnosci";
+  window.open(`${legalBaseUrl()}${path}`, "_blank");
 }
 
 async function uploadPartnerLogo(file) {

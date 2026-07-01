@@ -3,223 +3,211 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Polityka prywatności USLY</title>
-  <style>
-    :root {
-      --bg: #fff7fb;
-      --card: rgba(255,255,255,.78);
-      --text: #21131b;
-      --muted: #735d69;
-      --pink: #ff4fa3;
-      --pink2: #ff8ac7;
-      --violet: #7b4dff;
-      --line: rgba(33,19,27,.12);
-      --shadow: 0 24px 70px rgba(255,79,163,.18);
-      --radius: 30px;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 15% 10%, rgba(255,79,163,.18), transparent 34%),
-        radial-gradient(circle at 85% 5%, rgba(123,77,255,.15), transparent 32%),
-        linear-gradient(180deg, #fff7fb 0%, #fff 58%, #fff7fb 100%);
-      min-height: 100vh;
-    }
-    a { color: inherit; text-decoration: none; }
-    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
-    header {
-      padding: 24px 0;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      backdrop-filter: blur(18px);
-      background: rgba(255,247,251,.74);
-      border-bottom: 1px solid rgba(255,255,255,.55);
-    }
-    .nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
-    .brand { display: flex; align-items: center; gap: 12px; font-weight: 900; letter-spacing: -.04em; font-size: 24px; }
-    .brand img { width: 42px; height: 42px; object-fit: contain; border-radius: 14px; }
-    .navLinks { display: flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 700; font-size: 14px; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 46px;
-      padding: 0 18px;
-      border-radius: 999px;
-      font-weight: 900;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.72);
-      box-shadow: 0 10px 28px rgba(33,19,27,.06);
-    }
-    .btn.primary {
-      color: white;
-      border: 0;
-      background: linear-gradient(135deg, var(--pink), var(--violet));
-      box-shadow: 0 16px 36px rgba(255,79,163,.28);
-    }
-    .hero { padding: 70px 0 44px; }
-    .heroGrid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 42px; align-items: center; }
-    .eyebrow {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      padding: 9px 14px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.72);
-      border: 1px solid var(--line);
-      color: var(--muted);
-      font-weight: 800;
-      font-size: 13px;
-      margin-bottom: 18px;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(44px, 7vw, 78px);
-      line-height: .94;
-      letter-spacing: -.07em;
-    }
-    .grad { background: linear-gradient(135deg, var(--pink), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .lead {
-      margin: 22px 0 0;
-      color: var(--muted);
-      font-size: clamp(18px, 2vw, 22px);
-      line-height: 1.55;
-      max-width: 650px;
-      font-weight: 600;
-    }
-    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
-    .note { margin-top: 16px; color: var(--muted); font-size: 13px; font-weight: 700; }
-    .phoneCard {
-      border-radius: 42px;
-      padding: 18px;
-      background: rgba(255,255,255,.6);
-      border: 1px solid rgba(255,255,255,.9);
-      box-shadow: var(--shadow);
-      transform: rotate(2deg);
-    }
-    .phone {
-      border-radius: 34px;
-      min-height: 560px;
-      padding: 24px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,247,251,.9)),
-        radial-gradient(circle at 50% 0%, rgba(255,79,163,.2), transparent 45%);
-      border: 1px solid var(--line);
-      overflow: hidden;
-      position: relative;
-    }
-    .screenTop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-    .pill { padding: 8px 12px; border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
-    .event {
-      margin-top: 14px;
-      padding: 18px;
-      border-radius: 24px;
-      background: rgba(255,255,255,.82);
-      border: 1px solid var(--line);
-      box-shadow: 0 12px 32px rgba(33,19,27,.06);
-    }
-    .event strong { display:block; font-size: 18px; letter-spacing: -.03em; }
-    .event span { display:block; margin-top: 7px; color: var(--muted); font-weight: 700; font-size: 13px; }
-    .bubble {
-      margin-top: 22px;
-      padding: 18px;
-      border-radius: 28px;
-      color: white;
-      background: linear-gradient(135deg, var(--pink), var(--violet));
-      font-weight: 900;
-      font-size: 22px;
-      letter-spacing: -.04em;
-    }
-    section { padding: 54px 0; }
-    .sectionTitle { font-size: clamp(32px, 4vw, 48px); line-height: 1; letter-spacing: -.06em; margin: 0 0 14px; }
-    .sectionLead { margin: 0; color: var(--muted); font-size: 18px; line-height: 1.55; font-weight: 600; max-width: 720px; }
-    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 28px; }
-    .card {
-      padding: 24px;
-      border-radius: var(--radius);
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,.9);
-      box-shadow: 0 18px 48px rgba(33,19,27,.06);
-    }
-    .icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 17px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background: linear-gradient(135deg, rgba(255,79,163,.14), rgba(123,77,255,.12));
-      font-size: 24px;
-      margin-bottom: 16px;
-    }
-    .card h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: -.04em; }
-    .card p { margin: 0; color: var(--muted); line-height: 1.55; font-weight: 600; }
-    .cta {
-      margin: 28px 0 70px;
-      padding: 34px;
-      border-radius: 38px;
-      background: linear-gradient(135deg, rgba(255,79,163,.12), rgba(123,77,255,.12));
-      border: 1px solid rgba(255,255,255,.9);
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      align-items: center;
-    }
-    .cta h2 { margin:0; font-size: clamp(30px, 4vw, 44px); letter-spacing: -.06em; line-height: 1; }
-    .cta p { margin: 10px 0 0; color: var(--muted); font-weight: 700; line-height: 1.5; }
-    footer { padding: 30px 0 42px; color: var(--muted); font-size: 13px; font-weight: 700; }
-    .foot { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:22px; }
-    @media (max-width: 860px) {
-      .heroGrid { grid-template-columns: 1fr; }
-      .phoneCard { transform: none; }
-      .cards { grid-template-columns: 1fr; }
-      .cta { flex-direction: column; align-items: flex-start; }
-      .navLinks a:not(.btn) { display: none; }
-    }
-  </style>
+  <title>Polityka prywatności | USLY</title>
+  <link rel="stylesheet" href="/legal/legal.css" />
 </head>
 <body>
-  <header>
+  <header class="legalHeader">
     <div class="wrap nav">
       <a class="brand" href="/">
-        <img src="/USLY logo.png" alt="USLY" />
+        <img src="/assets/logo-usly.png" alt="USLY" onerror="this.style.display='none'" />
         <span>USLY</span>
       </a>
       <nav class="navLinks">
-        <a href="/">Strona główna</a>
-        <a class="btn primary" href="/app">Otwórz aplikację</a>
+        <a href="/regulamin">Regulamin</a>
+        <a href="/polityka-prywatnosci">Polityka prywatności</a>
+        <a href="/privacy-policy" class="pill">English version</a>
       </nav>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="wrap">
-        <span class="eyebrow">Dokumenty prawne</span>
-        <h1>Polityka prywatności USLY</h1>
-        <p class="sectionLead">Polityka prywatności jest w przygotowaniu. Aktualna wersja dokumentu zostanie opublikowana przed publikacją aplikacji w App Store i Google Play.</p>
+  <main class="wrap legalLayout">
+    <aside class="tocCard">
+      <div class="tocTitle">Spis treści</div>
+      <nav class="toc"><a href="#1-informacje-og-lne">1. INFORMACJE OGÓLNE</a>
+<a href="#2-zakres-przetwarzanych-danych">2. ZAKRES PRZETWARZANYCH DANYCH</a>
+<a href="#3-cele-przetwarzania-danych">3. CELE PRZETWARZANIA DANYCH</a>
+<a href="#4-podstawy-prawne-przetwarzania">4. PODSTAWY PRAWNE PRZETWARZANIA</a>
+<a href="#5-udost-pnianie-danych-osobowych">5. UDOSTĘPNIANIE DANYCH OSOBOWYCH</a>
+<a href="#6-okres-przechowywania-danych">6. OKRES PRZECHOWYWANIA DANYCH</a>
+<a href="#7-prawa-u-ytkownika">7. PRAWA UŻYTKOWNIKA</a>
+<a href="#8-bezpiecze-stwo-danych">8. BEZPIECZEŃSTWO DANYCH</a>
+<a href="#9-dane-os-b-nieletnich">9. DANE OSÓB NIELETNICH</a>
+<a href="#10-pliki-cookies-i-technologie-podobne">10. PLIKI COOKIES I TECHNOLOGIE PODOBNE</a>
+<a href="#11-zmiany-polityki-prywatno-ci">11. ZMIANY POLITYKI PRYWATNOŚCI</a>
+<a href="#12-kontakt">12. KONTAKT</a></nav>
+    </aside>
 
-        <article class="card" style="margin-top: 28px;">
-          <h3>Archiwum wersji</h3>
-          <p>Archiwum wcześniejszych wersji dokumentu będzie dostępne po publikacji pierwszej finalnej wersji.</p>
-        </article>
+    <article class="legalCard">
+      <div class="eyebrow">Dokument prawny USLY</div>
+      <h1>Polityka prywatności aplikacji USLY</h1>
+
+      <div class="metaGrid">
+        <div><span>Wersja</span><strong>1.1</strong></div>
+        <div><span>Obowiązuje od</span><strong>16 czerwca 2026</strong></div>
+        <div><span>Administrator</span><strong>PUGUA Sp. z o.o.</strong></div>
       </div>
-    </section>
+
+      <div class="notice">
+        Aktualna publiczna wersja dokumentu. Oryginał dokumentu prawnego jest archiwizowany wewnętrznie.
+      </div>
+
+      <section class="legalContent">
+        <p>POLITYKA PRYWATNOŚCI APLIKACJI USLY</p>
+<h2 id="1-informacje-og-lne">1. INFORMACJE OGÓLNE</h2>
+<p>Niniejsza Polityka Prywatności określa zasady przetwarzania danych osobowych użytkowników aplikacji mobilnej USLY (dalej: „Aplikacja”).</p>
+<p>USLY zapewnia procedury ochrony danych osobowych Użytkowników zgodnie z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. oraz zgodnie z wdrożoną Polityką Prywatności.</p>
+<p>Administratorem danych osobowych jest PUGUA Sp. z o.o. z siedzibą w Byszewska 37R, 92-770 Łódź, wpisana do Rejestru Przedsiębiorców KRS 0001175035, NIP: 7282900556 (dalej: „Administrator”).</p>
+<p>W celu uzyskania informacji lub pomocy w zakresie danych osobowych Użytkownik może kontaktować się z nami na adres: <strong>kontakt@uslyapp.pl</strong>.</p>
+
+<div class="definitionBox">
+  <h3>Definicje</h3>
+  <p><strong>Administrator</strong> – podmiot będący właścicielem oraz operatorem Aplikacji, który decyduje o celach i sposobach przetwarzania danych osobowych Użytkowników.</p>
+  <p><strong>Aplikacja</strong> – aplikacja mobilna USLY, umożliwiająca Użytkownikom nawiązywanie kontaktów, poznawanie nowych osób oraz uczestniczenie w interakcjach społecznościowych.</p>
+  <p><strong>Dane osobowe</strong> – wszelkie informacje o zidentyfikowanej lub możliwej do zidentyfikowania osobie fizycznej.</p>
+  <p><strong>Konto</strong> – indywidualny profil Użytkownika utworzony w Aplikacji.</p>
+  <p><strong>Lokalizacja</strong> – dane geograficzne dotyczące położenia Urządzenia Użytkownika, pozyskiwane za zgodą Użytkownika.</p>
+  <p><strong>Naruszenie danych osobowych</strong> – zdarzenie prowadzące do przypadkowego lub bezprawnego zniszczenia, utraty, zmiany lub ujawnienia danych osobowych.</p>
+  <p><strong>Polityka Prywatności</strong> – niniejszy dokument.</p>
+  <p><strong>Profil</strong> – zestaw informacji udostępnionych przez Użytkownika w ramach Konta.</p>
+  <p><strong>Przetwarzanie</strong> – operacje wykonywane na danych osobowych, takie jak zbieranie, utrwalanie, przechowywanie, organizowanie, modyfikowanie, udostępnianie lub usuwanie.</p>
+  <p><strong>Regulamin</strong> – dokument określający zasady korzystania z Aplikacji.</p>
+  <p><strong>Urządzenie</strong> – urządzenie elektroniczne, w szczególności smartfon lub tablet.</p>
+  <p><strong>Usługa</strong> – usługi świadczone drogą elektroniczną przez Administratora za pośrednictwem Aplikacji.</p>
+  <p><strong>Użytkownik</strong> – osoba fizyczna korzystająca z Aplikacji.</p>
+  <p><strong>Wydarzenia lub Interakcje</strong> – działania podejmowane przez Użytkownika w Aplikacji lub między Użytkownikami.</p>
+</div>
+
+<p>Administrator przetwarza dane osobowe zgodnie z:</p>
+<p class="letter-item">a) Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 (RODO),</p>
+<p class="letter-item">b) ustawą o ochronie danych osobowych,</p>
+<p class="letter-item">c) ustawą o świadczeniu usług drogą elektroniczną.</p>
+<h2 id="2-zakres-przetwarzanych-danych">2. ZAKRES PRZETWARZANYCH DANYCH</h2>
+<p>Administrator może przetwarzać następujące dane osobowe:</p>
+<p class="subclause">2.1 Dane osobowe podawane przez użytkownika:</p>
+<p class="bullet-item">adres e-mail,</p>
+<p class="bullet-item">numer telefonu</p>
+<p class="bullet-item">imię, nazwisko</p>
+<p class="bullet-item">wiek, data urodzenia,</p>
+<p class="bullet-item">miasto, lokalizacja ogólna,</p>
+<p class="bullet-item">narodowość,</p>
+<p class="bullet-item">płeć (opcjonalnie),</p>
+<p class="bullet-item">zdjęcia profilowe (opcjonalnie),</p>
+<p class="subclause">2.2 Dane dotyczące korzystania z Aplikacji:</p>
+<p class="bullet-item">identyfikator konta / nick,</p>
+<p class="bullet-item">historia logowań i operacji (kiedy rejestrujesz się na konto, tworzysz lub modyfikujesz swój profil, ustawiasz preferencje),</p>
+<p class="bullet-item">interakcje w aplikacji (czaty, zapisy na wydarzenia, uczestnictwo w grupach),</p>
+<p class="bullet-item">informacje o subskrypcji (plan, status płatności),</p>
+<p class="bullet-item">opis profilu osobistego i zainteresowań (o ile może pozwolić na bezpośrednią lub pośrednią identyfikację osoby fizycznej),</p>
+<p class="bullet-item">informacje dotyczące korzystania z portali społecznościowych m.in. dostęp do listy Twoich znajomych, jak również zbiorczych nieosobowych danych analitycznych (wyłącznie w sytuacji, jeśli połączyłeś nasze usługi ze swoimi kontami w portalach społecznościowych),</p>
+<p class="bullet-item">inne dane, które przekazujesz za pośrednictwem Aplikacji.</p>
+<p class="subclause">2.3 Dane techniczne:</p>
+<p class="bullet-item">adres IP,</p>
+<p class="bullet-item">typ urządzenia,</p>
+<p class="bullet-item">system operacyjny,</p>
+<p class="bullet-item">identyfikatory urządzeń (np. IDFA/AAID – zgodnie z ustawieniami użytkownika)*,</p>
+<p class="bullet-item">inne, dane techniczne o urządzeniach, z których korzystasz, aby uzyskać dostęp do Aplikacji *Identyfikatory reklamowe (IDFA/AAID) mogą być wykorzystywane wyłącznie wtedy, gdy użytkownik wyrazi na to zgodę w ustawieniach systemowych urządzenia oraz w zakresie zgodnym z politykami Google Play / App Store.</p>
+<p class="subclause">2.4 Dane podlegające szczególnej ochronie: Administrator nie wymaga podawania danych o charakterze wrażliwym, tj. pochodzenie rasowe lub etniczne, przekonania światopoglądowe, poglądy religijne czy polityczne lub przynależność do związków zawodowych, bądź informacji o swoim zdrowiu. Te i inne informacje, jeśli zostały przez Ciebie w sposób dobrowolny ujawnione w Twoim Profilu podlegają szczególnej ochronie zgodnie z prawem UE.</p>
+<p class="subclause">2.5. Wykorzystanie geolokalizacji: Administrator przetwarza informacje powiązane z lokalizacją, np. miejsce, w którym aktualnie się znajdujesz, miejsce zamieszkania, miejsca, które odwiedzasz oraz miejsca i osoby blisko Ciebie, aby dostarczać, personalizować i ulepszać nasze usługi w Aplikacji. Lokalizacja ma charakter przybliżony i nie wskazuje dokładnego adresu. W celu świadczenia funkcjonalności związanych z lokalizacją Użytkownika, Aplikacja może korzystać z usług geolokalizacyjnych oraz interfejsów API udostępnianych przez partnerów zewnętrznych. Dane lokalizacyjne są przetwarzane wyłącznie w zakresie niezbędnym do realizacji funkcji Aplikacji, takich jak określanie położenia Użytkownika, wyświetlanie map, interakcji z innymi Użytkownikami, wyszukiwanie kręgu osób i wydarzeń w danych obszarze lub prezentowanie treści zależnych od lokalizacji. Administrator wdrożył odpowiednie środki techniczne i organizacyjne mające na celu ochronę danych lokalizacyjnych przed nieuprawnionym dostępem, utratą, modyfikacją lub ujawnieniem. W szczególności dostęp do usług lokalizacji realizowany jest za pośrednictwem zabezpieczonych interfejsów API, z wykorzystaniem kluczy API objętych ograniczeniami bezpieczeństwa, które uniemożliwiają ich nieautoryzowane wykorzystanie poza środowiskiem Aplikacji. Dane lokalizacyjne są wykorzystywane wyłącznie w czasie rzeczywistym, w zakresie niezbędnym do działania funkcji Aplikacji i mogą zostać wyłączone przez Użytkownika w ustawieniach urządzenia.</p>
+<h2 id="3-cele-przetwarzania-danych">3. CELE PRZETWARZANIA DANYCH</h2>
+<p>Administrator przetwarza dane osobowe na podstawie obowiązujących przepisów prawnych, w celu zapewnienia dostępu do usług w Aplikacji.</p>
+<p>Rodzaje gromadzonych informacji zależą od sposobu, w jaki Użytkownik korzysta z usług w Aplikacji.</p>
+<p>Dane osobowe przetwarzane są w celu wdrożenia tzw. uzasadnionego interesu, rozumianego jako całkowicie zgodny z prawem cel przetwarzania danych, spójny z prawami Użytkownika, w tym między innymi:</p>
+<p class="number-item">1) świadczenia usług drogą elektroniczną (prowadzenie konta w Aplikacji),</p>
+<p class="number-item">2) autoryzacja dostępu i weryfikacja danych Użytkownika (w tym wieku i tożsamości),</p>
+<p class="number-item">3) umożliwienia komunikacji między Użytkownikami,</p>
+<p class="number-item">4) umożliwienia uczestnictwa w elementach Interakcji i obsługi Wydarzeń,</p>
+<p class="number-item">5) realizacji subskrypcji i płatności,</p>
+<p class="number-item">6) dostarczania informacji marketingowych (w tym spersonalizowanych),</p>
+<p class="number-item">7) poprawy jakości i modyfikacji Aplikacji,</p>
+<p class="number-item">8) zawiadamiania o zmianach dotyczących Usług,</p>
+<p class="number-item">9) zapewnienia bezpieczeństwa i zapobiegania nadużyciom,</p>
+<p class="number-item">10) rozpatrywanie skarg i informacji o naruszeniach,</p>
+<p class="number-item">10) realizacji obowiązków prawnych Administratora.</p>
+<h2 id="4-podstawy-prawne-przetwarzania">4. PODSTAWY PRAWNE PRZETWARZANIA</h2>
+<p>Dane osobowe przetwarzane są na podstawie:</p>
+<p class="bullet-item">art. 6 ust. 1 lit. b RODO – wykonanie umowy,</p>
+<p class="bullet-item">art. 6 ust. 1 lit. c RODO – obowiązek prawny,</p>
+<p class="bullet-item">art. 6 ust. 1 lit. f RODO – prawnie uzasadniony interes Administratora,</p>
+<h2 id="5-udost-pnianie-danych-osobowych">5. UDOSTĘPNIANIE DANYCH OSOBOWYCH</h2>
+<p class="subclause">5.1 W celu należytego świadczenia Usług może być konieczne przekazywanie niektórych zbieranych informacji i danych podmiotom trzecim wspierającym Administratora w utrzymaniu infrastruktury technicznej Aplikacji, w szczególności dostawcom usług hostingowych, analitycznych lub chmurowych, odpowiedzialnym za przeprowadzenie wsparcia technicznego. Administrator dzieli się informacjami ze stronami trzecimi, które pomagają mu działać, dostarczać, ulepszać, integrować, dostosowywać, wspierać i wprowadzać na rynek usługi, m.in. partnerzy biznesowi, marketingowi, analityczni oraz dostawcy usług IT i metod płatności. Administrator zapewnia, że wszystkie relacje, które wiążą się z przetwarzaniem danych osobowych, podlegają udokumentowanej umowie o powierzeniu przetwarzania danych osobowych, zawierającej konkretne informacje i warunki wymagane przez RODO. Dane osobowe mogą być przekazywane:</p>
+<p class="letter-item">a) dostawcom usług IT i hostingowych,</p>
+<p class="letter-item">b) operatorom płatności (Apple, Google i innym),</p>
+<p class="letter-item">c) dostawcom narzędzi analitycznych (np. statystyki aplikacji),</p>
+<p class="letter-item">d) organom administracyjnym i organom ścigania, w przypadkach uzasadnionych przepisami prawa,</p>
+<p class="letter-item">d) innym Użytkownikom aplikacji w zakresie wskazanym w Regulaminie działania Aplikacji. Dane podawane przez Użytkownika w jego Profilu są widoczne dla innych Użytkowników Aplikacji, w zakresie zgody wyrażonej przez właściciela Profilu. Inni Użytkownicy Aplikacji (osoby fizyczne) mogą widzieć przesłane przez Użytkownika treści, jak również podjęte przez Użytkownika działania w ramach usług w Aplikacji, udział w wydarzeniach, interakcje itp.</p>
+<p class="letter-item">e) Organom publicznym: Jeżeli jest to wymagane przez prawo, Administrator może ujawnić dane Użytkownika i informacje o jego interakcjach Policji lub innym uprawnionym organom publicznym (w tym między innymi: imię, nazwisko, numer telefonu, adres email, adres IP, jak również dane dotyczące podejrzanego zachowania takie jak niezgodne z prawem korzystanie z danej Usługi, uzasadnione podejrzenia popełnienia przestępstwa, groźby wobec innego Użytkownika). Możemy udostępniać Twoje dane osobowe następującym organizacjom:</p>
+<p class="bullet-item">Policji, organom ścigania, organom nadzorującym, w tym podatkowym i innym;</p>
+<p class="bullet-item">Agencjom zapobiegania oszustwom,</p>
+<p class="bullet-item">Agencjom weryfikacji tożsamości,</p>
+<p class="bullet-item">Osobom trzecim, które mają Twoje zezwolenie na udostępnieniu im Twoich danych;</p>
+<p class="bullet-item">Osobom trzecim, z którymi posiadamy zgodne z prawem i wiążące umowy powierzenia przetwarzania danych osobowych, w zakresie niezbędnym dla dostarczania i rozwoju naszych usług, w tym wynikające z przepisów o usługach płatniczych i prawa bankowego.</p>
+<p class="subclause">5.2 Komunikacja między użytkownikami: Aplikacja umożliwia użytkownikom komunikację oraz interakcję między sobą. Administrator może przetwarzać treści komunikacji w celu zapewnienia bezpieczeństwa użytkowników, zapobiegania nadużyciom, reagowania na zgłoszenia naruszeń regulaminu. Administrator nie monitoruje prywatnych rozmów w sposób ciągły, jednak może analizować zgłoszone treści w przypadku podejrzenia naruszenia zasad korzystania z aplikacji.</p>
+<p class="subclause">5.3. Zgody Marketingowe: W przypadku posiadania odpowiedniej zgody oraz zgodnie z prawem i z preferencjami Użytkownika, niektóre z danych osobowych mogą być przetwarzane przez naszych zewnętrznych partnerów marketingowych, aby umożliwić nam komunikowanie się ze wszystkimi naszymi klientami (np. przez telefon, e-mail, powiadomienia push). Może to obejmować dostawców platform do wysyłania wiadomości e-mail i SMS, dostawców nagród lub upominków itp. Odbywa się to zawsze w oparciu o zgodne z wymogami prawnymi umowy o powierzeniu przetwarzania danych osobowych, które skutecznie chronią prawa i interesy w zakresie dostępu do danych osobowych. Nasze komunikaty marketingowe będą zawierać instrukcje, jak zrezygnować z otrzymywania konkretnego rodzaju komunikacji lub wycofać / zmienić zakres zgód marketingowych. Zanim Twoje żądanie zostanie w pełni zrealizowane, może upłynąć do 48 godzin.</p>
+<p class="subclause">5.4. Nie udostępniamy danych osobowych Użytkowników niepowiązanym stronom trzecim w celu sprzedaży.</p>
+<p class="subclause">5.5. Administrator może profilować dane osobowe, co oznacza, że może wykorzystać zgromadzone informacje, aby dostosować komunikację skierowaną do Użytkownika bezpośrednio do jego potrzeb. Administrator nie wykorzystuje przy tym danych profilowania do podejmowania automatycznych decyzji, które mogłyby wpłynąć na sytuację prawną Użytkownika. Administrator nie stosuje algorytmów do podejmowania decyzji, które wpływałyby na indywidualne prawa wynikające z umowy o korzystanie z Aplikacji.</p>
+<p class="subclause">5.6. Udostępnienie danych poza EOG: Dane mogą być przekazywane poza UE wyłącznie w zakresie dozwolonym przez RODO. Zgadzając się na przekazanie swoich danych stronom trzecim, zgadzasz się również, że strony trzecie mogą znajdować się poza EOG. Przepisy dotyczące prywatności w tych krajach mogą nie zapewniać takiego samego poziomu ochrony jak w Twoim kraju lub EOG. Przekazywanie danych osobowych poza Unię Europejską będzie dokładnie sprawdzane przed dokonaniem przeniesienia, aby zapewnić, że mieszczą się one w granicach narzuconych przez RODO. Międzynarodowe transfery danych wewnątrzgrupowych będą podlegać prawnie wiążącym umowom, zwanym Wiążącymi Regułami Korporacyjnymi (BCR), które zapewniają pełne przestrzeganie i egzekwowanie praw osobom, których dane dotyczą. Jeśli Administrator udostępni dane poza EOG, będzie opierał się na standardowych klauzulach umownych UE lub innych przepisach prawa, które pozwolą na zgodny z prawem transfer danych i zapewnienie odpowiedniego poziomu ochrony.</p>
+<h2 id="6-okres-przechowywania-danych">6. OKRES PRZECHOWYWANIA DANYCH</h2>
+<p class="subclause">6.1 Administrator przetwarza dane osobowe Użytkownika wyłącznie przez okres, jaki będzie konieczny do osiągnięcia celów określonych w niniejszej Polityce Prywatności, w zgodzie z zasadą minimalizacji i ograniczenia przechowywania określonej w RODO (art. 5 ust. 1 lit. e). Po upływie tego czasu Administrator usunie lub zanonimizuje dane, w zależności od rodzaju tych danych i wymogów prawnych. W przypadku danych zanonimizowanych, Administrator bezpiecznie przechowuje dane Użytkownika i izoluje je od dalszego przetwarzania, aż do czasu, kiedy ich usunięcie będzie prawnie i technicznie możliwe.</p>
+<p class="subclause">6.2. Dane przechowywane są w następujących okresach: A. Dane ujawnione w Profilu Użytkownika (dane osobowe Użytkownika, informacje zamieszczone w Profilu) są widoczne w Profilu przez okres korzystania z aplikacji, do momentu usunięcia konta Użytkownika. Z chwilą usunięcia Konta dane zostają automatycznie zanonimizowane i niewidoczne dla innych Użytkowników. Po usunięciu konta Użytkownika, dane osobowe w zakresie podstawowym pozostają widoczne wyłącznie dla Administratora i przechowywane są przez okres niezbędny do dochodzenia lub obrony przed roszczeniami, zapewnienia bezpieczeństwa Aplikacji, realizacji obowiązków wynikających z przepisów prawa. Zanonimizowane dane mogą być przechowywane przez okres do 5 lat lub przez okres wymagany przepisami prawa. B. Dane dotyczące lokalizacji Dane lokalizacyjne są przechowywane wyłącznie w czasie rzeczywistym, przez czas niezbędny do działania funkcji aplikacji. Dane związane z uczestnictwem w wydarzeniach, publikowanymi treściami, aktywnością społeczną i interakcjami w Aplikacji są przechowywane przez okres funkcjonowania Konta Użytkownika lub do czasu ich usunięcia przez Użytkownika, z zastrzeżeniem sytuacji, w których dalsze przechowywanie jest wymagane przez przepisy prawa. C. Dane dotyczące płatności są przechowywane przez okres wymagany przepisami prawa podatkowego i rachunkowego, co do zasady przez 5 lat licząc od końca roku kalendarzowego, w którym powstał obowiązek podatkowy; D. Adresy IP, informacje o urządzeniach oraz dane związane z bezpieczeństwem Aplikacji są przechowywane przez okres 24 miesięcy od ich zarejestrowania, chyba że zachodzi potrzeba dłuższego przechowywania w celu ustalenia, dochodzenia lub obrony roszczeń. E. Dane przetwarzane w celach analitycznych i statystycznych są przechowywane przez okres niezbędny do realizacji tych celów, nie dłużej jednak niż 36 miesięcy od ich zebrania, chyba że dane zostały wcześniej zanonimizowane.</p>
+<h2 id="7-prawa-u-ytkownika">7. PRAWA UŻYTKOWNIKA</h2>
+<p class="subclause">7.1. Na mocy rozporządzenia o ochronie danych osobowych (RODO) Użytkownikowi przysługuje prawo do uzyskiwania dostępu do swoich danych, korygowania ich, przenoszenia lub żądania ich usunięcia. Do praw Użytkownika wynikających z przepisów rozporządzenia RODO należą m.in.:</p>
+<p class="bullet-item">Prawo do wycofania zgody na przetwarzanie danych,</p>
+<p class="bullet-item">Prawo do otrzymania informacji jak dane są przetwarzane i w jakim celu,</p>
+<p class="bullet-item">Prawo dostępu do danych i informacji na swój temat, żądania kopii danych (wyłącznie o Tobie),</p>
+<p class="bullet-item">Prawo do sprostowania i uzupełnienia niepełnych danych, gdy Twoje dane osobowe są niedokładne,</p>
+<p class="bullet-item">Prawo do usunięcia danych – możesz wnioskować o usunięcie Twoich danych osobowych w każdym czasie, o ile brak jest prawnych wymogów i nadrzędnego obowiązku dalszego przetwarzania tych danych przez określony czas. Zobowiązania prawne wynikające z konkretnych przepisów obejmują z góry ustalone okresy przechowywania danych.</p>
+<p class="bullet-item">Prawo do ograniczenia przetwarzania / sprzeciwu – w pewnych okolicznościach masz prawo do zgłoszenia sprzeciwu lub wniosku o ograniczenie przetwarzania Twoich danych osobowych, jeżeli przetwarzanie odbywa się na podstawie zgody lub naszego uzasadnionego interesu, a nie wymogów prawnych. Jednakże, jeżeli określony zakres danych jest objęty obowiązującymi nas wymaganiami prawnymi, to pomimo Twojego sprzeciwu / wniosku o ograniczenie przetwarzania Twoich danych, będziemy musieli w dalszym ciągu przetwarzać Twoje dane przez określony czas,</p>
+<p class="bullet-item">Prawo wniesienia sprzeciwu co do sposobu przetwarzania danych np. wobec przetwarzania danych do celów marketingu,</p>
+<p class="bullet-item">Prawo do przenoszenia danych – Masz prawo zażądać dostarczenia Twoich danych osobowych w ustrukturyzowanym, powszechnie używanym i możliwym do odczytu komputerowego formacie i przekazania tych danych osobie trzeciej. Dotyczy to danych osobowych, których przetwarzanie odbywa się na podstawie zgody Użytkownika i przetwarzania danych w sposób zautomatyzowany.</p>
+<p class="bullet-item">Prawa związane z automatycznym podejmowaniem decyzji i profilowaniem – prawo do sprzeciwu wobec podlegania automatycznemu podejmowaniu decyzji, w przypadku, gdy decyzja ma na Ciebie znaczący wpływ, możesz zażądać interwencji człowieka tam, gdzie to właściwe. Masz również prawo do wyrażania swojego punktu widzenia i podejmowanych decyzji. W celu realizacji praw należy skontaktować się z Administratorem.</p>
+<p class="subclause">7.2. Administrator może odmówić realizacji pewnych wskazanych powyżej praw Użytkownika, w sytuacji, w której realizacja danego prawa byłaby sprzeczna z uzasadnionym celem przetwarzania danych lub obowiązków nałożonych na Administratora przez prawo. Administrator może odmówić usunięcia Twoich danych osobowych na okres, w którym jest zobowiązany do przechowywania tych danych w oparciu o przepisy prawne.</p>
+<p class="subclause">7.3. Prawa Użytkownika w stosunku do innych Użytkowników: W celu zapewnienia bezpieczeństwa użytkowników Aplikacji, Administrator może dokonywać automatycznych czynności na skutek zgłaszania nieprawidłowości przez innych Użytkowników, w tym możliwość blokowania innych użytkowników, moderacji zgłoszonych treści. Administrator zastrzega sobie prawo do zawieszenia lub usunięcia konta naruszającego zasady korzystania z Aplikacji.</p>
+<p class="subclause">7.4. Usunięcie konta: Użytkownik może usunąć całkowicie konto w Aplikacji w zakładce “Ustawienia konta” lub kontaktując się z Administratorem: kontakt@uslyapp.pl W przypadku usunięcia konta usuniemy opublikowane przez Ciebie treści, takie jak zdjęcia i dane ujawnione w Profilu. Informacji tych nie będzie można później odzyskać. Informacje na Twój temat, udostępniane przez inne osoby, nie należą do Twojego konta i nie zostaną usunięte.</p>
+<h2 id="8-bezpiecze-stwo-danych">8. BEZPIECZEŃSTWO DANYCH</h2>
+<p class="subclause">8.1 Administrator stosuje odpowiednie środki techniczne i organizacyjne w celu ochrony danych. Administrator danych osobowych podejmuje działania techniczne, fizyczne i administracyjne mające na celu zapewnienie odpowiedniej ochrony danych osobowych Użytkowników przed utratą, niewłaściwym wykorzystaniem, a także nieuprawnionym dostępem, ujawnieniem i zmianą. W tym celu stosowane są odpowiednie zabezpieczenia m.in. zapory, szyfrowanie danych, kontrole dostępu fizycznego do baz danych i kontrole autoryzacji dostępu do informacji.</p>
+<p class="subclause">8.2. Dostęp do danych mają wyłącznie upoważnione osoby i partnerzy Administratora. Administrator nie ponosi odpowiedzialności za działania wynikające z zaniedbań użytkownika (np. udostępnienie hasła).</p>
+<p class="subclause">8.3. Treści generowane przez Użytkowników: Użytkownik ponosi pełną odpowiedzialność za treści publikowane w Aplikacji oraz zobowiązuje się do niepublikowania treści:</p>
+<p class="bullet-item">naruszających przepisy prawa,</p>
+<p class="bullet-item">naruszających prawa innych osób,</p>
+<p class="bullet-item">zawierających treści obraźliwe, wulgarne, dyskryminujące lub nawołujące do przemocy,</p>
+<p class="bullet-item">zawierających spam lub treści reklamowe bez zgody Administratora. Administrator zastrzega sobie prawo do usuwania treści naruszających niniejszy Regulamin.</p>
+<p class="subclause">8.4. Mechanizm zgłaszania Użytkowników i naruszeń: Aplikacja udostępnia mechanizm umożliwiający zgłaszanie użytkowników lub treści naruszających zasady korzystania z Aplikacji, prawa innych Użytkowników oraz osób trzecich. Każdy Użytkownik może zgłosić niewłaściwe zachowanie innych użytkowników, treści naruszające Regulamin, podejrzenie nadużyć lub działań niezgodnych z prawem. Administrator analizuje zgłoszenia i może podjąć odpowiednie działania, w szczególności: usunąć zgłoszone treści, ostrzec użytkownika, zablokować lub usunąć konto użytkownika.</p>
+<h2 id="9-dane-os-b-nieletnich">9. DANE OSÓB NIELETNICH</h2>
+<p>Aplikacja przeznaczona jest dla osób, które ukończyły co najmniej 18 lat. Rejestrując się w Aplikacji, Użytkownik oświadcza, że:</p>
+<p class="bullet-item">ukończył 18 lat,</p>
+<p class="bullet-item">posiada zdolność do korzystania z usług oferowanych w Aplikacji zgodnie z obowiązującymi przepisami prawa. Administrator nie przetwarza świadomie danych osobowych osób poniżej 18 roku życia. W przypadku uzyskania informacji, że dane takiej osoby zostały przekazane, Administrator podejmie działania w celu ich niezwłocznego usunięcia.</p>
+<h2 id="10-pliki-cookies-i-technologie-podobne">10. PLIKI COOKIES I TECHNOLOGIE PODOBNE</h2>
+<p>Partnerzy zewnętrzni Administratora, w tym partnerzy marketingowi i analityczni, używają technologii do zbierania informacji, takich jak pliki cookie i sygnalizatory web. Administrator wykorzystuje pliki cookie, sygnalizatory web i inne technologie w celach:</p>
+<p class="letter-item">a) funkcjonalnych,</p>
+<p class="bullet-item">ulepszania i dostosowania usług w Aplikacji;</p>
+<p class="bullet-item">ulepszania doświadczania usług - pliki cookie zapamiętują wybrane opcje, takie jak język lub parametry wyszukiwania;</p>
+<p class="bullet-item">umożliwienia dostępu do usług i korzystanie z nich bez ponownego wpisywania nazwy Użytkownika lub hasła, poprzez zapamiętanie, że Użytkownik jest już zalogowany;</p>
+<p class="letter-item">b) analitycznych</p>
+<p class="bullet-item">dla wydajności i analityki - pliki cookie i podobne technologie zbierają informacje o tym, jak Użytkownicy wchodzą w interakcję z usługami,</p>
+<p class="bullet-item">Administrator wykorzystuje pliki cookie Google Analytics, aby lepiej zrozumieć, w jaki sposób użytkownicy odnajdują nasze produkty i witrynę, i jak je przeglądają, aby zidentyfikować obszary wymagające ulepszeń, takie jak nawigacja, wrażenia użytkownika i kampanie marketingowe,</p>
+<p class="bullet-item">celem przedstawienia reklamy odpowiedniej dla Twoich zainteresowań.</p>
+<p class="letter-item">c) interakcji w mediach społecznościowych: Te pliki cookie są używane, gdy udostępniasz informacje o swoim Profilu w Aplikacji za pomocą przycisku udostępniania w innych mediach społecznościowych lub łączysz swój Profil z innymi witrynami lub mediami społecznościowymi. Użytkownik może zarządzać zgodami w ustawieniach urządzenia. Aby zrezygnować z korzystania z plików cookie, Użytkownik może odpowiednio ustawić przeglądarkę internetową, zmieniając jej opcje, tak aby przestała akceptować pliki cookie lub wyświetlała monit przed zaakceptowaniem plików cookie z odwiedzanych witryn. Jeśli nie akceptujesz plików cookie, może to utrudnić lub uniemożliwić korzystanie ze wszystkich aspektów usług w Aplikacji.</p>
+<h2 id="11-zmiany-polityki-prywatno-ci">11. ZMIANY POLITYKI PRYWATNOŚCI</h2>
+<p>Administrator zastrzega sobie prawo do zmiany Polityki Prywatności. Administrator publikuje wszelkie zmiany Polityki Prywatności dodając powiadomienie w Aplikacji. Administrator przechowuje wcześniejsze wersje Polityki Prywatności w archiwum do wglądu. Zachęcamy do zapoznania się z Polityką Prywatności za każdym razem, gdy korzystasz z usług, aby być na bieżąco z naszymi praktykami informacyjnymi i sposobami ochrony prywatności. Jeśli nie zgadzasz się ze zmianami niniejszej Polityki Prywatności, będziesz musiał zaprzestać korzystania z usług i dezaktywować swoje konto w Aplikacji.Dalsze korzystanie z Aplikacji oznacza akceptację zmian.</p>
+<h2 id="12-kontakt">12. KONTAKT</h2>
+<p>W sprawach dotyczących ochrony danych osobowych prosimy o kontakt: kontakt@uslyapp.pl Administrator USLY</p>
+      </section>
+
+      <section class="changeLog">
+        <h2>Historia zmian</h2>
+        <p><strong>1.1</strong> — pierwsza publiczna wersja dokumentu opublikowana dla aplikacji USLY.</p>
+      </section>
+    </article>
   </main>
 
-  <footer>
-    <div class="wrap foot">
-      <span>© 2026 USLY</span>
-      <span>
-        <a href="/regulamin">Regulamin</a> ·
-        <a href="/polityka-prywatnosci">Polityka prywatności</a> ·
-        <a href="/kontakt">Kontakt</a>
-      </span>
+  <footer class="legalFooter">
+    <div class="wrap">
+      <p>© 2026 PUGUA Sp. z o.o. · USLY</p>
+      <p><a href="/regulamin">Regulamin</a> · <a href="/polityka-prywatnosci">Polityka prywatności</a> · <a href="/kontakt">Kontakt</a></p>
     </div>
   </footer>
+
+  <script src="/legal/legal.js"></script>
 </body>
 </html>

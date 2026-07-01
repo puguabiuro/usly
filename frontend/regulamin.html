@@ -3,223 +3,293 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Regulamin USLY</title>
-  <style>
-    :root {
-      --bg: #fff7fb;
-      --card: rgba(255,255,255,.78);
-      --text: #21131b;
-      --muted: #735d69;
-      --pink: #ff4fa3;
-      --pink2: #ff8ac7;
-      --violet: #7b4dff;
-      --line: rgba(33,19,27,.12);
-      --shadow: 0 24px 70px rgba(255,79,163,.18);
-      --radius: 30px;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 15% 10%, rgba(255,79,163,.18), transparent 34%),
-        radial-gradient(circle at 85% 5%, rgba(123,77,255,.15), transparent 32%),
-        linear-gradient(180deg, #fff7fb 0%, #fff 58%, #fff7fb 100%);
-      min-height: 100vh;
-    }
-    a { color: inherit; text-decoration: none; }
-    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
-    header {
-      padding: 24px 0;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      backdrop-filter: blur(18px);
-      background: rgba(255,247,251,.74);
-      border-bottom: 1px solid rgba(255,255,255,.55);
-    }
-    .nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
-    .brand { display: flex; align-items: center; gap: 12px; font-weight: 900; letter-spacing: -.04em; font-size: 24px; }
-    .brand img { width: 42px; height: 42px; object-fit: contain; border-radius: 14px; }
-    .navLinks { display: flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 700; font-size: 14px; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 46px;
-      padding: 0 18px;
-      border-radius: 999px;
-      font-weight: 900;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.72);
-      box-shadow: 0 10px 28px rgba(33,19,27,.06);
-    }
-    .btn.primary {
-      color: white;
-      border: 0;
-      background: linear-gradient(135deg, var(--pink), var(--violet));
-      box-shadow: 0 16px 36px rgba(255,79,163,.28);
-    }
-    .hero { padding: 70px 0 44px; }
-    .heroGrid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 42px; align-items: center; }
-    .eyebrow {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      padding: 9px 14px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.72);
-      border: 1px solid var(--line);
-      color: var(--muted);
-      font-weight: 800;
-      font-size: 13px;
-      margin-bottom: 18px;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(44px, 7vw, 78px);
-      line-height: .94;
-      letter-spacing: -.07em;
-    }
-    .grad { background: linear-gradient(135deg, var(--pink), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .lead {
-      margin: 22px 0 0;
-      color: var(--muted);
-      font-size: clamp(18px, 2vw, 22px);
-      line-height: 1.55;
-      max-width: 650px;
-      font-weight: 600;
-    }
-    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
-    .note { margin-top: 16px; color: var(--muted); font-size: 13px; font-weight: 700; }
-    .phoneCard {
-      border-radius: 42px;
-      padding: 18px;
-      background: rgba(255,255,255,.6);
-      border: 1px solid rgba(255,255,255,.9);
-      box-shadow: var(--shadow);
-      transform: rotate(2deg);
-    }
-    .phone {
-      border-radius: 34px;
-      min-height: 560px;
-      padding: 24px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,247,251,.9)),
-        radial-gradient(circle at 50% 0%, rgba(255,79,163,.2), transparent 45%);
-      border: 1px solid var(--line);
-      overflow: hidden;
-      position: relative;
-    }
-    .screenTop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-    .pill { padding: 8px 12px; border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
-    .event {
-      margin-top: 14px;
-      padding: 18px;
-      border-radius: 24px;
-      background: rgba(255,255,255,.82);
-      border: 1px solid var(--line);
-      box-shadow: 0 12px 32px rgba(33,19,27,.06);
-    }
-    .event strong { display:block; font-size: 18px; letter-spacing: -.03em; }
-    .event span { display:block; margin-top: 7px; color: var(--muted); font-weight: 700; font-size: 13px; }
-    .bubble {
-      margin-top: 22px;
-      padding: 18px;
-      border-radius: 28px;
-      color: white;
-      background: linear-gradient(135deg, var(--pink), var(--violet));
-      font-weight: 900;
-      font-size: 22px;
-      letter-spacing: -.04em;
-    }
-    section { padding: 54px 0; }
-    .sectionTitle { font-size: clamp(32px, 4vw, 48px); line-height: 1; letter-spacing: -.06em; margin: 0 0 14px; }
-    .sectionLead { margin: 0; color: var(--muted); font-size: 18px; line-height: 1.55; font-weight: 600; max-width: 720px; }
-    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 28px; }
-    .card {
-      padding: 24px;
-      border-radius: var(--radius);
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,.9);
-      box-shadow: 0 18px 48px rgba(33,19,27,.06);
-    }
-    .icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 17px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background: linear-gradient(135deg, rgba(255,79,163,.14), rgba(123,77,255,.12));
-      font-size: 24px;
-      margin-bottom: 16px;
-    }
-    .card h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: -.04em; }
-    .card p { margin: 0; color: var(--muted); line-height: 1.55; font-weight: 600; }
-    .cta {
-      margin: 28px 0 70px;
-      padding: 34px;
-      border-radius: 38px;
-      background: linear-gradient(135deg, rgba(255,79,163,.12), rgba(123,77,255,.12));
-      border: 1px solid rgba(255,255,255,.9);
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      align-items: center;
-    }
-    .cta h2 { margin:0; font-size: clamp(30px, 4vw, 44px); letter-spacing: -.06em; line-height: 1; }
-    .cta p { margin: 10px 0 0; color: var(--muted); font-weight: 700; line-height: 1.5; }
-    footer { padding: 30px 0 42px; color: var(--muted); font-size: 13px; font-weight: 700; }
-    .foot { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:22px; }
-    @media (max-width: 860px) {
-      .heroGrid { grid-template-columns: 1fr; }
-      .phoneCard { transform: none; }
-      .cards { grid-template-columns: 1fr; }
-      .cta { flex-direction: column; align-items: flex-start; }
-      .navLinks a:not(.btn) { display: none; }
-    }
-  </style>
+  <title>Regulamin | USLY</title>
+  <link rel="stylesheet" href="/legal/legal.css" />
 </head>
 <body>
-  <header>
+  <header class="legalHeader">
     <div class="wrap nav">
       <a class="brand" href="/">
-        <img src="/USLY logo.png" alt="USLY" />
+        <img src="/assets/logo-usly.png" alt="USLY" onerror="this.style.display='none'" />
         <span>USLY</span>
       </a>
       <nav class="navLinks">
-        <a href="/">Strona główna</a>
-        <a class="btn primary" href="/app">Otwórz aplikację</a>
+        <a href="/regulamin">Regulamin</a>
+        <a href="/polityka-prywatnosci">Polityka prywatności</a>
+        <a href="/regulamin/en" class="pill">English version</a>
       </nav>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="wrap">
-        <span class="eyebrow">Dokumenty prawne</span>
-        <h1>Regulamin USLY</h1>
-        <p class="sectionLead">Regulamin jest w przygotowaniu. Aktualna wersja dokumentu zostanie opublikowana przed publikacją aplikacji w App Store i Google Play.</p>
+  <main class="wrap legalLayout">
+    <aside class="tocCard">
+      <div class="tocTitle">Spis treści</div>
+      <nav class="toc"><a href="#1-postanowienia-og-lne">§ 1. Postanowienia ogólne</a>
+<a href="#2-warunki-korzystania-z-aplikacji">§ 2. Warunki korzystania z Aplikacji</a>
+<a href="#3-profil-u-ytkownika-i-plany-p-atno-ci">§ 3. Profil Użytkownika i Plany Płatności</a>
+<a href="#4-lokalizacja-i-zasi-g-wyszukiwania">§ 4. Lokalizacja i zasięg wyszukiwania</a>
+<a href="#5-wydarzenia">§ 5. Wydarzenia</a>
+<a href="#6-tre-ci-publikowane-przez-u-ytkownik-w-moderacja-administratora">§ 6. Treści publikowane przez Użytkowników. Moderacja Administratora.</a>
+<a href="#7-usuni-cie-konta">§ 7. Usunięcie konta</a>
+<a href="#8-subskrypcje-odnawianie-i-anulowanie">§ 8. Subskrypcje - odnawianie i anulowanie</a>
+<a href="#9-wsp-praca-marketingowa-i-promocje">§ 9. Współpraca marketingowa i promocje</a>
+<a href="#10-reklamacje-i-kontakt-z-administratorem">§ 10. Reklamacje i kontakt z Administratorem</a>
+<a href="#11-postanowienia-ko-cowe">§ 11. Postanowienia końcowe</a></nav>
+    </aside>
 
-        <article class="card" style="margin-top: 28px;">
-          <h3>Archiwum wersji</h3>
-          <p>Archiwum wcześniejszych wersji dokumentu będzie dostępne po publikacji pierwszej finalnej wersji.</p>
-        </article>
+    <article class="legalCard">
+      <div class="eyebrow">Dokument prawny USLY</div>
+      <h1>Regulamin aplikacji mobilnej USLY</h1>
+
+      <div class="metaGrid">
+        <div><span>Wersja</span><strong>1.0</strong></div>
+        <div><span>Obowiązuje od</span><strong>01.07.2026</strong></div>
+        <div><span>Administrator</span><strong>PUGUA Sp. z o.o.</strong></div>
       </div>
-    </section>
+
+      <div class="notice">
+        Aktualna publiczna wersja dokumentu. Oryginał dokumentu prawnego jest archiwizowany wewnętrznie.
+      </div>
+
+      <section class="legalContent">
+        <h2 id="1-postanowienia-og-lne">§ 1. Postanowienia ogólne</h2>
+<p class="clause">1. Niniejszy Regulamin określa zasady korzystania z aplikacji mobilnej USLY („Aplikacja”).</p>
+<p class="clause">2. Właścicielem i administratorem Aplikacji jest PUGUA Sp. z o.o. z siedzibą pod adresem Byszewska 37R, 92-770 Łódź, KRS: 0001175035, NIP: 7282900556, zwana dalej „Administratorem”.</p>
+<p class="clause">3. Aplikacja służy do nawiązywania kontaktów pomiędzy użytkownikami, uczestnictwa w wydarzeniach oraz korzystania z funkcjonalności społecznościowych udostępnianych przez Administratora.</p>
+<p class="clause">4. Korzystanie z Aplikacji oznacza akceptację niniejszego Regulaminu oraz Polityki Prywatności. Korzystając z Aplikacji, użytkownik („Użytkownik”) wyraża zgodę na przestrzeganie niniejszych warunków, a rejestrując konto w Aplikacji potwierdza zawarcie Umowy z Administratorem na zasadach określonych w niniejszym Regulaminie.</p>
+<p class="clause">5. Zasady przetwarzania danych osobowych określa Polityka Prywatności dostępna w Aplikacji. Polityka Prywatności stanowi integralną część umowy z Administratorem. Korzystanie z Aplikacji oznacza zapoznanie się z Polityką Prywatności.</p>
+<p class="clause">6. Użytkownik powinien zapoznać się z warunkami Regulaminu przed rejestracją i rozpoczęciem korzystania z Aplikacji, a także odpowiednio przy kolejnych logowaniach.</p>
+<p class="clause">7. Administrator zastrzega sobie prawo do zmiany niniejszych warunków o czym każdorazowo zawiadomi Użytkowników. Jeśli użytkownik nie wyraża zgody na zmiany Regulaminu powinien zaprzestać korzystania z Aplikacji i usunąć zarejestrowane Konto.</p>
+<p class="clause">8. Definicje: Administrator – podmiot będący właścicielem oraz operatorem Aplikacji, Aplikacja - aplikacja mobilna USLY, umożliwiająca Użytkownikom nawiązywanie kontaktów, poznawanie nowych osób oraz uczestniczenie w interakcjach społecznościowych z innymi Użytkownikami w oparciu o lokalizację oraz funkcjonalności dostępne w aplikacji; Dane osobowe – wszelkie informacje o zidentyfikowanej lub możliwej do zidentyfikowania osobie fizycznej w rozumieniu obowiązujących przepisów o ochronie danych osobowych; Konto – indywidualny profil Użytkownika utworzony w Aplikacji, umożliwiający korzystanie z określonych funkcjonalności, w szczególności tworzenie profilu, komunikowanie się z innymi Użytkownikami oraz zarządzanie ustawieniami; Lokalizacja – dane geograficzne dotyczące położenia Urządzenia Użytkownika, pozyskiwane za zgodą Użytkownika w celu umożliwienia korzystania z funkcji Aplikacji związanych z wyszukiwaniem osób lub wydarzeń w pobliżu; Plan Płatności - model płatności, w formie subskrypcji, w którym Użytkownik płaci cykliczną opłatę miesięcznie za nieprzerwany dostęp do funkcji i treści Aplikacji. Zapewnia to automatyczne odnawianie dostępu bez konieczności każdorazowego zatwierdzania transakcji; Profil – zestaw informacji udostępnionych przez Użytkownika w ramach Konta Organizatora lub Towarzysza, w szczególności obejmujący dane identyfikacyjne, opis, miejsce, zdjęcie lub awatar, zainteresowania oraz inne informacje dobrowolnie wprowadzone przez Użytkownika; Organizator - Profil użytkownika Aplikacji, również jako miejsce / firma tworzące Wydarzenia, o których zamieszcza informacje w Aplikacji. Wchodząc w interakcję z innymi Użytkownikami poszukuje osób chcących wziąć aktywny udział w Wydarzeniu. Organizator ponosi pełną odpowiedzialność za realizację i przebieg Wydarzenia; Regulamin – dokument zamieszczony przez Administratora w Aplikacji, określający zasady korzystania z Aplikacji oraz prawa i obowiązki Użytkowników i Administratora, jego akceptacja stanowi zawarcie umowy na świadczenie Usługi; Trener - wyróżnik osoby reprezentującej Organizatora, występuje w Planach płatnych, w których Organizator może tworzyć więcej wydarzeń i wskazywać Trenera jako osobę prowadzącą dane wydarzenie; Urządzenie – urządzenie elektroniczne, w szczególności smartfon lub tablet, za pomocą którego Użytkownik uzyskuje dostęp do Aplikacji; Usługa – usługi świadczone drogą elektroniczną przez Administratora za pośrednictwem Aplikacji, polegające w szczególności na umożliwieniu Użytkownikom poznawania się, komunikacji oraz uczestnictwa w Interakcjach; Użytkownik - osoba fizyczna korzystająca z Aplikacji, która zainstalowała ją na swoim urządzeniu mobilnym oraz uzyskała dostęp do jej funkcjonalności po zarejestrowaniu konta w Aplikacji, posiadacz statusu “Towarzysz” lub “Organizator”; Interakcje – wszelkie działania podejmowane przez Użytkownika w Aplikacji lub między Użytkownikami, w szczególności obejmujące nawiązywanie kontaktów, wysyłanie wiadomości, reagowanie na profile innych Użytkowników, Wydarzenia - spotkania, aktywności i eventy organizowane przez Organizatora, których miejsce, czas i proponowany przebieg są publikowane w Aplikacji, umożliwiając udział innym Użytkownikom jako uczestnicy. Wydarzenia umożliwiają nawiązywanie relacji między Użytkownikami poza aplikacją. Administrator nie ponosi odpowiedzialności za realizację i przebieg Wydarzeń, jak również nie sprzedaje biletów i nie partycypuje w kosztach i/lub zyskach z Wydarzeń.</p>
+<h2 id="2-warunki-korzystania-z-aplikacji">§ 2. Warunki korzystania z Aplikacji</h2>
+<p class="clause">1. Korzystać z Aplikacji mogą wyłącznie osoby, które ukończyły 18 rok życia.</p>
+<p class="clause">2. W trakcie rejestracji Użytkownik zobowiązany jest do podania:</p>
+<p class="letter-item">a) adresu e-mail,</p>
+<p class="letter-item">b) nazwy użytkownika (nick),</p>
+<p class="letter-item">c) hasła,</p>
+<p class="letter-item">d) daty urodzenia,</p>
+<p class="letter-item">e) miasta - lokalizacji.</p>
+<p class="clause">3. Weryfikacja wieku odbywa się na podstawie oświadczenia składanego przez Użytkownika podczas rejestracji. W przypadku uzyskania informacji, że konto zostało utworzone przez osobę poniżej 18 roku życia, Administrator niezwłocznie usunie konto.</p>
+<p class="clause">4. Użytkownik zobowiązuje się podawać dane zgodne ze stanem faktycznym. Administrator nie ponosi odpowiedzialności za podanie przez Użytkownika nieprawdziwych danych.</p>
+<p class="clause">5. Publikując treści w Aplikacji Użytkownik udziela Administratorowi niewyłącznej, nieodpłatnej licencji na ich wyświetlanie, przechowywanie, kopiowanie techniczne oraz udostępnianie innym Użytkownikom wyłącznie w zakresie niezbędnym do funkcjonowania Aplikacji.</p>
+<p class="clause">6. Publikując zdjęcia, opisy, wydarzenia, komentarze, wiadomości przeznaczone do publikacji, materiały graficzne lub inne treści w Aplikacji, Użytkownik oświadcza, że posiada wszelkie prawa niezbędne do ich publikacji.</p>
+<p class="clause">7. Użytkownik udziela Administratorowi niewyłącznej, nieodpłatnej, obowiązującej przez okres publikacji treści w Aplikacji licencji na przechowywanie, zwielokrotnianie w zakresie technicznym, wyświetlanie, publiczne udostępnianie innym Użytkownikom, tworzenie kopii bezpieczeństwa, wyłącznie w zakresie niezbędnym do funkcjonowania Aplikacji.</p>
+<p class="clause">8. Administrator nie odpowiada za działania Użytkowników oraz treści publikowane przez Użytkowników. Administrator ma prawo zablokować konto Użytkownika w przypadku uzasadnionego podejrzenia naruszenia Regulaminu.</p>
+<p class="clause">9. Użytkownik oświadcza, że posiada prawa do publikowanych zdjęć, opisów i materiałów pojawiających się na jego Profilu.</p>
+<p class="clause">10. Administrator dokłada należytej staranności w celu zapewnienia prawidłowego działania Aplikacji, przy czym nie ponosi odpowiedzialności za ewentualne przerwy związane z działaniem aplikacji i partnerów zewnętrznych, w tym modernizacje i prace serwisowe. Administrator nie gwarantuje nieprzerwanej dostępności Aplikacji 24 godziny na dobę.</p>
+<p class="clause">11. Administrator nie odpowiada za treści publikowane przez Użytkowników, jak również osiągnięcia określonych rezultatów przez korzystanie z Aplikacji.</p>
+<p class="clause">12. Komunikacja pomiędzy Użytkownikami możliwa jest wyłącznie po zaakceptowaniu zaproszenia do znajomych. Użytkownik może:</p>
+<p class="letter-item">a) wysłać zaproszenie do znajomych,</p>
+<p class="letter-item">b) zaakceptować zaproszenie,</p>
+<p class="letter-item">c) odrzucić zaproszenie.</p>
+<p class="clause">13. Użytkownik nie może wysyłać wiadomości prywatnych do osób, które nie znajdują się na jego liście znajomych.</p>
+<p class="clause">14. Aplikacja umożliwia kontakt z Organizatorami Wydarzeń poprzez funkcjonalności przewidziane w Aplikacji.</p>
+<p class="clause">15. Zabrania się podszywania pod inne osoby, przedsiębiorców, organizacje lub Administratora.</p>
+<p class="clause">16. Niedopuszczalne jest wykorzystywanie funkcji AI do tworzenia treści wprowadzających innych Użytkowników w błąd, podszywania się pod osoby trzecie lub naruszania ich dóbr osobistych.</p>
+<h2 id="3-profil-u-ytkownika-i-plany-p-atno-ci">§ 3. Profil Użytkownika i Plany Płatności</h2>
+<p class="clause">1. Użytkownik w procesie rejestracji zaznacza interesujący go Profil, który decyduje o dostępnych funkcjach korzystania z Aplikacji oraz Pakiety Płatności. Opcje te można zmienić w dowolnym czasie.</p>
+<p class="clause">2. Użytkownik może założyć w Aplikacji następujący Profil:</p>
+<p class="letter-item">a) Towarzysz — wybierając dostęp do konta „Poznaj Ludzi”,</p>
+<p class="letter-item">b) Organizator — wybierając dostęp do konta „Twórz Wydarzenia”.</p>
+
+<p class="clause">3. Po dokonaniu wyboru Profilu, Użytkownik dokonuje wyboru Planu Płatności. Aplikacja dostępna jest w wersji bezpłatnej oraz w formie płatnych Planów — subskrypcji, odnawianych comiesięcznie. Ceny poszczególnych Planów mogą być zmienne. Każdorazowo ceny podawane są w opisie danego Planu w funkcjach Aplikacji. Szczegółowy zakres funkcjonalności, ceny, okresy rozliczeniowe oraz ewentualne rabaty prezentowane są w Aplikacji przed dokonaniem zakupu.</p>
+<p class="clause">Zakup planów płatnych realizowany jest za pośrednictwem sklepów Apple App Store oraz Google Play. Rozliczenia, odnawianie subskrypcji oraz anulowanie subskrypcji podlegają zasadom odpowiednio Apple App Store i Google Play.</p>
+
+<div class="planSection">
+  <h3>Plany Towarzysza</h3>
+  <div class="planGrid">
+    <section class="planCard"><h4>FREE</h4><ul><li>rozmowy 1:1 ze znajomymi</li><li>możliwość dołączania do jednej (1) grupy jednocześnie</li><li>brak możliwości tworzenia własnych grup</li><li>wybór do 5 zainteresowań w profilu</li><li>1 awatar AI miesięcznie</li></ul></section>
+    <section class="planCard"><h4>PLUS</h4><ul><li>rozmowy 1:1 ze znajomymi</li><li>tworzenie jednej (1) własnej grupy</li><li>dołączanie do maksymalnie trzech (3) grup jednocześnie</li><li>wybór do 10 zainteresowań w profilu</li><li>5 awatarów AI miesięcznie</li></ul></section>
+    <section class="planCard"><h4>PREMIUM</h4><ul><li>rozmowy 1:1 ze znajomymi</li><li>tworzenie do trzech (3) własnych grup</li><li>brak limitu dołączania do grup</li><li>możliwość dodawania znajomych do grup</li><li>wybór do 20 zainteresowań w profilu</li><li>15 awatarów AI miesięcznie</li><li>oznaczenie Trenera w maks. 2 zainteresowaniach</li></ul></section>
+    <section class="planCard"><h4>VIP</h4><ul><li>rozmowy 1:1 ze znajomymi</li><li>tworzenie grup bez limitu</li><li>brak limitów w grupach i kontaktach</li><li>dodawanie znajomych do grup</li><li>nieograniczona liczba zainteresowań w profilu</li><li>30 awatarów AI miesięcznie</li><li>oznaczenie Trenera w maks. 5 zainteresowaniach</li></ul></section>
+  </div>
+</div>
+
+<div class="planSection">
+  <h3>Plany Organizatora</h3>
+  <div class="planGrid">
+    <section class="planCard"><h4>Free</h4><ul><li>maksymalnie 2 aktywne Wydarzenia jednocześnie</li><li>podstawowy podgląd panelu: aktywne Wydarzenia</li><li>brak wiadomości do uczestników Wydarzeń</li><li>brak broadcastu i brak wyróżnienia Wydarzeń</li><li>1 hashtag/kategoria na Wydarzenie</li></ul></section>
+    <section class="planCard"><h4>PRO</h4><ul><li>maksymalnie 5 aktywnych Wydarzeń jednocześnie</li><li>rozszerzony podgląd panelu: aktywne Wydarzenia, szkice i zapisy łącznie</li><li>możliwość wysyłania wiadomości do uczestników Wydarzeń</li><li>brak broadcastu i brak wyróżnienia Wydarzeń</li><li>do 2 hashtagów/kategorii na Wydarzenie</li></ul></section>
+    <section class="planCard"><h4>PREMIUM</h4><ul><li>nielimitowana liczba aktywnych Wydarzeń</li><li>pełny podgląd panelu: aktywne Wydarzenia, szkice, zapisy łącznie i frekwencja</li><li>możliwość wysyłki broadcastu do uczestników</li><li>wyróżnienie wydarzeń w aplikacji</li><li>do 5 hashtagów/kategorii na Wydarzenie</li></ul></section>
+    <section class="planCard"><h4>ENTERPRISE</h4><ul><li>nielimitowana liczba aktywnych Wydarzeń</li><li>pełny podgląd panelu: aktywne Wydarzenia, szkice, zapisy łącznie i frekwencji</li><li>możliwość wysyłki broadcastu do uczestników</li><li>wyróżnienie wydarzeń w aplikacji</li><li>do 5 hashtagów/kategorii na Wydarzenie</li><li>obsługa wielu scenariuszy i działań niestandardowych</li><li>najpełniejszy zakres raportowania i komunikacji</li><li>zakres wdrożenia ustalany indywidualnie</li><li>indywidualny zakres hashtagów/kategorii wydarzeń</li></ul></section>
+  </div>
+</div>
+
+<p class="clause">4. Administrator może okresowo oferować promocje, rabaty lub okresy próbne, których warunki będą każdorazowo określane w Aplikacji.</p>
+<p class="clause">5. Rejestracja Konta: po wyborze Profilu i Planu Płatności oraz podaniu wymaganych informacji tworzone jest Konto Użytkownika.</p>
+<p class="letter-item">a) Konto Organizatora wymaga podania następujących danych: adres email, nazwa miejsca / firmy, hasło, miasto.</p>
+<p class="letter-item">b) Konto Towarzysza wymaga podania następujących danych: email, nick / imię publicznie widoczne, hasło, data urodzenia, lokalizacja / miasto.</p>
+<p class="clause">6. Konto zostanie zarejestrowane po wyrażeniu zgody na warunki Regulaminu i Polityki Prywatności oraz zweryfikowaniu adresu email. Aktywacja konta następuje poprzez kliknięcie linku aktywacyjnego przesłanego na adres e-mail podany podczas rejestracji.</p>
+<p class="clause">7. Funkcja resetu hasła wymaga potwierdzenia tożsamości za pomocą adresu e-mail przypisanego do konta.</p>
+<p class="clause">8. Administrator rejestruje informacje o aktywacji Konta oraz operacjach związanych z bezpieczeństwem w zakresie niezbędnym do ochrony użytkowników i systemu.</p>
+<p class="clause">9. Kolejne użycie Aplikacji wymagać będzie zalogowania w Aplikacji poprzez podanie Nazwy (nicku) i hasła.</p>
+<p class="clause">10. Dane Profilu: Użytkownik może dobrowolnie uzupełnić swój Profil o dane, które ułatwiają innym Użytkownikom nawiązać interakcję tj. logo, miasto, charakterystyka miejsca, klimat, kategoria i opis miejsca (w przypadku Organizatora) lub informacje dotyczące zainteresowań (w przypadku Towarzysza). Profil może zawierać w szczególności:</p>
+<p class="letter-item">a) zdjęcie profilowe,</p>
+<p class="letter-item">b) avatar wygenerowany przez narzędzia AI na podstawie opisu Użytkownika,</p>
+<p class="letter-item">c) automatycznie wygenerowany znak graficzny zawierający pierwszą literę imienia lub nazwy użytkownika,</p>
+<p class="letter-item">d) opis BIO o długości do 250 znaków,</p>
+<p class="letter-item">e) zainteresowania,</p>
+<p class="letter-item">f) dodatkowe informacje udostępniane przez Użytkownika.</p>
+<p>Użytkownik może w dowolnym momencie edytować opisy swojego Profilu. Wskazanie zainteresowań jest opcjonalne, lecz rekomendowane w celu poprawy jakości dopasowań i rekomendacji.</p>
+<p class="clause">11. Użytkownik może przełączać się pomiędzy dostępnymi Profilami Towarzysza i Organizatora w zakresie przewidzianym przez funkcjonalności Aplikacji. Szczegółowy zakres funkcji przypisanych do poszczególnych ról określany jest w interfejsie Aplikacji.</p>
+<h2 id="4-lokalizacja-i-zasi-g-wyszukiwania">§ 4. Lokalizacja i zasięg wyszukiwania</h2>
+<p class="clause">1. Aplikacja wykorzystuje dane lokalizacyjne podawane przez Użytkownika lub pozyskane za jego zgodą, zgodnie z zapisami zawartymi w Polityce Prywatności.</p>
+<p class="clause">2. Użytkownik może samodzielnie określić zasięg wyszukiwania innych Użytkowników i wydarzeń.</p>
+<p class="clause">3. Jeżeli Użytkownik nie określi własnego zasięgu, domyślny promień wyszukiwania w Aplikacji wynosi 50 km. Aplikacja nie podaje dokładnego adresu zamieszkania czy przebywania Użytkownika.</p>
+<p class="clause">4. Aplikacja udostępnia ekran „W Okolicy”, prezentujący Użytkowników oraz Wydarzenia na mapie.</p>
+<p class="clause">5. W ramach funkcji „W Okolicy” mogą być prezentowane:</p>
+<p class="letter-item">a) lokalizacja przybliżona Użytkownika,</p>
+<p class="letter-item">b) wiek Użytkownika,</p>
+<p class="letter-item">c) nazwa Użytkownika (nick),</p>
+<p class="letter-item">d) zdjęcie profilowe lub avatar,</p>
+<p class="letter-item">e) zainteresowania,</p>
+<p class="letter-item">f) procentowy poziom dopasowania.</p>
+<p class="clause">6. Widoczność danych zależy od ustawień prywatności oraz zgód udzielonych przez Użytkownika.</p>
+<p class="clause">7. Algorytm dopasowania ma charakter pomocniczy i nie stanowi zautomatyzowanego podejmowania decyzji wywołującego skutki prawne wobec Użytkownika.</p>
+<p class="clause">8. Lokalizacja prezentowana w Aplikacji może być przybliżona i nie wskazuje dokładnego miejsca pobytu Użytkownika.</p>
+<h2 id="5-wydarzenia">§ 5. Wydarzenia</h2>
+<p class="clause">1. W Aplikacji mogą być prezentowane Wydarzenia organizowane przez Użytkowników -Organizatorów. W opisie Wydarzenia należy podać informacje o Wydarzeniu, miejsce, datę, limit miejsc (opcjonalnie), cenę wydarzenia oraz hashtagi (zainteresowania), aby umożliwić znalezienie wydarzenia osobom trzecim o podobnych zainteresowaniach.</p>
+<p class="clause">2. Wydarzenia mogą mieć charakter bezpłatny lub płatny.</p>
+<p class="clause">3. Przy wydarzeniach płatnych (opcjonalnie) prezentowana może być konkretna - stała cena biletu lub przedział cenowy określony przez Organizatora.</p>
+<p class="clause">4. Administrator USLY nie jest organizatorem wydarzeń prezentowanych w Aplikacji, chyba że wyraźnie wskazano inaczej. USLY nie sprzedaje biletów i nie pobiera innych opłat za Wydarzenia — Organizator w Aplikacji może podać link do zewnętrznej sprzedaży /rezerwacji. Płatności za udział w Wydarzeniach dokonywane są bezpośrednio na rzecz Organizatora wydarzenia lub za pośrednictwem wskazanego przez niego operatora płatności.</p>
+<p class="clause">5. Administrator może usunąć Wydarzenie jeszcze przed publikacją lub po publikacji, jeżeli zachodzi uzasadnione podejrzenie, że wydarzenie jest fikcyjne, stanowi próbę oszustwa, narusza przepisy prawa lub niniejszy Regulamin.</p>
+<p class="clause">6. W sekcji „Dla Ciebie” prezentowane są Wydarzenia:</p>
+<p class="letter-item">a) znajdujące się w pobliżu Użytkownika,</p>
+<p class="letter-item">b) z wybranego regionu Polski,</p>
+<p class="letter-item">c) z całego kraju.</p>
+<p class="clause">7. W sekcji „Moje Wydarzenia” prezentowane są wydarzenia oznaczone przez Użytkownika.</p>
+<p class="clause">8. Użytkownik może otrzymywać przypomnienia oraz powiadomienia dotyczące wydarzeń zapisanych w sekcji „Moje Wydarzenia”.</p>
+<p class="clause">9. Aplikacja może umożliwiać dodawanie wydarzenia do kalendarza urządzenia Użytkownika.</p>
+<p class="clause">10. W przypadku zmiany istotnych danych wydarzenia przez Organizatora Aplikacja może automatycznie poinformować Użytkowników, którzy oznaczyli wydarzenie jako interesujące.</p>
+<p class="clause">11. Administrator może wysyłać komunikaty dotyczące bezpieczeństwa, ostrzeżenia przed nadużyciami oraz informacje o zmianach funkcjonowania Aplikacji.</p>
+<p class="clause">12. W ramach Planów płatnych Użytkownicy mogą tworzyć grupy związane z Wydarzeniami.</p>
+<p class="clause">13. Zabrania się publikowania w grupach linków promujących wydarzenia organizowane poza Aplikacją USLY. Administrator może usuwać treści naruszające powyższy zakaz.</p>
+<p class="clause">14. Administrator USLY w szczególności nie odpowiada za przebieg Wydarzeń, jakość organizacji Wydarzeń, zmianę terminu Wydarzenia, odwołanie Wydarzenia, zwroty środków za bilety itp.</p>
+<p class="clause">15. Akceptując niniejszy Regulamin Użytkownicy - Organizatorzy przejmują wszelkie ryzyko i odpowiedzialność za organizację, przebieg, bezpieczeństwo, wszelkie koszty i ewentualne roszczenia osób trzecich związane z Wydarzeniami. Wszelkie reklamacje dotyczące Wydarzeń należy kierować bezpośrednio do Organizatora.</p>
+<p class="clause">16. Użytkownik może określić preferowany przedział wiekowy innych Użytkowników, których profile i Wydarzenia będą prezentowane w Aplikacji. Preferencje wieku mają charakter pomocniczy i nie gwarantują wyświetlania wyłącznie treści spełniających wskazane kryteria.</p>
+<p class="clause">17. Wydarzenia archiwalne przechowywane są przez okres 1 miesiąca od zakończenia Wydarzenia.</p>
+<p class="clause">18. Organizator posiada dostęp wyłącznie do danych uczestników niezbędnych do organizacji Wydarzenia.</p>
+<p class="clause">19. Organizator nie otrzymuje adresów e-mail uczestników, chyba że przepisy prawa lub odrębna zgoda Użytkownika stanowią inaczej.</p>
+<p class="clause">20. Organizator widzi wyłącznie dane udostępnione w ramach funkcjonalności Aplikacji, w szczególności nick użytkownika.</p>
+<h2 id="6-tre-ci-publikowane-przez-u-ytkownik-w-moderacja-administratora">§ 6. Treści publikowane przez Użytkowników. Moderacja Administratora.</h2>
+<p class="clause">1. Użytkownik ponosi pełną odpowiedzialność za treści publikowane w Aplikacji.</p>
+<p class="clause">2. Zabronione jest publikowanie, udostępnianie, przesyłanie lub promowanie za pośrednictwem Aplikacji treści:</p>
+<p class="letter-item">a) niezgodnych z obowiązującym prawem,</p>
+<p class="letter-item">b) obraźliwych, znieważających, dyskryminujących lub nawołujących do nienawiści,</p>
+<p class="letter-item">c) nawołujących do przemocy, terroryzmu lub popełniania przestępstw,</p>
+<p class="letter-item">d) naruszających dobra osobiste, prawa autorskie, prawa własności intelektualnej lub inne prawa osób trzecich,</p>
+<p class="letter-item">e) zawierających szkodliwe, niebezpieczne, złośliwe lub wprowadzające w błąd linki, oprogramowanie lub pliki,</p>
+<p class="letter-item">f) mających charakter spamu, automatycznie generowanych wiadomości lub niezamówionej korespondencji,</p>
+<p class="letter-item">g) zawierających nagość, pornografię lub treści o charakterze erotycznym,</p>
+<p class="letter-item">h) promujących usługi seksualne, prostytucję, sponsoring seksualny lub inne usługi o podobnym charakterze,</p>
+<p class="letter-item">i) treści o charakterze jednoznacznie seksualnym,</p>
+<p class="letter-item">j) promujących, oferujących lub ułatwiających sprzedaż, zakup albo dystrybucję narkotyków, substancji psychoaktywnych, dopalaczy lub innych środków odurzających,</p>
+<p class="letter-item">k) promujących nielegalny obrót bronią, amunicją, materiałami wybuchowymi lub innymi niebezpiecznymi przedmiotami,</p>
+<p class="letter-item">l) promujących sprzedaż alkoholu, wyrobów tytoniowych, papierosów elektronicznych lub innych produktów objętych ograniczeniami wiekowymi w sposób niezgodny z obowiązującymi przepisami prawa,</p>
+<p class="letter-item">m) mających charakter oszustwa, phishingu, wyłudzenia danych, podszywania się pod inne osoby lub organizacje albo wprowadzających innych Użytkowników w błąd,</p>
+<p class="letter-item">n) zawierających reklamy, oferty handlowe lub materiały promocyjne publikowane bez zgody Administratora, w szczególności poprzez masowe wysyłanie wiadomości, zaproszeń lub niezamówionych ofert handlowych (spam),</p>
+<p class="letter-item">o) służących obchodzeniu zabezpieczeń Aplikacji, pozyskiwaniu danych innych Użytkowników lub zakłócaniu prawidłowego działania Aplikacji.</p>
+<p class="clause">3. Administrator prowadzi moderację treści publikowanych w Aplikacji, w tym dotyczące Wydarzeń. Administrator może odmówić publikacji wydarzenia albo usunąć wydarzenie opublikowane, jeżeli:</p>
+<p class="bullet-item">narusza Regulamin,</p>
+<p class="bullet-item">narusza przepisy prawa,</p>
+<p class="bullet-item">jest wydarzeniem fikcyjnym,</p>
+<p class="bullet-item">może prowadzić do oszustwa,</p>
+<p class="bullet-item">zagraża bezpieczeństwu Użytkowników,</p>
+<p class="bullet-item">narusza dobre obyczaje.</p>
+<p class="clause">4. W przypadku stwierdzenia naruszenia Regulaminu, Administrator może niezwłocznie usunąć treści naruszające niniejszy Regulamin, zablokować ich publikację, ograniczyć funkcjonalność konta lub zawiesić albo trwale usunąć konto Użytkownika, który dopuścił się naruszenia. W przypadkach wymaganych przepisami prawa Administrator może również przekazać odpowiednie informacje właściwym organom publicznym.</p>
+<p class="clause">5. Użytkownik przyjmuje do wiadomości, że treść naruszająca Regulamin może zostać oznaczona komunikatem: „Treść została zablokowana przez moderację USLY”.</p>
+<p class="clause">6. Administrator może czasowo ograniczyć lub trwale zablokować konto Użytkownika naruszającego Regulamin.</p>
+<p class="clause">7. Użytkownik ma prawo zwrócić się do Administratora o ponowną weryfikację decyzji dotyczącej usunięcia treści, ograniczenia funkcjonalności lub zablokowania Konta. Administrator rozpatruje zgłoszenie w terminie 14 dni od daty zgłoszenia i informuje Użytkownika o wyniku.</p>
+<p class="clause">8. Administrator prowadzi moderację treści publikowanych przez Użytkowników w celu zapewnienia bezpieczeństwa korzystania z Aplikacji oraz przestrzegania obowiązujących przepisów prawa i niniejszego Regulaminu.</p>
+<p class="clause">9. Każdy Użytkownik może zgłosić treść, profil, wiadomość, grupę lub Wydarzenie, które:</p>
+<p class="letter-item">a) naruszają przepisy prawa,</p>
+<p class="letter-item">b) naruszają postanowienia niniejszego Regulaminu,</p>
+<p class="letter-item">c) naruszają prawa lub dobra osobiste osób trzecich,</p>
+<p class="letter-item">d) mogą stanowić próbę oszustwa, wyłudzenia lub podszywania się pod inne osoby,</p>
+<p class="letter-item">e) zawierające mowę nienawiści, groźby, treści pornograficzne, przemoc lub inne treści zabronione.</p>
+<p class="clause">10. Zgłoszenia mogą być dokonywane za pośrednictwem funkcji „Zgłoś” dostępnej w Aplikacji lub drogą elektroniczną na adres e-mail Administratora.</p>
+<p class="clause">11. Administrator rozpatruje zgłoszenia w rozsądnym terminie, z uwzględnieniem charakteru sprawy, stopnia zagrożenia oraz obowiązujących przepisów prawa.</p>
+<p class="clause">12. Użytkownicy mogą zgłaszać wydarzenia, które ich zdaniem mają charakter fałszywy, oszukańczy lub naruszający Regulamin.</p>
+<p class="clause">13. Po dokonaniu oceny zgłoszenia Administrator może w szczególności:</p>
+<p class="letter-item">a) pozostawić zgłoszoną treść bez zmian,</p>
+<p class="letter-item">b) ograniczyć widoczność treści,</p>
+<p class="letter-item">c) usunąć treść,</p>
+<p class="letter-item">d) zablokować możliwość publikacji określonych treści,</p>
+<p class="letter-item">e) czasowo ograniczyć funkcjonalność konta,</p>
+<p class="letter-item">f) zawiesić lub trwale usunąć konto Użytkownika.</p>
+<p class="clause">14. Administrator może podejmować działania z własnej inicjatywy, jeżeli uzyska wiarygodną informację o naruszeniu prawa, Regulaminu lub zagrożeniu dla bezpieczeństwa innych Użytkowników.</p>
+<p class="clause">15. Użytkownik, którego treść została usunięta lub którego konto zostało ograniczone albo zablokowane, ma prawo zwrócić się do Administratora z wnioskiem o ponowne rozpatrzenie sprawy.</p>
+<p class="clause">16. Wniosek o ponowne rozpatrzenie decyzji należy przesłać w terminie 14 dni od dnia otrzymania informacji o zastosowanych działaniach, na adres e-mail Administratora wskazany w Regulaminie.</p>
+<p class="clause">17. Administrator rozpatruje odwołanie bez zbędnej zwłoki i informuje Użytkownika o wyniku ponownej weryfikacji.</p>
+<p class="clause">18. W przypadku uzasadnionego podejrzenia popełnienia przestępstwa, zagrożenia życia lub zdrowia, naruszenia praw osób trzecich albo gdy obowiązek taki wynika z przepisów prawa, Administrator może przekazać właściwym organom publicznym informacje niezbędne do wyjaśnienia sprawy, w zakresie wymaganym obowiązującymi przepisami.</p>
+<p class="clause">19. Administrator prowadzi działania moderacyjne z zachowaniem zasad rzetelności, proporcjonalności oraz niedyskryminowania Użytkowników, uwzględniając charakter naruszenia oraz konieczność zapewnienia bezpieczeństwa społeczności USLY.</p>
+<p class="clause">20. Administrator zastrzega sobie prawo do stosowania narzędzi wspomagających moderację, w tym automatycznych mechanizmów wykrywania spamu, fałszywych kont, podejrzanych aktywności oraz treści mogących naruszać Regulamin lub przepisy prawa. Ostateczne decyzje dotyczące zastosowania środków ograniczających podejmowane są z uwzględnieniem okoliczności konkretnej sprawy.</p>
+<p class="clause">21. Administrator publikuje niniejsze zasady moderacji w celu zapewnienia przejrzystości działania Aplikacji zgodnie z wymaganiami wynikającymi z przepisów Rozporządzenia Parlamentu Europejskiego i Rady (UE) 2022/2065 z dnia 19 października 2022 r. w sprawie jednolitego rynku usług cyfrowych (Digital Services Act – DSA).</p>
+<h2 id="7-usuni-cie-konta">§ 7. Usunięcie konta</h2>
+<p class="clause">1. Użytkownik może w dowolnym czasie samodzielnie usunąć konto poprzez funkcjonalności dostępne w Aplikacji lub poprzez kontakt z Administratorem.</p>
+<p class="clause">2. Usunięcie konta skutkuje utratą dostępu do funkcjonalności wymagających posiadania konta.</p>
+<p class="clause">3. Administrator ma prawo zablokować lub usunąć konto Użytkownika w razie naruszenia zasad Regulaminu.</p>
+<p class="clause">4. Administrator może usunąć Konto, które pozostaje nieaktywne przez okres przekraczający 24 miesiące po wcześniejszym poinformowaniu Użytkownika.</p>
+<p class="clause">5. Usunięcie, szyfrowanie i archiwizacja danych usuniętego konta odbywa się zgodnie z przyjętą Polityką Prywatności.</p>
+<h2 id="8-subskrypcje-odnawianie-i-anulowanie">§ 8. Subskrypcje - odnawianie i anulowanie</h2>
+<p class="clause">1. Płatne plany abonamentowe dostępne w Aplikacji nabywane są za pośrednictwem odpowiednio Apple App Store lub Google Play Store. Zakup subskrypcji oznacza wyrażenie zgody na pobranie opłaty zgodnie z cennikiem Planów Płatności obowiązującym w chwili zakupu oraz zasadami właściwego sklepu z aplikacjami.</p>
+<p class="clause">2. Subskrypcje mają charakter odnawialny.</p>
+<p class="clause">3. Opłata za kolejny okres abonamentowy pobierana jest automatycznie przez operatora sklepu (Apple lub Google), o ile Użytkownik nie wyłączy automatycznego odnawiania subskrypcji przed rozpoczęciem kolejnego okresu rozliczeniowego.</p>
+<p class="clause">4. Użytkownik może w każdej chwili zrezygnować z automatycznego odnawiania subskrypcji poprzez ustawienia swojego konta:</p>
+<p class="letter-item">a) w przypadku urządzeń z systemem iOS – w ustawieniach konta Apple ID,</p>
+<p class="letter-item">b) w przypadku urządzeń z systemem Android – w ustawieniach konta Google Play.</p>
+<p class="clause">5. Rezygnacja z automatycznego odnawiania subskrypcji nie powoduje zwrotu opłat już pobranych za bieżący okres rozliczeniowy. Użytkownik zachowuje dostęp do funkcji płatnego Planu do końca opłaconego okresu abonamentowego.</p>
+<p class="clause">6. Administrator nie pobiera płatności bezpośrednio od Użytkowników. Wszystkie płatności, rozliczenia, zwroty oraz reklamacje dotyczące transakcji realizowanych za pośrednictwem Apple App Store lub Google Play Store podlegają zasadom i procedurom obowiązującym u operatora danego sklepu.</p>
+<p class="clause">7. Jeżeli przepisy prawa lub regulamin operatora sklepu przewidują możliwość zwrotu środków za zakupioną subskrypcję, wniosek o zwrot powinien zostać złożony bezpośrednio do Apple lub Google zgodnie z obowiązującą procedurą.</p>
+<p class="clause">8. Zmiana planu abonamentowego z niższego na wyższy lub z wyższego na niższy może dotyczyć kolejnego okresu rozliczeniowego, zmiana nie następuje automatycznie, ale odbywa się zgodnie z zasadami obowiązującymi w Apple App Store lub Google Play Store. Administrator nie ma wpływu na sposób rozliczenia takiej zmiany.</p>
+<p class="clause">9. Administrator zastrzega sobie prawo do zmiany cen Planów abonamentowych. Zmiana cen nie wpływa na już opłacony okres subskrypcji i obowiązuje wyłącznie od kolejnego okresu rozliczeniowego, zgodnie z zasadami właściwego sklepu z aplikacjami.</p>
+<p class="clause">10. Usunięcie konta w Aplikacji nie powoduje automatycznego anulowania aktywnej subskrypcji. Użytkownik jest zobowiązany do samodzielnego wyłączenia automatycznego odnawiania subskrypcji w ustawieniach swojego konta Apple App Store lub Google Play Store.</p>
+<h2 id="9-wsp-praca-marketingowa-i-promocje">§ 9. Współpraca marketingowa i promocje</h2>
+<p class="clause">1. Administrator może prowadzić program ambasadorski, program poleceń oraz akcje promocyjne. Administrator może podejmować współprace marketingowe, partnerskie, sponsoringowe oraz streamingowe.</p>
+<p class="clause">2. Szczegółowe zasady każdej promocji, kodów promocyjnych lub programu ambasadorskiego określane są w odrębnych regulaminach.</p>
+<p class="clause">3. Korzystanie z promocji oznacza akceptację warunków danej akcji.</p>
+<p class="clause">4. Wszelkie działania marketingowe prowadzone za pośrednictwem Aplikacji muszą być zgodne z obowiązującym prawem, zasadami współżycia społecznego oraz standardami etycznymi.</p>
+<p class="clause">5. Zabronione jest promowanie treści o charakterze “pato-streamingu”, przemocy, mowy nienawiści lub innych treści mogących zaszkodzić Użytkownikom i wpływać na reputację Aplikacji i Administratora.</p>
+<h2 id="10-reklamacje-i-kontakt-z-administratorem">§ 10. Reklamacje i kontakt z Administratorem</h2>
+<p class="clause">1. Użytkownik ma prawo zgłaszać reklamacje dotyczące funkcjonowania Aplikacji, świadczonych usług, płatnych Planów abonamentowych (w zakresie pozostającym po stronie Administratora), działania konta, moderacji treści oraz innych spraw związanych z korzystaniem z Aplikacji.</p>
+<p class="clause">2. Reklamacje należy składać drogą elektroniczną na adres e-mail: kontakt@uslyapp.pl</p>
+<p class="clause">3. Reklamacja powinna zawierać co najmniej:</p>
+<p class="letter-item">a) imię lub nick Użytkownika,</p>
+<p class="letter-item">b) adres e-mail przypisany do Konta,</p>
+<p class="letter-item">c) opis zgłaszanego problemu,</p>
+<p class="letter-item">d) datę wystąpienia problemu, jeżeli jest znana,</p>
+<p class="letter-item">e) oczekiwany sposób rozwiązania sprawy (opcjonalnie).</p>
+<p class="clause">4. Administrator może zwrócić się do Użytkownika o przekazanie dodatkowych informacji niezbędnych do rozpatrzenia reklamacji.</p>
+<p class="clause">5. Administrator rozpatrzy reklamację bez zbędnej zwłoki, nie później niż w terminie 14 dni od dnia jej otrzymania. Jeżeli rozpatrzenie reklamacji w tym terminie okaże się niemożliwe z przyczyn niezależnych od Administratora, Użytkownik zostanie poinformowany o przyczynach opóźnienia oraz przewidywanym terminie udzielenia odpowiedzi.</p>
+<p class="clause">6. Odpowiedź na reklamację zostanie przesłana na adres e-mail, z którego została ona zgłoszona, chyba że Użytkownik wskaże inny sposób kontaktu.</p>
+<p class="clause">7. Reklamacje dotyczące płatności, subskrypcji, zwrotów środków oraz rozliczeń realizowanych za pośrednictwem Apple App Store lub Google Play Store rozpatrywane są zgodnie z zasadami obowiązującymi u operatora właściwego sklepu. Administrator nie jest stroną tych transakcji i nie ma możliwości dokonywania zwrotów środków pobranych przez Apple lub Google.</p>
+<p class="clause">8. Złożenie reklamacji nie ogranicza ani nie wyłącza uprawnień Użytkownika wynikających z obowiązujących przepisów prawa.</p>
+<h2 id="11-postanowienia-ko-cowe">§ 11. Postanowienia końcowe</h2>
+<p class="clause">1. Administrator może zmieniać Regulamin z ważnych przyczyn w tym organizacyjnych, prawnych lub technicznych.</p>
+<p class="clause">2. O zmianach Regulaminu Użytkownicy zostaną poinformowani za pośrednictwem Aplikacji.</p>
+<p class="clause">3. Administrator stosuje środki techniczne i organizacyjne mające na celu zapewnienie bezpieczeństwa danych i infrastruktury Aplikacji.</p>
+<p class="clause">4. Infrastruktura Aplikacji może korzystać z usług ochrony sieciowej, serwerów chmurowych, mechanizmów filtrowania ruchu oraz zabezpieczeń aplikacyjnych. Dostęp administracyjny do systemów jest ograniczony do osób upoważnionych.</p>
+<p class="clause">5. Operator stosuje mechanizmy kontroli dostępu oraz podziału uprawnień zgodnie z zasadą minimalnego dostępu.</p>
+<p class="clause">6. Dane lokalizacyjne przetwarzane są wyłącznie na potrzeby funkcjonowania Aplikacji i zabezpieczone przed nieuprawnionym wykorzystaniem.</p>
+<p class="clause">7. Administrator nie ponosi odpowiedzialności za niewykonanie lub nienależyte wykonanie Usług spowodowane działaniem siły wyższej, awarią operatorów telekomunikacyjnych, przerwami w dostawie energii elektrycznej, atakami cybernetycznymi lub innymi zdarzeniami pozostającymi poza jego kontrolą.</p>
+<p class="clause">8. Administrator może zakończyć świadczenie Usługi po wcześniejszym poinformowaniu Użytkowników.</p>
+<p class="clause">9. W sprawach nieuregulowanych Regulaminem zastosowanie mają przepisy prawa polskiego.</p>
+      </section>
+
+      <section class="changeLog">
+        <h2>Historia zmian</h2>
+        <p><strong>1.0</strong> — pierwsza publiczna wersja dokumentu opublikowana dla aplikacji USLY.</p>
+      </section>
+    </article>
   </main>
 
-  <footer>
-    <div class="wrap foot">
-      <span>© 2026 USLY</span>
-      <span>
-        <a href="/regulamin">Regulamin</a> ·
-        <a href="/polityka-prywatnosci">Polityka prywatności</a> ·
-        <a href="/kontakt">Kontakt</a>
-      </span>
+  <footer class="legalFooter">
+    <div class="wrap">
+      <p>© 2026 PUGUA Sp. z o.o. · USLY</p>
+      <p><a href="/regulamin">Regulamin</a> · <a href="/polityka-prywatnosci">Polityka prywatności</a> · <a href="/kontakt">Kontakt</a></p>
     </div>
   </footer>
+
+  <script src="/legal/legal.js"></script>
 </body>
 </html>

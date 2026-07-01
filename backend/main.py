@@ -1261,6 +1261,9 @@ def upload_media_to_r2(key: str, content: bytes, content_type: str) -> str:
 # =========================
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
+FRONTEND_LEGAL_DIR = FRONTEND_DIR / "legal"
+
+app.mount("/legal", StaticFiles(directory=str(FRONTEND_LEGAL_DIR)), name="frontend_legal")
 
 def _serve_frontend_index_file():
     return FileResponse(
@@ -1277,6 +1280,14 @@ def serve_landing_page():
     )
 
 
+@app.get("/en", include_in_schema=False)
+def serve_landing_en_page():
+    return FileResponse(
+        FRONTEND_DIR / "landing.en.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.get("/regulamin", include_in_schema=False)
 def serve_terms_page():
     return FileResponse(
@@ -1285,10 +1296,26 @@ def serve_terms_page():
     )
 
 
+@app.get("/regulamin/en", include_in_schema=False)
+def serve_terms_en_page():
+    return FileResponse(
+        FRONTEND_DIR / "regulamin.en.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.get("/polityka-prywatnosci", include_in_schema=False)
 def serve_privacy_page():
     return FileResponse(
         FRONTEND_DIR / "polityka-prywatnosci.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get("/privacy-policy", include_in_schema=False)
+def serve_privacy_en_page():
+    return FileResponse(
+        FRONTEND_DIR / "privacy-policy.html",
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 
