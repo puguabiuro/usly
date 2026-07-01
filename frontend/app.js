@@ -6192,6 +6192,7 @@ async function sendGroup() {
   const groupId = App.selectedGroupId;
   if (!isUserInGroup(groupId)) {
     toast(t("groupThread.joinToWrite"));
+    sendGroup.__busy = false;
     return;
   }
 
