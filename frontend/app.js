@@ -355,6 +355,7 @@ const I18N = {
     "chats.searchSub": "Po nazwie rozmowy",
     "chats.searchPlaceholder": "np. Alex",
     "chatThread.placeholder": "Napisz wiadomość.",
+    "chatThread.newMessages": "Nowe wiadomości",
     "chat.menu.title": "Menu czatu",
     "chat.menu.notificationsOn": "Włącz powiadomienia",
     "chat.menu.notificationsOff": "Wycisz rozmowę",
@@ -1261,6 +1262,7 @@ const I18N = {
     "chats.searchSub": "By conversation name",
     "chats.searchPlaceholder": "e.g. Alex",
     "chatThread.placeholder": "Write a message.",
+    "chatThread.newMessages": "New messages",
     "chat.menu.title": "Chat menu",
     "chat.menu.notificationsOn": "Turn on notifications",
     "chat.menu.notificationsOff": "Mute conversation",
@@ -5208,7 +5210,7 @@ async function renderChatThread() {
           divider.style.margin = "18px 0 10px";
           divider.innerHTML = `
             <div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div>
-            <div class="sectionSub" style="white-space:nowrap;">Nowe wiadomości</div>
+            <div class="sectionSub" style="white-space:nowrap;">${t("chatThread.newMessages")}</div>
             <div style="flex:1;height:1px;background:rgba(255,255,255,.10);"></div>
           `;
           box.appendChild(divider);
