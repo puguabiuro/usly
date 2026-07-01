@@ -571,6 +571,7 @@ const I18N = {
     "partnerEvent.closeShort": "Zamknij",
     "partnerEvent.archiveShort": "Zarchiwizuj",
     "partnerEvent.emptySection": "Brak wydarzeń w tej sekcji",
+    "partnerEvent.loading": "Ładowanie wydarzeń...",
     "partnerEvents.title": "Twoje wydarzenia",
     "partnerParticipants.title": "Uczestnicy wydarzenia",
     "partnerParticipants.notifyAll": "Powiadom wszystkich uczestników",
@@ -595,6 +596,7 @@ const I18N = {
     "partnerMessages.searchPlaceholder": "Szukaj rozmowy...",
     "partnerMessages.defaultUser": "Użytkownik",
     "partnerMessages.empty": "Brak rozmów",
+    "partnerMessages.loading": "Ładowanie rozmów...",
     "partnerMessages.loadFailed": "Nie udało się załadować rozmów",
     "notifications.title": "Powiadomienia",
     "notifications.empty": "Brak powiadomień",
@@ -649,6 +651,7 @@ const I18N = {
     "partnerParticipants.savedUsers": "Zapisani uczestnicy",
     "partnerParticipants.savedUsersSub": "Osoby, które kliknęły „wezmę udział” dla tego wydarzenia.",
     "partnerParticipants.empty": "Na razie nikt się nie zapisał.",
+    "partnerParticipants.loading": "Ładowanie uczestników...",
     "settings.title": "Ustawienia",
     "settings.profile": "Twój profil",
     "settings.profileSub": "Uzupełnij profil, aby poprawić dopasowania.",
@@ -1435,6 +1438,7 @@ const I18N = {
     "partnerEvent.closeShort": "Close",
     "partnerEvent.archiveShort": "Archive",
     "partnerEvent.emptySection": "No events in this section",
+    "partnerEvent.loading": "Loading events...",
     "partnerEvents.title": "Your events",
     "partnerParticipants.title": "Event participants",
     "partnerParticipants.notifyAll": "Notify all participants",
@@ -1459,6 +1463,7 @@ const I18N = {
     "partnerMessages.searchPlaceholder": "Search conversation...",
     "partnerMessages.defaultUser": "User",
     "partnerMessages.empty": "No conversations",
+    "partnerMessages.loading": "Loading conversations...",
     "partnerMessages.loadFailed": "Could not load conversations",
     "notifications.title": "Notifications",
     "notifications.empty": "No notifications yet",
@@ -1513,6 +1518,7 @@ const I18N = {
     "partnerParticipants.savedUsers": "Signed-up participants",
     "partnerParticipants.savedUsersSub": "People who selected “I’m going” for this event.",
     "partnerParticipants.empty": "No one has signed up yet.",
+    "partnerParticipants.loading": "Loading participants...",
     "settings.title": "Settings",
     "settings.profile": "Your profile",
     "settings.profileSub": "Complete your profile to improve matches.",
@@ -6842,7 +6848,7 @@ async function renderPartnerEventParticipants() {
   }
 
   card.style.display = "block";
-  list.innerHTML = '<div class="tMuted">Ładowanie...</div>';
+  list.innerHTML = `<div class="tMuted">${t("partnerParticipants.loading")}</div>`;
 
   try {
     const data = await apiFetch(`/partners/events/${App.selectedPartnerEventId}/participants?limit=50`);
@@ -8946,6 +8952,8 @@ function renderPartnerEvents() {
   const list = $("partnerEventsList");
   if (!list) return;
 
+  list.innerHTML = `<div class="tMuted">${t("partnerEvent.loading")}</div>`;
+
   const events = Array.isArray(App.partnerEvents) ? App.partnerEvents : [];
 
   const now = new Date();
@@ -9193,6 +9201,8 @@ async function renderPartnerMsgList() {
   if (!list) return;
 
   const q = ($("partnerMsgSearch")?.value || "").trim().toLowerCase();
+
+  list.innerHTML = `<div class="tMuted">${t("partnerMessages.loading")}</div>`;
 
   try {
     const data = await apiFetch("/messages/private");
