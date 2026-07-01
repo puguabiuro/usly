@@ -454,6 +454,7 @@ const I18N = {
     "eventDetail.shareSub": "Skopiuj link i prześlij go dalej.",
     "eventDetail.copyLink": "Skopiuj link",
     "eventDetail.copyToast": "Skopiowano link",
+    "eventDetail.copyFailed": "Nie udało się skopiować linku",
     "eventReport.modalTitle": "Zgłoś wydarzenie",
     "eventReport.reasonTitle": "Powód zgłoszenia",
     "eventReport.chooseReason": "Wybierz powód",
@@ -1347,6 +1348,7 @@ const I18N = {
     "eventDetail.shareSub": "Copy the link and share it.",
     "eventDetail.copyLink": "Copy link",
     "eventDetail.copyToast": "Link copied",
+    "eventDetail.copyFailed": "Could not copy link",
     "eventDetail.interestedNote": "If you select “I’m going”, the organizer will see you on the interested list.",
     "eventDetail.writeOrganizer": "Message the organizer",
     "groups.searchPlaceholder": "Search groups (e.g. #cinema)",
@@ -5708,11 +5710,38 @@ async function toggleInterestedEvent() {
   }
 }
 
+function getSelectedEventShareUrl() {
+  const eventId = App.selectedEventId ? encodeURIComponent(String(App.selectedEventId)) : "";
+  return eventId ? `https://uslyapp.pl/app?event=${eventId}` : "https://uslyapp.pl/app";
+}
+
+async function copySelectedEventLink() {
+  const url = getSelectedEventShareUrl();
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const input = document.createElement("input");
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+
+    toast(t("eventDetail.copyToast"));
+    closeModal();
+  } catch (err) {
+    toast(t("eventDetail.copyFailed"));
+  }
+}
+
 function openShare() {
   openModal(t("eventDetail.shareTitle"), `
     <div class="tStrong">${t("eventDetail.shareHeading")}</div>
     <div class="sectionSub mt10">${t("eventDetail.shareSub")}</div>
-    <button class="btn mt16" type="button" onclick="toast(t('eventDetail.copyToast')); closeModal();">${t("eventDetail.copyLink")}</button>
+    <button class="btn mt16" type="button" onclick="copySelectedEventLink()">${t("eventDetail.copyLink")}</button>
   `);
 }
 
