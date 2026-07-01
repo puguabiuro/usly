@@ -6801,10 +6801,17 @@ function clearPartnerEventForm() {
   resetPartnerEventFormMode();
   setPartnerEventInterestTags([]);
   renderPartnerEventInterestTags();
-  ["peTitle","peCity","peWhen","peDate","peTime","peWhere","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink","peCapacity"].forEach(id => {
+  ["peTitle","peCity","peWhen","peDate","peTime","peWhere","peAddress","peResolvedAddress","peLocationLat","peLocationLng","peInterest","peDesc","pePrice","pePriceFrom","pePriceTo","peTicketLink","peCapacity"].forEach(id => {
     const el = $(id);
     if (el) el.value = "";
   });
+  const placeHint = $("peSelectedPlaceHint");
+  if (placeHint) {
+    placeHint.textContent = "";
+    placeHint.hidden = true;
+  }
+  const placeResults = $("pePlaceResults");
+  if (placeResults) placeResults.innerHTML = "";
   if ($("pePaidMode")) $("pePaidMode").value = "free";
   if ($("peUnlimitedCapacity")) $("peUnlimitedCapacity").checked = true;
   syncPartnerPricingFields();
