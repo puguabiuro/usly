@@ -1328,6 +1328,14 @@ def serve_contact_page():
     )
 
 
+@app.get("/contact", include_in_schema=False)
+def serve_contact_en_page():
+    return FileResponse(
+        FRONTEND_DIR / "contact.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.get("/app", include_in_schema=False)
 @app.get("/app/", include_in_schema=False)
 @app.get("/reset-password", include_in_schema=False)
