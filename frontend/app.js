@@ -406,6 +406,8 @@ const I18N = {
     "events.forYou": "Dla Ciebie",
     "events.myEvents": "Moje wydarzenia",
     "events.searchPlaceholder": "Szukaj po nazwie / # (np. muzyka)",
+    "events.emptyForYou": "Na razie nie ma nowych wydarzeń dopasowanych do Twoich zainteresowań.",
+    "events.emptyFollowed": "Nie masz jeszcze zapisanych ani obserwowanych wydarzeń.",
     "eventDetail.kicker": "Wydarzenie",
     "eventDetail.description": "Opis wydarzenia",
     "eventDetail.place": "Miejsce",
@@ -1305,6 +1307,8 @@ const I18N = {
     "events.forYou": "For you",
     "events.myEvents": "My events",
     "events.searchPlaceholder": "Search by name / # (e.g. music)",
+    "events.emptyForYou": "There are no new events matching your interests yet.",
+    "events.emptyFollowed": "You do not have any saved or followed events yet.",
     "eventDetail.kicker": "Event",
     "eventDetail.description": "Event description",
     "eventDetail.place": "Place",
@@ -8585,6 +8589,11 @@ function renderEventsList() {
       e.title.toLowerCase().includes(q) ||
       e.interest.toLowerCase().includes(qClean)
     );
+  }
+
+  if (!events.length) {
+    list.innerHTML = `<div class="tMuted">${t(App.eventsTab === "followed" ? "events.emptyFollowed" : "events.emptyForYou")}</div>`;
+    return;
   }
 
   list.innerHTML = events.map(ev => `
