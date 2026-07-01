@@ -410,6 +410,7 @@ const I18N = {
     "events.emptyFollowed": "Nie masz jeszcze zapisanych ani obserwowanych wydarzeń.",
     "eventDetail.kicker": "Wydarzenie",
     "eventDetail.description": "Opis wydarzenia",
+    "eventDetail.emptyDescription": "Organizator nie dodał jeszcze opisu wydarzenia.",
     "eventDetail.place": "Miejsce",
     "eventDetail.mapPlaceholder": "Dokładny adres pojawi się tutaj.",
     "eventDetail.organizer": "Organizator",
@@ -1314,6 +1315,7 @@ const I18N = {
     "events.emptyFollowed": "You do not have any saved or followed events yet.",
     "eventDetail.kicker": "Event",
     "eventDetail.description": "Event description",
+    "eventDetail.emptyDescription": "The organizer has not added an event description yet.",
     "eventDetail.place": "Place",
     "eventDetail.mapPlaceholder": "The exact address will appear here.",
     "eventDetail.locationSaved": "Event location saved on the map",
@@ -5408,7 +5410,7 @@ function openEvent(eventId) {
       .forEach(tag => chips.appendChild(makeChip(`#${tag}`, null)));
   }
 
-  safeSetText("evDesc", ev.desc);
+  safeSetText("evDesc", ev.desc || t("eventDetail.emptyDescription"));
 
   const organizerName = ev.organizer?.name || t("eventDetail.organizer");
   const organizerMeta = [
