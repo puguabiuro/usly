@@ -292,15 +292,15 @@
       <div class="wrap">
         <span class="eyebrow">💌 Contact</span>
         <h1>Write to USLY</h1>
-        <p class="sectionLead">Masz pytanie, pomysł na współpracę albo chcesz zgłosić sprawę dotyczącą aplikacji? Wybierz temat i zostaw wiadomość.</p>
+        <p class="sectionLead">Have a question, an idea for cooperation, or want to report something about the app? Choose a topic and leave a message.</p>
 
         <div class="contactShell">
           <article class="contactCard">
             <form id="contactForm">
               <div class="contactGrid">
                 <div class="contactField">
-                  <label>Imię lub nazwa firmy</label>
-                  <input name="name" type="text" placeholder="Np. Agnieszka Kowalska / Klub Muzyczny XYZ" />
+                  <label>Name or company name</label>
+                  <input name="name" type="text" placeholder="e.g. Alex Smith / Music Club XYZ" />
                 </div>
 
                 <div class="contactField">
@@ -309,27 +309,27 @@
                 </div>
 
                 <div class="contactField full">
-                  <label>Temat wiadomości</label>
+                  <label>Message subject</label>
                   <select name="topic" required>
-                    <option value="">Wybierz temat</option>
+                    <option value="">Choose a subject</option>
                     <option value="general">I want to ask about USLY</option>
-                    <option value="organizer">Jestem Organizatorem</option>
-                    <option value="cooperation">Współpraca / media</option>
+                    <option value="organizer">I am an Organiser</option>
+                    <option value="cooperation">Cooperation / media</option>
                     <option value="privacy">Legal or privacy matter</option>
-                    <option value="support">Pomoc techniczna</option>
+                    <option value="support">Technical support</option>
                     <option value="other">Inne</option>
                   </select>
                 </div>
 
                 <div class="contactField full">
-                  <label>Wiadomość</label>
-                  <textarea name="message" placeholder="Napisz, w czym możemy pomóc..." required></textarea>
+                  <label>Message</label>
+                  <textarea name="message" placeholder="Write how we can help..." required></textarea>
                 </div>
               </div>
 
               <div class="contactActions">
                 <button class="btn primary" type="submit">Send message ✈️</button>
-                <p class="contactNote">Twoje dane są u nas bezpieczne. Odpowiemy najszybciej, jak będzie to możliwe.</p>
+                <p class="contactNote">Your data is safe with us. We will reply as soon as possible.</p>
               </div>
 
               <p id="contactStatus" class="contactNote" style="margin-top: 16px; font-weight: 900;"></p>
@@ -337,7 +337,7 @@
           </article>
 
           <aside class="contactCard contactSide">
-            <h3>Jak możemy pomóc?</h3>
+            <h3>How can we help?</h3>
 
             <div class="contactTopic">
               <div class="contactIcon">✨</div>
@@ -346,12 +346,12 @@
 
             <div class="contactTopic">
               <div class="contactIcon">🎟️</div>
-              <div><strong>Jestem Organizatorem</strong><span>Wydarzenia, miejsca i współpraca</span></div>
+              <div><strong>I am an Organiser</strong><span>Events, venues and cooperation</span></div>
             </div>
 
             <div class="contactTopic">
               <div class="contactIcon">🤝</div>
-              <div><strong>Współpraca / media</strong><span>Partnerstwa, media, influencerzy</span></div>
+              <div><strong>Cooperation / media</strong><span>Partnerships, media, influencers</span></div>
             </div>
 
             <div class="contactTopic">
@@ -361,7 +361,7 @@
 
             <div class="contactTopic">
               <div class="contactIcon">🎧</div>
-              <div><strong>Pomoc techniczna</strong><span>Problemy z aplikacją, wsparcie</span></div>
+              <div><strong>Technical support</strong><span>App issues and support</span></div>
             </div>
           </aside>
         </div>
@@ -411,7 +411,7 @@
         contactForm.innerHTML = `
           <div style="text-align:center; padding: 34px 20px;">
             <div style="font-size: 44px; margin-bottom: 14px;">✅</div>
-            <h3 style="margin-bottom: 10px;">Wiadomość została wysłana</h3>
+            <h3 style="margin-bottom: 10px;">Message została wysłana</h3>
             <p class="contactNote" style="max-width: 520px; margin: 0 auto 18px;">
               Thank you for contacting USLY. We have also sent a confirmation to the email address provided.
             </p>

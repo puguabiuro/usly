@@ -49,8 +49,10 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 6px;
       min-height: 38px;
       padding: 0 14px;
+      white-space: nowrap;
       border-radius: 999px;
       border: 1px solid rgba(33,19,27,.12);
       background: rgba(255,255,255,.82);
@@ -208,7 +210,7 @@
       <nav class="navLinks">
         <a href="#jak-dziala">Jak działa</a>
         <a href="#dla-kogo">Dla kogo</a>
-        <a class="langSwitch" href="/en" aria-label="Switch language to English">🌐 English</a><a class="btn primary" href="/app">Otwórz aplikację</a>
+        <a class="langSwitch" href="/en" aria-label="Switch language to English"><span aria-hidden="true">🌐</span><span>English</span></a><a class="btn primary" href="/app">Otwórz aplikację</a>
       </nav>
     </div>
   </header>
