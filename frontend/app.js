@@ -1904,6 +1904,8 @@ const App = {
   isLoggedIn: false,
   history: ["S0_WELCOME"],
   currentView: "S0_WELCOME",
+  authMode: "register",      // register | login
+  authMethod: "email",       // email | google | apple
   resetToken: "",
   resetEmail: "",
   partnerEventFormMode: "create", // create | draft_edit | published_edit | archived_edit
@@ -2422,6 +2424,17 @@ function selectRole(role) {
 
   // Re-render pills etc.
   renderAll();
+}
+
+function selectAuthChoice(mode, role, method) {
+  if ((mode !== "login" && mode !== "register") || (role !== "user" && role !== "partner")) return;
+
+  App.authMode = mode;
+  App.authMethod = method === "google" || method === "apple" ? method : "email";
+  selectRole(role);
+
+  const viewId = mode === "login" ? "S1_LOGIN" : "S2_REGISTER";
+  go(viewId);
 }
 
 /* ------------------------- Login / Signup -------------------------- */

@@ -2287,65 +2287,115 @@ section#S11_PLANS .promoCodeRow .btn{
         </nav>
   
         <!-- =========================================================
-        S0 WELCOME / START (PL ONLY)
+        S0 WELCOME / START
         ========================================================== -->
         <section class="view active" id="S0_WELCOME" aria-label="Start">
           <header class="topbar">
-            <div class="ghostBtn" aria-hidden="true">◀</div>
-            <div class="brandCenter">
-              <div class="brandRow">
-                <img id="brandLogo" class="brandLogo" src="./USLY logo.png" alt="USLY logo" />
-                <div class="brandText">
-                  <div class="brandName">USLY</div>
-                  <div class="brandTagline" data-i18n="welcome.tagline">Poznawaj ludzi przez zainteresowania, nie wygląd.</div>
-                </div>
-              </div>
+            <div class="ghostBtn" aria-hidden="true"></div>
+            <div class="brandCenter small">
+              <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
             </div>
-            <!-- brak języka (PL only) -->
-            <div class="ghostBtn" aria-hidden="true">•</div>
+            <div class="ghostBtn" aria-hidden="true"></div>
           </header>
-  
+
           <div class="content hero">
             <div class="heroCard">
               <div class="heroHeader">
-                <div class="heroHello" data-i18n="welcome.title">Twoje miasto. Twoi ludzie.</div>
-                <div class="heroSub" data-i18n="welcome.subtitle">Ludzie, rozmowy i wydarzenia oparte na zainteresowaniach — nie na przypadku.</div>
+                <img class="brandLogo" src="./USLY logo.png" alt="USLY logo" />
+                <div class="heroHello" data-i18n="welcome.title">USLY</div>
+                <div class="heroSub" data-i18n="welcome.subtitle">Poznawaj ludzi. Twórz wydarzenia. Buduj swoją społeczność.</div>
                 <div class="langSwitchWelcome" aria-label="Wybór języka" data-i18n-aria-label="welcome.langAria">
                   <button class="langBtn" data-lang-choice="pl" type="button" onclick="setLanguage('pl')">PL</button>
                   <button class="langBtn" data-lang-choice="en" type="button" onclick="setLanguage('en')">EN</button>
                 </div>
               </div>
-  
-              <div class="segLabel" data-i18n="welcome.choose_account">Wybierz konto</div>
-              <div class="seg wide" role="tablist" aria-label="Tryb konta">
-                <button class="segBtn on" id="roleUserBtn" type="button" onclick="selectRole('user')" data-i18n="welcome.user">Poznaj ludzi</button>
-                <button class="segBtn" id="rolePartnerBtn" type="button" onclick="selectRole('partner')" data-i18n="welcome.partner">Twórz wydarzenia</button>
+
+              <div class="row mt16">
+                <button class="btn" type="button" onclick="go('S0_REGISTER_CHOICE')" data-i18n="welcome.start">Zacznij</button>
+                <button class="btn secondary" type="button" onclick="go('S0_LOGIN_CHOICE')" data-i18n="welcome.have_account">Mam konto</button>
               </div>
-  
-              <div class="heroBadges" aria-hidden="true" style="display:none;">
-                <div class="pill" data-i18n="landing.pill.interests">Poznawaj po zainteresowaniach</div>
-                <div class="pill" data-i18n="landing.pill.vibe">Spotykaj ludzi w swoim klimacie</div>
-                <div class="pill" data-i18n="landing.pill.places">Wychodź do miejsc, które czujesz</div>
-              </div>
-  
-              <div class="row mt12">
-                <button class="btn" type="button" onclick="go('S2_REGISTER')" data-i18n="welcome.start">Zacznij</button>
-                <button class="btn secondary" type="button" onclick="go('S1_LOGIN')" data-i18n="welcome.have_account">Mam konto</button>
-              </div>
-  
-              <div class="mt12 center promoLine">
-                <span data-i18n="welcome.promo">Poznawaj miasto przez ludzi, z którymi naprawdę masz flow.</span>
-              </div>
-            </div>
-  
-            <div class="card mt16">
-              <div class="sectionTitle" data-i18n="plans.title">Plany</div>
-              <div class="sectionSub" data-i18n="welcome.plans_subtitle">Wybierz tryb, który najlepiej pasuje do Ciebie.</div>
-              <button class="btn secondary" type="button" onclick="go('S11_PLANS')" data-i18n="welcome.see_plans">Zobacz plany</button>
             </div>
           </div>
         </section>
-  
+
+        <!-- =========================================================
+        S0 REGISTER CHOICE
+        ========================================================== -->
+        <section class="view" id="S0_REGISTER_CHOICE" aria-label="Wybór rejestracji">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+            <div class="brandCenter small">
+              <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+            </div>
+            <div class="ghostBtn" aria-hidden="true"></div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard profileSummaryCard">
+              <div class="sectionTitle" data-i18n="auth.registerChoice.title">Jak chcesz korzystać z USLY?</div>
+              <div class="sectionSub" data-i18n="auth.registerChoice.subtitle">Wybierz rolę i metodę rejestracji.</div>
+
+              <div class="card mt16">
+                <div class="sectionTitle" data-i18n="role.user">Towarzysz</div>
+                <div class="sectionSub" data-i18n="auth.role.userDesc">Dla osób, które chcą poznawać ludzi, dołączać do wydarzeń i budować lokalną społeczność.</div>
+                <button class="btn mt12" type="button" onclick="selectAuthChoice('register','user','email')" data-i18n="auth.method.email">Email</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','user','google')" data-i18n="auth.method.google">Google</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','user','apple')" data-i18n="auth.method.apple">Apple</button>
+              </div>
+
+              <div class="card mt16">
+                <div class="sectionTitle" data-i18n="role.partner">Organizator</div>
+                <div class="sectionSub" data-i18n="auth.role.partnerDesc">Dla miejsc, marek i osób, które tworzą wydarzenia, zajęcia lub lokalne inicjatywy.</div>
+                <button class="btn mt12" type="button" onclick="selectAuthChoice('register','partner','email')" data-i18n="auth.method.email">Email</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','partner','google')" data-i18n="auth.method.google">Google</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','partner','apple')" data-i18n="auth.method.apple">Apple</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+        S0 LOGIN CHOICE
+        ========================================================== -->
+        <section class="view" id="S0_LOGIN_CHOICE" aria-label="Wybór logowania">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+            <div class="brandCenter small">
+              <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+            </div>
+            <div class="ghostBtn" aria-hidden="true"></div>
+          </header>
+
+          <div class="content">
+            <div class="heroCard profileSummaryCard">
+              <div class="sectionTitle" data-i18n="auth.loginChoice.title">Jak chcesz się zalogować?</div>
+              <div class="sectionSub" data-i18n="auth.loginChoice.subtitle">Wybierz rolę i metodę logowania.</div>
+
+              <div class="card mt16">
+                <div class="sectionTitle" data-i18n="role.user">Towarzysz</div>
+                <div class="sectionSub" data-i18n="auth.role.userDesc">Dla osób, które chcą poznawać ludzi, dołączać do wydarzeń i budować lokalną społeczność.</div>
+                <button class="btn mt12" type="button" onclick="selectAuthChoice('login','user','email')" data-i18n="auth.method.email">Email</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','user','google')" data-i18n="auth.method.google">Google</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','user','apple')" data-i18n="auth.method.apple">Apple</button>
+              </div>
+
+              <div class="card mt16">
+                <div class="sectionTitle" data-i18n="role.partner">Organizator</div>
+                <div class="sectionSub" data-i18n="auth.role.partnerDesc">Dla miejsc, marek i osób, które tworzą wydarzenia, zajęcia lub lokalne inicjatywy.</div>
+                <button class="btn mt12" type="button" onclick="selectAuthChoice('login','partner','email')" data-i18n="auth.method.email">Email</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','partner','google')" data-i18n="auth.method.google">Google</button>
+                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','partner','apple')" data-i18n="auth.method.apple">Apple</button>
+              </div>
+
+              <div class="mt16 center">
+                <span class="link" onclick="go('S0_REGISTER_CHOICE')" data-i18n="login.no_account">Nie masz konta? Zarejestruj się</span>
+                <span class="dotSep"> · </span>
+                <span class="link" onclick="openForgot()" data-i18n="login.forgot_password">Nie pamiętasz hasła?</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- =========================================================
         S1 LOGIN (PL ONLY)
         ========================================================== -->
