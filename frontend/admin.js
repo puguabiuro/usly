@@ -1052,7 +1052,6 @@ async function adminAddReportNote(reportType, ticket, textareaId, reopen = null)
 
 
 async function adminSendUserWarning(userId, reportTicket) {
-  console.log("adminSendUserWarning clicked", { userId, reportTicket });
   try {
     const action = document.getElementById("userWarningAction")?.value || "warning_profile";
 
@@ -1062,9 +1061,8 @@ async function adminSendUserWarning(userId, reportTicket) {
       warning_behavior: "Ostrzeżenie dotyczące zachowania",
     };
 
-    console.log("sending warning request", action);
 
-    const res = await window.apiFetch(`/admin/reports/user/${encodeURIComponent(reportTicket)}/action`, {
+    await window.apiFetch(`/admin/reports/user/${encodeURIComponent(reportTicket)}/action`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1073,7 +1071,6 @@ async function adminSendUserWarning(userId, reportTicket) {
       }),
     });
 
-    console.log("warning request success", res);
 
     adminToast("Ostrzeżenie zapisane.");
     await reloadAdminReports();
