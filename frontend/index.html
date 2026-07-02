@@ -2290,30 +2290,30 @@ section#S11_PLANS .promoCodeRow .btn{
         S0 WELCOME / START
         ========================================================== -->
         <section class="view active" id="S0_WELCOME" aria-label="Start">
-          <header class="topbar">
-            <div class="ghostBtn" aria-hidden="true"></div>
-            <div class="brandCenter small">
-              <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
-            </div>
-            <div class="ghostBtn" aria-hidden="true"></div>
-          </header>
+          <div class="uslyWelcomePremium">
+            <main class="uslyWelcomeHero">
+              <img class="uslyWelcomeLogo" src="./USLY logo.png" alt="USLY logo" />
 
-          <div class="content hero">
-            <div class="heroCard">
-              <div class="heroHeader">
-                <img class="brandLogo" src="./USLY logo.png" alt="USLY logo" />
-                <div class="heroHello" data-i18n="welcome.title">USLY</div>
-                <div class="heroSub" data-i18n="welcome.subtitle">Poznawaj ludzi. Twórz wydarzenia. Buduj swoją społeczność.</div>
-                <div class="langSwitchWelcome" aria-label="Wybór języka" data-i18n-aria-label="welcome.langAria">
-                  <button class="langBtn" data-lang-choice="pl" type="button" onclick="setLanguage('pl')">PL</button>
-                  <button class="langBtn" data-lang-choice="en" type="button" onclick="setLanguage('en')">EN</button>
-                </div>
+              <div class="uslyWelcomeClaim">
+                <div data-i18n="welcome.claim.line1">Twoje miasto.</div>
+                <div data-i18n="welcome.claim.line2">Twoi ludzie.</div>
               </div>
 
-              <div class="row mt16">
-                <button class="btn" type="button" onclick="go('S0_REGISTER_CHOICE')" data-i18n="welcome.start">Zacznij</button>
-                <button class="btn secondary" type="button" onclick="go('S0_LOGIN_CHOICE')" data-i18n="welcome.have_account">Mam konto</button>
+              <div class="uslyWelcomeValue">
+                <div data-i18n="welcome.value.line1">Poznawaj ludzi.</div>
+                <div data-i18n="welcome.value.line2">Twórz wydarzenia.</div>
+                <div data-i18n="welcome.value.line3">Buduj społeczność.</div>
               </div>
+
+              <div class="langSwitchWelcome uslyWelcomeLang" aria-label="Wybór języka" data-i18n-aria-label="welcome.langAria">
+                <button class="langBtn" data-lang-choice="pl" type="button" onclick="setLanguage('pl')">PL</button>
+                <button class="langBtn" data-lang-choice="en" type="button" onclick="setLanguage('en')">EN</button>
+              </div>
+            </main>
+
+            <div class="uslyWelcomeActions">
+              <button class="btn uslyWelcomePrimary" type="button" onclick="go('S0_REGISTER_CHOICE')" data-i18n="welcome.start">Zacznij</button>
+              <button class="btn secondary uslyWelcomeSecondary" type="button" onclick="go('S0_LOGIN_CHOICE')" data-i18n="welcome.have_account">Mam konto</button>
             </div>
           </div>
         </section>

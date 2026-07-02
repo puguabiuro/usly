@@ -5205,3 +5205,109 @@ button[id^="notifBtn"]:active{
     padding-bottom:220px !important;
   }
 }
+
+/* Premium Welcome clean final */
+#S0_WELCOME{
+  padding: 0;
+  overflow: hidden;
+}
+
+#S0_WELCOME .uslyWelcomePremium{
+  height: 100%;
+  min-height: 100%;
+  padding: calc(28px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 34px;
+  overflow: hidden;
+}
+
+#S0_WELCOME .uslyWelcomeHero{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#S0_WELCOME .uslyWelcomeLogo{
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+  border-radius: 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 18px 42px rgba(0,0,0,.34);
+}
+
+#S0_WELCOME .uslyWelcomeClaim{
+  font-size: clamp(28px, 7.2vw, 36px);
+  line-height: 1.08;
+  letter-spacing: -1.2px;
+  font-weight: 950;
+  color: rgba(255,255,255,.98);
+  margin-bottom: 18px;
+}
+
+#S0_WELCOME .uslyWelcomeValue{
+  font-size: 15.5px;
+  line-height: 1.42;
+  font-weight: 700;
+  letter-spacing: -.2px;
+  color: rgba(255,255,255,.76);
+}
+
+#S0_WELCOME .uslyWelcomeLang{
+  margin-top: 26px;
+}
+
+#S0_WELCOME .uslyWelcomeActions{
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+#S0_WELCOME .uslyWelcomeActions .btn{
+  width: 100%;
+  min-height: 52px;
+  border-radius: 20px;
+  font-size: 15px;
+}
+
+#S0_WELCOME .uslyWelcomeSecondary{
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.18);
+}
+
+@media (max-height: 740px){
+  #S0_WELCOME .uslyWelcomePremium{
+    gap: 24px;
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  #S0_WELCOME .uslyWelcomeLogo{
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    margin-bottom: 22px;
+  }
+
+  #S0_WELCOME .uslyWelcomeClaim{
+    font-size: clamp(26px, 6.8vw, 32px);
+    margin-bottom: 14px;
+  }
+
+  #S0_WELCOME .uslyWelcomeValue{
+    font-size: 14.5px;
+    line-height: 1.36;
+  }
+
+  #S0_WELCOME .uslyWelcomeLang{
+    margin-top: 20px;
+  }
+
+  #S0_WELCOME .uslyWelcomeActions .btn{
+    min-height: 48px;
+  }
+}
+
