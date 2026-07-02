@@ -2403,63 +2403,38 @@ section#S11_PLANS .promoCodeRow .btn{
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
-              <div class="brandRow">
-                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
-                <div class="brandText">
-                  <div class="brandName">USLY</div>
-                  <div class="brandTagline" id="roleLabelLogin">Towarzysz</div>
-                </div>
-              </div>
+              <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
             </div>
-            <div class="ghostBtn" aria-hidden="true">•</div>
+            <div class="ghostBtn" aria-hidden="true"></div>
           </header>
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle" data-i18n="login.title">Zaloguj się</div>
-              <div class="sectionSub" data-i18n="login.subtitle">Zaloguj się, aby wejść do swojego konta.</div>
-  
-              <label class="mt12" data-i18n="login.mode">Tryb</label>
-              <div class="seg wide">
-                <button class="segBtn on" id="roleUserBtnLogin" type="button" onclick="selectRole('user')" data-i18n="login.user">Towarzysz</button>
-                <button class="segBtn" id="rolePartnerBtnLogin" type="button" onclick="selectRole('partner')" data-i18n="login.partner">Organizator</button>
-              </div>
+              <div class="sectionTitle" id="authLoginRoleTitle">Towarzysz</div>
+              <div class="sectionSub" id="authLoginMethodTitle">Logowanie przez adres e-mail</div>
+
   
               <label class="mt12" data-i18n="login.email">Email / nick</label>
               <input id="loginId" type="text" placeholder="np. ola_88 / ola@email.com" data-i18n-placeholder="login.email_placeholder" autocomplete="username" />
   
-              <label data-i18n="login.password">Hasło</label>
-              <div class="passwordField">
+              <div id="loginPasswordBlock">
+                <label data-i18n="login.password">Hasło</label>
+                <div class="passwordField">
                 <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
                 <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('loginPass', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                </div>
               </div>
   
               <button class="btn mt12" type="button" onclick="loginPrimary()" data-i18n="login.submit">Zaloguj się</button>
-  
-              <div class="divider mt16"><span data-i18n="login.or">albo</span></div>
-  
-              <button class="btn social apple mt12" type="button" onclick="loginSocial('apple')">
-                <span class="sIco"></span> <span data-i18n="login.apple">Kontynuuj z Apple</span>
-              </button>
-              <button class="btn social google mt10" type="button" onclick="loginSocial('google')">
-                <span class="sIco">G</span> <span data-i18n="login.google">Kontynuuj z Google</span>
-              </button>
-              <button class="btn social fb mt10" type="button" onclick="loginSocial('facebook')">
-                <span class="sIco">f</span> <span data-i18n="login.facebook">Kontynuuj z Facebook</span>
-              </button>
+
   
               <div class="mt16 center">
-                <span class="link" onclick="go('S2_REGISTER')" data-i18n="login.no_account">Nie masz konta? Zarejestruj się</span>
+                <span class="link" onclick="go('S0_REGISTER_CHOICE')" data-i18n="login.no_account">Nie masz konta? Zarejestruj się</span>
                 <span class="dotSep"> · </span>
                 <span class="link" onclick="openForgot()" data-i18n="login.forgot_password">Nie pamiętasz hasła?</span>
               </div>
             </div>
-  
-            <div class="card mt16">
-              <div class="sectionTitle" data-i18n="plans.title">Plany</div>
-              <div class="sectionSub" data-i18n="plans.subtitle">Zobacz różnice funkcji przed zalogowaniem.</div>
-              <button class="btn secondary" type="button" onclick="go('S11_PLANS')" data-i18n="plans.preview">Podgląd planów</button>
-            </div>
+
           </div>
         </section>
   
@@ -2470,15 +2445,9 @@ section#S11_PLANS .promoCodeRow .btn{
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
-              <div class="brandRow">
-                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
-                <div class="brandText">
-                  <div class="brandName">USLY</div>
-                  <div class="brandTagline" data-i18n="reset.title">Reset hasła</div>
-                </div>
-              </div>
+              <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
             </div>
-            <div class="ghostBtn" aria-hidden="true">•</div>
+            <div class="ghostBtn" aria-hidden="true"></div>
           </header>
 
           <div class="content">
@@ -2507,27 +2476,16 @@ section#S11_PLANS .promoCodeRow .btn{
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
-              <div class="brandRow">
-                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
-                <div class="brandText">
-                  <div class="brandName">USLY</div>
-                  <div class="brandTagline" id="roleLabelRegister">Towarzysz</div>
-                </div>
-              </div>
+              <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
             </div>
-            <div class="ghostBtn" aria-hidden="true">•</div>
+            <div class="ghostBtn" aria-hidden="true"></div>
           </header>
   
           <div class="content">
             <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle" data-i18n="register.title">Załóż konto</div>
-              <div class="sectionSub" id="regSubLine" data-i18n="register.subtitle">Utwórz konto i przejdź do profilu.</div>
+              <div class="sectionTitle" id="authRegisterRoleTitle">Towarzysz</div>
+              <div class="sectionSub" id="authRegisterMethodTitle">Rejestracja przez adres e-mail</div>
 
-              <label class="mt12" data-i18n="login.mode">Tryb</label>
-              <div class="seg wide">
-                <button class="segBtn on" id="roleUserBtn2" type="button" onclick="selectRole('user')" data-i18n="login.user">Towarzysz</button>
-                <button class="segBtn" id="rolePartnerBtn2" type="button" onclick="selectRole('partner')" data-i18n="login.partner">Organizator</button>
-              </div>
 
               <div class="card mt16">
                 <div class="sectionTitle" data-i18n="register.account.title">Konto</div>
@@ -2546,16 +2504,18 @@ section#S11_PLANS .promoCodeRow .btn{
                   <input id="regCompany" type="text" placeholder="np. Studio Miejsce" data-i18n-placeholder="register.company_placeholder" />
                 </div>
 
-                <label class="mt12" data-i18n="register.password">Hasło *</label>
-                <div class="passwordField">
-                  <input id="regPass" type="password" placeholder="Minimum 8 znaków" data-i18n-placeholder="register.password_placeholder" autocomplete="new-password" />
-                  <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPass', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
-                </div>
+                <div id="registerPasswordBlock">
+                  <label class="mt12" data-i18n="register.password">Hasło *</label>
+                  <div class="passwordField">
+                    <input id="regPass" type="password" placeholder="Minimum 8 znaków" data-i18n-placeholder="register.password_placeholder" autocomplete="new-password" />
+                    <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPass', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                  </div>
 
-                <label class="mt12" data-i18n="register.repeat_password">Powtórz hasło *</label>
-                <div class="passwordField">
-                  <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" data-i18n-placeholder="register.repeat_password_placeholder" autocomplete="new-password" />
-                  <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPassRepeat', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                  <label class="mt12" data-i18n="register.repeat_password">Powtórz hasło *</label>
+                  <div class="passwordField">
+                    <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" data-i18n-placeholder="register.repeat_password_placeholder" autocomplete="new-password" />
+                    <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPassRepeat', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                  </div>
                 </div>
               </div>
 

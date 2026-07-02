@@ -926,6 +926,11 @@ const I18N = {
     "social.signupSoon": "Rejestracja społecznościowa będzie dostępna wkrótce",
     "role.user": "Towarzysz",
     "role.partner": "Organizator",
+    "auth.methodLabel.email": "adres e-mail",
+    "auth.methodLabel.google": "Google",
+    "auth.methodLabel.apple": "Apple",
+    "auth.loginMethodTitle": "Logowanie przez {{method}}",
+    "auth.registerMethodTitle": "Rejestracja przez {{method}}",
     "register.user.subtitleDynamic": "Stwórz konto Towarzysza i ustaw profil.",
     "register.partner.subtitleDynamic": "Stwórz konto Organizatora i ustaw profil.",
     "plans.toast.saveFailed": "Nie udało się zapisać planu",
@@ -1796,6 +1801,11 @@ const I18N = {
     "social.signupSoon": "Social signup will be available soon",
     "role.user": "Companion",
     "role.partner": "Organizer",
+    "auth.methodLabel.email": "email address",
+    "auth.methodLabel.google": "Google",
+    "auth.methodLabel.apple": "Apple",
+    "auth.loginMethodTitle": "Login with {{method}}",
+    "auth.registerMethodTitle": "Registration with {{method}}",
     "register.user.subtitleDynamic": "Create a Companion account and set up your profile.",
     "register.partner.subtitleDynamic": "Create an Organizer account and set up your profile.",
     "plans.toast.saveFailed": "Could not save plan",
@@ -1868,6 +1878,8 @@ function t(key, fallback = "") {
 function setLanguage(lang) {
   App.lang = lang === "en" ? "en" : "pl";
   localStorage.setItem("usly_lang", App.lang);
+  updateAuthHeadings();
+
   renderAll();
 }
 
@@ -2426,12 +2438,30 @@ function selectRole(role) {
   renderAll();
 }
 
+function updateAuthHeadings() {
+  const roleLabel = App.role === "partner" ? t("role.partner") : t("role.user");
+  const method = App.authMethod === "google" || App.authMethod === "apple" ? App.authMethod : "email";
+  const methodLabel = t("auth.methodLabel." + method);
+  const isEmail = method === "email";
+
+  safeSetText("authLoginRoleTitle", roleLabel);
+  safeSetText("authLoginMethodTitle", t("auth.loginMethodTitle", { method: methodLabel }));
+  safeSetText("authRegisterRoleTitle", roleLabel);
+  safeSetText("authRegisterMethodTitle", t("auth.registerMethodTitle", { method: methodLabel }));
+
+  const loginPasswordBlock = $("loginPasswordBlock");
+  const registerPasswordBlock = $("registerPasswordBlock");
+  if (loginPasswordBlock) loginPasswordBlock.style.display = isEmail ? "" : "none";
+  if (registerPasswordBlock) registerPasswordBlock.style.display = isEmail ? "" : "none";
+}
+
 function selectAuthChoice(mode, role, method) {
   if ((mode !== "login" && mode !== "register") || (role !== "user" && role !== "partner")) return;
 
   App.authMode = mode;
   App.authMethod = method === "google" || method === "apple" ? method : "email";
   selectRole(role);
+  updateAuthHeadings();
 
   const viewId = mode === "login" ? "S1_LOGIN" : "S2_REGISTER";
   go(viewId);
