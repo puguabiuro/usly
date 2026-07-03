@@ -932,6 +932,8 @@ const I18N = {
     "auth.loginChoice.subtitle": "Wybierz rolę i metodę logowania.",
     "auth.role.userDesc": "Dla osób, które chcą poznawać ludzi, dołączać do wydarzeń i budować lokalną społeczność.",
     "auth.role.partnerDesc": "Dla miejsc, marek i osób, które tworzą wydarzenia, zajęcia lub lokalne inicjatywy.",
+    "auth.role.userLoginDesc": "Poznawaj ludzi, odkrywaj wydarzenia i buduj swoją lokalną społeczność.",
+    "auth.role.partnerLoginDesc": "Twórz wydarzenia, docieraj do nowych uczestników i rozwijaj swoją społeczność.",
     "auth.method.email": "Adres e-mail",
     "auth.method.google": "Google",
     "auth.method.apple": "Apple",
@@ -1828,6 +1830,8 @@ const I18N = {
     "auth.loginChoice.subtitle": "Choose your role and login method.",
     "auth.role.userDesc": "For people who want to meet others, join events and build a local community.",
     "auth.role.partnerDesc": "For places, brands and people who create events, classes or local initiatives.",
+    "auth.role.userLoginDesc": "Meet people, discover events and build your local community.",
+    "auth.role.partnerLoginDesc": "Create events, reach new participants and grow your community.",
     "auth.method.email": "Email address",
     "auth.method.google": "Google",
     "auth.method.apple": "Apple",
@@ -2487,6 +2491,12 @@ function updateAuthHeadings() {
   const isEmail = method === "email";
 
   safeSetText("authLoginRoleTitle", roleLabel);
+  safeSetText(
+    "authLoginRoleDesc",
+    App.role === "partner"
+      ? t("auth.role.partnerLoginDesc")
+      : t("auth.role.userLoginDesc")
+  );
   safeSetText("authLoginMethodTitle", t("auth.loginMethodTitle", { method: methodLabel }));
   safeSetText("authRegisterRoleTitle", roleLabel);
   safeSetText("authRegisterMethodTitle", t("auth.registerMethodTitle", { method: methodLabel }));
