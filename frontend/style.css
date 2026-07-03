@@ -5836,3 +5836,140 @@ button[id^="notifBtn"]:active{
     0 34px 82px rgba(47,31,130,.36),
     0 0 62px rgba(112,82,255,.18);
 }
+
+/* Welcome premium final polish pass 1 */
+#S0_WELCOME .uslyWelcomeTags span{
+  padding: 6px 11px;
+  border-color: rgba(255,255,255,.11);
+  background: linear-gradient(180deg, rgba(255,255,255,.115), rgba(255,255,255,.045));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.16),
+    0 8px 22px rgba(91,78,184,.13);
+}
+
+#S0_WELCOME .uslyWelcomeActions{
+  padding: 11px 14px;
+}
+
+#S0_WELCOME .uslyWelcomeLogo{
+  animation: uslyLogoBreath 8s ease-in-out infinite;
+}
+
+@keyframes uslyLogoBreath{
+  0%, 100%{
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.24),
+      0 0 46px rgba(116,233,255,.28),
+      0 24px 68px rgba(68,220,245,.28),
+      0 16px 52px rgba(244,70,210,.20);
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.26),
+      0 0 62px rgba(116,233,255,.38),
+      0 30px 82px rgba(68,220,245,.36),
+      0 20px 62px rgba(244,70,210,.26);
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  #S0_WELCOME .uslyWelcomeLogo{
+    animation: none;
+  }
+}
+
+/* Login premium logo pass 1 */
+#S1_LOGIN .brandCenter.small .brandLogo,
+#S1_LOGIN .brandLogo.sm{
+  width: 74px;
+  height: 74px;
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.18),
+    0 18px 46px rgba(68,220,245,.20),
+    0 12px 34px rgba(244,70,210,.15);
+}
+
+/* Login premium logo layout pass 1 */
+#S1_LOGIN .topbar .brandCenter{
+  opacity: 0;
+  pointer-events: none;
+}
+
+#S1_LOGIN .content{
+  padding-top: 18px;
+}
+
+#S1_LOGIN .loginHeroLogo{
+  display: block;
+  width: 118px;
+  height: 118px;
+  border-radius: 34px;
+  object-fit: cover;
+  margin: 0 auto 18px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.22),
+    0 0 48px rgba(116,233,255,.28),
+    0 24px 68px rgba(68,220,245,.28),
+    0 16px 52px rgba(244,70,210,.20);
+}
+
+#S1_LOGIN .heroCard.profileSummaryCard{
+  width: min(430px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#S1_LOGIN .loginHeroTitle{
+  font-size: 24px;
+  line-height: 1.12;
+  font-weight: 850;
+  letter-spacing: -.03em;
+  text-align: center;
+  color: rgba(255,255,255,.96);
+}
+
+#S1_LOGIN .loginHeroDesc{
+  margin: 8px auto 6px;
+  max-width: 340px;
+  font-size: 15.5px;
+  line-height: 1.42;
+  font-weight: 600;
+  text-align: center;
+  color: rgba(255,255,255,.74);
+}
+
+#S1_LOGIN .loginHeroMethod{
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 700;
+  text-align: center;
+  color: rgba(255,255,255,.50);
+}
+
+#S1_LOGIN .dotSep{
+  display: none;
+}
+
+#S1_LOGIN .heroCard .mt16.center{
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-height: 740px){
+  #S1_LOGIN .content{
+    padding-top: 12px;
+  }
+
+  #S1_LOGIN .loginHeroLogo{
+    width: 102px;
+    height: 102px;
+    border-radius: 30px;
+    margin-bottom: 14px;
+  }
+
+  #S1_LOGIN .loginHeroDesc{
+    font-size: 15px;
+  }
+}
