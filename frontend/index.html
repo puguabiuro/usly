@@ -2562,7 +2562,7 @@ section#S11_PLANS .promoCodeRow .btn{
                   <input id="regCityPartner" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerSetup.cityPlaceholder" data-i18n-placeholder="register.partner.city_placeholder" list="citiesDatalist" />
                 </div>
 
-                <div class="card mt16">
+                <div class="card mt16 hidden" id="regPartnerPlanBox">
                   <div class="sectionTitle" data-i18n="register.partner.plan_title">Plan organizatora</div>
                   <div class="sectionSub" data-i18n="register.partner.plan_subtitle">Wybierz dostęp dla miejsca.</div>
 
@@ -2579,7 +2579,7 @@ section#S11_PLANS .promoCodeRow .btn{
                 </div>
               </div>
 
-              <div class="card mt16" id="regUserPlanBox">
+              <div class="card mt16 hidden" id="regUserPlanBox">
                   <div class="sectionTitle" data-i18n="register.user.plan_title">Plan</div>
                   <div class="sectionSub" data-i18n="register.user.plan_subtitle">Wybierz startowy dostęp.</div>
 
@@ -2945,7 +2945,7 @@ section#S11_PLANS .promoCodeRow .btn{
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline" data-i18n="partnerSetup.topbar">Profil organizatora</div>
+                  <div class="brandTagline" data-i18n="partnerSetup.topbar">Profil</div>
                 </div>
               </div>
             </div>
@@ -2953,13 +2953,9 @@ section#S11_PLANS .promoCodeRow .btn{
           </header>
 
           <div class="content">
-            <div class="heroCard profileHubCard">
+            <div class="heroCard profileHubCard setupOrgIdentityCard">
               <div class="sectionTitle" id="setupPartnerCompanyName" style="margin:0;" data-i18n="partnerSetup.title">Uzupełnij profil</div>
               <div class="sectionSub mt10" data-i18n="partnerSetup.subtitle">Logo, miasto i charakter miejsca.</div>
-            </div>
-
-            <div class="card mt16 setupOrgIdentityCard">
-              <div class="sectionTitle" data-i18n="partnerSetup.identityTitle">Tożsamość miejsca</div>
 
               <div class="row mt12" style="align-items:center;gap:14px;">
                 <div class="avatar big setupOrgLogoPreview" id="setupOrgLogoPreview"></div>

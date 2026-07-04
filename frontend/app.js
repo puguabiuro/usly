@@ -284,7 +284,7 @@ const I18N = {
     "profileSetup.bioLabel": "BIO (max 250)",
     "profileSetup.ageRangeText": "Ustaw, w jakim wieku mają być osoby sugerowane przez aplikację. Możesz to później zmienić w ustawieniach.",
     "profileSetup.finish": "Zapisz i przejdź dalej",
-    "partnerSetup.topbar": "Profil organizatora",
+    "partnerSetup.topbar": "Profil",
     "partnerSetup.title": "Uzupełnij profil",
     "partnerSetup.subtitle": "Logo, miasto i charakter miejsca.",
     "partnerSetup.identityTitle": "Tożsamość miejsca",
@@ -1229,7 +1229,7 @@ const I18N = {
     "profileSetup.bioLabel": "BIO (max 250)",
     "profileSetup.ageRangeText": "Set the age range of people suggested by the app. You can change it later in settings.",
     "profileSetup.finish": "Save and continue",
-    "partnerSetup.topbar": "Organizer profile",
+    "partnerSetup.topbar": "Profile",
     "partnerSetup.title": "Complete your profile",
     "partnerSetup.subtitle": "Logo, city and venue character.",
     "partnerSetup.identityTitle": "Venue identity",
@@ -2469,17 +2469,18 @@ function selectRole(role) {
   const userBox = $("regUserBox");
   const userPlanBox = $("regUserPlanBox");
   const partnerBox = $("regPartnerBox");
+  const partnerPlanBox = $("regPartnerPlanBox");
   if (userBox && partnerBox) {
     if (role === "user") {
       show(userBox);
-      if (userPlanBox) show(userPlanBox);
       hide(partnerBox);
     } else {
       hide(userBox);
-      if (userPlanBox) hide(userPlanBox);
       show(partnerBox);
     }
   }
+  if (userPlanBox) hide(userPlanBox);
+  if (partnerPlanBox) hide(partnerPlanBox);
 
   // Settings sections
   const settingsUser = $("settingsUserBox");
@@ -2915,14 +2916,14 @@ async function registerPrimary() {
         safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
         renderInterestChips("interestChips");
         refreshInterestUi();
-        go("S3_PROFILE_SETUP");
+        go("S11_PLANS");
       } else {
         if ($("setupOrgCity")) $("setupOrgCity").value = App.partner.city || "";
         if ($("setupOrgCategory")) $("setupOrgCategory").value = App.partner.category || "inne";
         if ($("setupOrgAbout")) $("setupOrgAbout").value = App.partner.about || "";
         safeSetText("setupOrgAboutCount", String(($("setupOrgAbout")?.value || "").length));
         safeSetText("setupPartnerCompanyName", App.partner.company || t("partnerSetup.title"));
-        go("S3B_PARTNER_SETUP");
+        go("S11_PLANS");
         setTimeout(updateOrgLogoFallback, 0);
       }
   } catch (err) {
@@ -3125,16 +3126,45 @@ async function refreshPlanAfterStorePurchase(role) {
   }
 }
 
+function goToProfileSetupAfterPlan() {
+  if (App.role === "partner") {
+    if ($("setupOrgCity")) $("setupOrgCity").value = App.partner.city || "";
+    if ($("setupOrgCategory")) $("setupOrgCategory").value = App.partner.category || "inne";
+    if ($("setupOrgAbout")) $("setupOrgAbout").value = App.partner.about || "";
+    safeSetText("setupOrgAboutCount", String(($("setupOrgAbout")?.value || "").length));
+    safeSetText("setupPartnerCompanyName", App.partner.company || t("partnerSetup.title"));
+    go("S3B_PARTNER_SETUP");
+    setTimeout(updateOrgLogoFallback, 0);
+    return;
+  }
+
+  safeSetText("planPillSetup", String(App.user.plan || "free").toUpperCase());
+
+  if ($("setupNick")) $("setupNick").value = App.user.nick || "";
+  if ($("setupCity")) $("setupCity").value = App.user.city || "";
+  if ($("setupBio")) $("setupBio").value = App.user.bio || "";
+  if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
+  if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
+  safeSetText("bioCount", String(($("setupBio")?.value || "").length));
+  safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
+  renderInterestChips("interestChips");
+  refreshInterestUi();
+  go("S3_PROFILE_SETUP");
+}
+
 async function chooseUserPlan(plan) {
   const normalizedPlan = String(plan || "").toLowerCase();
   if (normalizedPlan === "free") {
-    return setUserPlan("free");
+    await setUserPlan("free", true);
+    goToProfileSetupAfterPlan();
+    return;
   }
 
   try {
     await window.USLYBilling.purchasePlan({ role: "user", plan: normalizedPlan });
     toast(t("plans.payment.success", "Plan został aktywowany."));
     await refreshPlanAfterStorePurchase("user");
+    goToProfileSetupAfterPlan();
   } catch (err) {
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
     toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
@@ -3144,7 +3174,9 @@ async function chooseUserPlan(plan) {
 async function choosePartnerPlan(plan) {
   const normalizedPlan = String(plan || "").toLowerCase();
   if (normalizedPlan === "free") {
-    return setPartnerPlan("free");
+    await setPartnerPlan("free", true);
+    goToProfileSetupAfterPlan();
+    return;
   }
 
   if (normalizedPlan === "enterprise") {
@@ -3155,6 +3187,7 @@ async function choosePartnerPlan(plan) {
     await window.USLYBilling.purchasePlan({ role: "partner", plan: normalizedPlan });
     toast(t("plans.payment.success", "Plan został aktywowany."));
     await refreshPlanAfterStorePurchase("partner");
+    goToProfileSetupAfterPlan();
   } catch (err) {
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
     toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
@@ -3802,17 +3835,19 @@ async function uploadPartnerLogo(file) {
 }
 
 function initPartnerLogoUpload() {
-  const input = $("setOrgLogo");
-  if (!input || input.dataset.bound === "1") return;
+  ["setOrgLogo", "setupOrgLogo"].forEach((inputId) => {
+    const input = $(inputId);
+    if (!input || input.dataset.bound === "1") return;
 
-  input.addEventListener("change", async (e) => {
-    const file = e.target?.files?.[0];
-    if (!file) return;
-    await uploadPartnerLogo(file);
-    input.value = "";
+    input.addEventListener("change", async (e) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+      await uploadPartnerLogo(file);
+      input.value = "";
+    });
+
+    input.dataset.bound = "1";
   });
-
-  input.dataset.bound = "1";
 }
 
 /* ------------------------- Avatar / Photo hooks -------------------------- */
@@ -10807,8 +10842,10 @@ function renderAll() {
   if ($("setOrgCity")) $("setOrgCity").value = App.partner.city || "Warszawa";
   if ($("setOrgAbout")) $("setOrgAbout").value = App.partner.about || "";
 
-  const orgLogoPreview = $("setOrgLogoPreview");
-  if (orgLogoPreview) {
+  ["setOrgLogoPreview", "setupOrgLogoPreview"].forEach((previewId) => {
+    const orgLogoPreview = $(previewId);
+    if (!orgLogoPreview) return;
+
     if (App.partner.logoUrl) {
       const src = String(App.partner.logoUrl).startsWith("http")
         ? App.partner.logoUrl
@@ -10817,7 +10854,7 @@ function renderAll() {
     } else {
       orgLogoPreview.textContent = (App.partner.company || "U").trim().charAt(0).toUpperCase();
     }
-  }
+  });
 
   // Interest chips in visible sections
   renderInterestChips("interestChips");
