@@ -88,6 +88,13 @@ const I18N = {
     "plans.promo.label": "Kod promocyjny",
     "plans.promo.placeholder": "Wpisz kod",
     "plans.promo.apply": "Zastosuj",
+    "plans.restore.title": "Masz już aktywną subskrypcję?",
+    "plans.restore.subtitle": "Zmieniasz telefon lub instalujesz aplikację ponownie? Odśwież zakup z App Store lub Google Play.",
+    "plans.restore.button": "Przywróć zakup",
+    "plans.restore.checking": "Sprawdzamy aktywne subskrypcje...",
+    "plans.restore.notFound": "Nie znaleziono aktywnych zakupów dla tego konta.",
+    "plans.restore.success": "Subskrypcja została odświeżona.",
+    "plans.restore.failed": "Nie udało się przywrócić zakupów. Spróbuj ponownie.",
     "plans.promo.applied": "Kod zastosowany",
     "plans.promo.invalid": "Nie udało się zastosować kodu.",
     "plans.promo.notActive": "Ten kod nie jest już aktywny.",
@@ -99,7 +106,7 @@ const I18N = {
     "plans.payment.storeComingSoon": "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play.",
     "plans.payment.cancelled": "Zakup został anulowany.",
     "plans.payment.notConfigured": "Płatności sklepowe nie są jeszcze skonfigurowane.",
-    "plans.payment.nativeOnly": "Płatności są dostępne tylko w aplikacji mobilnej.",
+    "plans.payment.nativeOnly": "Przywracanie zakupów jest dostępne tylko w aplikacji mobilnej USLY.",
     "plans.payment.pluginMissing": "Moduł płatności nie jest dostępny w tej wersji aplikacji.",
     "plans.payment.productUnavailable": "Ten produkt nie jest jeszcze dostępny w sklepie.",
     "plans.payment.transactionMissing": "Sklep nie zwrócił identyfikatora transakcji. Spróbuj ponownie.",
@@ -1044,6 +1051,13 @@ const I18N = {
     "plans.promo.label": "Promo code",
     "plans.promo.placeholder": "Enter code",
     "plans.promo.apply": "Apply",
+    "plans.restore.title": "Already have an active subscription?",
+    "plans.restore.subtitle": "Changed phones or reinstalled the app? Refresh your purchase from the App Store or Google Play.",
+    "plans.restore.button": "Restore purchase",
+    "plans.restore.checking": "Checking active subscriptions...",
+    "plans.restore.notFound": "No active purchases were found for this account.",
+    "plans.restore.success": "Your subscription has been refreshed.",
+    "plans.restore.failed": "Could not restore purchases. Please try again.",
     "plans.promo.applied": "Code applied",
     "plans.promo.invalid": "Could not apply the code.",
     "plans.promo.notActive": "This code is no longer active.",
@@ -1055,7 +1069,7 @@ const I18N = {
     "plans.payment.storeComingSoon": "Store payments are being prepared. This plan will be activated after purchase through the App Store or Google Play.",
     "plans.payment.cancelled": "The purchase was cancelled.",
     "plans.payment.notConfigured": "Store payments are not configured yet.",
-    "plans.payment.nativeOnly": "Payments are available only in the mobile app.",
+    "plans.payment.nativeOnly": "Restoring purchases is available only in the USLY mobile app.",
     "plans.payment.pluginMissing": "The payments module is not available in this app version.",
     "plans.payment.productUnavailable": "This product is not available in the store yet.",
     "plans.payment.transactionMissing": "The store did not return a transaction identifier. Please try again.",
@@ -3191,6 +3205,31 @@ async function choosePartnerPlan(plan) {
   } catch (err) {
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
     toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
+  }
+}
+
+async function restoreStorePurchases(role) {
+  const normalizedRole = String(role || App.role || "").toLowerCase() === "partner" ? "partner" : "user";
+
+  try {
+    if (!window.USLYBilling?.restorePurchases) {
+      throw new Error("STORE_BILLING_RESTORE_UNAVAILABLE");
+    }
+
+    toast(t("plans.restore.checking", "Sprawdzamy aktywne subskrypcje..."));
+    const result = await window.USLYBilling.restorePurchases(normalizedRole);
+    await refreshPlanAfterStorePurchase(normalizedRole);
+
+    const activePurchases = result?.customerInfo?.activeSubscriptions || [];
+    if (Array.isArray(activePurchases) && activePurchases.length === 0) {
+      toast(t("plans.restore.notFound", "Nie znaleziono aktywnych zakupów dla tego konta."));
+      return;
+    }
+
+    toast(t("plans.restore.success", "Subskrypcja została odświeżona."));
+  } catch (err) {
+    const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.restore.failed";
+    toast(t(key, "Nie udało się przywrócić zakupów. Spróbuj ponownie."));
   }
 }
 
@@ -11666,6 +11705,7 @@ window.finishPartnerSetup = finishPartnerSetup;
 window.saveSettings = saveSettings;
 window.toggleTrainerInterest = toggleTrainerInterest;
 window.savePartnerSettings = savePartnerSettings;
+window.restoreStorePurchases = restoreStorePurchases;
 window.publishPartnerEvent = publishPartnerEvent;
 window.savePartnerEventDraft = savePartnerEventDraft;
 window.togglePasswordVisibility = togglePasswordVisibility;
