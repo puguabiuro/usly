@@ -42,6 +42,36 @@
     return window.Capacitor?.Plugins?.Purchases || null;
   }
 
+  function getBillingErrorCode(err) {
+    return String(
+      err?.code ||
+      err?.errorCode ||
+      err?.userInfo?.readableErrorCode ||
+      err?.message ||
+      ""
+    );
+  }
+
+  function isUserCancelledError(err) {
+    const code = getBillingErrorCode(err).toLowerCase();
+    return !!err?.userCancelled || code.includes("cancel") || code.includes("user_cancelled");
+  }
+
+  function getBillingErrorMessageKey(err) {
+    const code = getBillingErrorCode(err);
+
+    if (isUserCancelledError(err)) return "plans.payment.cancelled";
+    if (code.includes("STORE_BILLING_SDK_KEY_MISSING")) return "plans.payment.notConfigured";
+    if (code.includes("STORE_BILLING_WEB_UNSUPPORTED")) return "plans.payment.nativeOnly";
+    if (code.includes("STORE_BILLING_PLUGIN_MISSING")) return "plans.payment.pluginMissing";
+    if (code.includes("STORE_BILLING_PACKAGE_NOT_FOUND")) return "plans.payment.productUnavailable";
+    if (code.includes("STORE_BILLING_TRANSACTION_ID_MISSING")) return "plans.payment.transactionMissing";
+    if (code.includes("STORE_VERIFICATION_NOT_CONFIGURED")) return "plans.payment.verifyNotConfigured";
+    if (code.includes("NETWORK") || code.includes("Network")) return "plans.payment.networkError";
+
+    return "plans.payment.failed";
+  }
+
   function getRevenueCatApiKey(platform = getPlatform()) {
     return REVENUECAT_PUBLIC_SDK_KEYS[platform] || "";
   }
@@ -131,15 +161,23 @@
   }
 
   function getPurchaseTransactionId(result, productId) {
-    return (
+    const transactionId = (
       result?.transaction?.transactionIdentifier ||
       result?.transaction?.transactionId ||
       result?.transaction?.identifier ||
       result?.transactionIdentifier ||
       result?.transactionId ||
-      result?.customerInfo?.originalAppUserId ||
-      `${productId}_${Date.now()}`
+      ""
     );
+
+    if (!transactionId) {
+      const err = new Error("STORE_BILLING_TRANSACTION_ID_MISSING");
+      err.code = "STORE_BILLING_TRANSACTION_ID_MISSING";
+      err.product_id = productId;
+      throw err;
+    }
+
+    return transactionId;
   }
 
   function getPurchaseExpiresAt(result, productId) {
@@ -253,6 +291,9 @@
     getPlatform,
     getAppUserId,
     getNativePurchasesPlugin,
+    getBillingErrorCode,
+    isUserCancelledError,
+    getBillingErrorMessageKey,
     getRevenueCatApiKey,
     configure,
     logIn,

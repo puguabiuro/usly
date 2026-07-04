@@ -97,6 +97,16 @@ const I18N = {
     "plans.promo.discount": "Zniżka {{value}}% przez {{months}} mies.",
     "plans.contact_us": "Napisz do nas",
     "plans.payment.storeComingSoon": "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play.",
+    "plans.payment.cancelled": "Zakup został anulowany.",
+    "plans.payment.notConfigured": "Płatności sklepowe nie są jeszcze skonfigurowane.",
+    "plans.payment.nativeOnly": "Płatności są dostępne tylko w aplikacji mobilnej.",
+    "plans.payment.pluginMissing": "Moduł płatności nie jest dostępny w tej wersji aplikacji.",
+    "plans.payment.productUnavailable": "Ten produkt nie jest jeszcze dostępny w sklepie.",
+    "plans.payment.transactionMissing": "Sklep nie zwrócił identyfikatora transakcji. Spróbuj ponownie.",
+    "plans.payment.verifyNotConfigured": "Weryfikacja płatności nie jest jeszcze skonfigurowana.",
+    "plans.payment.networkError": "Nie udało się połączyć ze sklepem. Spróbuj ponownie.",
+    "plans.payment.failed": "Nie udało się zakończyć płatności. Spróbuj ponownie.",
+    "plans.payment.success": "Plan został aktywowany.",
     "plans.current": "Aktualny plan",
     "plans.user.free.desc": "Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.",
     "plans.user.plus.desc": "Większa swoboda w poznawaniu ludzi i korzystaniu z grup.",
@@ -1043,6 +1053,16 @@ const I18N = {
     "plans.promo.discount": "{{value}}% off for {{months}} months",
     "plans.contact_us": "Contact us",
     "plans.payment.storeComingSoon": "Store payments are being prepared. This plan will be activated after purchase through the App Store or Google Play.",
+    "plans.payment.cancelled": "The purchase was cancelled.",
+    "plans.payment.notConfigured": "Store payments are not configured yet.",
+    "plans.payment.nativeOnly": "Payments are available only in the mobile app.",
+    "plans.payment.pluginMissing": "The payments module is not available in this app version.",
+    "plans.payment.productUnavailable": "This product is not available in the store yet.",
+    "plans.payment.transactionMissing": "The store did not return a transaction identifier. Please try again.",
+    "plans.payment.verifyNotConfigured": "Payment verification is not configured yet.",
+    "plans.payment.networkError": "Could not connect to the store. Please try again.",
+    "plans.payment.failed": "Could not complete the payment. Please try again.",
+    "plans.payment.success": "Your plan has been activated.",
     "plans.current": "Current plan",
     "plans.user.free.desc": "Basic access to USLY and meeting people in your area.",
     "plans.user.plus.desc": "More freedom to meet people and use groups.",
@@ -3084,6 +3104,27 @@ async function applyPlanPromoCode(role) {
 }
 
 
+async function refreshPlanAfterStorePurchase(role) {
+  const normalizedRole = String(role || App.role || "").toLowerCase();
+
+  if (normalizedRole === "partner") {
+    await loadPartnerProfile();
+    try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, App.partner.plan || "free"); } catch (_) {}
+    refreshPlanPromoPrices("partner");
+    renderAll();
+    return;
+  }
+
+  const profile = await apiFetch("/users/me");
+  if (profile?.success && profile?.data) {
+    App.user.plan = profile.data.plan || App.user.plan || "free";
+    try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
+    safeSetText("planPillSetup", String(App.user.plan || "free").toUpperCase());
+    refreshUserPlanCardsUi();
+    renderAll();
+  }
+}
+
 async function chooseUserPlan(plan) {
   const normalizedPlan = String(plan || "").toLowerCase();
   if (normalizedPlan === "free") {
@@ -3092,8 +3133,11 @@ async function chooseUserPlan(plan) {
 
   try {
     await window.USLYBilling.purchasePlan({ role: "user", plan: normalizedPlan });
-  } catch (_) {
-    toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+    toast(t("plans.payment.success", "Plan został aktywowany."));
+    await refreshPlanAfterStorePurchase("user");
+  } catch (err) {
+    const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
+    toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
   }
 }
 
@@ -3109,8 +3153,11 @@ async function choosePartnerPlan(plan) {
 
   try {
     await window.USLYBilling.purchasePlan({ role: "partner", plan: normalizedPlan });
-  } catch (_) {
-    toast(t("plans.payment.storeComingSoon", "Płatności sklepowe są w przygotowaniu. Ten plan będzie aktywowany po zakupie przez App Store lub Google Play."));
+    toast(t("plans.payment.success", "Plan został aktywowany."));
+    await refreshPlanAfterStorePurchase("partner");
+  } catch (err) {
+    const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
+    toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
   }
 }
 
