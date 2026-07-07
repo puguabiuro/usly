@@ -85,6 +85,17 @@ const I18N = {
     "plans.partner.title": "Plany Organizatora",
     "plans.partner.subtitle": "Wybierz poziom widoczności, raportów i narzędzi dla swojego miejsca lub marki.",
     "plans.choose": "Wybierz",
+    "plans.continueFree": "Kontynuuj z FREE",
+    "plans.continuePlus": "Kontynuuj z PLUS",
+    "plans.continuePremium": "Kontynuuj z PREMIUM",
+    "plans.continueVip": "Kontynuuj z VIP",
+    "plans.continuePro": "Kontynuuj z PRO",
+    "plans.recommendedStart": "✨ Polecany na start",
+    "plans.defaultStart": "✔ Polecany na początek",
+    "plans.onboarding.topTitle": "Prawie gotowe!",
+    "plans.onboarding.title": "Wybierz plan",
+    "plans.onboarding.userSubtitle": "Wybierz plan, od którego chcesz rozpocząć korzystanie z USLY. Zawsze możesz go zmienić później.",
+    "plans.onboarding.partnerSubtitle": "Wybierz plan, od którego chcesz rozpocząć tworzenie wydarzeń w USLY. Zawsze możesz go zmienić później.",
     "plans.promo.label": "Kod promocyjny",
     "plans.promo.placeholder": "Wpisz kod",
     "plans.promo.apply": "Zastosuj",
@@ -1048,6 +1059,17 @@ const I18N = {
     "plans.partner.title": "Organizer Plans",
     "plans.partner.subtitle": "Choose the visibility, reporting and tools level for your venue or brand.",
     "plans.choose": "Choose",
+    "plans.continueFree": "Continue with FREE",
+    "plans.continuePlus": "Continue with PLUS",
+    "plans.continuePremium": "Continue with PREMIUM",
+    "plans.continueVip": "Continue with VIP",
+    "plans.continuePro": "Continue with PRO",
+    "plans.recommendedStart": "✨ Recommended to start",
+    "plans.defaultStart": "✔ Recommended to start",
+    "plans.onboarding.topTitle": "Almost ready!",
+    "plans.onboarding.title": "Choose a plan",
+    "plans.onboarding.userSubtitle": "Choose the plan you want to start using USLY with. You can change it later anytime.",
+    "plans.onboarding.partnerSubtitle": "Choose the plan you want to start creating events with. You can change it later anytime.",
     "plans.promo.label": "Promo code",
     "plans.promo.placeholder": "Enter code",
     "plans.promo.apply": "Apply",
@@ -2001,6 +2023,7 @@ const App = {
   resetToken: "",
   resetEmail: "",
   partnerEventFormMode: "create", // create | draft_edit | published_edit | archived_edit
+  planScreenMode: "settings", // settings | onboarding
 
   // Sub-states / filters
   eventsTab: "for_you", // 'for_you' | 'followed'
@@ -2133,10 +2156,92 @@ function syncEventDetailButtons() {
 }
 
 /* ------------------------- Navigation -------------------------- */
+function applyPlanScreenMode() {
+  const isOnboarding = App.planScreenMode === "onboarding";
+  const isPartner = App.role === "partner";
+
+  const plansUserOnly = $("plansUserOnly");
+  const plansPartnerOnly = $("plansPartnerOnly");
+  if (plansUserOnly && plansPartnerOnly) {
+    if (isPartner) {
+      hide(plansUserOnly);
+      show(plansPartnerOnly);
+    } else {
+      show(plansUserOnly);
+      hide(plansPartnerOnly);
+    }
+  }
+
+  document.querySelectorAll("#S11_PLANS .restorePurchaseCard").forEach((el) => {
+    el.style.display = isOnboarding ? "none" : "";
+  });
+
+  document.querySelectorAll("#S11_PLANS .onboardingOnly").forEach((el) => {
+    el.style.display = isOnboarding ? "" : "none";
+  });
+
+  document.querySelectorAll("#S11_PLANS .card[data-plan='free']").forEach((el) => {
+    el.classList.toggle("is-recommended-plan", isOnboarding && App.role === "user");
+  });
+
+  document.querySelectorAll("#S11_PLANS .card[data-plan='pro']").forEach((el) => {
+    el.classList.toggle("is-recommended-partner-plan", isOnboarding && App.role === "partner");
+  });
+
+  const plansBackBtn = $("plansBackBtn");
+  if (plansBackBtn) {
+    plansBackBtn.style.visibility = isOnboarding ? "hidden" : "";
+  }
+
+  const ctas = [
+    ["plansCtaUserPlus","plans.continuePlus"],
+    ["plansCtaUserPremium","plans.continuePremium"],
+    ["plansCtaUserVip","plans.continueVip"],
+    ["plansCtaPartnerPro","plans.continuePro"],
+    ["plansCtaPartnerPremium","plans.continuePremium"]
+  ];
+
+  ctas.forEach(([id,key])=>{
+    const btn=$(id);
+    if(!btn) return;
+    btn.textContent=isOnboarding ? t(key) : t("plans.choose");
+  });
+
+  if (isOnboarding) {
+    document.querySelectorAll("#S11_PLANS .card[data-plan='free'] .btn.secondary").forEach((btn) => {
+      btn.textContent = t("plans.continueFree");
+    });
+  }
+
+  safeSetText("plansScreenTopTitle", isOnboarding ? t("plans.onboarding.topTitle") : t("plans.title"));
+  safeSetText("plansUserHeroTitle", isOnboarding ? t("plans.onboarding.title") : t("plans.user.title"));
+  safeSetText(
+    "plansUserHeroSubtitle",
+    isOnboarding
+      ? t("plans.onboarding.userSubtitle")
+      : t("plans.user.subtitle")
+  );
+  safeSetText("plansPartnerHeroTitle", isOnboarding ? t("plans.onboarding.title") : t("plans.partner.title"));
+  safeSetText(
+    "plansPartnerHeroSubtitle",
+    isOnboarding
+      ? t("plans.onboarding.partnerSubtitle")
+      : t("plans.partner.subtitle")
+  );
+}
+
+function goToPlansSettings() {
+  App.planScreenMode = "settings";
+  go("S11_PLANS");
+}
+
 function go(viewId) {
   if (!viewId) return;
   const current = App.currentView;
-  if (current === viewId) return;
+  if (current === viewId) {
+    if (viewId === "S11_PLANS") applyPlanScreenMode();
+    return;
+  }
 
   // Hide all
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -2150,6 +2255,10 @@ function go(viewId) {
 
   App.currentView = viewId;
   App.history.push(viewId);
+
+  if (viewId === "S11_PLANS") {
+    applyPlanScreenMode();
+  }
 
   if (viewId === "S10E_PROFILE_INVITES" || viewId === "S12_NOTIFICATIONS") {
     updateNotifBadges(0);
@@ -2930,6 +3039,7 @@ async function registerPrimary() {
         safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
         renderInterestChips("interestChips");
         refreshInterestUi();
+        App.planScreenMode = "onboarding";
         go("S11_PLANS");
       } else {
         if ($("setupOrgCity")) $("setupOrgCity").value = App.partner.city || "";
@@ -2937,6 +3047,7 @@ async function registerPrimary() {
         if ($("setupOrgAbout")) $("setupOrgAbout").value = App.partner.about || "";
         safeSetText("setupOrgAboutCount", String(($("setupOrgAbout")?.value || "").length));
         safeSetText("setupPartnerCompanyName", App.partner.company || t("partnerSetup.title"));
+        App.planScreenMode = "onboarding";
         go("S11_PLANS");
         setTimeout(updateOrgLogoFallback, 0);
       }
