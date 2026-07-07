@@ -91,6 +91,7 @@ const I18N = {
     "plans.continueVip": "Kontynuuj z VIP",
     "plans.continuePro": "Kontynuuj z PRO",
     "plans.recommendedStart": "✨ Polecany na start",
+    "plans.recommendedOrganizer": "⭐ Polecany wybór",
     "plans.defaultStart": "✔ Polecany na początek",
     "plans.onboarding.topTitle": "Prawie gotowe!",
     "plans.onboarding.title": "Wybierz plan",
@@ -1065,6 +1066,7 @@ const I18N = {
     "plans.continueVip": "Continue with VIP",
     "plans.continuePro": "Continue with PRO",
     "plans.recommendedStart": "✨ Recommended to start",
+    "plans.recommendedOrganizer": "⭐ Recommended choice",
     "plans.defaultStart": "✔ Recommended to start",
     "plans.onboarding.topTitle": "Almost ready!",
     "plans.onboarding.title": "Choose a plan",
@@ -2159,6 +2161,8 @@ function syncEventDetailButtons() {
 function applyPlanScreenMode() {
   const isOnboarding = App.planScreenMode === "onboarding";
   const isPartner = App.role === "partner";
+  const currentUserPlan = String(App.user?.plan || "free").toLowerCase();
+  const currentPartnerPlan = String(App.partner?.plan || "free").toLowerCase();
 
   const plansUserOnly = $("plansUserOnly");
   const plansPartnerOnly = $("plansPartnerOnly");
@@ -2180,37 +2184,44 @@ function applyPlanScreenMode() {
     el.style.display = isOnboarding ? "" : "none";
   });
 
-  document.querySelectorAll("#S11_PLANS .card[data-plan='free']").forEach((el) => {
-    el.classList.toggle("is-recommended-plan", isOnboarding && App.role === "user");
-  });
+  const planCards = [
+    { selector: "#S11_PLANS #plansUserOnly .card[data-plan]", current: currentUserPlan, role: "user" },
+    { selector: "#S11_PLANS #plansPartnerOnly .card[data-plan]", current: currentPartnerPlan, role: "partner" },
+  ];
 
-  document.querySelectorAll("#S11_PLANS .card[data-plan='pro']").forEach((el) => {
-    el.classList.toggle("is-recommended-partner-plan", isOnboarding && App.role === "partner");
+  planCards.forEach(({ selector, current, role }) => {
+    document.querySelectorAll(selector).forEach((card) => {
+      const plan = String(card.dataset.plan || "").toLowerCase();
+      const isCurrent = plan === current;
+      const btn = card.querySelector(".btn.secondary, .btn");
+
+      card.classList.toggle("is-current", !isOnboarding && isCurrent);
+      card.classList.toggle("is-recommended-plan", isOnboarding && role === "user" && plan === "free");
+      card.classList.toggle("is-recommended-partner-plan", isOnboarding && role === "partner" && plan === "pro");
+
+      if (!btn) return;
+
+      if (isOnboarding) {
+        const onboardingKeys = {
+          free: "plans.continueFree",
+          plus: "plans.continuePlus",
+          premium: "plans.continuePremium",
+          vip: "plans.continueVip",
+          pro: "plans.continuePro",
+        };
+        btn.textContent = t(onboardingKeys[plan] || "plans.choose");
+        return;
+      }
+
+      btn.textContent = plan === "enterprise"
+        ? t("plans.contact_us", "Napisz do nas")
+        : (isCurrent ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz"));
+    });
   });
 
   const plansBackBtn = $("plansBackBtn");
   if (plansBackBtn) {
     plansBackBtn.style.visibility = isOnboarding ? "hidden" : "";
-  }
-
-  const ctas = [
-    ["plansCtaUserPlus","plans.continuePlus"],
-    ["plansCtaUserPremium","plans.continuePremium"],
-    ["plansCtaUserVip","plans.continueVip"],
-    ["plansCtaPartnerPro","plans.continuePro"],
-    ["plansCtaPartnerPremium","plans.continuePremium"]
-  ];
-
-  ctas.forEach(([id,key])=>{
-    const btn=$(id);
-    if(!btn) return;
-    btn.textContent=isOnboarding ? t(key) : t("plans.choose");
-  });
-
-  if (isOnboarding) {
-    document.querySelectorAll("#S11_PLANS .card[data-plan='free'] .btn.secondary").forEach((btn) => {
-      btn.textContent = t("plans.continueFree");
-    });
   }
 
   safeSetText("plansScreenTopTitle", isOnboarding ? t("plans.onboarding.topTitle") : t("plans.title"));
@@ -3024,8 +3035,7 @@ async function registerPrimary() {
     $("appRoot")?.classList.add("isLoggedIn");
     updateTabbars();
 
-    renderAll();
-    bindMessageInputs();
+    applyI18n();
 
     toast(t("register.toast.created_logged_in"));
       if (App.role === "user") {
@@ -3035,7 +3045,6 @@ async function registerPrimary() {
         if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
         if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
         safeSetText("bioCount", String(($("setupBio")?.value || "").length));
-        safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
         safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
         renderInterestChips("interestChips");
         refreshInterestUi();
@@ -3126,21 +3135,30 @@ function refreshPlanPromoPrices(role) {
 
 function refreshUserPlanCardsUi() {
   const current = String(App.user?.plan || "free").toLowerCase();
+  const isOnboarding = App.planScreenMode === "onboarding";
 
   document.querySelectorAll('#S11_PLANS #plansUserOnly .card[data-plan]').forEach(card => {
     const plan = String(card.dataset.plan || "").toLowerCase();
     const btn = card.querySelector('button.btn.secondary');
 
-    card.classList.toggle("is-current", plan === current);
+    if (!isOnboarding) {
+      card.classList.toggle("is-current", plan === current);
 
-    if (btn) {
-      btn.textContent = plan === current ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz");
+      if (btn) {
+        btn.textContent = plan === current ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz");
+      }
+    } else {
+      card.classList.remove("is-current");
     }
   });
 
   safeSetText("settingsProfilePlanPill", current.toUpperCase());
   safeSetText("settingsProfilePlanPillSecondary", current.toUpperCase());
   refreshPlanPromoPrices("user");
+
+  if (isOnboarding && App.currentView === "S11_PLANS") {
+    applyPlanScreenMode();
+  }
 }
 
 
@@ -3438,13 +3456,18 @@ async function setPartnerPlan(plan, silent = false) {
 
   document.querySelectorAll('#S11_PLANS #plansPartnerOnly .card[data-plan]').forEach(card => {
     const isCurrent = String(card.dataset.plan || "").toLowerCase() === plan;
-    card.classList.toggle("is-current", isCurrent);
+    const isOnboarding = App.planScreenMode === "onboarding";
+    card.classList.toggle("is-current", !isOnboarding && isCurrent);
     const btn = card.querySelector(".btn");
-    if (btn) {
+    if (btn && !isOnboarding) {
       const cardPlan = String(card.dataset.plan || "").toLowerCase();
       btn.textContent = cardPlan === "enterprise" ? t("plans.contact_us", "Napisz do nas") : (isCurrent ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz"));
     }
   });
+
+  if (App.planScreenMode === "onboarding" && App.currentView === "S11_PLANS") {
+    applyPlanScreenMode();
+  }
 
   document.querySelectorAll("#partnerPlanPill").forEach((el) => {
     el.textContent = plan.toUpperCase();
@@ -10827,13 +10850,18 @@ function renderAll() {
   document.querySelectorAll('#S11_PLANS #plansPartnerOnly .card[data-plan]').forEach((card) => {
     const currentPlan = String(App.partner.plan || "free").toLowerCase();
     const isCurrent = String(card.dataset.plan || "").toLowerCase() === currentPlan;
-    card.classList.toggle("is-current", isCurrent);
+    const isOnboarding = App.planScreenMode === "onboarding";
+    card.classList.toggle("is-current", !isOnboarding && isCurrent);
     const btn = card.querySelector(".btn");
-    if (btn) {
+    if (btn && !isOnboarding) {
       const cardPlan = String(card.dataset.plan || "").toLowerCase();
       btn.textContent = cardPlan === "enterprise" ? t("plans.contact_us", "Napisz do nas") : (isCurrent ? t("plans.current", "Aktualny plan") : t("plans.choose", "Wybierz"));
     }
   });
+
+  if (App.planScreenMode === "onboarding" && App.currentView === "S11_PLANS") {
+    applyPlanScreenMode();
+  }
 
   if (App.currentView === "S10B_PROFILE_EDIT") {
     if ($("setNearbyRadiusKm")) $("setNearbyRadiusKm").value = String(App.user.nearbyRadiusKm || 25);
