@@ -1320,6 +1320,22 @@ def serve_privacy_en_page():
     )
 
 
+@app.get("/delete-account", include_in_schema=False)
+def serve_delete_account_page():
+    return FileResponse(
+        FRONTEND_DIR / "delete-account.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get("/delete-account/en", include_in_schema=False)
+def serve_delete_account_en_page():
+    return FileResponse(
+        FRONTEND_DIR / "delete-account.en.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.get("/kontakt", include_in_schema=False)
 def serve_contact_page():
     return FileResponse(
