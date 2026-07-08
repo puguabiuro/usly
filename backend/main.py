@@ -1701,13 +1701,15 @@ def register(request: Request, payload: RegisterRequest):
                     "Miło Cię widzieć w USLY ✨"
                 )
 
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(send_user_email(user.email, welcome_subject, welcome_body))
-                loop.create_task(send_user_email(user.email, verify_subject, verify_body))
-            except RuntimeError:
-                asyncio.run(send_user_email(user.email, welcome_subject, welcome_body))
-                asyncio.run(send_user_email(user.email, verify_subject, verify_body))
+            def _send_registration_emails_background():
+                try:
+                    asyncio.run(send_user_email(user.email, welcome_subject, welcome_body))
+                    asyncio.run(send_user_email(user.email, verify_subject, verify_body))
+                except Exception as email_error:
+                    print("REGISTRATION EMAIL BACKGROUND ERROR:", email_error)
+
+            import threading
+            threading.Thread(target=_send_registration_emails_background, daemon=True).start()
         except Exception as mail_error:
             print("WELCOME MAIL ERROR:", mail_error)
 
