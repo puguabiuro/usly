@@ -3014,19 +3014,20 @@ async function registerPrimary() {
     App.isLoggedIn = true;
 
     if (App.role === "user") {
-      const profile = await apiFetch("/users/me");
-      if (profile?.success && profile?.data) {
-        App.user.nick = profile.data.nick || App.user.nick;
-        App.user.city = profile.data.miasto || App.user.city;
-        App.user.bio = profile.data.bio || "";
+      apiFetch("/users/me").then((profile) => {
+        if (profile?.success && profile?.data) {
+          App.user.nick = profile.data.nick || App.user.nick;
+          App.user.city = profile.data.miasto || App.user.city;
+          App.user.bio = profile.data.bio || "";
           const backendInterests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
           App.user.interests = backendInterests;
           App.user.trainerInterests = Array.isArray(profile.data.trainer_interests) ? profile.data.trainer_interests : [];
           try { localStorage.setItem("usly_user_interests", JSON.stringify(backendInterests)); } catch(_) {}
-        App.user.plan = profile.data.plan || App.user.plan;
-        App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
-        try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
-      }
+          App.user.plan = profile.data.plan || App.user.plan;
+          App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
+          try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
+        }
+      }).catch((err) => console.error("post-register load user profile failed", err));
     } else {
       await loadPartnerProfile();
       await loadPartnerEvents();
