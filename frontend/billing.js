@@ -1,13 +1,13 @@
 (function () {
   const PRODUCT_IDS = {
     user: {
-      plus: "usly_user_plus_monthly",
-      premium: "usly_user_premium_monthly",
-      vip: "usly_user_vip_monthly",
+      plus: "usly_user_plus:monthly",
+      premium: "usly_user_premium:monthly",
+      vip: "usly_user_vip:monthly",
     },
     partner: {
-      pro: "usly_partner_pro_monthly",
-      premium: "usly_partner_premium_monthly",
+      pro: "usly_partner_pro:monthly",
+      premium: "usly_partner_premium:monthly",
     },
   };
 
