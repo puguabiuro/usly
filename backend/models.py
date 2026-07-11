@@ -1390,6 +1390,119 @@ class AmbassadorRewardGrant(Base):
     )
 
 
+class RevenueCatWebhookEvent(Base):
+    """Trwały rejestr webhooków RevenueCat.
+
+    Tabela służy do:
+
+    - deduplikacji ponownie dostarczonych zdarzeń,
+    - audytu przetwarzania webhooków,
+    - diagnostyki błędów,
+    - kontrolowanego retry.
+    """
+
+    __tablename__ = "revenuecat_webhook_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    event_id: Mapped[str] = mapped_column(
+        String(180),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    event_type: Mapped[str] = mapped_column(
+        String(80),
+        nullable=False,
+        index=True,
+    )
+
+    app_user_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    revenuecat_customer_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    environment: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="received",
+        index=True,
+    )
+
+    error_message: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
+    payload_json: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    processing_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    processed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    retry_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    last_retry_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_revenuecat_webhook_events_status_received",
+            "status",
+            "received_at",
+        ),
+        Index(
+            "ix_revenuecat_webhook_events_app_user_status",
+            "app_user_id",
+            "status",
+        ),
+    )
+
+
 class StorePurchase(Base):
     __tablename__ = "store_purchases"
 
