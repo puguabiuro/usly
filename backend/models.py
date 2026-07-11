@@ -1437,6 +1437,75 @@ class StorePurchase(Base):
         default=None,
     )
 
+    revenuecat_app_user_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    revenuecat_customer_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    revenuecat_subscription_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    revenuecat_entitlement_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    entitlement_lookup_key: Mapped[str | None] = mapped_column(
+        String(160),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    role: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    store: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    last_event_id: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    last_event_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
+
     plan: Mapped[str] = mapped_column(
         String(40),
         nullable=False,
