@@ -214,6 +214,14 @@ from backend.models import (
     EmailVerificationToken,
     AiUsageLog,
 )
+from backend.revenuecat_config import load_revenuecat_config
+from backend.revenuecat_webhook import (
+    RevenueCatWebhookAuthorizationError,
+    RevenueCatWebhookPayloadError,
+    parse_revenuecat_webhook_payload,
+    validate_revenuecat_webhook_authorization,
+)
+from backend.revenuecat_webhook_processor import RevenueCatWebhookProcessor
 from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, GroupMessageCreate, MessageOut
 from backend.security import (
     hash_password,
@@ -821,6 +829,77 @@ async def _plan_expiry_notice_scheduler() -> None:
 async def start_plan_expiry_notice_scheduler() -> None:
     _init_firebase_admin()
     asyncio.create_task(_plan_expiry_notice_scheduler())
+
+
+@app.post("/revenuecat/webhook")
+async def revenuecat_webhook(request: Request):
+    """Odbiera i trwale przetwarza webhook RevenueCat."""
+
+    config = load_revenuecat_config()
+
+    try:
+        validate_revenuecat_webhook_authorization(
+            request.headers.get("authorization"),
+            config,
+        )
+    except RevenueCatWebhookAuthorizationError as exc:
+        raise HTTPException(
+            status_code=401,
+            detail="REVENUECAT_WEBHOOK_UNAUTHORIZED",
+        ) from exc
+
+    try:
+        raw_payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="REVENUECAT_WEBHOOK_INVALID_JSON",
+        ) from exc
+
+    try:
+        payload = parse_revenuecat_webhook_payload(raw_payload)
+    except RevenueCatWebhookPayloadError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="REVENUECAT_WEBHOOK_INVALID_PAYLOAD",
+        ) from exc
+
+    db = SessionLocal()
+
+    try:
+        processor = RevenueCatWebhookProcessor(db=db)
+        result = processor.process(payload)
+
+        db.commit()
+
+        response_data = {
+            "event_id": result.event_id,
+            "status": result.status,
+            "duplicate": result.duplicate,
+            "app_user_id": result.app_user_id,
+            "revenuecat_customer_id": result.revenuecat_customer_id,
+            "role": result.role,
+            "effective_plan": result.effective_plan,
+        }
+
+        if result.status == "failed":
+            raise HTTPException(
+                status_code=502,
+                detail="REVENUECAT_WEBHOOK_PROCESSING_FAILED",
+            )
+
+        return ok(response_data)
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="REVENUECAT_WEBHOOK_INTERNAL_ERROR",
+        ) from exc
+    finally:
+        db.close()
 
 
 @app.get("/healthz")
