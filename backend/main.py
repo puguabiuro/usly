@@ -2190,6 +2190,7 @@ def auth_me(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "email": current_user.email,
         "role": current_user.role,
+        "revenuecat_app_user_id": current_user.revenuecat_app_user_id,
         "admin_display_name": current_user.admin_display_name,
         "admin_level": current_user.admin_level,
         "mfa_enabled": bool(getattr(current_user, "mfa_enabled", False)) if current_user.role == UserRole.ADMIN.value else None,

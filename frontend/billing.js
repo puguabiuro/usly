@@ -11,10 +11,10 @@
     },
   };
 
-  const REVENUECAT_PUBLIC_SDK_KEYS = {
-    ios: "",
-    android: "",
-  };
+  const REVENUECAT_PUBLIC_SDK_KEYS = Object.freeze({
+    ios: window.USLY_CONFIG?.revenueCat?.iosPublicApiKey || "",
+    android: window.USLY_CONFIG?.revenueCat?.androidPublicApiKey || "",
+  });
 
   let configurePromise = null;
   let configuredAppUserId = null;
@@ -29,13 +29,11 @@
     return "web";
   }
 
-  function getAppUserId(role) {
-    const id = window.App?.currentUserId;
-    if (!id) return null;
+  function getAppUserId() {
+    const appUserId = window.App?.currentRevenueCatAppUserId;
+    if (!appUserId) return null;
 
-    const normalizedRole = String(role || window.App?.role || "").toLowerCase();
-    if (normalizedRole === "partner") return `usly_partner_${id}`;
-    return `usly_user_${id}`;
+    return String(appUserId);
   }
 
   function getNativePurchasesPlugin() {

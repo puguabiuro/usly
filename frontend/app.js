@@ -2077,6 +2077,7 @@ const App = {
   selectedChatId: null,
   selectedChatUserId: null,
   currentUserId: null,
+  currentRevenueCatAppUserId: null,
   selectedGroupId: null,
 };
 
@@ -2716,6 +2717,7 @@ async function loginPrimary() {
     const me = await apiFetch("/auth/me");
     const meData = me?.data || me || {};
     App.currentUserId = meData.id ?? null;
+    App.currentRevenueCatAppUserId = meData.revenuecat_app_user_id ?? null;
     App.role = meData.role === "admin" ? "admin" : (meData.role === "partner" ? "partner" : "user");
     App.isLoggedIn = true;
     setupPushNotifications();
@@ -2815,6 +2817,7 @@ function logout() {
   try { localStorage.removeItem("usly_user_interests"); } catch (_) {}
 
   App.currentUserId = null;
+  App.currentRevenueCatAppUserId = null;
   App.selectedPersonId = null;
   App.selectedChatId = null;
   App.selectedChatUserId = null;
@@ -3010,6 +3013,8 @@ async function registerPrimary() {
 
     const me = await apiFetch("/auth/me");
     App.currentUserId = me?.id ?? me?.data?.id ?? null;
+    App.currentRevenueCatAppUserId =
+      me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
     App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
     App.isLoggedIn = true;
 
@@ -11164,6 +11169,8 @@ async function init() {
     try {
       const me = await apiFetch("/auth/me");
       App.currentUserId = me?.id ?? me?.data?.id ?? null;
+      App.currentRevenueCatAppUserId =
+        me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
       App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
       selectRole(App.role);
       syncAccountEmail(me?.data?.email || me?.email || "");
@@ -11212,6 +11219,7 @@ async function init() {
       try { localStorage.removeItem("usly_user_interests"); } catch (_) {}
       App.isLoggedIn = false;
       App.currentUserId = null;
+      App.currentRevenueCatAppUserId = null;
       App.user.interests = [];
       App.user.trainerInterests = [];
       $("appRoot")?.classList.remove("isLoggedIn");
@@ -11495,6 +11503,7 @@ async function submitDeleteAccount() {
       try { localStorage.removeItem("usly_token"); } catch (_) {}
       App.isLoggedIn = false;
       App.currentUserId = null;
+      App.currentRevenueCatAppUserId = null;
       closeModal();
       toast(t("delete.toastSuccess"));
       go("S0_WELCOME");
