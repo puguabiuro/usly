@@ -15,13 +15,18 @@ Nie jest jeszcze podłączony do main.py.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.models import RevenueCatWebhookEvent, User
+from backend.revenuecat_sync import (
+    RevenueCatSyncEngine,
+    RevenueCatSyncResult,
+    create_revenuecat_sync_engine,
+)
 from backend.revenuecat_webhook import RevenueCatWebhookPayload
 
 
@@ -56,6 +61,9 @@ class RevenueCatWebhookProcessor:
     """Orkiestruje trwałe i idempotentne przetwarzanie webhooka."""
 
     db: Session
+    sync_engine: RevenueCatSyncEngine = field(
+        default_factory=create_revenuecat_sync_engine
+    )
 
     def find_user_by_app_user_id(
         self,
@@ -87,6 +95,40 @@ class RevenueCatWebhookProcessor:
             )
 
         return user
+
+    def resolve_sync_role(
+        self,
+        user: User,
+    ) -> str:
+        """Zwraca rolę obsługiwaną przez subskrypcje sklepowe."""
+
+        normalized_role = str(user.role or "").strip().lower()
+
+        if normalized_role not in {"user", "partner"}:
+            raise RevenueCatWebhookProcessingError(
+                (
+                    "Użytkownik RevenueCat ma rolę nieobsługiwaną "
+                    f"przez subskrypcje sklepowe: {normalized_role or '<pusta>'}"
+                )
+            )
+
+        return normalized_role
+
+    def sync_user_from_webhook(
+        self,
+        *,
+        user: User,
+        payload: RevenueCatWebhookPayload,
+    ) -> RevenueCatSyncResult:
+        """Uruchamia RevenueCat Sync Engine dla odnalezionego konta USLY."""
+
+        role = self.resolve_sync_role(user)
+
+        return self.sync_engine.sync_customer(
+            app_user_id=user.revenuecat_app_user_id,
+            role=role,
+            environment=payload.environment,
+        )
 
     def register_event(
         self,

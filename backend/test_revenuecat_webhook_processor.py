@@ -15,6 +15,30 @@ from backend.revenuecat_webhook_processor import (
 )
 
 
+
+
+class FakeRevenueCatSyncEngine:
+    def __init__(self) -> None:
+        self.calls = []
+        self.result = object()
+
+    def sync_customer(
+        self,
+        *,
+        app_user_id,
+        role,
+        environment=None,
+    ):
+        self.calls.append(
+            {
+                "app_user_id": app_user_id,
+                "role": role,
+                "environment": environment,
+            }
+        )
+        return self.result
+
+
 class RevenueCatWebhookProcessorRegistrationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.engine = create_engine("sqlite:///:memory:")
@@ -69,6 +93,99 @@ class RevenueCatWebhookProcessorRegistrationTests(unittest.TestCase):
 
         self.assertEqual(found_user.id, user.id)
         self.assertEqual(found_user.email, user.email)
+
+    def test_resolves_user_sync_role(self) -> None:
+        user = User(
+            email="sync-user-role@usly.local",
+            password_hash="test",
+            role=" USER ",
+            status="active",
+            revenuecat_app_user_id=(
+                "usly_usr_11111111111111111111111111111111"
+            ),
+        )
+
+        self.assertEqual(
+            self.processor.resolve_sync_role(user),
+            "user",
+        )
+
+    def test_resolves_partner_sync_role(self) -> None:
+        user = User(
+            email="sync-partner-role@usly.local",
+            password_hash="test",
+            role="PARTNER",
+            status="active",
+            revenuecat_app_user_id=(
+                "usly_usr_22222222222222222222222222222222"
+            ),
+        )
+
+        self.assertEqual(
+            self.processor.resolve_sync_role(user),
+            "partner",
+        )
+
+    def test_rejects_admin_sync_role(self) -> None:
+        user = User(
+            email="sync-admin-role@usly.local",
+            password_hash="test",
+            role="admin",
+            status="active",
+            revenuecat_app_user_id=(
+                "usly_usr_33333333333333333333333333333333"
+            ),
+        )
+
+        with self.assertRaises(RevenueCatWebhookProcessingError):
+            self.processor.resolve_sync_role(user)
+
+    def test_syncs_user_from_webhook_with_trusted_identity(self) -> None:
+        fake_sync_engine = FakeRevenueCatSyncEngine()
+        processor = RevenueCatWebhookProcessor(
+            db=self.db,
+            sync_engine=fake_sync_engine,
+        )
+        user = User(
+            email="sync-webhook-user@usly.local",
+            password_hash="test",
+            role=" USER ",
+            status="active",
+            revenuecat_app_user_id=(
+                "usly_usr_77777777777777777777777777777777"
+            ),
+        )
+        payload = parse_revenuecat_webhook_payload(
+            {
+                "event": {
+                    "id": "evt-sync-user",
+                    "type": "RENEWAL",
+                    "app_user_id": (
+                        "usly_usr_77777777777777777777777777777777"
+                    ),
+                    "environment": "SANDBOX",
+                }
+            }
+        )
+
+        result = processor.sync_user_from_webhook(
+            user=user,
+            payload=payload,
+        )
+
+        self.assertIs(result, fake_sync_engine.result)
+        self.assertEqual(
+            fake_sync_engine.calls,
+            [
+                {
+                    "app_user_id": (
+                        "usly_usr_77777777777777777777777777777777"
+                    ),
+                    "role": "user",
+                    "environment": "SANDBOX",
+                }
+            ],
+        )
 
     def test_rejects_unknown_revenuecat_app_user_id(self) -> None:
         with self.assertRaises(RevenueCatWebhookUserNotFoundError):

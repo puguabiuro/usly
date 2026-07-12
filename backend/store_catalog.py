@@ -88,6 +88,25 @@ def get_product_for_plan(role: str, plan: str) -> dict[str, Any] | None:
     )
 
 
+def get_store_product_id_for_plan(
+    role: str,
+    plan: str,
+) -> str | None:
+    """Zwraca sklepowy identyfikator produktu dla roli i planu."""
+
+    normalized_role = str(role or "").strip()
+    normalized_plan = str(plan or "").strip()
+
+    for product_id, product in STORE_PRODUCTS.items():
+        if (
+            product["role"] == normalized_role
+            and product["plan"] == normalized_plan
+        ):
+            return product_id
+
+    return None
+
+
 def is_product_valid_for_role(product_id: str, role: str) -> bool:
     """Sprawdza, czy produkt należy do wskazanej roli."""
     product = get_store_product(product_id)

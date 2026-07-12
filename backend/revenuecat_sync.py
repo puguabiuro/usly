@@ -18,6 +18,10 @@ from typing import Any, Iterable
 
 from backend.revenuecat_client import create_revenuecat_client
 from backend.revenuecat_service import RevenueCatService
+from backend.revenuecat_subscription import (
+    RevenueCatSubscription,
+    parse_revenuecat_subscription,
+)
 from backend.store_catalog import (
     PLAN_RANKS_BY_ROLE,
     get_product_by_entitlement,
@@ -64,7 +68,7 @@ class RevenueCatSyncResult:
     effective_plan: EffectivePlan
     mapped_entitlements: tuple[MappedEntitlement, ...]
     unknown_entitlement_ids: tuple[str, ...]
-    subscriptions: tuple[dict[str, Any], ...]
+    subscriptions: tuple[RevenueCatSubscription, ...]
 
 
 
@@ -314,12 +318,8 @@ def normalize_required_identifier(value: str, field_name: str) -> str:
 
 def extract_subscriptions(
     subscriptions_payload: dict[str, Any],
-) -> tuple[dict[str, Any], ...]:
-    """Waliduje listę subskrypcji bez interpretowania jej pól biznesowych.
-
-    Szczegółowe mapowanie subskrypcji do StorePurchase zostanie dodane
-    dopiero podczas przebudowy modelu i migracji.
-    """
+) -> tuple[RevenueCatSubscription, ...]:
+    """Waliduje i typuje listę subskrypcji RevenueCat API v2."""
 
     if not isinstance(subscriptions_payload, dict):
         raise RevenueCatSyncDataError(
@@ -332,7 +332,7 @@ def extract_subscriptions(
             "Subskrypcje RevenueCat nie zawierają poprawnej listy items"
         )
 
-    subscriptions: list[dict[str, Any]] = []
+    subscriptions: list[RevenueCatSubscription] = []
 
     for item in items:
         if not isinstance(item, dict):
@@ -340,7 +340,14 @@ def extract_subscriptions(
                 "Lista subskrypcji RevenueCat zawiera element o nieprawidłowym typie"
             )
 
-        subscriptions.append(dict(item))
+        try:
+            subscription = parse_revenuecat_subscription(item)
+        except Exception as exc:
+            raise RevenueCatSyncDataError(
+                "Lista subskrypcji RevenueCat zawiera nieprawidłową subskrypcję"
+            ) from exc
+
+        subscriptions.append(subscription)
 
     return tuple(subscriptions)
 

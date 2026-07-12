@@ -146,7 +146,34 @@ class RevenueCatSyncResultTests(unittest.TestCase):
             subscriptions_payload={
                 "items": [
                     {
+                        "object": "subscription",
                         "id": "subscription_789",
+                        "customer_id": "customer_456",
+                        "original_customer_id": "customer_original",
+                        "product_id": "product_internal",
+                        "current_period_ends_at": None,
+                        "ends_at": 1782864000000,
+                        "gives_access": True,
+                        "pending_payment": False,
+                        "entitlements": {
+                            "object": "list",
+                            "items": [
+                                {
+                                    "object": "entitlement",
+                                    "id": "ent_premium",
+                                    "lookup_key": (
+                                        "usly_user_premium"
+                                    ),
+                                    "state": "active",
+                                }
+                            ],
+                        },
+                        "status": "active",
+                        "environment": "production",
+                        "store": "play_store",
+                        "store_subscription_identifier": (
+                            "GPA.1234-5678-9012-34567"
+                        ),
                         "future_field": {"preserved": True},
                     }
                 ]
@@ -162,8 +189,16 @@ class RevenueCatSyncResultTests(unittest.TestCase):
             ("ent_unknown",),
         )
         self.assertEqual(
-            result.subscriptions[0]["future_field"],
-            {"preserved": True},
+            result.subscriptions[0].subscription_id,
+            "subscription_789",
+        )
+        self.assertEqual(
+            result.subscriptions[0].store_subscription_identifier,
+            "GPA.1234-5678-9012-34567",
+        )
+        self.assertIn(
+            '"future_field":{"preserved":true}',
+            result.subscriptions[0].raw_payload_json,
         )
 
     def test_build_sync_result_rejects_invalid_subscription_item(self):
@@ -217,8 +252,34 @@ class FakeRevenueCatService:
         return {
             "items": [
                 {
+                    "object": "subscription",
                     "id": "subscription_internal",
-                    "environment": environment,
+                    "customer_id": customer_id,
+                    "original_customer_id": "customer_original",
+                    "product_id": "product_internal",
+                    "current_period_ends_at": None,
+                    "ends_at": None,
+                    "gives_access": True,
+                    "pending_payment": False,
+                    "entitlements": {
+                        "object": "list",
+                        "items": [
+                            {
+                                "object": "entitlement",
+                                "id": "ent_partner_premium",
+                                "lookup_key": (
+                                    "usly_partner_premium"
+                                ),
+                                "state": "active",
+                            }
+                        ],
+                    },
+                    "status": "active",
+                    "environment": environment or "production",
+                    "store": "play_store",
+                    "store_subscription_identifier": (
+                        "GPA.9999-8888-7777-66666"
+                    ),
                 }
             ]
         }
