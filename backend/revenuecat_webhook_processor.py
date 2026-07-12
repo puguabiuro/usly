@@ -21,13 +21,22 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from backend.models import RevenueCatWebhookEvent, User
+from backend.effective_plan_applier import (
+    EffectivePlanApplyResult,
+    apply_effective_plan,
+)
+from backend.models import RevenueCatWebhookEvent, StorePurchase, User
 from backend.revenuecat_sync import (
     RevenueCatSyncEngine,
     RevenueCatSyncResult,
     create_revenuecat_sync_engine,
 )
 from backend.revenuecat_webhook import RevenueCatWebhookPayload
+from backend.store_purchase_data import (
+    build_store_purchase_data,
+    select_subscription_for_effective_plan,
+)
+from backend.store_purchase_repository import StorePurchaseRepository
 
 
 class RevenueCatWebhookProcessorError(RuntimeError):
@@ -54,6 +63,15 @@ class RevenueCatWebhookProcessResult:
     revenuecat_customer_id: str | None
     role: str | None
     effective_plan: str | None
+
+
+@dataclass(frozen=True)
+class RevenueCatWebhookPersistenceResult:
+    """Wynik trwałego zastosowania synchronizacji RevenueCat."""
+
+    sync_result: RevenueCatSyncResult
+    store_purchase: StorePurchase | None
+    plan_apply_result: EffectivePlanApplyResult
 
 
 @dataclass
@@ -128,6 +146,63 @@ class RevenueCatWebhookProcessor:
             app_user_id=user.revenuecat_app_user_id,
             role=role,
             environment=payload.environment,
+        )
+
+    def persist_sync_result(
+        self,
+        *,
+        user: User,
+        payload: RevenueCatWebhookPayload,
+        sync_result: RevenueCatSyncResult,
+        synced_at: datetime,
+    ) -> RevenueCatWebhookPersistenceResult:
+        """Zapisuje zakup i stosuje końcowy plan w bieżącej transakcji."""
+
+        if not isinstance(synced_at, datetime):
+            raise RevenueCatWebhookProcessingError(
+                "synced_at musi być znacznikiem czasu datetime"
+            )
+
+        role = self.resolve_sync_role(user)
+
+        if sync_result.role != role:
+            raise RevenueCatWebhookProcessingError(
+                "Rola RevenueCatSyncResult nie odpowiada roli użytkownika"
+            )
+
+        store_purchase = None
+        purchase_data = None
+
+        subscription = select_subscription_for_effective_plan(
+            sync_result=sync_result,
+            webhook_payload=payload,
+        )
+
+        if subscription is not None:
+            purchase_data = build_store_purchase_data(
+                sync_result=sync_result,
+                subscription=subscription,
+                webhook_payload=payload,
+                synced_at=synced_at,
+            )
+
+            store_purchase = StorePurchaseRepository(self.db).upsert(
+                user_id=user.id,
+                data=purchase_data,
+            )
+
+        plan_apply_result = apply_effective_plan(
+            db=self.db,
+            user=user,
+            effective_plan=sync_result.effective_plan,
+            purchase_data=purchase_data,
+            applied_at=synced_at,
+        )
+
+        return RevenueCatWebhookPersistenceResult(
+            sync_result=sync_result,
+            store_purchase=store_purchase,
+            plan_apply_result=plan_apply_result,
         )
 
     def register_event(
@@ -276,8 +351,109 @@ class RevenueCatWebhookProcessor:
         self,
         payload: RevenueCatWebhookPayload,
     ) -> RevenueCatWebhookProcessResult:
-        """Przetwarza jeden zwalidowany webhook RevenueCat."""
+        """Przetwarza jeden zwalidowany webhook RevenueCat.
 
-        raise NotImplementedError(
-            "Procesor webhooka RevenueCat nie został jeszcze zaimplementowany"
-        )
+        Metoda wykonuje flush, ale nie wykonuje commit ani rollback.
+        Warstwa wyżej kontroluje ostateczne zatwierdzenie transakcji.
+        """
+
+        webhook_event, duplicate = self.register_event(payload)
+
+        if duplicate and webhook_event.status in {
+            "processed",
+            "processing",
+        }:
+            return RevenueCatWebhookProcessResult(
+                event_id=webhook_event.event_id,
+                status=webhook_event.status,
+                duplicate=True,
+                webhook_event_db_id=webhook_event.id,
+                app_user_id=webhook_event.app_user_id,
+                revenuecat_customer_id=None,
+                role=None,
+                effective_plan=None,
+            )
+
+        if webhook_event.status == "failed":
+            self.retry_processing(webhook_event)
+        elif webhook_event.status == "received":
+            self.start_processing(webhook_event)
+        else:
+            raise RevenueCatWebhookProcessingError(
+                (
+                    "Webhook ma nieobsługiwany status przed "
+                    f"przetwarzaniem: {webhook_event.status!r}"
+                )
+            )
+
+        user = None
+        sync_result = None
+
+        try:
+            user = self.find_user_by_app_user_id(payload.app_user_id)
+
+            sync_result = self.sync_user_from_webhook(
+                user=user,
+                payload=payload,
+            )
+
+            synced_at = datetime.utcnow()
+
+            with self.db.begin_nested():
+                self.persist_sync_result(
+                    user=user,
+                    payload=payload,
+                    sync_result=sync_result,
+                    synced_at=synced_at,
+                )
+
+                self.mark_processed(webhook_event)
+
+            return RevenueCatWebhookProcessResult(
+                event_id=webhook_event.event_id,
+                status=webhook_event.status,
+                duplicate=duplicate,
+                webhook_event_db_id=webhook_event.id,
+                app_user_id=user.revenuecat_app_user_id,
+                revenuecat_customer_id=sync_result.customer_id,
+                role=sync_result.role,
+                effective_plan=sync_result.effective_plan.plan,
+            )
+
+        except Exception as exc:
+            error_message = (
+                f"{type(exc).__name__}: {str(exc).strip() or 'unknown error'}"
+            )
+
+            if webhook_event.status == "processing":
+                self.mark_failed(
+                    webhook_event,
+                    error_message,
+                )
+
+            return RevenueCatWebhookProcessResult(
+                event_id=webhook_event.event_id,
+                status=webhook_event.status,
+                duplicate=duplicate,
+                webhook_event_db_id=webhook_event.id,
+                app_user_id=(
+                    user.revenuecat_app_user_id
+                    if user is not None
+                    else payload.app_user_id
+                ),
+                revenuecat_customer_id=(
+                    sync_result.customer_id
+                    if sync_result is not None
+                    else None
+                ),
+                role=(
+                    sync_result.role
+                    if sync_result is not None
+                    else None
+                ),
+                effective_plan=(
+                    sync_result.effective_plan.plan
+                    if sync_result is not None
+                    else None
+                ),
+            )
