@@ -7,6 +7,7 @@ from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.database import Base
+from backend.revenuecat_identity import generate_revenuecat_app_user_id
 
 
 # =====================
@@ -39,6 +40,14 @@ class User(Base):
         unique=True,
         index=True,
         nullable=False,
+    )
+
+    revenuecat_app_user_id: Mapped[str] = mapped_column(
+        String(64),
+        unique=True,
+        index=True,
+        nullable=False,
+        default=generate_revenuecat_app_user_id,
     )
 
     password_hash: Mapped[str] = mapped_column(
