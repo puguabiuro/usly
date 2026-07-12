@@ -1578,6 +1578,7 @@ class StorePurchase(Base):
         nullable=True,
         default=None,
         index=True,
+        unique=True,
     )
 
     revenuecat_entitlement_id: Mapped[str | None] = mapped_column(
