@@ -386,6 +386,20 @@ class RevenueCatWebhookProcessor:
                 )
             )
 
+        if payload.event_type.strip().upper() == "TEST":
+            self.mark_processed(webhook_event)
+
+            return RevenueCatWebhookProcessResult(
+                event_id=webhook_event.event_id,
+                status=webhook_event.status,
+                duplicate=duplicate,
+                webhook_event_db_id=webhook_event.id,
+                app_user_id=payload.app_user_id,
+                revenuecat_customer_id=None,
+                role=None,
+                effective_plan=None,
+            )
+
         user = None
         sync_result = None
 

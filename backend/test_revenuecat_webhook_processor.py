@@ -212,6 +212,36 @@ class RevenueCatWebhookProcessorRegistrationTests(unittest.TestCase):
                 ):
                     self.processor.find_user_by_app_user_id(app_user_id)
 
+    def test_processes_test_event_without_user_sync(self) -> None:
+        payload = self.make_payload(
+            event_id="evt-revenuecat-dashboard-test",
+            event_type="TEST",
+        )
+
+        result = self.processor.process(payload)
+
+        webhook_event = (
+            self.db.query(RevenueCatWebhookEvent)
+            .filter(
+                RevenueCatWebhookEvent.event_id
+                == "evt-revenuecat-dashboard-test"
+            )
+            .one()
+        )
+
+        self.assertEqual(result.event_id, "evt-revenuecat-dashboard-test")
+        self.assertEqual(result.status, "processed")
+        self.assertFalse(result.duplicate)
+        self.assertEqual(result.app_user_id, "user-42")
+        self.assertIsNone(result.revenuecat_customer_id)
+        self.assertIsNone(result.role)
+        self.assertIsNone(result.effective_plan)
+
+        self.assertEqual(webhook_event.status, "processed")
+        self.assertIsNotNone(webhook_event.processed_at)
+        self.assertIsNone(webhook_event.error_message)
+        self.assertEqual(webhook_event.retry_count, 0)
+
     def test_registers_new_event(self) -> None:
         payload = self.make_payload()
 
