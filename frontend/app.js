@@ -905,7 +905,7 @@ const I18N = {
     "register.repeat_password_placeholder": "Powtórz hasło",
     "register.user.location_title": "Wiek i lokalizacja",
     "register.birthdate": "Data urodzenia *",
-    "register.birthdate_hint": "Format: DD.MM.RRRR",
+    "register.birthdate_hint": "Wybierz dzień, miesiąc i rok.",
     "register.age_required": "Wymagane 18+.",
     "register.location": "Lokalizacja *",
     "register.location_placeholder": "Pobieramy miasto...",
@@ -1832,7 +1832,7 @@ const I18N = {
     "register.repeat_password_placeholder": "Repeat password",
     "register.user.location_title": "Age and location",
     "register.birthdate": "Date of birth *",
-    "register.birthdate_hint": "Format: DD.MM.YYYY",
+    "register.birthdate_hint": "Choose day, month and year.",
     "register.age_required": "18+ required.",
     "register.location": "Location *",
     "register.location_placeholder": "Getting your city...",
@@ -2297,44 +2297,52 @@ function go(viewId) {
     const setupCity = $("setupCity");
     if (setupCity) setupCity.value = "Pobieranie lokalizacji...";
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = approximateCoordinate(pos.coords.latitude);
-          const lng = approximateCoordinate(pos.coords.longitude);
-          if (lat == null || lng == null) return;
+    getCurrentDeviceLocation({
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 60000,
+    })
+      .then((pos) => {
+        const lat = approximateCoordinate(pos?.coords?.latitude);
+        const lng = approximateCoordinate(pos?.coords?.longitude);
+        if (lat == null || lng == null) {
+          throw new Error("Invalid location coordinates");
+        }
 
-          App.user.geo = App.user.geo || {};
-          App.user.geo.lat = String(lat);
-          App.user.geo.lng = String(lng);
+        App.user.geo = App.user.geo || {};
+        App.user.geo.lat = String(lat);
+        App.user.geo.lng = String(lng);
 
-          const cityInput = $("setupCity");
-          if (cityInput) cityInput.value = "Pobieranie lokalizacji...";
+        const cityInput = $("setupCity");
+        if (cityInput) cityInput.value = "Pobieranie lokalizacji...";
 
-          apiFetch("/users/me", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location_lat: lat,
-              location_lng: lng,
-            }),
-          })
-            .then((data) => {
-              App.user.city = data?.data?.miasto || App.user.city;
-              App.user.geo = App.user.geo || {};
-              App.user.geo.lat = String(data?.data?.location_lat || lat);
-              App.user.geo.lng = String(data?.data?.location_lng || lng);
+        return apiFetch("/users/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location_lat: lat,
+            location_lng: lng,
+          }),
+        }).then((data) => ({ data, lat, lng, cityInput }));
+      })
+      .then(({ data, lat, lng, cityInput }) => {
+        App.user.city = data?.data?.miasto || App.user.city;
+        App.user.geo = App.user.geo || {};
+        App.user.geo.lat = String(data?.data?.location_lat ?? lat);
+        App.user.geo.lng = String(data?.data?.location_lng ?? lng);
 
-              if (cityInput) cityInput.value = App.user.city || "Lokalizacja pobrana";
-            })
-            .catch(() => {
-              if (cityInput) cityInput.value = App.user.city || "Lokalizacja pobrana";
-            });
-        },
-        () => {},
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
-      );
-    }
+        if (cityInput) {
+          cityInput.value = App.user.city || "Lokalizacja pobrana";
+        }
+      })
+      .catch((error) => {
+        console.warn("profile setup geolocation failed", error);
+
+        const cityInput = $("setupCity");
+        if (cityInput) {
+          cityInput.value = App.user.city || "";
+        }
+      });
   }
 
 
@@ -2344,41 +2352,53 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
     if (pList) pList.innerHTML = `<div class="tMuted">${t("geo.fetching")}</div>`;
     if (eList) eList.innerHTML = `<div class="tMuted">${t("geo.fetching")}</div>`;
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = approximateCoordinate(pos.coords.latitude);
-          const lng = approximateCoordinate(pos.coords.longitude);
-          if (lat == null || lng == null) return;
+    getCurrentDeviceLocation({
+      enableHighAccuracy: false,
+      timeout: 20000,
+      maximumAge: 0,
+    })
+      .then((pos) => {
+        const lat = approximateCoordinate(pos?.coords?.latitude);
+        const lng = approximateCoordinate(pos?.coords?.longitude);
 
-          App.user.geo.lat = String(lat);
-          App.user.geo.lng = String(lng);
+        if (lat == null || lng == null) {
+          throw new Error("Invalid location coordinates");
+        }
 
-          Promise.all([loadNearbyPeople(lat, lng), loadNearbyEvents(lat, lng)])
-            .then(() => renderNearby())
-            .catch((err) => console.error("nearby refresh failed", err));
+        App.user.geo = App.user.geo || {};
+        App.user.geo.lat = String(lat);
+        App.user.geo.lng = String(lng);
 
-          apiFetch("/users/me", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location_lat: lat,
-              location_lng: lng,
-            }),
-          }).catch((err) => console.error("location save failed", err));
+        Promise.all([loadNearbyPeople(lat, lng), loadNearbyEvents(lat, lng)])
+          .then(() => renderNearby())
+          .catch((error) => {
+            console.error("nearby refresh failed", error);
+          });
 
-          if (nearbyMap) {
-            nearbyMap.setView([lat, lng], 12);
-            renderNearbyMapMarkers();
-          }
-        },
-        (err) => {
-          console.warn("nearby geolocation failed", err);
-          toast(t("geo.failed"));
-        },
-        { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }
-      );
-    }
+        apiFetch("/users/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location_lat: lat,
+            location_lng: lng,
+          }),
+        }).catch((error) => {
+          console.error("location save failed", error);
+        });
+
+        if (nearbyMap) {
+          nearbyMap.setView([lat, lng], 12);
+          renderNearbyMapMarkers();
+        }
+      })
+      .catch((error) => {
+        console.warn("nearby geolocation failed", error);
+        toast(
+          error?.code === "LOCATION_UNAVAILABLE"
+            ? t("geo.unavailable")
+            : t("geo.failed")
+        );
+      });
   }
 
   if (viewId === "S10_SETTINGS") {
@@ -10297,6 +10317,66 @@ function approximateCoordinate(value) {
   return Number.isFinite(number) ? Math.round(number * 100) / 100 : null;
 }
 
+function getCapacitorGeolocationPlugin() {
+  return window.Capacitor?.Plugins?.Geolocation || null;
+}
+
+async function getCurrentDeviceLocation(options = {}) {
+  const {
+    enableHighAccuracy = true,
+    timeout = 10000,
+    maximumAge = 60000,
+  } = options;
+
+  const nativeGeolocation = getCapacitorGeolocationPlugin();
+
+  if (IS_CAPACITOR_APP && nativeGeolocation) {
+    let permissionStatus = await nativeGeolocation.checkPermissions();
+
+    const hasLocationPermission =
+      permissionStatus?.location === "granted" ||
+      permissionStatus?.coarseLocation === "granted";
+
+    if (!hasLocationPermission) {
+      permissionStatus = await nativeGeolocation.requestPermissions();
+
+      const permissionGranted =
+        permissionStatus?.location === "granted" ||
+        permissionStatus?.coarseLocation === "granted";
+
+      if (!permissionGranted) {
+        const error = new Error("Location permission was not granted");
+        error.code = "LOCATION_PERMISSION_DENIED";
+        throw error;
+      }
+    }
+
+    return nativeGeolocation.getCurrentPosition({
+      enableHighAccuracy,
+      timeout,
+      maximumAge,
+    });
+  }
+
+  if (!navigator.geolocation) {
+    const error = new Error("Geolocation is unavailable");
+    error.code = "LOCATION_UNAVAILABLE";
+    throw error;
+  }
+
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      resolve,
+      reject,
+      {
+        enableHighAccuracy,
+        timeout,
+        maximumAge,
+      }
+    );
+  });
+}
+
 function initGeolocation() {
   // REQUIRED: bind by id="btnUseLocation" without inline onclick
   const btn = $("btnUseLocation");
@@ -10306,59 +10386,78 @@ function initGeolocation() {
 }
 
 // Global function name as requested (punkt 12)
-function useCurrentLocationForCity() {
-  if (!navigator.geolocation) {
-    toast(t("geo.unavailable"));
-    return;
-  }
-
+async function useCurrentLocationForCity() {
   toast(t("geo.fetching"));
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const lat = approximateCoordinate(pos.coords.latitude);
-      const lng = approximateCoordinate(pos.coords.longitude);
-      if (lat == null || lng == null) {
-        toast(t("geo.failed"));
-        return;
-      }
 
-      // Save to hidden fields (backend-ready)
-      const latEl = $("regGeoLat");
-      const lngEl = $("regGeoLng");
-      if (latEl) latEl.value = String(lat);
-      if (lngEl) lngEl.value = String(lng);
+  try {
+    const pos = await getCurrentDeviceLocation({
+      enableHighAccuracy: true,
+      timeout: 8000,
+      maximumAge: 120000,
+    });
 
-      App.user.geo.lat = String(lat);
-      App.user.geo.lng = String(lng);
+    const lat = approximateCoordinate(pos?.coords?.latitude);
+    const lng = approximateCoordinate(pos?.coords?.longitude);
 
-      const city = $("regCity");
-      if (city && App.role === "user") city.value = t("geo.fetchingCity");
-
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=10&addressdetails=1`)
-        .then((r) => r.ok ? r.json() : null)
-        .then((geoData) => {
-          const a = geoData?.address || {};
-          const cityName = a.city || a.town || a.village || a.municipality || a.county || "";
-          if (cityName) {
-            App.user.city = cityName;
-            if (city && App.role === "user") city.value = cityName;
-          } else if (city && App.role === "user") {
-            city.value = t("geo.locationFetched");
-          }
-          toast(t("geo.locationSet"));
-        })
-        .catch(() => {
-          if (city && App.role === "user") city.value = t("geo.locationFetched");
-          toast(t("geo.locationSet"));
-        });
-    },
-    () => {
-      const city = $("regCity");
-      if (city && App.role === "user") city.value = t("geo.enableLocation");
+    if (lat == null || lng == null) {
       toast(t("geo.failed"));
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 }
-  );
+      return;
+    }
+
+    // Save to hidden fields (backend-ready)
+    const latEl = $("regGeoLat");
+    const lngEl = $("regGeoLng");
+    if (latEl) latEl.value = String(lat);
+    if (lngEl) lngEl.value = String(lng);
+
+    App.user.geo = App.user.geo || {};
+    App.user.geo.lat = String(lat);
+    App.user.geo.lng = String(lng);
+
+    const city = $("regCity");
+    if (city && App.role === "user") city.value = t("geo.fetchingCity");
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=10&addressdetails=1`
+      );
+      const geoData = response.ok ? await response.json() : null;
+      const address = geoData?.address || {};
+      const cityName =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        address.county ||
+        "";
+
+      if (cityName) {
+        App.user.city = cityName;
+        if (city && App.role === "user") city.value = cityName;
+      } else if (city && App.role === "user") {
+        city.value = t("geo.locationFetched");
+      }
+    } catch (_) {
+      if (city && App.role === "user") {
+        city.value = t("geo.locationFetched");
+      }
+    }
+
+    toast(t("geo.locationSet"));
+  } catch (error) {
+    console.warn("registration geolocation failed", error);
+
+    const city = $("regCity");
+    if (city && App.role === "user") {
+      city.value = t("geo.enableLocation");
+    }
+
+    toast(
+      error?.code === "LOCATION_UNAVAILABLE"
+        ? t("geo.unavailable")
+        : t("geo.failed")
+    );
+  }
 }
 
 /* ------------------------- Tabbar + Active states -------------------------- */
@@ -11126,12 +11225,138 @@ function initSearchBindings() {
 }
 
 /* ------------------------- App Init -------------------------- */
+function getBirthDateMonthLabel(monthNumber) {
+  const locale = App.lang === "en" ? "en-GB" : "pl-PL";
+  const date = new Date(2000, monthNumber - 1, 1);
+
+  return new Intl.DateTimeFormat(locale, {
+    month: "long",
+  }).format(date);
+}
+
+function getBirthDateDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function syncRegistrationBirthDate() {
+  const daySelect = $("regBirthDay");
+  const monthSelect = $("regBirthMonth");
+  const yearSelect = $("regBirthYear");
+  const hiddenInput = $("regBirthDate");
+
+  if (!daySelect || !monthSelect || !yearSelect || !hiddenInput) return;
+
+  const day = Number(daySelect.value);
+  const month = Number(monthSelect.value);
+  const year = Number(yearSelect.value);
+
+  hiddenInput.value = "";
+
+  if (
+    !Number.isInteger(day) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(year)
+  ) {
+    hiddenInput.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
+  const daysInMonth = getBirthDateDaysInMonth(year, month);
+  if (day < 1 || day > daysInMonth) {
+    hiddenInput.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
+  const paddedDay = String(day).padStart(2, "0");
+  const paddedMonth = String(month).padStart(2, "0");
+
+  hiddenInput.value = `${year}-${paddedMonth}-${paddedDay}`;
+  hiddenInput.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function refreshRegistrationBirthDays() {
+  const daySelect = $("regBirthDay");
+  const monthSelect = $("regBirthMonth");
+  const yearSelect = $("regBirthYear");
+
+  if (!daySelect || !monthSelect || !yearSelect) return;
+
+  const selectedDay = Number(daySelect.value);
+  const month = Number(monthSelect.value);
+  const year = Number(yearSelect.value);
+
+  const maxDays =
+    Number.isInteger(month) && Number.isInteger(year)
+      ? getBirthDateDaysInMonth(year, month)
+      : 31;
+
+  const placeholder = App.lang === "en" ? "Day" : "Dzień";
+  daySelect.innerHTML = `<option value="">${placeholder}</option>`;
+
+  for (let day = 1; day <= maxDays; day += 1) {
+    const option = document.createElement("option");
+    option.value = String(day);
+    option.textContent = String(day).padStart(2, "0");
+    daySelect.appendChild(option);
+  }
+
+  if (selectedDay >= 1 && selectedDay <= maxDays) {
+    daySelect.value = String(selectedDay);
+  }
+
+  syncRegistrationBirthDate();
+}
+
+function initRegistrationBirthDateSelects() {
+  const daySelect = $("regBirthDay");
+  const monthSelect = $("regBirthMonth");
+  const yearSelect = $("regBirthYear");
+
+  if (!daySelect || !monthSelect || !yearSelect) return;
+  if (daySelect.dataset.bound === "1") return;
+
+  const monthPlaceholder = App.lang === "en" ? "Month" : "Miesiąc";
+  monthSelect.innerHTML = `<option value="">${monthPlaceholder}</option>`;
+
+  for (let month = 1; month <= 12; month += 1) {
+    const option = document.createElement("option");
+    option.value = String(month);
+    option.textContent = getBirthDateMonthLabel(month);
+    monthSelect.appendChild(option);
+  }
+
+  const currentYear = new Date().getFullYear();
+  const maximumBirthYear = currentYear - 18;
+  const minimumBirthYear = currentYear - 100;
+  const yearPlaceholder = App.lang === "en" ? "Year" : "Rok";
+
+  yearSelect.innerHTML = `<option value="">${yearPlaceholder}</option>`;
+
+  for (let year = maximumBirthYear; year >= minimumBirthYear; year -= 1) {
+    const option = document.createElement("option");
+    option.value = String(year);
+    option.textContent = String(year);
+    yearSelect.appendChild(option);
+  }
+
+  refreshRegistrationBirthDays();
+
+  daySelect.addEventListener("change", syncRegistrationBirthDate);
+  monthSelect.addEventListener("change", refreshRegistrationBirthDays);
+  yearSelect.addEventListener("change", refreshRegistrationBirthDays);
+
+  daySelect.dataset.bound = "1";
+  monthSelect.dataset.bound = "1";
+  yearSelect.dataset.bound = "1";
+}
+
 async function init() {
   // Start view
   go("S0_WELCOME");
 
   // init hooks
   initGeolocation();
+  initRegistrationBirthDateSelects();
   initAgeSliders();
   initCharCounters();
   initInterestInputs();

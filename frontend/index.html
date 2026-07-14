@@ -2602,8 +2602,19 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   
 
                   <label class="mt12" data-i18n="register.birthdate">Data urodzenia *</label>
-                  <input id="regBirthDate" class="mobileDateTimeInput" type="date" required />
-                  <div class="tMuted" style="text-align:left;font-size:12px;margin-top:6px;" data-i18n="register.birthdate_hint">Format: DD.MM.RRRR</div>
+                  <div class="birthDateSelectGrid" id="regBirthDateSelects">
+                    <select id="regBirthDay" aria-label="Dzień urodzenia" required>
+                      <option value="">Dzień</option>
+                    </select>
+                    <select id="regBirthMonth" aria-label="Miesiąc urodzenia" required>
+                      <option value="">Miesiąc</option>
+                    </select>
+                    <select id="regBirthYear" aria-label="Rok urodzenia" required>
+                      <option value="">Rok</option>
+                    </select>
+                  </div>
+                  <input id="regBirthDate" type="hidden" value="" />
+                  <div class="tMuted" style="text-align:left;font-size:12px;margin-top:6px;" data-i18n="register.birthdate_hint">Wybierz dzień, miesiąc i rok.</div>
                   <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
                    Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
                   </div>
