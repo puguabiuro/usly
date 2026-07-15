@@ -78,8 +78,33 @@ class RevenueCatClient:
             )
             response.raise_for_status()
         except requests.RequestException as exc:
+            response = getattr(exc, "response", None)
+            status_code = (
+                response.status_code
+                if response is not None
+                else None
+            )
+            response_text = (
+                str(response.text or "").strip()[:500]
+                if response is not None
+                else ""
+            )
+
+            details = [
+                f"method={str(method or '').strip().upper()}",
+                f"url={url}",
+                f"error={type(exc).__name__}",
+            ]
+
+            if status_code is not None:
+                details.append(f"status={status_code}")
+
+            if response_text:
+                details.append(f"response={response_text}")
+
             raise RevenueCatRequestError(
-                "Nie udało się wykonać requestu do RevenueCat"
+                "Nie udało się wykonać requestu do RevenueCat: "
+                + "; ".join(details)
             ) from exc
         finally:
             session.close()
