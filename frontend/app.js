@@ -3343,7 +3343,13 @@ async function chooseUserPlan(plan) {
       details: err,
     });
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
-    toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
+    const diagnosticCode = String(
+      window.USLYBilling?.getBillingErrorCode?.(err) ||
+      err?.message ||
+      err?.name ||
+      "UNKNOWN_PAYMENT_ERROR"
+    );
+    toast(`${t(key, "Nie udało się zakończyć płatności.")} [${diagnosticCode}]`);
   }
 }
 
@@ -3373,7 +3379,13 @@ async function choosePartnerPlan(plan) {
       details: err,
     });
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
-    toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
+    const diagnosticCode = String(
+      window.USLYBilling?.getBillingErrorCode?.(err) ||
+      err?.message ||
+      err?.name ||
+      "UNKNOWN_PAYMENT_ERROR"
+    );
+    toast(`${t(key, "Nie udało się zakończyć płatności.")} [${diagnosticCode}]`);
   }
 }
 

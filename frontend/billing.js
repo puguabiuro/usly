@@ -109,7 +109,10 @@
     }
 
     configuredAppUserId = appUserID;
-    configurePromise = Purchases.configure({ apiKey, appUserID }).then(() => ({ appUserID, platform }));
+    configurePromise = (async () => {
+      await Purchases.configure({ apiKey, appUserID });
+      return { appUserID, platform };
+    })();
     return configurePromise;
   }
 
