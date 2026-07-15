@@ -961,6 +961,30 @@ def revenuecat_sync_me(
             sync_result=sync_result,
         )
 
+        print(
+            "REVENUECAT SYNC-ME RESULT:",
+            {
+                "app_user_id": sync_result.app_user_id,
+                "customer_id": sync_result.customer_id,
+                "role": sync_result.role,
+                "effective_plan": sync_result.effective_plan.plan,
+                "mapped_entitlements": [
+                    {
+                        "lookup_key": item.lookup_key,
+                        "plan": item.plan,
+                        "role": item.role,
+                    }
+                    for item in sync_result.mapped_entitlements
+                ],
+                "unknown_entitlement_ids": list(
+                    sync_result.unknown_entitlement_ids
+                ),
+                "subscriptions_count": len(
+                    sync_result.subscriptions
+                ),
+            },
+        )
+
         db.commit()
 
         return ok({
