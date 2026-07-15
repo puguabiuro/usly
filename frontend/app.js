@@ -3335,6 +3335,13 @@ async function chooseUserPlan(plan) {
     await refreshPlanAfterStorePurchase("user");
     goToProfileSetupAfterPlan();
   } catch (err) {
+    console.error("USLY user purchase failed", {
+      name: err?.name || "",
+      code: err?.code || err?.errorCode || err?.userInfo?.readableErrorCode || "",
+      message: err?.message || "",
+      userCancelled: !!err?.userCancelled,
+      details: err,
+    });
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
     toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
   }
@@ -3358,6 +3365,13 @@ async function choosePartnerPlan(plan) {
     await refreshPlanAfterStorePurchase("partner");
     goToProfileSetupAfterPlan();
   } catch (err) {
+    console.error("USLY partner purchase failed", {
+      name: err?.name || "",
+      code: err?.code || err?.errorCode || err?.userInfo?.readableErrorCode || "",
+      message: err?.message || "",
+      userCancelled: !!err?.userCancelled,
+      details: err,
+    });
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.payment.failed";
     toast(t(key, "Nie udało się zakończyć płatności. Spróbuj ponownie."));
   }
