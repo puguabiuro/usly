@@ -982,6 +982,28 @@ def revenuecat_sync_me(
                 "subscriptions_count": len(
                     sync_result.subscriptions
                 ),
+                "subscriptions": [
+                    {
+                        "subscription_id": item.subscription_id,
+                        "revenuecat_product_id": (
+                            item.revenuecat_product_id
+                        ),
+                        "store": item.store,
+                        "environment": item.environment,
+                        "status": item.status,
+                        "gives_access": item.gives_access,
+                        "pending_payment": item.pending_payment,
+                        "active_entitlement_ids": list(
+                            item.active_entitlement_ids
+                        ),
+                        "current_period_ends_at": (
+                            item.current_period_ends_at.isoformat()
+                            if item.current_period_ends_at
+                            else None
+                        ),
+                    }
+                    for item in sync_result.subscriptions
+                ],
             },
         )
 
