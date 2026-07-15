@@ -32,11 +32,20 @@ from backend.revenuecat_sync import (
     create_revenuecat_sync_engine,
 )
 from backend.revenuecat_webhook import RevenueCatWebhookPayload
+from backend.revenuecat_sync_persistence import (
+    RevenueCatSyncPersistenceResult,
+    RevenueCatSyncPersistenceService,
+)
+from backend.store_catalog import get_store_product_id_for_plan
 from backend.store_purchase_data import (
     build_store_purchase_data,
     select_subscription_for_effective_plan,
 )
 from backend.store_purchase_repository import StorePurchaseRepository
+
+
+# Zgodność dotychczasowego kontraktu procesora webhooków.
+RevenueCatWebhookPersistenceResult = RevenueCatSyncPersistenceResult
 
 
 class RevenueCatWebhookProcessorError(RuntimeError):
@@ -63,16 +72,6 @@ class RevenueCatWebhookProcessResult:
     revenuecat_customer_id: str | None
     role: str | None
     effective_plan: str | None
-
-
-@dataclass(frozen=True)
-class RevenueCatWebhookPersistenceResult:
-    """Wynik trwałego zastosowania synchronizacji RevenueCat."""
-
-    sync_result: RevenueCatSyncResult
-    store_purchase: StorePurchase | None
-    plan_apply_result: EffectivePlanApplyResult
-
 
 @dataclass
 class RevenueCatWebhookProcessor:
@@ -156,7 +155,7 @@ class RevenueCatWebhookProcessor:
         sync_result: RevenueCatSyncResult,
         synced_at: datetime,
     ) -> RevenueCatWebhookPersistenceResult:
-        """Zapisuje zakup i stosuje końcowy plan w bieżącej transakcji."""
+        """Deleguje zapis zakupu i planu do wspólnej warstwy persystencji."""
 
         if not isinstance(synced_at, datetime):
             raise RevenueCatWebhookProcessingError(
@@ -170,39 +169,42 @@ class RevenueCatWebhookProcessor:
                 "Rola RevenueCatSyncResult nie odpowiada roli użytkownika"
             )
 
-        store_purchase = None
-        purchase_data = None
-
-        subscription = select_subscription_for_effective_plan(
-            sync_result=sync_result,
-            webhook_payload=payload,
+        canonical_product_id = get_store_product_id_for_plan(
+            role,
+            sync_result.effective_plan.plan,
         )
+        webhook_product_id = str(
+            payload.product_id or ""
+        ).strip()
 
-        if subscription is not None:
-            purchase_data = build_store_purchase_data(
-                sync_result=sync_result,
-                subscription=subscription,
-                webhook_payload=payload,
-                synced_at=synced_at,
+        if (
+            webhook_product_id
+            and canonical_product_id
+            and webhook_product_id != canonical_product_id
+        ):
+            raise RevenueCatWebhookProcessingError(
+                (
+                    "Product ID webhooka nie odpowiada końcowemu "
+                    "planowi wyliczonemu przez RevenueCat"
+                )
             )
 
-            store_purchase = StorePurchaseRepository(self.db).upsert(
-                user_id=user.id,
-                data=purchase_data,
+        source_event_at = None
+
+        if payload.event_timestamp_ms is not None:
+            source_event_at = datetime.utcfromtimestamp(
+                payload.event_timestamp_ms / 1000
             )
 
-        plan_apply_result = apply_effective_plan(
-            db=self.db,
+        return RevenueCatSyncPersistenceService(self.db).apply(
             user=user,
-            effective_plan=sync_result.effective_plan,
-            purchase_data=purchase_data,
-            applied_at=synced_at,
-        )
-
-        return RevenueCatWebhookPersistenceResult(
             sync_result=sync_result,
-            store_purchase=store_purchase,
-            plan_apply_result=plan_apply_result,
+            environment=payload.environment,
+            store=payload.store,
+            synced_at=synced_at,
+            source_event_id=payload.event_id,
+            source_event_type=payload.event_type,
+            source_event_at=source_event_at,
         )
 
     def register_event(

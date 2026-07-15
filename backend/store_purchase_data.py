@@ -59,8 +59,8 @@ class StorePurchaseData:
     ends_at: datetime | None
     plan_expires_at: datetime | None
 
-    webhook_event_id: str
-    webhook_event_type: str
+    webhook_event_id: str | None
+    webhook_event_type: str | None
     webhook_event_at: datetime | None
 
     synced_at: datetime
@@ -70,9 +70,15 @@ class StorePurchaseData:
 def select_subscription_for_effective_plan(
     *,
     sync_result: RevenueCatSyncResult,
-    webhook_payload: RevenueCatWebhookPayload,
+    webhook_payload: RevenueCatWebhookPayload | None = None,
+    environment: str | None = None,
+    store: str | None = None,
 ) -> RevenueCatSubscription | None:
-    """Wybiera subskrypcję odpowiadającą końcowemu planowi użytkownika."""
+    """Wybiera subskrypcję odpowiadającą końcowemu planowi użytkownika.
+
+    Filtry środowiska i sklepu mogą pochodzić z webhooka albo bezpośrednio
+    z produkcyjnej synchronizacji konta. Funkcja nie wymaga webhooka.
+    """
 
     source_entitlement_id = (
         sync_result.effective_plan.source_entitlement_id
@@ -85,12 +91,39 @@ def select_subscription_for_effective_plan(
             )
         return None
 
-    webhook_environment = str(
-        webhook_payload.environment or ""
-    ).strip().lower()
-    webhook_store = str(
-        webhook_payload.store or ""
-    ).strip().lower()
+    normalized_environment = str(environment or "").strip().lower()
+    normalized_store = str(store or "").strip().lower()
+
+    if webhook_payload is not None:
+        webhook_environment = str(
+            webhook_payload.environment or ""
+        ).strip().lower()
+        webhook_store = str(
+            webhook_payload.store or ""
+        ).strip().lower()
+
+        if (
+            normalized_environment
+            and webhook_environment
+            and normalized_environment != webhook_environment
+        ):
+            raise StorePurchaseDataError(
+                "Przekazane środowisko jest niespójne z webhookiem"
+            )
+
+        if (
+            normalized_store
+            and webhook_store
+            and normalized_store != webhook_store
+        ):
+            raise StorePurchaseDataError(
+                "Przekazany sklep jest niespójny z webhookiem"
+            )
+
+        normalized_environment = (
+            normalized_environment or webhook_environment
+        )
+        normalized_store = normalized_store or webhook_store
 
     candidates: list[RevenueCatSubscription] = []
 
@@ -108,12 +141,12 @@ def select_subscription_for_effective_plan(
             continue
 
         if (
-            webhook_environment
-            and subscription.environment != webhook_environment
+            normalized_environment
+            and subscription.environment != normalized_environment
         ):
             continue
 
-        if webhook_store and subscription.store != webhook_store:
+        if normalized_store and subscription.store != normalized_store:
             continue
 
         candidates.append(subscription)
@@ -143,45 +176,128 @@ def build_store_purchase_data(
     *,
     sync_result: RevenueCatSyncResult,
     subscription: RevenueCatSubscription,
-    webhook_payload: RevenueCatWebhookPayload,
+    webhook_payload: RevenueCatWebhookPayload | None = None,
     synced_at: datetime | None = None,
+    source_event_id: str | None = None,
+    source_event_type: str | None = None,
+    source_event_at: datetime | None = None,
 ) -> StorePurchaseData:
-    """Buduje spójny kontrakt danych późniejszego StorePurchase."""
+    """Buduje spójny kontrakt danych późniejszego StorePurchase.
+
+    Dane zdarzenia są opcjonalne. Webhook może je dostarczyć, ale produkcyjna
+    synchronizacja konta nie musi tworzyć ani udawać webhooka.
+    """
 
     if subscription.customer_id != sync_result.customer_id:
         raise StorePurchaseDataError(
             "Subskrypcja RevenueCat należy do innego customer_id"
         )
 
-    webhook_app_user_id = str(
-        webhook_payload.app_user_id or ""
-    ).strip()
+    normalized_source_event_id = (
+        str(source_event_id).strip()
+        if source_event_id is not None
+        else None
+    )
+    normalized_source_event_type = (
+        str(source_event_type).strip()
+        if source_event_type is not None
+        else None
+    )
+    normalized_source_event_at = source_event_at
 
     if (
-        webhook_app_user_id
-        and webhook_app_user_id != sync_result.app_user_id
+        normalized_source_event_at is not None
+        and not isinstance(normalized_source_event_at, datetime)
     ):
         raise StorePurchaseDataError(
-            "Webhook RevenueCat dotyczy innego App User ID"
+            "source_event_at musi być znacznikiem czasu datetime albo null"
         )
 
-    webhook_environment = str(
-        webhook_payload.environment or ""
-    ).strip().lower()
+    if webhook_payload is not None:
+        webhook_app_user_id = str(
+            webhook_payload.app_user_id or ""
+        ).strip()
 
-    if (
-        webhook_environment
-        and webhook_environment != subscription.environment
-    ):
-        raise StorePurchaseDataError(
-            "Środowisko webhooka i subskrypcji RevenueCat jest niespójne"
+        if (
+            webhook_app_user_id
+            and webhook_app_user_id != sync_result.app_user_id
+        ):
+            raise StorePurchaseDataError(
+                "Webhook RevenueCat dotyczy innego App User ID"
+            )
+
+        webhook_environment = str(
+            webhook_payload.environment or ""
+        ).strip().lower()
+
+        if (
+            webhook_environment
+            and webhook_environment != subscription.environment
+        ):
+            raise StorePurchaseDataError(
+                "Środowisko webhooka i subskrypcji RevenueCat jest niespójne"
+            )
+
+        webhook_store = str(
+            webhook_payload.store or ""
+        ).strip().lower()
+
+        if webhook_store and webhook_store != subscription.store:
+            raise StorePurchaseDataError(
+                "Sklep webhooka i subskrypcji RevenueCat jest niespójny"
+            )
+
+        webhook_event_id = str(
+            webhook_payload.event_id or ""
+        ).strip()
+        webhook_event_type = str(
+            webhook_payload.event_type or ""
+        ).strip()
+        webhook_event_at = _milliseconds_to_datetime(
+            webhook_payload.event_timestamp_ms
         )
 
-    webhook_store = str(webhook_payload.store or "").strip().lower()
+        if (
+            normalized_source_event_id
+            and webhook_event_id
+            and normalized_source_event_id != webhook_event_id
+        ):
+            raise StorePurchaseDataError(
+                "source_event_id jest niespójne z webhookiem"
+            )
 
-    if webhook_store and webhook_store != subscription.store:
-        raise StorePurchaseDataError(
-            "Sklep webhooka i subskrypcji RevenueCat jest niespójny"
+        if (
+            normalized_source_event_type
+            and webhook_event_type
+            and normalized_source_event_type != webhook_event_type
+        ):
+            raise StorePurchaseDataError(
+                "source_event_type jest niespójne z webhookiem"
+            )
+
+        if (
+            normalized_source_event_at is not None
+            and webhook_event_at is not None
+            and normalized_source_event_at != webhook_event_at
+        ):
+            raise StorePurchaseDataError(
+                "source_event_at jest niespójne z webhookiem"
+            )
+
+        normalized_source_event_id = (
+            normalized_source_event_id
+            or webhook_event_id
+            or None
+        )
+        normalized_source_event_type = (
+            normalized_source_event_type
+            or webhook_event_type
+            or None
+        )
+        normalized_source_event_at = (
+            normalized_source_event_at
+            if normalized_source_event_at is not None
+            else webhook_event_at
         )
 
     platform_by_store = {
@@ -206,10 +322,6 @@ def build_store_purchase_data(
             "synced_at musi być znacznikiem czasu datetime"
         )
 
-    webhook_event_at = _milliseconds_to_datetime(
-        webhook_payload.event_timestamp_ms
-    )
-
     effective_plan = sync_result.effective_plan
 
     canonical_store_product_id = get_store_product_id_for_plan(
@@ -225,20 +337,21 @@ def build_store_purchase_data(
             )
         )
 
-    webhook_product_id = str(
-        webhook_payload.product_id or ""
-    ).strip()
+    if webhook_payload is not None:
+        webhook_product_id = str(
+            webhook_payload.product_id or ""
+        ).strip()
 
-    if (
-        webhook_product_id
-        and webhook_product_id != canonical_store_product_id
-    ):
-        raise StorePurchaseDataError(
-            (
-                "Product ID webhooka nie odpowiada końcowemu "
-                "planowi wyliczonemu przez RevenueCat"
+        if (
+            webhook_product_id
+            and webhook_product_id != canonical_store_product_id
+        ):
+            raise StorePurchaseDataError(
+                (
+                    "Product ID webhooka nie odpowiada końcowemu "
+                    "planowi wyliczonemu przez RevenueCat"
+                )
             )
-        )
 
     plan_expires_at = (
         subscription.current_period_ends_at
@@ -273,9 +386,9 @@ def build_store_purchase_data(
         ),
         ends_at=subscription.ends_at,
         plan_expires_at=plan_expires_at,
-        webhook_event_id=webhook_payload.event_id,
-        webhook_event_type=webhook_payload.event_type,
-        webhook_event_at=webhook_event_at,
+        webhook_event_id=normalized_source_event_id,
+        webhook_event_type=normalized_source_event_type,
+        webhook_event_at=normalized_source_event_at,
         synced_at=normalized_synced_at,
         raw_subscription_json=subscription.raw_payload_json,
     )

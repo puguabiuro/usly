@@ -222,6 +222,14 @@ from backend.revenuecat_webhook import (
     validate_revenuecat_webhook_authorization,
 )
 from backend.revenuecat_webhook_processor import RevenueCatWebhookProcessor
+from backend.revenuecat_sync import (
+    RevenueCatSyncError,
+    create_revenuecat_sync_engine,
+)
+from backend.revenuecat_sync_persistence import (
+    RevenueCatSyncPersistenceError,
+    RevenueCatSyncPersistenceService,
+)
 from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, GroupMessageCreate, MessageOut
 from backend.security import (
     hash_password,
@@ -897,6 +905,94 @@ async def revenuecat_webhook(request: Request):
         raise HTTPException(
             status_code=500,
             detail="REVENUECAT_WEBHOOK_INTERNAL_ERROR",
+        ) from exc
+    finally:
+        db.close()
+
+
+@app.post("/revenuecat/sync-me")
+def revenuecat_sync_me(
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    """Synchronizuje aktualnego użytkownika z produkcyjnym RevenueCat API."""
+
+    db = SessionLocal()
+
+    try:
+        user = (
+            db.query(User)
+            .filter(User.id == current_user.id)
+            .one_or_none()
+        )
+
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="USER_NOT_FOUND",
+            )
+
+        app_user_id = str(
+            user.revenuecat_app_user_id or ""
+        ).strip()
+
+        if not app_user_id:
+            raise HTTPException(
+                status_code=409,
+                detail="REVENUECAT_APP_USER_ID_MISSING",
+            )
+
+        role = str(user.role or "").strip().lower()
+
+        if role not in {"user", "partner"}:
+            raise HTTPException(
+                status_code=403,
+                detail="REVENUECAT_ROLE_NOT_SUPPORTED",
+            )
+
+        sync_result = create_revenuecat_sync_engine().sync_customer(
+            app_user_id=app_user_id,
+            role=role,
+        )
+
+        persistence_result = RevenueCatSyncPersistenceService(
+            db
+        ).apply(
+            user=user,
+            sync_result=sync_result,
+        )
+
+        db.commit()
+
+        return ok({
+            "app_user_id": sync_result.app_user_id,
+            "revenuecat_customer_id": sync_result.customer_id,
+            "role": sync_result.role,
+            "effective_plan": sync_result.effective_plan.plan,
+            "store_purchase_recorded": (
+                persistence_result.store_purchase is not None
+            ),
+        })
+
+    except HTTPException:
+        db.rollback()
+        raise
+    except RevenueCatSyncError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=502,
+            detail="REVENUECAT_SYNC_FAILED",
+        ) from exc
+    except RevenueCatSyncPersistenceError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="REVENUECAT_SYNC_PERSISTENCE_FAILED",
+        ) from exc
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="REVENUECAT_SYNC_INTERNAL_ERROR",
         ) from exc
     finally:
         db.close()

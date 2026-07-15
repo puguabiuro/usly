@@ -186,28 +186,15 @@
     return subscriptions?.[productId] || null;
   }
 
-  async function verifyPurchase({ role, plan, productId, purchaseResult }) {
+  async function syncCurrentRevenueCatPlan() {
     if (!window.apiFetch) {
       const err = new Error("STORE_BILLING_API_UNAVAILABLE");
       err.code = "STORE_BILLING_API_UNAVAILABLE";
       throw err;
     }
 
-    const payload = {
-      platform: getPlatform(),
-      plan: String(plan || "").toLowerCase(),
-      product_id: productId,
-      transaction_id: getPurchaseTransactionId(purchaseResult, productId),
-      original_transaction_id: purchaseResult?.transaction?.originalTransactionIdentifier || null,
-      purchase_token: purchaseResult?.transaction?.purchaseToken || null,
-      environment: purchaseResult?.transaction?.environment || null,
-      expires_at: getPurchaseExpiresAt(purchaseResult, productId),
-    };
-
-    return window.apiFetch("/store/verify-purchase", {
+    return window.apiFetch("/revenuecat/sync-me", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
     });
   }
 
@@ -234,7 +221,10 @@
       throw err;
     }
 
-    return Purchases.restorePurchases();
+    const restoreResult = await Purchases.restorePurchases();
+    const syncResult = await syncCurrentRevenueCatPlan();
+
+    return { ...(restoreResult || {}), syncResult };
   }
 
 
@@ -266,14 +256,9 @@
     }
 
     const purchaseResult = await Purchases.purchasePackage({ aPackage: selectedPackage });
-    const verifyResult = await verifyPurchase({
-      role: normalizedRole,
-      plan: normalizedPlan,
-      productId,
-      purchaseResult,
-    });
+    const syncResult = await syncCurrentRevenueCatPlan();
 
-    return { purchaseResult, verifyResult };
+    return { purchaseResult, syncResult };
   }
 
   function debugState() {
@@ -300,7 +285,7 @@
     logIn,
     getOfferings,
     findPackageByProductId,
-    verifyPurchase,
+    syncCurrentRevenueCatPlan,
     getCustomerInfo,
     restorePurchases,
     debugState,
