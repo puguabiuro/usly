@@ -977,18 +977,30 @@ def revenuecat_sync_me(
         db.rollback()
         raise
     except RevenueCatSyncError as exc:
+        print(
+            "REVENUECAT SYNC-ME SYNC ERROR:",
+            f"{type(exc).__name__}: {str(exc).strip() or 'unknown error'}",
+        )
         db.rollback()
         raise HTTPException(
             status_code=502,
             detail="REVENUECAT_SYNC_FAILED",
         ) from exc
     except RevenueCatSyncPersistenceError as exc:
+        print(
+            "REVENUECAT SYNC-ME PERSISTENCE ERROR:",
+            f"{type(exc).__name__}: {str(exc).strip() or 'unknown error'}",
+        )
         db.rollback()
         raise HTTPException(
             status_code=500,
             detail="REVENUECAT_SYNC_PERSISTENCE_FAILED",
         ) from exc
     except Exception as exc:
+        print(
+            "REVENUECAT SYNC-ME INTERNAL ERROR:",
+            f"{type(exc).__name__}: {str(exc).strip() or 'unknown error'}",
+        )
         db.rollback()
         raise HTTPException(
             status_code=500,

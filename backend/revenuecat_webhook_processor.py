@@ -441,6 +441,11 @@ class RevenueCatWebhookProcessor:
                 f"{type(exc).__name__}: {str(exc).strip() or 'unknown error'}"
             )
 
+            print(
+                "REVENUECAT WEBHOOK PROCESSING ERROR:",
+                error_message,
+            )
+
             if webhook_event.status == "processing":
                 self.mark_failed(
                     webhook_event,
