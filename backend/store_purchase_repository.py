@@ -13,6 +13,7 @@ Moduł:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -111,7 +112,8 @@ class StorePurchaseRepository:
 
             if (
                 purchase.synced_at is not None
-                and data.synced_at < purchase.synced_at
+                and _as_utc_naive(data.synced_at)
+                < _as_utc_naive(purchase.synced_at)
             ):
                 return purchase
 
@@ -151,3 +153,10 @@ class StorePurchaseRepository:
         self.db.flush()
 
         return purchase
+
+def _as_utc_naive(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
+
