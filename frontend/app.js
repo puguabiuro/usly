@@ -105,7 +105,7 @@ const I18N = {
     "plans.restore.button": "Przywróć zakup",
     "plans.restore.checking": "Sprawdzamy aktywne subskrypcje...",
     "plans.restore.notFound": "Nie znaleziono aktywnych zakupów dla tego konta.",
-    "plans.restore.success": "Subskrypcja została odświeżona.",
+    "plans.restore.success": "Zakupy zostały przywrócone.",
     "plans.restore.failed": "Nie udało się przywrócić zakupów. Spróbuj ponownie.",
     "plans.promo.applied": "Kod zastosowany",
     "plans.promo.invalid": "Nie udało się zastosować kodu.",
@@ -1080,7 +1080,7 @@ const I18N = {
     "plans.restore.button": "Restore purchase",
     "plans.restore.checking": "Checking active subscriptions...",
     "plans.restore.notFound": "No active purchases were found for this account.",
-    "plans.restore.success": "Your subscription has been refreshed.",
+    "plans.restore.success": "Purchases have been restored.",
     "plans.restore.failed": "Could not restore purchases. Please try again.",
     "plans.promo.applied": "Code applied",
     "plans.promo.invalid": "Could not apply the code.",
@@ -3063,7 +3063,10 @@ async function registerPrimary() {
 
     applyI18n();
 
-    toast(t("register.toast.created_logged_in"));
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => toast(t("register.toast.created_logged_in")));
+    });
+
       if (App.role === "user") {
         if ($("setupNick")) $("setupNick").value = App.user.nick || "";
         if ($("setupCity")) $("setupCity").value = App.user.city || "";
@@ -3295,6 +3298,16 @@ async function refreshPlanAfterStorePurchase(role) {
   }
 }
 
+function finishPlanSelectionNavigation() {
+  if (App.planScreenMode === "onboarding") {
+    goToProfileSetupAfterPlan();
+    return;
+  }
+
+  refreshUserPlanCardsUi();
+  applyPlanScreenMode();
+}
+
 function goToProfileSetupAfterPlan() {
   if (App.role === "partner") {
     if ($("setupOrgCity")) $("setupOrgCity").value = App.partner.city || "";
@@ -3325,7 +3338,7 @@ async function chooseUserPlan(plan) {
   const normalizedPlan = String(plan || "").toLowerCase();
   if (normalizedPlan === "free") {
     await setUserPlan("free", true);
-    goToProfileSetupAfterPlan();
+    finishPlanSelectionNavigation();
     return;
   }
 
@@ -3333,7 +3346,7 @@ async function chooseUserPlan(plan) {
     await window.USLYBilling.purchasePlan({ role: "user", plan: normalizedPlan });
     toast(t("plans.payment.success", "Plan został aktywowany."));
     await refreshPlanAfterStorePurchase("user");
-    goToProfileSetupAfterPlan();
+    finishPlanSelectionNavigation();
   } catch (err) {
     console.error("USLY user purchase failed", {
       name: err?.name || "",
@@ -3357,7 +3370,7 @@ async function choosePartnerPlan(plan) {
   const normalizedPlan = String(plan || "").toLowerCase();
   if (normalizedPlan === "free") {
     await setPartnerPlan("free", true);
-    goToProfileSetupAfterPlan();
+    finishPlanSelectionNavigation();
     return;
   }
 
@@ -3369,7 +3382,7 @@ async function choosePartnerPlan(plan) {
     await window.USLYBilling.purchasePlan({ role: "partner", plan: normalizedPlan });
     toast(t("plans.payment.success", "Plan został aktywowany."));
     await refreshPlanAfterStorePurchase("partner");
-    goToProfileSetupAfterPlan();
+    finishPlanSelectionNavigation();
   } catch (err) {
     console.error("USLY partner purchase failed", {
       name: err?.name || "",
@@ -3407,7 +3420,7 @@ async function restoreStorePurchases(role) {
       return;
     }
 
-    toast(t("plans.restore.success", "Subskrypcja została odświeżona."));
+    toast(t("plans.restore.success", "Zakupy zostały przywrócone."));
   } catch (err) {
     const key = window.USLYBilling?.getBillingErrorMessageKey?.(err) || "plans.restore.failed";
     toast(t(key, "Nie udało się przywrócić zakupów. Spróbuj ponownie."));
@@ -10821,35 +10834,48 @@ async function loadNearbyEvents(lat, lng) {
 
 async function loadEvents(lat = null, lng = null) {
   try {
-    const data = await apiFetch(`/events?limit=100${nearbyLocationQuery(lat, lng)}`);
-    const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+    const [eventsResult, joinedResult, savedResult] = await Promise.allSettled([
+      apiFetch(`/events?limit=100${nearbyLocationQuery(lat, lng)}`),
+      apiFetch("/users/me/events?limit=100"),
+      apiFetch("/users/me/saved-events?limit=100"),
+    ]);
+
+    if (eventsResult.status !== "fulfilled") {
+      throw eventsResult.reason;
+    }
+
+    const items = Array.isArray(eventsResult.value?.data?.items)
+      ? eventsResult.value.data.items
+      : [];
 
     let joinedIds = new Set();
-    try {
-      const mine = await apiFetch("/users/me/events?limit=100");
-      const myItems = Array.isArray(mine?.data?.items) ? mine.data.items : [];
+    if (joinedResult.status === "fulfilled") {
+      const myItems = Array.isArray(joinedResult.value?.data?.items)
+        ? joinedResult.value.data.items
+        : [];
       joinedIds = new Set(
         myItems
           .map(x => x?.signup?.event_id ?? x?.event?.id)
           .filter(v => v != null)
           .map(v => String(v))
       );
-    } catch (err) {
-      console.error("loadEvents joined state failed", err);
+    } else {
+      console.error("loadEvents joined state failed", joinedResult.reason);
     }
 
     let savedIds = new Set();
-    try {
-      const savedRes = await apiFetch("/users/me/saved-events?limit=100");
-      const savedItems = Array.isArray(savedRes?.data?.items) ? savedRes.data.items : [];
+    if (savedResult.status === "fulfilled") {
+      const savedItems = Array.isArray(savedResult.value?.data?.items)
+        ? savedResult.value.data.items
+        : [];
       savedIds = new Set(
         savedItems
           .map(x => x?.saved?.event_id ?? x?.event?.id)
           .filter(v => v != null)
           .map(v => String(v))
       );
-    } catch (err) {
-      console.error("loadEvents saved state failed", err);
+    } else {
+      console.error("loadEvents saved state failed", savedResult.reason);
     }
 
     App.events = items.map(raw => {
@@ -11376,9 +11402,16 @@ function initRegistrationBirthDateSelects() {
   yearSelect.dataset.bound = "1";
 }
 
+function finishSessionStartup() {
+  document.documentElement.classList.remove("usly-session-pending");
+}
+
 async function init() {
-  // Start view
-  go("S0_WELCOME");
+  // Start view is already present in HTML for users without a saved session.
+  if (!localStorage.getItem("usly_token")) {
+    go("S0_WELCOME");
+    finishSessionStartup();
+  }
 
   // init hooks
   initGeolocation();
@@ -11447,6 +11480,7 @@ async function init() {
         renderAll();
         bindMessageInputs();
         go("S4_NEARBY");
+        finishSessionStartup();
 
         Promise.allSettled([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), refreshChatBadgeCount()])
           .then(() => renderAll())
@@ -11456,10 +11490,15 @@ async function init() {
       } else {
         await loadPartnerProfile();
         try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, App.partner.plan || "free"); } catch (_) {}
-        await loadPartnerEvents();
         renderAll();
         bindMessageInputs();
         go("S9_PARTNER");
+        finishSessionStartup();
+
+        loadPartnerEvents()
+          .then(() => renderAll())
+          .catch((err) => console.error("partner session restore background refresh failed", err));
+
         return;
       }
     } catch (err) {
@@ -11476,6 +11515,7 @@ async function init() {
       $("appRoot")?.classList.remove("isLoggedIn");
       updateTabbars();
       go("S0_WELCOME");
+      finishSessionStartup();
     }
   }
 

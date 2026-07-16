@@ -6,6 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>USLY</title>
 
+  <script>
+    try {
+      if (localStorage.getItem("usly_token")) {
+        document.documentElement.classList.add("usly-session-pending");
+      }
+    } catch (_) {}
+  </script>
+
+  <style>
+    html.usly-session-pending #appRoot {
+      visibility: hidden;
+    }
+  </style>
+
   <!-- Logo lokalnie (masz plik w folderze projektu): -->
   <!-- ./USLY logo.png -->
 
