@@ -6825,10 +6825,22 @@ def send_push_to_user(db, user_id: int, title: str, body: str, data: dict | None
                 data=payload_data,
                 token=token_row.token,
             )
-            messaging.send(message)
+            message_id = messaging.send(message)
+            print(
+                "PUSH SEND OK:",
+                "user_id=", user_id,
+                "token_id=", token_row.id,
+                "message_id=", message_id,
+            )
             sent_any = True
         except Exception as exc:
-            print("PUSH SEND ERROR:", exc)
+            print(
+                "PUSH SEND ERROR:",
+                "user_id=", user_id,
+                "token_id=", token_row.id,
+                "error_type=", type(exc).__name__,
+                "error=", exc,
+            )
 
     return sent_any
 
