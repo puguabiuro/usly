@@ -12040,8 +12040,6 @@ async function setupPushNotifications() {
     }
     if (permission.receive !== "granted") return;
 
-    await PushNotifications.register();
-
     PushNotifications.addListener("registration", async (token) => {
       const tokenValue = token?.value || token;
       console.info("USLY push token:", tokenValue);
@@ -12076,6 +12074,8 @@ async function setupPushNotifications() {
     PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
       console.info("USLY push action:", action);
     });
+
+    await PushNotifications.register();
   } catch (error) {
     console.error("USLY push setup failed", error);
   }
