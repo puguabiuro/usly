@@ -11461,6 +11461,7 @@ async function init() {
       App.isLoggedIn = true;
       $("appRoot")?.classList.add("isLoggedIn");
       updateTabbars();
+      setupPushNotifications();
 
       if (App.role === "user") {
         const profile = await apiFetch("/users/me");
