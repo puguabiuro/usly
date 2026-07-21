@@ -186,6 +186,8 @@ from uuid import uuid4
 import boto3
 import firebase_admin
 from firebase_admin import credentials, messaging
+from google.auth.transport import requests as google_auth_requests
+from google.oauth2 import id_token as google_id_token
 from botocore.exceptions import ClientError
 import os
 import aiosmtplib
@@ -1887,6 +1889,15 @@ def _is_at_least_18(dob: date) -> bool:
 from backend.schemas import RegisterRequest, RegisterResponse  # <- jeli masz gdzie indziej, podmie
 
 
+class GoogleLoginRequest(BaseModel):
+    id_token: str = Field(min_length=20)
+    mode: str = Field(pattern="^(login|register)$")
+    expected_role: str = Field(pattern="^(user|partner)$")
+    dob: date | None = None
+    accept_terms: bool = False
+    accept_privacy: bool = False
+
+
 @app.post("/auth/register")
 @limiter.limit("3/minute")
 def register(request: Request, payload: RegisterRequest):
@@ -2224,6 +2235,260 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
     expected_role: str | None = None
+
+
+@app.post("/auth/google")
+@limiter.limit("5/minute")
+def google_login(payload: GoogleLoginRequest, request: Request):
+    google_web_client_id = os.getenv("GOOGLE_WEB_CLIENT_ID", "").strip()
+
+    if not google_web_client_id:
+        print("GOOGLE AUTH ERROR: GOOGLE_WEB_CLIENT_ID is not configured")
+        raise HTTPException(status_code=503, detail="GOOGLE_AUTH_NOT_CONFIGURED")
+
+    try:
+        google_claims = google_id_token.verify_oauth2_token(
+            payload.id_token,
+            google_auth_requests.Request(),
+            google_web_client_id,
+        )
+    except Exception as exc:
+        print(
+            "GOOGLE AUTH TOKEN ERROR:",
+            type(exc).__name__,
+            str(exc),
+        )
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    google_sub = str(google_claims.get("sub") or "").strip()
+    email = str(google_claims.get("email") or "").strip().lower()
+    email_verified = google_claims.get("email_verified") is True
+
+    if not google_sub or not email or not email_verified:
+        audit_db = SessionLocal()
+        try:
+            _audit(
+                audit_db,
+                action="GOOGLE_LOGIN_FAIL_INVALID_IDENTITY",
+                request=request,
+                user_id=None,
+                details=f"email={email or 'missing'}",
+            )
+        finally:
+            audit_db.close()
+
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    db = SessionLocal()
+
+    try:
+        user_by_sub = (
+            db.query(User)
+            .filter(User.google_sub == google_sub)
+            .first()
+        )
+
+        user_by_email = (
+            db.query(User)
+            .filter(User.email == email)
+            .first()
+        )
+
+        if (
+            user_by_sub is not None
+            and user_by_email is not None
+            and user_by_sub.id != user_by_email.id
+        ):
+            _audit(
+                db,
+                action="GOOGLE_LOGIN_FAIL_ACCOUNT_CONFLICT",
+                request=request,
+                user_id=user_by_sub.id,
+                details=f"email={email}",
+            )
+            raise HTTPException(
+                status_code=409,
+                detail="GOOGLE_ACCOUNT_CONFLICT",
+            )
+
+        user = user_by_sub or user_by_email
+
+        # -------------------------------------------------
+        # LOGIN
+        # -------------------------------------------------
+        if payload.mode == "login":
+            if not user:
+                _audit(
+                    db,
+                    action="GOOGLE_LOGIN_FAIL_USER_NOT_FOUND",
+                    request=request,
+                    user_id=None,
+                    details=f"email={email}",
+                )
+                raise HTTPException(
+                    status_code=404,
+                    detail="GOOGLE_ACCOUNT_NOT_REGISTERED",
+                )
+
+            if user.status != UserStatus.ACTIVE.value:
+                raise ApiException(
+                    status_code=403,
+                    code=ErrorCode.ACCOUNT_INACTIVE,
+                )
+
+            if user.role != payload.expected_role:
+                _audit(
+                    db,
+                    action="GOOGLE_LOGIN_FAIL_ROLE_MISMATCH",
+                    request=request,
+                    user_id=user.id,
+                    details=(
+                        f"email={email}, "
+                        f"expected_role={payload.expected_role}, "
+                        f"actual_role={user.role}"
+                    ),
+                )
+                raise ApiException(
+                    status_code=403,
+                    code=ErrorCode.INSUFFICIENT_ROLE,
+                )
+
+            if user.google_sub and user.google_sub != google_sub:
+                raise HTTPException(
+                    status_code=409,
+                    detail="GOOGLE_ACCOUNT_CONFLICT",
+                )
+
+            if not user.google_sub:
+                user.google_sub = google_sub
+
+            if not user.email_verified_at:
+                user.email_verified_at = datetime.now(timezone.utc)
+
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+            access_token = create_access_token(user.id)
+
+            _audit(
+                db,
+                action="GOOGLE_LOGIN_SUCCESS",
+                request=request,
+                user_id=user.id,
+                details=f"email={email}",
+            )
+
+            return ok({
+                "access_token": access_token,
+                "token_type": "bearer",
+                "created": False,
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "role": user.role,
+                    "status": user.status,
+                    "email_verified": True,
+                    "email_verified_at": (
+                        str(user.email_verified_at)
+                        if user.email_verified_at
+                        else None
+                    ),
+                },
+            })
+
+        # -------------------------------------------------
+        # REGISTER
+        # -------------------------------------------------
+        if user:
+            # Registration must not silently create or merge a duplicate
+            # account. Existing users should use Google login instead.
+            raise ApiException(
+                status_code=409,
+                code=ErrorCode.EMAIL_ALREADY_EXISTS,
+            )
+
+        role_value = (
+            "partner"
+            if payload.expected_role == "partner"
+            else "user"
+        )
+
+        if not payload.accept_terms or not payload.accept_privacy:
+            raise ApiException(
+                status_code=422,
+                code=ErrorCode.TERMS_REQUIRED,
+            )
+
+        if role_value == "user":
+            if not payload.dob:
+                raise ApiException(
+                    status_code=422,
+                    code=ErrorCode.INVALID_INPUT,
+                    message="Data urodzenia jest wymagana.",
+                )
+
+            if not _is_at_least_18(payload.dob):
+                raise ApiException(
+                    status_code=403,
+                    code=ErrorCode.AGE_TOO_LOW,
+                )
+
+        now = datetime.now(timezone.utc)
+
+        user = User(
+            email=email,
+            password_hash=None,
+            google_sub=google_sub,
+            dob=payload.dob if role_value == "user" else None,
+            terms_accepted_at=now,
+            terms_version="v1",
+            privacy_version="v1",
+            role=role_value,
+            status=UserStatus.ACTIVE.value,
+            email_verified_at=now,
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        access_token = create_access_token(user.id)
+
+        _audit(
+            db,
+            action="GOOGLE_REGISTER_SUCCESS",
+            request=request,
+            user_id=user.id,
+            details=f"email={email}, role={role_value}",
+        )
+
+        return ok({
+            "access_token": access_token,
+            "token_type": "bearer",
+            "created": True,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "status": user.status,
+                "email_verified": True,
+                "email_verified_at": (
+                    str(user.email_verified_at)
+                    if user.email_verified_at
+                    else None
+                ),
+            },
+        })
+
+    finally:
+        db.close()
 
 
 @app.post("/auth/login")

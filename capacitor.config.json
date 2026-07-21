@@ -1,5 +1,15 @@
 {
   "appId": "com.usly.app",
   "appName": "USLY",
-  "webDir": "frontend"
+  "webDir": "frontend",
+  "plugins": {
+    "SocialLogin": {
+      "providers": {
+        "google": true,
+        "facebook": false,
+        "apple": false,
+        "twitter": false
+      }
+    }
+  }
 }

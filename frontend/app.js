@@ -2713,6 +2713,204 @@ function syncAccountEmail(email) {
 
 async function loginPrimary() {
   console.error("USLY LOGIN DIAGNOSTIC: loginPrimary START");
+
+  if (App.authMethod === "google") {
+    console.error("USLY GOOGLE AUTH DIAGNOSTIC: login START");
+
+    try {
+      const initialized = await setupGoogleSocialLogin();
+
+      if (!initialized) {
+        console.error("USLY GOOGLE AUTH DIAGNOSTIC: login initialization unavailable");
+        toast(
+          App.lang === "en"
+            ? "Google Sign-In is currently unavailable."
+            : "Logowanie przez Google jest obecnie niedostępne."
+        );
+        return;
+      }
+
+      const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+
+      if (!SocialLogin?.login) {
+        console.error("USLY GOOGLE AUTH DIAGNOSTIC: login plugin unavailable");
+        toast(
+          App.lang === "en"
+            ? "Google Sign-In is currently unavailable."
+            : "Logowanie przez Google jest obecnie niedostępne."
+        );
+        return;
+      }
+
+      const googleResult = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+
+      console.info(
+        "USLY GOOGLE AUTH DIAGNOSTIC: native login response type =",
+        googleResult?.result?.responseType || googleResult?.responseType || null
+      );
+
+      const googleData = googleResult?.result || googleResult;
+      const idToken = googleData?.idToken || null;
+
+      if (!idToken) {
+        console.error("USLY GOOGLE AUTH DIAGNOSTIC: missing idToken");
+        toast(
+          App.lang === "en"
+            ? "Google Sign-In did not return a valid identity token."
+            : "Google nie zwrócił prawidłowego tokenu tożsamości."
+        );
+        return;
+      }
+
+      const data = await apiFetch("/auth/google", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_token: idToken,
+          mode: "login",
+          expected_role: App.role === "partner" ? "partner" : "user",
+        }),
+      });
+
+      const authData = data?.data || data || {};
+      const accessToken = authData.access_token;
+
+      if (!accessToken) {
+        console.error("USLY GOOGLE AUTH DIAGNOSTIC: backend access token missing");
+        toast(
+          App.lang === "en"
+            ? "Google Sign-In could not be completed."
+            : "Nie udało się zakończyć logowania przez Google."
+        );
+        return;
+      }
+
+      localStorage.setItem("usly_token", accessToken);
+
+      const me = await apiFetch("/auth/me");
+      const meData = me?.data || me || {};
+
+      App.currentUserId = meData.id ?? null;
+      App.currentRevenueCatAppUserId = meData.revenuecat_app_user_id ?? null;
+      App.role =
+        meData.role === "partner"
+          ? "partner"
+          : "user";
+
+      selectRole(App.role);
+      syncAccountEmail(meData.email || "");
+
+      App.isLoggedIn = true;
+      $("appRoot")?.classList.add("isLoggedIn");
+      updateTabbars();
+
+      await syncMessageMutesFromBackend();
+      setupPushNotifications();
+
+      console.info(
+        "USLY GOOGLE AUTH DIAGNOSTIC: backend login OK user_id =",
+        App.currentUserId
+      );
+
+      if (App.role === "user") {
+        try {
+          const profile = await apiFetch("/users/me");
+
+          if (profile?.success && profile?.data) {
+            App.user.nick = profile.data.nick || App.user.nick;
+            App.user.city = profile.data.miasto || App.user.city;
+            App.user.bio = profile.data.bio || "";
+            App.user.interests = Array.isArray(profile.data.zainteresowania)
+              ? profile.data.zainteresowania
+              : [];
+            App.user.plan = profile.data.plan || App.user.plan;
+            App.user.avatarUrl =
+              profile.data.avatar_url || App.user.avatarUrl || "";
+
+            try {
+              localStorage.setItem(
+                USLY_STORAGE_KEYS.userPlan,
+                App.user.plan
+              );
+            } catch (_) {}
+
+            refreshUserPlanCardsUi();
+          }
+        } catch (profileError) {
+          console.error(
+            "USLY GOOGLE AUTH DIAGNOSTIC: user profile load failed",
+            profileError
+          );
+        }
+
+        renderAll();
+        bindMessageInputs();
+        go("S4_NEARBY");
+
+        Promise.allSettled([
+          loadNearbyPeople(),
+          loadEvents(),
+          loadMyGroups(),
+          loadGroups(),
+          refreshChatBadgeCount(),
+        ])
+          .then(() => renderAll())
+          .catch((error) =>
+            console.error(
+              "USLY GOOGLE AUTH DIAGNOSTIC: background refresh failed",
+              error
+            )
+          );
+
+        console.info("USLY GOOGLE AUTH DIAGNOSTIC: login COMPLETE");
+        return;
+      }
+
+      await loadPartnerProfile();
+
+      try {
+        localStorage.setItem(
+          USLY_STORAGE_KEYS.partnerPlan,
+          App.partner.plan || "free"
+        );
+      } catch (_) {}
+
+      renderAll();
+      bindMessageInputs();
+      go("S9_PARTNER");
+
+      loadPartnerEvents()
+        .then(() => renderAll())
+        .catch((error) =>
+          console.error(
+            "USLY GOOGLE AUTH DIAGNOSTIC: partner events load failed",
+            error
+          )
+        );
+
+      console.info("USLY GOOGLE AUTH DIAGNOSTIC: login COMPLETE");
+      return;
+    } catch (error) {
+      console.error(
+        "USLY GOOGLE AUTH DIAGNOSTIC: login ERROR",
+        error
+      );
+
+      toast(
+        error?.userMessage ||
+          (App.lang === "en"
+            ? "Google Sign-In could not be completed."
+            : "Nie udało się zalogować przez Google.")
+      );
+
+      return;
+    }
+  }
   const email = $("loginId")?.value?.trim();
   const password = $("loginPass")?.value?.trim();
 
@@ -11488,8 +11686,70 @@ function finishSessionStartup() {
   document.documentElement.classList.remove("usly-session-pending");
 }
 
+let googleSocialLoginInitializationStarted = false;
+let googleSocialLoginInitialized = false;
+
+async function setupGoogleSocialLogin() {
+  console.error("USLY GOOGLE AUTH DIAGNOSTIC: initialize START");
+
+  if (googleSocialLoginInitializationStarted) {
+    console.info(
+      "USLY GOOGLE AUTH DIAGNOSTIC: initialize already started",
+      googleSocialLoginInitialized
+    );
+    return googleSocialLoginInitialized;
+  }
+
+  googleSocialLoginInitializationStarted = true;
+
+  try {
+    const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+
+    console.info(
+      "USLY GOOGLE AUTH DIAGNOSTIC: plugin available =",
+      Boolean(SocialLogin)
+    );
+
+    if (!SocialLogin?.initialize) {
+      googleSocialLoginInitializationStarted = false;
+      return false;
+    }
+
+    const platform = window.Capacitor?.getPlatform?.() || "web";
+
+    console.info(
+      "USLY GOOGLE AUTH DIAGNOSTIC: platform =",
+      platform
+    );
+
+    await SocialLogin.initialize({
+      google: {
+        webClientId:
+          "698442832607-sjaqlbmt58mtm5tjj8ltrfrqkmna7c54.apps.googleusercontent.com",
+      },
+    });
+
+    googleSocialLoginInitialized = true;
+
+    console.info("USLY GOOGLE AUTH DIAGNOSTIC: initialize OK");
+    return true;
+  } catch (error) {
+    googleSocialLoginInitializationStarted = false;
+    googleSocialLoginInitialized = false;
+
+    console.error(
+      "USLY GOOGLE AUTH DIAGNOSTIC: initialize ERROR",
+      error
+    );
+
+    return false;
+  }
+}
+
 async function init() {
   console.error("USLY INIT DIAGNOSTIC: init START");
+
+  await setupGoogleSocialLogin();
   // Start view is already present in HTML for users without a saved session.
   if (!localStorage.getItem("usly_token")) {
     go("S0_WELCOME");
