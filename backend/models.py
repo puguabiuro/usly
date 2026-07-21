@@ -1060,6 +1060,71 @@ class UserBlock(Base):
 
 
 # =====================
+# NOTIFICATION MUTES
+# =====================
+
+class PrivateChatMute(Base):
+    __tablename__ = "private_chat_mutes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    other_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        CheckConstraint("user_id <> other_user_id", name="ck_private_chat_mutes_no_self"),
+        UniqueConstraint("user_id", "other_user_id", name="uq_private_chat_mutes_user_other"),
+        Index("ix_private_chat_mutes_user_created", "user_id", "created_at"),
+    )
+
+
+class GroupMute(Base):
+    __tablename__ = "group_mutes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "group_id", name="uq_group_mutes_user_group"),
+        Index("ix_group_mutes_user_created", "user_id", "created_at"),
+    )
+
+
+# =====================
 # USER NOTIFICATIONS (MVP)
 # =====================
 
@@ -1143,6 +1208,13 @@ class DevicePushToken(Base):
         String(40),
         nullable=True,
         default=None,
+    )
+
+    language: Mapped[str] = mapped_column(
+        String(5),
+        nullable=False,
+        default="pl",
+        index=True,
     )
 
     is_active: Mapped[bool] = mapped_column(

@@ -153,6 +153,28 @@ def ensure_event_reminder_notifications(db, current_time=None):
                     )
                 )
 
+                if notif_type == "event_reminder_2d":
+                    reminder_body_pl = "Twoje wydarzenie odbędzie się za 2 dni"
+                    reminder_body_en = "Your event is in 2 days"
+                else:
+                    reminder_body_pl = "Twoje wydarzenie odbędzie się jutro"
+                    reminder_body_en = "Your event is tomorrow"
+
+                send_push_to_user(
+                    db,
+                    target_user_id,
+                    "USLY",
+                    reminder_body_pl,
+                    data={
+                        "type": notif_type,
+                        "event_id": event.id,
+                    },
+                    localized_bodies={
+                        "pl": reminder_body_pl,
+                        "en": reminder_body_en,
+                    },
+                )
+
 
 from dataclasses import dataclass
 from datetime import date, datetime, timezone, timedelta
@@ -205,6 +227,8 @@ from backend.models import (
     Message,
     Friendship,
     GroupInvitation,
+    PrivateChatMute,
+    GroupMute,
     PromoCampaign,
     PromoRedemption,
     AmbassadorRewardGrant,
@@ -814,7 +838,7 @@ def _init_firebase_admin() -> bool:
 # Healthcheck (for deploy / monitoring)
 
 async def _plan_expiry_notice_scheduler() -> None:
-    # Lightweight MVP scheduler: run once after backend startup, then once daily.
+    # Lightweight scheduler: run once after backend startup, then once hourly.
     while True:
         db = SessionLocal()
         try:
@@ -825,12 +849,15 @@ async def _plan_expiry_notice_scheduler() -> None:
             result = await _send_plan_expiry_notices(db)
             if any(result.values()):
                 print("PLAN EXPIRY NOTICES SENT:", result)
+
+            ensure_event_reminder_notifications(db)
+            db.commit()
         except Exception as exc:
             print("PLAN EXPIRY NOTICE SCHEDULER ERROR:", exc)
         finally:
             db.close()
 
-        await asyncio.sleep(24 * 60 * 60)
+        await asyncio.sleep(60 * 60)
 
 
 @app.on_event("startup")
@@ -3978,6 +4005,16 @@ def partner_update_event(
             else:
                 notification_type = "event_location_changed"
 
+            if notification_type == "event_time_and_location_changed":
+                body_pl = "Zmieniły się czas i lokalizacja wydarzenia"
+                body_en = "The event time and location have changed"
+            elif notification_type == "event_time_changed":
+                body_pl = "Zmienił się czas wydarzenia"
+                body_en = "The event time has changed"
+            else:
+                body_pl = "Zmieniła się lokalizacja wydarzenia"
+                body_en = "The event location has changed"
+
             for target_user_id in target_user_ids:
                 db.add(
                     UserNotification(
@@ -3986,6 +4023,21 @@ def partner_update_event(
                         partner_user_id=current_user.id,
                         type=notification_type,
                     )
+                )
+
+                send_push_to_user(
+                    db,
+                    target_user_id,
+                    "USLY",
+                    body_pl,
+                    data={
+                        "type": notification_type,
+                        "event_id": event.id,
+                    },
+                    localized_bodies={
+                        "pl": body_pl,
+                        "en": body_en,
+                    },
                 )
 
         db.add(event)
@@ -5147,6 +5199,7 @@ class PushTokenRegisterRequest(BaseModel):
     platform: str = Field(pattern="^(android|ios)$")
     device_id: str | None = Field(default=None, max_length=120)
     app_version: str | None = Field(default=None, max_length=40)
+    language: str = Field(default="pl", pattern="^(pl|en)$")
 
 
 @app.post("/push/register-token")
@@ -5173,6 +5226,7 @@ def register_push_token(
             existing.platform = payload.platform
             existing.device_id = payload.device_id
             existing.app_version = payload.app_version
+            existing.language = payload.language
             existing.is_active = True
             existing.updated_at = now
             existing.last_seen_at = now
@@ -5184,6 +5238,7 @@ def register_push_token(
                 platform=payload.platform,
                 device_id=payload.device_id,
                 app_version=payload.app_version,
+                language=payload.language,
                 is_active=True,
                 created_at=now,
                 updated_at=now,
@@ -5197,6 +5252,7 @@ def register_push_token(
             {
                 "registered": True,
                 "platform": token_row.platform,
+                "language": token_row.language,
             }
         )
     finally:
@@ -5385,6 +5441,33 @@ def send_private_message(
         db.commit()
         db.refresh(msg)
 
+        recipient_muted_chat = (
+            db.query(PrivateChatMute)
+            .filter(
+                PrivateChatMute.user_id == payload.recipient_user_id,
+                PrivateChatMute.other_user_id == current_user.id,
+            )
+            .first()
+            is not None
+        )
+
+        if not recipient_muted_chat:
+            send_push_to_user(
+                db,
+                payload.recipient_user_id,
+                "USLY",
+                "Masz nową wiadomość",
+                {
+                    "type": "private_message",
+                    "sender_user_id": current_user.id,
+                    "message_id": msg.id,
+                },
+                localized_bodies={
+                    "pl": "Masz nową wiadomość",
+                    "en": "You have a new message",
+                },
+            )
+
         return ok(
             MessageOut(
                 id=msg.id,
@@ -5518,6 +5601,47 @@ def send_group_message(
         db.add(msg)
         db.commit()
         db.refresh(msg)
+
+        recipient_rows = (
+            db.query(GroupMembership.user_id)
+            .filter(
+                GroupMembership.group_id == payload.group_id,
+                GroupMembership.user_id != current_user.id,
+            )
+            .all()
+        )
+
+        muted_user_ids = {
+            row[0]
+            for row in (
+                db.query(GroupMute.user_id)
+                .filter(GroupMute.group_id == payload.group_id)
+                .all()
+            )
+        }
+
+        for row in recipient_rows:
+            recipient_user_id = row[0]
+
+            if recipient_user_id in muted_user_ids:
+                continue
+
+            send_push_to_user(
+                db,
+                recipient_user_id,
+                "USLY",
+                "Masz nową wiadomość w grupie",
+                data={
+                    "type": "group_message",
+                    "group_id": payload.group_id,
+                    "sender_user_id": current_user.id,
+                    "message_id": msg.id,
+                },
+                localized_bodies={
+                    "pl": "Masz nową wiadomość w grupie",
+                    "en": "You have a new group message",
+                },
+            )
 
         return ok(
             MessageOut(
@@ -5791,6 +5915,267 @@ def list_private_conversations(
 
 
 # =========================
+# MESSAGE NOTIFICATION MUTES
+# =========================
+@app.get("/messages/mutes")
+def list_message_mutes(
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        private_chat_rows = (
+            db.query(PrivateChatMute.other_user_id)
+            .filter(PrivateChatMute.user_id == current_user.id)
+            .all()
+        )
+
+        group_rows = (
+            db.query(GroupMute.group_id)
+            .join(
+                GroupMembership,
+                (GroupMembership.group_id == GroupMute.group_id)
+                & (GroupMembership.user_id == current_user.id),
+            )
+            .filter(GroupMute.user_id == current_user.id)
+            .all()
+        )
+
+        return ok({
+            "private_chat_other_user_ids": [
+                row[0] for row in private_chat_rows
+            ],
+            "group_ids": [
+                row[0] for row in group_rows
+            ],
+        })
+    finally:
+        db.close()
+
+
+
+# =========================
+# GROUP NOTIFICATION MUTE
+# =========================
+@app.get("/messages/group/{group_id}/mute")
+def get_group_mute(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        group = db.query(Group).filter(Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.group_id == group_id,
+                GroupMembership.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not membership:
+            raise HTTPException(status_code=403, detail="GROUP_MEMBERSHIP_REQUIRED")
+
+        muted = (
+            db.query(GroupMute)
+            .filter(
+                GroupMute.user_id == current_user.id,
+                GroupMute.group_id == group_id,
+            )
+            .first()
+            is not None
+        )
+
+        return ok({"muted": muted})
+    finally:
+        db.close()
+
+
+@app.put("/messages/group/{group_id}/mute")
+def mute_group(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        group = db.query(Group).filter(Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.group_id == group_id,
+                GroupMembership.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not membership:
+            raise HTTPException(status_code=403, detail="GROUP_MEMBERSHIP_REQUIRED")
+
+        existing = (
+            db.query(GroupMute)
+            .filter(
+                GroupMute.user_id == current_user.id,
+                GroupMute.group_id == group_id,
+            )
+            .first()
+        )
+
+        if not existing:
+            db.add(
+                GroupMute(
+                    user_id=current_user.id,
+                    group_id=group_id,
+                )
+            )
+            db.commit()
+
+        return ok({"muted": True})
+    finally:
+        db.close()
+
+
+@app.delete("/messages/group/{group_id}/mute")
+def unmute_group(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        group = db.query(Group).filter(Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        membership = (
+            db.query(GroupMembership)
+            .filter(
+                GroupMembership.group_id == group_id,
+                GroupMembership.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not membership:
+            raise HTTPException(status_code=403, detail="GROUP_MEMBERSHIP_REQUIRED")
+
+        (
+            db.query(GroupMute)
+            .filter(
+                GroupMute.user_id == current_user.id,
+                GroupMute.group_id == group_id,
+            )
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+
+        return ok({"muted": False})
+    finally:
+        db.close()
+
+
+
+# =========================
+# PRIVATE CHAT NOTIFICATION MUTE
+# =========================
+@app.get("/messages/private/{user_id}/mute")
+def get_private_chat_mute(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        if user_id == current_user.id:
+            raise HTTPException(status_code=422, detail="CANNOT_MUTE_SELF")
+
+        other_user = db.query(User).filter(User.id == user_id).first()
+        if not other_user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        muted = (
+            db.query(PrivateChatMute)
+            .filter(
+                PrivateChatMute.user_id == current_user.id,
+                PrivateChatMute.other_user_id == user_id,
+            )
+            .first()
+            is not None
+        )
+
+        return ok({"muted": muted})
+    finally:
+        db.close()
+
+
+@app.put("/messages/private/{user_id}/mute")
+def mute_private_chat(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        if user_id == current_user.id:
+            raise HTTPException(status_code=422, detail="CANNOT_MUTE_SELF")
+
+        other_user = db.query(User).filter(User.id == user_id).first()
+        if not other_user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        existing = (
+            db.query(PrivateChatMute)
+            .filter(
+                PrivateChatMute.user_id == current_user.id,
+                PrivateChatMute.other_user_id == user_id,
+            )
+            .first()
+        )
+
+        if not existing:
+            db.add(
+                PrivateChatMute(
+                    user_id=current_user.id,
+                    other_user_id=user_id,
+                )
+            )
+            db.commit()
+
+        return ok({"muted": True})
+    finally:
+        db.close()
+
+
+@app.delete("/messages/private/{user_id}/mute")
+def unmute_private_chat(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    db = SessionLocal()
+    try:
+        if user_id == current_user.id:
+            raise HTTPException(status_code=422, detail="CANNOT_MUTE_SELF")
+
+        other_user = db.query(User).filter(User.id == user_id).first()
+        if not other_user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        (
+            db.query(PrivateChatMute)
+            .filter(
+                PrivateChatMute.user_id == current_user.id,
+                PrivateChatMute.other_user_id == user_id,
+            )
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+
+        return ok({"muted": False})
+    finally:
+        db.close()
+
+
+
+# =========================
 # FRIENDSHIPS / FRIEND REQUESTS
 # =========================
 @app.post("/friends/requests")
@@ -5836,6 +6221,22 @@ def create_friend_request(
 
         db.commit()
         db.refresh(fr)
+
+        send_push_to_user(
+            db,
+            payload.addressee_user_id,
+            "USLY",
+            "Masz nowe zaproszenie do znajomych",
+            data={
+                "type": "friend_request",
+                "requester_user_id": current_user.id,
+                "friendship_id": fr.id,
+            },
+            localized_bodies={
+                "pl": "Masz nowe zaproszenie do znajomych",
+                "en": "You have a new friend request",
+            },
+        )
 
         return ok({
             "id": fr.id,
@@ -6039,6 +6440,24 @@ def respond_group_invitation(
         db.commit()
         db.refresh(inv)
 
+        if payload.action == "accepted":
+            send_push_to_user(
+                db,
+                inv.inviter_user_id,
+                "USLY",
+                "Twoje zaproszenie do grupy zostało zaakceptowane",
+                data={
+                    "type": "group_invitation_accepted",
+                    "group_id": inv.group_id,
+                    "invitee_user_id": current_user.id,
+                    "invitation_id": inv.id,
+                },
+                localized_bodies={
+                    "pl": "Twoje zaproszenie do grupy zostało zaakceptowane",
+                    "en": "Your group invitation was accepted",
+                },
+            )
+
         return ok({
             "id": inv.id,
             "status": inv.status,
@@ -6071,6 +6490,23 @@ def respond_friend_request(
         db.add(fr)
         db.commit()
         db.refresh(fr)
+
+        if payload.action == "accepted":
+            send_push_to_user(
+                db,
+                fr.requester_user_id,
+                "USLY",
+                "Twoje zaproszenie do znajomych zostało zaakceptowane",
+                data={
+                    "type": "friend_request_accepted",
+                    "friend_user_id": current_user.id,
+                    "friendship_id": fr.id,
+                },
+                localized_bodies={
+                    "pl": "Twoje zaproszenie do znajomych zostało zaakceptowane",
+                    "en": "Your friend request was accepted",
+                },
+            )
 
         return ok({
             "id": fr.id,
@@ -6533,6 +6969,23 @@ def invite_to_group(
         db.commit()
         db.refresh(inv)
 
+        send_push_to_user(
+            db,
+            payload.invitee_user_id,
+            "USLY",
+            "Masz nowe zaproszenie do grupy",
+            data={
+                "type": "group_invitation",
+                "group_id": group_id,
+                "inviter_user_id": current_user.id,
+                "invitation_id": inv.id,
+            },
+            localized_bodies={
+                "pl": "Masz nowe zaproszenie do grupy",
+                "en": "You have a new group invitation",
+            },
+        )
+
         return ok({
             "id": inv.id,
             "status": inv.status,
@@ -6798,7 +7251,14 @@ def get_terms_en():
 
 # =========================
 
-def send_push_to_user(db, user_id: int, title: str, body: str, data: dict | None = None) -> bool:
+def send_push_to_user(
+    db,
+    user_id: int,
+    title: str,
+    body: str,
+    data: dict | None = None,
+    localized_bodies: dict[str, str] | None = None,
+) -> bool:
     if not firebase_admin._apps:
         return False
 
@@ -6817,10 +7277,26 @@ def send_push_to_user(db, user_id: int, title: str, body: str, data: dict | None
 
     for token_row in tokens:
         try:
+            token_language = (
+                str(getattr(token_row, "language", None) or "pl")
+                .strip()
+                .lower()
+            )
+            if token_language not in {"pl", "en"}:
+                token_language = "pl"
+
+            localized_body = body
+            if localized_bodies:
+                localized_body = (
+                    localized_bodies.get(token_language)
+                    or localized_bodies.get("pl")
+                    or body
+                )
+
             message = messaging.Message(
                 notification=messaging.Notification(
                     title=title,
-                    body=body,
+                    body=localized_body,
                 ),
                 data=payload_data,
                 token=token_row.token,
@@ -9315,6 +9791,16 @@ def admin_notify_event_watchers(
         }
         target_user_ids = signup_user_ids | saved_user_ids
 
+        if notification_type == "admin_event_under_review":
+            body_pl = "Wydarzenie jest obecnie w trakcie weryfikacji"
+            body_en = "The event is currently under review"
+        elif notification_type == "admin_event_archived":
+            body_pl = "Wydarzenie zostało zarchiwizowane"
+            body_en = "The event has been archived"
+        else:
+            body_pl = "Ważna informacja dotycząca bezpieczeństwa wydarzenia"
+            body_en = "Important safety information about the event"
+
         for target_user_id in target_user_ids:
             db.add(
                 UserNotification(
@@ -9323,6 +9809,21 @@ def admin_notify_event_watchers(
                     partner_user_id=event.partner_user_id,
                     type=notification_type,
                 )
+            )
+
+            send_push_to_user(
+                db,
+                target_user_id,
+                "USLY",
+                body_pl,
+                data={
+                    "type": notification_type,
+                    "event_id": event.id,
+                },
+                localized_bodies={
+                    "pl": body_pl,
+                    "en": body_en,
+                },
             )
 
         reports_file = Path(__file__).resolve().parent / "data" / "event_reports.jsonl"

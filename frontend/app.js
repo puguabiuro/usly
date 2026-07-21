@@ -2712,6 +2712,7 @@ function syncAccountEmail(email) {
 }
 
 async function loginPrimary() {
+  console.error("USLY LOGIN DIAGNOSTIC: loginPrimary START");
   const email = $("loginId")?.value?.trim();
   const password = $("loginPass")?.value?.trim();
 
@@ -2740,6 +2741,8 @@ async function loginPrimary() {
     App.currentRevenueCatAppUserId = meData.revenuecat_app_user_id ?? null;
     App.role = meData.role === "admin" ? "admin" : (meData.role === "partner" ? "partner" : "user");
     App.isLoggedIn = true;
+    await syncMessageMutesFromBackend();
+    console.error("USLY LOGIN DIAGNOSTIC: before setupPushNotifications");
     setupPushNotifications();
 
     if (App.role === "admin") {
@@ -3037,6 +3040,7 @@ async function registerPrimary() {
       me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
     App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
     App.isLoggedIn = true;
+    await syncMessageMutesFromBackend();
 
     if (App.role === "user") {
       apiFetch("/users/me").then((profile) => {
@@ -8682,6 +8686,52 @@ function markChatAsSeen(chatId) {
   writeChatSeenMap(seenMap);
 }
 
+async function syncMessageMutesFromBackend() {
+  if (!App.isLoggedIn || !App.currentUserId || App.role === "admin") return;
+
+  try {
+    const res = await apiFetch("/messages/mutes");
+    const data = res?.data || {};
+
+    const privateChatIds = Array.isArray(data.private_chat_other_user_ids)
+      ? data.private_chat_other_user_ids
+      : [];
+    const groupIds = Array.isArray(data.group_ids)
+      ? data.group_ids
+      : [];
+
+    const mutedChatsMap = {};
+    for (const otherUserId of privateChatIds) {
+      const normalizedUserId = Number(otherUserId);
+      if (Number.isInteger(normalizedUserId) && normalizedUserId > 0) {
+        mutedChatsMap[`pm_${normalizedUserId}`] = true;
+      }
+    }
+
+    const mutedGroupsMap = {};
+    for (const groupId of groupIds) {
+      const normalizedGroupId = Number(groupId);
+      if (Number.isInteger(normalizedGroupId) && normalizedGroupId > 0) {
+        mutedGroupsMap[String(normalizedGroupId)] = true;
+      }
+    }
+
+    writeMutedChatsMap(mutedChatsMap);
+    writeMutedGroupsMap(mutedGroupsMap);
+
+    console.info(
+      "USLY mute sync: restored",
+      Object.keys(mutedChatsMap).length,
+      "private chats and",
+      Object.keys(mutedGroupsMap).length,
+      "groups"
+    );
+  } catch (err) {
+    console.error("USLY mute sync failed; keeping local mute state", err);
+  }
+}
+
+
 function readMutedChatsMap() {
   try {
     const raw = localStorage.getItem(getMutedChatsStorageKey());
@@ -8704,15 +8754,32 @@ function isChatMuted(chatId) {
   return !!map[String(chatId)];
 }
 
-function setChatMuted(chatId, muted) {
+async function setChatMuted(chatId, muted) {
   if (!chatId) return;
+
+  const chatKey = String(chatId);
+  const otherUserId = Number(chatKey.replace(/^pm_/, ""));
+
+  if (!Number.isInteger(otherUserId) || otherUserId <= 0) {
+    console.error("private chat mute sync skipped: invalid chatId", chatId);
+    return;
+  }
+
   const map = readMutedChatsMap();
   if (muted) {
-    map[String(chatId)] = true;
+    map[chatKey] = true;
   } else {
-    delete map[String(chatId)];
+    delete map[chatKey];
   }
   writeMutedChatsMap(map);
+
+  try {
+    await apiFetch(`/messages/private/${otherUserId}/mute`, {
+      method: muted ? "PUT" : "DELETE",
+    });
+  } catch (err) {
+    console.error("private chat mute sync failed", err);
+  }
 }
 
 function readMutedGroupsMap() {
@@ -8737,8 +8804,15 @@ function isGroupMuted(groupId) {
   return !!mutedMap[String(groupId)];
 }
 
-function setGroupMuted(groupId, muted) {
+async function setGroupMuted(groupId, muted) {
   if (!groupId) return;
+
+  const normalizedGroupId = Number(groupId);
+  if (!Number.isInteger(normalizedGroupId) || normalizedGroupId <= 0) {
+    console.error("group mute sync skipped: invalid groupId", groupId);
+    return;
+  }
+
   const mutedMap = readMutedGroupsMap();
   if (muted) {
     mutedMap[String(groupId)] = true;
@@ -8746,6 +8820,14 @@ function setGroupMuted(groupId, muted) {
     delete mutedMap[String(groupId)];
   }
   writeMutedGroupsMap(mutedMap);
+
+  try {
+    await apiFetch(`/messages/group/${normalizedGroupId}/mute`, {
+      method: muted ? "PUT" : "DELETE",
+    });
+  } catch (err) {
+    console.error("group mute sync failed", err);
+  }
 }
 
 function readGroupSeenMap() {
@@ -11407,6 +11489,7 @@ function finishSessionStartup() {
 }
 
 async function init() {
+  console.error("USLY INIT DIAGNOSTIC: init START");
   // Start view is already present in HTML for users without a saved session.
   if (!localStorage.getItem("usly_token")) {
     go("S0_WELCOME");
@@ -11448,10 +11531,13 @@ async function init() {
   updateTabbars();
 
   const token = localStorage.getItem("usly_token");
+  console.error("USLY SESSION DIAGNOSTIC: auth token present =", Boolean(token));
 
   if (token) {
     try {
+      console.error("USLY SESSION DIAGNOSTIC: before auth/me");
       const me = await apiFetch("/auth/me");
+      console.error("USLY SESSION DIAGNOSTIC: after auth/me");
       App.currentUserId = me?.id ?? me?.data?.id ?? null;
       App.currentRevenueCatAppUserId =
         me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
@@ -11461,6 +11547,7 @@ async function init() {
       App.isLoggedIn = true;
       $("appRoot")?.classList.add("isLoggedIn");
       updateTabbars();
+      await syncMessageMutesFromBackend();
       setupPushNotifications();
 
       if (App.role === "user") {
@@ -12024,18 +12111,28 @@ function setupCapacitorAuthLinkListener() {
 let pushNotificationsSetupStarted = false;
 
 async function setupPushNotifications() {
-  if (pushNotificationsSetupStarted) return;
-  if (!localStorage.getItem("usly_token")) return;
+  console.error("USLY PUSH DIAGNOSTIC: setupPushNotifications START");
+  if (pushNotificationsSetupStarted) {
+    console.info("USLY push setup: already started");
+    return;
+  }
+  if (!localStorage.getItem("usly_token")) {
+    console.info("USLY push setup: no auth token");
+    return;
+  }
   pushNotificationsSetupStarted = true;
 
   try {
     const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
+    console.info("USLY push setup: plugin available =", Boolean(PushNotifications));
     if (!PushNotifications) return;
 
     const platform = window.Capacitor?.getPlatform?.();
+    console.info("USLY push setup: platform =", platform);
     if (platform !== "android" && platform !== "ios") return;
 
     let permission = await PushNotifications.checkPermissions();
+    console.info("USLY push setup: permission =", permission?.receive);
     if (permission.receive !== "granted") {
       permission = await PushNotifications.requestPermissions();
     }
@@ -12056,6 +12153,7 @@ async function setupPushNotifications() {
           body: JSON.stringify({
             token: tokenValue,
             platform,
+            language: App.lang === "en" ? "en" : "pl",
           }),
         });
         console.info("USLY push token registered");
