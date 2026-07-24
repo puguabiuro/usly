@@ -18,6 +18,40 @@
     html.usly-session-pending #appRoot {
       visibility: hidden;
     }
+
+    #uslyStartupShell {
+      display: none;
+    }
+
+    html.usly-session-pending #uslyStartupShell {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      background: #070b17;
+    }
+
+    .uslyStartupLogo {
+      width: min(52vw, 210px);
+      height: auto;
+    }
+
+    .uslyStartupLoader {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255,255,255,.18);
+      border-top-color: rgba(255,255,255,.92);
+      border-radius: 50%;
+      animation: uslyStartupSpin .8s linear infinite;
+    }
+
+    @keyframes uslyStartupSpin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 
   <!-- Logo lokalnie (masz plik w folderze projektu): -->
@@ -2250,6 +2284,10 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
 
 </head>
 <body>
+  <div id="uslyStartupShell" aria-hidden="true">
+    <img class="uslyStartupLogo" src="./USLY logo.png" alt="" />
+    <div class="uslyStartupLoader" aria-hidden="true"></div>
+  </div>
 
 <!-- =========================================================
   USLY — HTML v11 (PL ONLY) — POD BACKEND
@@ -2430,7 +2468,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 <div class="sectionSub" data-i18n="auth.role.userDesc">Dla osób, które chcą poznawać ludzi, dołączać do wydarzeń i budować lokalną społeczność.</div>
                 <button class="btn mt12" type="button" onclick="selectAuthChoice('register','user','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
                 <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','user','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','user','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('register','user','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
               </div>
 
               <div class="card mt16">
@@ -2438,7 +2476,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 <div class="sectionSub" data-i18n="auth.role.partnerDesc">Dla miejsc, marek i osób, które tworzą wydarzenia, zajęcia lub lokalne inicjatywy.</div>
                 <button class="btn mt12" type="button" onclick="selectAuthChoice('register','partner','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
                 <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','partner','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','partner','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('register','partner','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
               </div>
             </div>
           </div>
@@ -2466,7 +2504,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 <div class="sectionSub" data-i18n="auth.role.userDesc">Dla osób, które chcą poznawać ludzi, dołączać do wydarzeń i budować lokalną społeczność.</div>
                 <button class="btn mt12" type="button" onclick="selectAuthChoice('login','user','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
                 <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','user','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','user','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('login','user','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
               </div>
 
               <div class="card mt16">
@@ -2474,7 +2512,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 <div class="sectionSub" data-i18n="auth.role.partnerDesc">Dla miejsc, marek i osób, które tworzą wydarzenia, zajęcia lub lokalne inicjatywy.</div>
                 <button class="btn mt12" type="button" onclick="selectAuthChoice('login','partner','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
                 <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','partner','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','partner','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('login','partner','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
               </div>
 
               <div class="mt16 center">
@@ -2581,8 +2619,10 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 <div class="sectionTitle" data-i18n="register.account.title">Konto</div>
                 
 
-                <label class="mt12" data-i18n="register.email">Email *</label>
-                <input id="regEmail" type="email" placeholder="np. ola@email.com" data-i18n-placeholder="register.email_placeholder" autocomplete="email" />
+                <div id="registerEmailBlock">
+                  <label class="mt12" data-i18n="register.email">Email *</label>
+                  <input id="regEmail" type="email" placeholder="np. ola@email.com" data-i18n-placeholder="register.email_placeholder" autocomplete="email" />
+                </div>
 
                 <div id="regUserAccountFields">
                   <label class="mt12" data-i18n="register.nick">Nick / imię (publiczne) *</label>

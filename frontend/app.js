@@ -2091,7 +2091,66 @@ const USLY_STORAGE_KEYS = {
   userPlan: "usly_user_plan",
   partnerPlan: "usly_partner_plan",
   savedEvents: "usly_saved_events",
+  userProfileCache: "usly_user_profile_cache",
 };
+
+function saveUserProfileCache() {
+  if (!App.currentUserId || App.role !== "user") return;
+
+  try {
+    localStorage.setItem(
+      USLY_STORAGE_KEYS.userProfileCache,
+      JSON.stringify({
+        userId: String(App.currentUserId),
+        nick: App.user.nick || "",
+        city: App.user.city || "",
+        bio: App.user.bio || "",
+        interests: Array.isArray(App.user.interests) ? App.user.interests : [],
+        prefAgeFrom: App.user.prefAgeFrom,
+        prefAgeTo: App.user.prefAgeTo,
+        nearbyRadiusKm: App.user.nearbyRadiusKm,
+        plan: App.user.plan || "free",
+        avatarUrl: App.user.avatarUrl || "",
+      })
+    );
+  } catch (error) {
+    console.error("user profile cache save failed", error);
+  }
+}
+
+function restoreUserProfileCache() {
+  if (!App.currentUserId || App.role !== "user") return false;
+
+  try {
+    const raw = localStorage.getItem(USLY_STORAGE_KEYS.userProfileCache);
+    if (!raw) return false;
+
+    const cached = JSON.parse(raw);
+    if (!cached || String(cached.userId) !== String(App.currentUserId)) {
+      return false;
+    }
+
+    App.user.nick = cached.nick || App.user.nick;
+    App.user.city = cached.city || App.user.city;
+    App.user.bio = cached.bio || "";
+    App.user.interests = Array.isArray(cached.interests)
+      ? cached.interests
+      : App.user.interests;
+    App.user.prefAgeFrom =
+      cached.prefAgeFrom ?? App.user.prefAgeFrom;
+    App.user.prefAgeTo =
+      cached.prefAgeTo ?? App.user.prefAgeTo;
+    App.user.nearbyRadiusKm =
+      cached.nearbyRadiusKm ?? App.user.nearbyRadiusKm;
+    App.user.plan = cached.plan || App.user.plan;
+    App.user.avatarUrl = cached.avatarUrl || App.user.avatarUrl || "";
+
+    return true;
+  } catch (error) {
+    console.error("user profile cache restore failed", error);
+    return false;
+  }
+}
 
 try {
   const hasToken =
@@ -2347,15 +2406,14 @@ function go(viewId) {
 
 
 if (viewId === "S4_NEARBY" && App.role === "user") {
-    const pList = $("nearbyPeopleList");
-    const eList = $("nearbyEventsList");
-    if (pList) pList.innerHTML = `<div class="tMuted">${t("geo.fetching")}</div>`;
-    if (eList) eList.innerHTML = `<div class="tMuted">${t("geo.fetching")}</div>`;
+    // Show already available Nearby data immediately.
+    // Fresh location and API data are refreshed in the background.
+    renderNearby();
 
     getCurrentDeviceLocation({
       enableHighAccuracy: false,
-      timeout: 20000,
-      maximumAge: 0,
+      timeout: 5000,
+      maximumAge: 60000,
     })
       .then((pos) => {
         const lat = approximateCoordinate(pos?.coords?.latitude);
@@ -2388,7 +2446,6 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
 
         if (nearbyMap) {
           nearbyMap.setView([lat, lng], 12);
-          renderNearbyMapMarkers();
         }
       })
       .catch((error) => {
@@ -2660,6 +2717,24 @@ function selectRole(role) {
   renderAll();
 }
 
+function updatePlatformAuthProviderVisibility() {
+  const platform = window.Capacitor?.getPlatform?.() || "web";
+  const showApple = platform !== "android";
+
+  document
+    .querySelectorAll('[data-auth-provider="apple"]')
+    .forEach((button) => {
+      button.hidden = !showApple;
+    });
+
+  console.info(
+    "USLY AUTH PLATFORM: platform =",
+    platform,
+    "apple visible =",
+    showApple
+  );
+}
+
 function updateAuthHeadings() {
   const roleLabel = App.role === "partner" ? t("role.partner") : t("role.user");
   const method = App.authMethod === "google" || App.authMethod === "apple" ? App.authMethod : "email";
@@ -2678,18 +2753,55 @@ function updateAuthHeadings() {
   safeSetText("authRegisterMethodTitle", t("auth.registerMethodTitle", { method: methodLabel }));
 
   const loginPasswordBlock = $("loginPasswordBlock");
+  const registerEmailBlock = $("registerEmailBlock");
   const registerPasswordBlock = $("registerPasswordBlock");
-  if (loginPasswordBlock) loginPasswordBlock.style.display = isEmail ? "" : "none";
-  if (registerPasswordBlock) registerPasswordBlock.style.display = isEmail ? "" : "none";
+
+  if (loginPasswordBlock) {
+    loginPasswordBlock.style.display = isEmail ? "" : "none";
+  }
+
+  if (registerEmailBlock) {
+    registerEmailBlock.style.display = isEmail ? "" : "none";
+  }
+
+  if (registerPasswordBlock) {
+    registerPasswordBlock.style.display = isEmail ? "" : "none";
+  }
 }
 
 function selectAuthChoice(mode, role, method) {
   if ((mode !== "login" && mode !== "register") || (role !== "user" && role !== "partner")) return;
 
+  const platform = window.Capacitor?.getPlatform?.() || "web";
+
+  if (method === "apple" && platform === "android") {
+    console.info("USLY AUTH PLATFORM: Apple auth blocked on Android");
+    return;
+  }
+
   App.authMode = mode;
   App.authMethod = method === "google" || method === "apple" ? method : "email";
   selectRole(role);
   updateAuthHeadings();
+
+  // Social login nie wymaga formularza email/hasło.
+  // Provider sam identyfikuje konto i zwraca zweryfikowany token.
+  if (mode === "login" && App.authMethod === "google") {
+    console.info("USLY GOOGLE AUTH DIAGNOSTIC: direct login from auth choice");
+    loginPrimary();
+    return;
+  }
+
+  // Apple będzie korzystał z tego samego bezpośredniego UX
+  // po podpięciu natywnego Sign in with Apple.
+  if (mode === "login" && App.authMethod === "apple") {
+    toast(
+      App.lang === "en"
+        ? "Sign in with Apple is being prepared."
+        : "Logowanie przez Apple jest jeszcze w przygotowaniu."
+    );
+    return;
+  }
 
   const viewId = mode === "login" ? "S1_LOGIN" : "S2_REGISTER";
   go(viewId);
@@ -3109,18 +3221,22 @@ async function registerPrimary() {
     return;
   }
 
+  const isGoogleRegistration = App.authMethod === "google";
+
   const email = $("regEmail")?.value?.trim();
   const pass = $("regPass")?.value?.trim();
   const passRepeat = $("regPassRepeat")?.value?.trim();
 
-  if (!email || !pass || !passRepeat || pass.length < 8) {
-    toast(t("register.toast.account_required"));
-    return;
-  }
+  if (!isGoogleRegistration) {
+    if (!email || !pass || !passRepeat || pass.length < 8) {
+      toast(t("register.toast.account_required"));
+      return;
+    }
 
-  if (pass !== passRepeat) {
-    toast(t("reset.toast.passwords_mismatch"));
-    return;
+    if (pass !== passRepeat) {
+      toast(t("reset.toast.passwords_mismatch"));
+      return;
+    }
   }
 
   let dob = "";
@@ -3200,6 +3316,174 @@ async function registerPrimary() {
   }
 
   try {
+    if (isGoogleRegistration) {
+      console.error("USLY GOOGLE AUTH DIAGNOSTIC: register START");
+
+      const initialized = await setupGoogleSocialLogin();
+
+      if (!initialized) {
+        toast(
+          App.lang === "en"
+            ? "Google registration is currently unavailable."
+            : "Rejestracja przez Google jest obecnie niedostępna."
+        );
+        return;
+      }
+
+      const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+
+      if (!SocialLogin?.login) {
+        toast(
+          App.lang === "en"
+            ? "Google registration is currently unavailable."
+            : "Rejestracja przez Google jest obecnie niedostępna."
+        );
+        return;
+      }
+
+      const googleResult = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+
+      const googleData = googleResult?.result || googleResult;
+      const idToken = googleData?.idToken || null;
+
+      console.info(
+        "USLY GOOGLE AUTH DIAGNOSTIC: register native response type =",
+        googleData?.responseType || null
+      );
+
+      if (!idToken) {
+        console.error("USLY GOOGLE AUTH DIAGNOSTIC: register missing idToken");
+        toast(
+          App.lang === "en"
+            ? "Google did not return a valid identity token."
+            : "Google nie zwrócił prawidłowego tokenu tożsamości."
+        );
+        return;
+      }
+
+      const googleRegister = await apiFetch("/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_token: idToken,
+          mode: "register",
+          expected_role: App.role === "partner" ? "partner" : "user",
+          dob,
+          accept_terms: true,
+          accept_privacy: true,
+        }),
+      });
+
+      const googleAuthData = googleRegister?.data || googleRegister || {};
+      const accessToken = googleAuthData.access_token;
+
+      if (!accessToken) {
+        console.error("USLY GOOGLE AUTH DIAGNOSTIC: register backend token missing");
+        toast(
+          App.lang === "en"
+            ? "Google registration could not be completed."
+            : "Nie udało się zakończyć rejestracji przez Google."
+        );
+        return;
+      }
+
+      localStorage.setItem("usly_token", accessToken);
+
+      const me = await apiFetch("/auth/me");
+      App.currentUserId = me?.id ?? me?.data?.id ?? null;
+      App.currentRevenueCatAppUserId =
+        me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
+      App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
+      App.isLoggedIn = true;
+
+      await syncMessageMutesFromBackend();
+      setupPushNotifications();
+
+      if (App.role === "user") {
+        apiFetch("/users/me").then((profile) => {
+          if (profile?.success && profile?.data) {
+            App.user.nick = profile.data.nick || App.user.nick;
+            App.user.city = profile.data.miasto || App.user.city;
+            App.user.bio = profile.data.bio || "";
+            const backendInterests = Array.isArray(profile.data.zainteresowania)
+              ? profile.data.zainteresowania
+              : [];
+            App.user.interests = backendInterests;
+            App.user.trainerInterests = Array.isArray(profile.data.trainer_interests)
+              ? profile.data.trainer_interests
+              : [];
+            App.user.plan = profile.data.plan || App.user.plan;
+            App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
+            try {
+              localStorage.setItem(
+                USLY_STORAGE_KEYS.userPlan,
+                App.user.plan
+              );
+            } catch (_) {}
+          }
+        }).catch((err) =>
+          console.error(
+            "USLY GOOGLE AUTH DIAGNOSTIC: post-register user profile failed",
+            err
+          )
+        );
+      } else {
+        await loadPartnerProfile();
+        await loadPartnerEvents();
+      }
+
+      $("appRoot")?.classList.add("isLoggedIn");
+      updateTabbars();
+      applyI18n();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() =>
+          toast(t("register.toast.created_logged_in"))
+        );
+      });
+
+      if (App.role === "user") {
+        if ($("setupNick")) $("setupNick").value = App.user.nick || "";
+        if ($("setupCity")) $("setupCity").value = App.user.city || "";
+        if ($("setupBio")) $("setupBio").value = App.user.bio || "";
+        if ($("setupPrefAgeFrom")) $("setupPrefAgeFrom").value = String(App.user.prefAgeFrom);
+        if ($("setupPrefAgeTo")) $("setupPrefAgeTo").value = String(App.user.prefAgeTo);
+        safeSetText("bioCount", String(($("setupBio")?.value || "").length));
+        safeSetText("setupAgeDisplay", t("settings.ageLabel", { age: App.user.age || "—" }));
+        renderInterestChips("interestChips");
+        refreshInterestUi();
+
+        App.planScreenMode = "onboarding";
+        go("S11_PLANS");
+      } else {
+        if ($("setupOrgCity")) $("setupOrgCity").value = App.partner.city || "";
+        if ($("setupOrgCategory")) $("setupOrgCategory").value = App.partner.category || "inne";
+        if ($("setupOrgAbout")) $("setupOrgAbout").value = App.partner.about || "";
+        safeSetText(
+          "setupOrgAboutCount",
+          String(($("setupOrgAbout")?.value || "").length)
+        );
+        safeSetText(
+          "setupPartnerCompanyName",
+          App.partner.company || t("partnerSetup.title")
+        );
+
+        App.planScreenMode = "onboarding";
+        go("S11_PLANS");
+        setTimeout(updateOrgLogoFallback, 0);
+      }
+
+      console.info(
+        "USLY GOOGLE AUTH DIAGNOSTIC: register COMPLETE user_id =",
+        App.currentUserId
+      );
+
+      return;
+    }
+
     const data = await apiFetch("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -11749,9 +12033,21 @@ async function setupGoogleSocialLogin() {
 async function init() {
   console.error("USLY INIT DIAGNOSTIC: init START");
 
-  await setupGoogleSocialLogin();
-  // Start view is already present in HTML for users without a saved session.
-  if (!localStorage.getItem("usly_token")) {
+  updatePlatformAuthProviderVisibility();
+
+  const startupAuthToken = localStorage.getItem("usly_token");
+
+  if (startupAuthToken) {
+    // Existing session does not need Google Social Login before the app can open.
+    setupGoogleSocialLogin().catch((error) => {
+      console.error(
+        "USLY STARTUP PERFORMANCE: background Google initialization failed",
+        error
+      );
+    });
+  } else {
+    // Logged-out auth screens still initialize Google before normal auth usage.
+    await setupGoogleSocialLogin();
     go("S0_WELCOME");
     finishSessionStartup();
   }
@@ -11807,32 +12103,155 @@ async function init() {
       App.isLoggedIn = true;
       $("appRoot")?.classList.add("isLoggedIn");
       updateTabbars();
-      await syncMessageMutesFromBackend();
+
+      syncMessageMutesFromBackend()
+        .catch((error) => {
+          console.error("startup background mute sync failed", error);
+        });
+
       setupPushNotifications();
 
       if (App.role === "user") {
+        const restoredProfileFromCache = restoreUserProfileCache();
+
+        console.info(
+          "USLY STARTUP PERFORMANCE: profile cache restored =",
+          restoredProfileFromCache
+        );
+
+        if (restoredProfileFromCache) {
+          renderAll();
+          bindMessageInputs();
+          go("S4_NEARBY");
+          finishSessionStartup();
+
+          console.info(
+            "USLY STARTUP PERFORMANCE: app visible before users/me refresh"
+          );
+
+          apiFetch("/users/me")
+            .then((profile) => {
+              console.info(
+                "USLY STARTUP PERFORMANCE: background users/me complete"
+              );
+
+              if (profile?.success && profile?.data) {
+                App.user.nick = profile.data.nick || App.user.nick;
+                App.user.city = profile.data.miasto || App.user.city;
+                App.user.bio = profile.data.bio || "";
+                App.user.interests = Array.isArray(profile.data.zainteresowania)
+                  ? profile.data.zainteresowania
+                  : [];
+                App.user.prefAgeFrom =
+                  Object.prototype.hasOwnProperty.call(profile.data, "age_min")
+                    ? profile.data.age_min
+                    : App.user.prefAgeFrom;
+                App.user.prefAgeTo =
+                  Object.prototype.hasOwnProperty.call(profile.data, "age_max")
+                    ? profile.data.age_max
+                    : App.user.prefAgeTo;
+                App.user.nearbyRadiusKm =
+                  Object.prototype.hasOwnProperty.call(profile.data, "nearby_radius_km")
+                    ? profile.data.nearby_radius_km
+                    : App.user.nearbyRadiusKm;
+                App.user.plan = profile.data.plan || App.user.plan;
+                App.user.avatarUrl =
+                  profile.data.avatar_url || App.user.avatarUrl || "";
+
+                try {
+                  localStorage.setItem(
+                    USLY_STORAGE_KEYS.userPlan,
+                    App.user.plan
+                  );
+                } catch (_) {}
+
+                saveUserProfileCache();
+                refreshUserPlanCardsUi();
+                renderAll();
+              }
+            })
+            .catch((error) => {
+              console.error(
+                "startup background users/me refresh failed",
+                error
+              );
+            });
+
+          Promise.allSettled([
+            loadNearbyPeople(),
+            loadEvents(),
+            loadMyGroups(),
+            loadGroups(),
+            refreshChatBadgeCount(),
+          ])
+            .then(() => renderAll())
+            .catch((err) =>
+              console.error(
+                "session restore background refresh failed",
+                err
+              )
+            );
+
+          return;
+        }
+
+        console.error("USLY STARTUP PERFORMANCE: before users/me");
         const profile = await apiFetch("/users/me");
+        console.error("USLY STARTUP PERFORMANCE: after users/me");
+
         if (profile?.success && profile?.data) {
           App.user.nick = profile.data.nick || App.user.nick;
           App.user.city = profile.data.miasto || App.user.city;
           App.user.bio = profile.data.bio || "";
-          App.user.interests = Array.isArray(profile.data.zainteresowania) ? profile.data.zainteresowania : [];
-          App.user.prefAgeFrom = Object.prototype.hasOwnProperty.call(profile.data, "age_min") ? profile.data.age_min : App.user.prefAgeFrom;
-          App.user.prefAgeTo = Object.prototype.hasOwnProperty.call(profile.data, "age_max") ? profile.data.age_max : App.user.prefAgeTo;
-        App.user.nearbyRadiusKm = Object.prototype.hasOwnProperty.call(profile.data, "nearby_radius_km") ? profile.data.nearby_radius_km : App.user.nearbyRadiusKm;
+          App.user.interests = Array.isArray(profile.data.zainteresowania)
+            ? profile.data.zainteresowania
+            : [];
+          App.user.prefAgeFrom =
+            Object.prototype.hasOwnProperty.call(profile.data, "age_min")
+              ? profile.data.age_min
+              : App.user.prefAgeFrom;
+          App.user.prefAgeTo =
+            Object.prototype.hasOwnProperty.call(profile.data, "age_max")
+              ? profile.data.age_max
+              : App.user.prefAgeTo;
+          App.user.nearbyRadiusKm =
+            Object.prototype.hasOwnProperty.call(profile.data, "nearby_radius_km")
+              ? profile.data.nearby_radius_km
+              : App.user.nearbyRadiusKm;
           App.user.plan = profile.data.plan || App.user.plan;
-          App.user.avatarUrl = profile.data.avatar_url || App.user.avatarUrl || "";
-          try { localStorage.setItem(USLY_STORAGE_KEYS.userPlan, App.user.plan); } catch (_) {}
+          App.user.avatarUrl =
+            profile.data.avatar_url || App.user.avatarUrl || "";
+
+          try {
+            localStorage.setItem(
+              USLY_STORAGE_KEYS.userPlan,
+              App.user.plan
+            );
+          } catch (_) {}
+
+          saveUserProfileCache();
           refreshUserPlanCardsUi();
-          }
+        }
+
         renderAll();
         bindMessageInputs();
         go("S4_NEARBY");
         finishSessionStartup();
 
-        Promise.allSettled([loadNearbyPeople(), loadEvents(), loadMyGroups(), loadGroups(), refreshChatBadgeCount()])
+        Promise.allSettled([
+          loadNearbyPeople(),
+          loadEvents(),
+          loadMyGroups(),
+          loadGroups(),
+          refreshChatBadgeCount(),
+        ])
           .then(() => renderAll())
-          .catch((err) => console.error("session restore background refresh failed", err));
+          .catch((err) =>
+            console.error(
+              "session restore background refresh failed",
+              err
+            )
+          );
 
         return;
       } else {
@@ -11887,6 +12306,7 @@ document.addEventListener("DOMContentLoaded", init);
 
 let nearbyMap = null;
 let nearbyMarkers = [];
+let nearbyMapRenderSignature = "";
 
 function initNearbyMap() {
   const el = document.getElementById("nearbyMap");
@@ -11905,11 +12325,39 @@ function initNearbyMap() {
 function renderNearbyMapMarkers() {
   if (!nearbyMap) return;
 
-  nearbyMarkers.forEach(m => nearbyMap.removeLayer(m));
-  nearbyMarkers = [];
+  const peopleForMap = getNearbyPeopleForView();
+  const nearbyEventsForMap = (App.nearbyEvents || [])
+    .filter(ev => matchesUserEventInterest(ev) && isEventInNearbyRadius(ev));
 
   const baseLat = App.user?.geo?.lat ? Number(App.user.geo.lat) : 52.2297;
   const baseLng = App.user?.geo?.lng ? Number(App.user.geo.lng) : 21.0122;
+
+  const nextRenderSignature = JSON.stringify({
+    user: [baseLat, baseLng],
+    people: peopleForMap.map(person => [
+      String(person.id || ""),
+      Number(person.location_lat),
+      Number(person.location_lng),
+      String(person.nick || ""),
+      String(person.avatarUrl || ""),
+      Array.isArray(person.trainerInterests)
+        ? person.trainerInterests.join("|")
+        : "",
+    ]),
+    events: nearbyEventsForMap.map(ev => [
+      String(ev.id || ""),
+      Number(ev.location_lat),
+      Number(ev.location_lng),
+      String(ev.interest || ""),
+    ]),
+  });
+
+  if (nextRenderSignature === nearbyMapRenderSignature) {
+    return;
+  }
+
+  nearbyMarkers.forEach(m => nearbyMap.removeLayer(m));
+  nearbyMarkers = [];
 
   const buildEventIcon = (ev) => L.divIcon({
     className: "nearby-event-marker",
@@ -11923,7 +12371,7 @@ function renderNearbyMapMarkers() {
 
   const seenCoords = {};
 
-  getNearbyPeopleForView().forEach((person, index) => {
+  peopleForMap.forEach((person, index) => {
     const lat = Number(person.location_lat);
     const lng = Number(person.location_lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -11960,9 +12408,6 @@ function renderNearbyMapMarkers() {
     nearbyMarkers.push(marker);
   });
 
-  const nearbyEventsForMap = (App.nearbyEvents || [])
-    .filter(ev => matchesUserEventInterest(ev) && isEventInNearbyRadius(ev));
-
   nearbyEventsForMap.forEach((ev, index) => {
     const lat = Number(ev.location_lat);
     const lng = Number(ev.location_lng);
@@ -11981,6 +12426,7 @@ function renderNearbyMapMarkers() {
     nearbyMarkers.push(marker);
   });
 
+  nearbyMapRenderSignature = nextRenderSignature;
 }
 
 
