@@ -729,6 +729,16 @@ const I18N = {
     "delete.toastInvalid": "Hasło jest nieprawidłowe",
     "delete.toastSuccess": "Konto zostało usunięte",
     "delete.toastFailed": "Nie udało się usunąć konta",
+    "delete.subtitleAuth": "Ta akcja jest nieodwracalna. Potwierdź swoją tożsamość, aby usunąć konto.",
+    "delete.chooseMethod": "Wybierz sposób potwierdzenia tożsamości",
+    "delete.passwordMethod": "Potwierdź hasłem",
+    "delete.googleMethod": "Potwierdź przez Google",
+    "delete.appleMethod": "Potwierdź przez Apple",
+    "delete.googleConfirm": "Potwierdź przez Google i usuń konto",
+    "delete.appleConfirm": "Potwierdź przez Apple i usuń konto",
+    "delete.authUnavailable": "Brak dostępnej metody potwierdzenia tożsamości",
+    "delete.googleFailed": "Nie udało się potwierdzić tożsamości przez Google",
+    "delete.appleFailed": "Nie udało się potwierdzić tożsamości przez Apple",
     "settings.toast.saveFailed": "Nie udało się zapisać ustawień",
     "partnerSettings.toastSaveFailed": "Nie udało się zapisać ustawień organizatora",
     "partnerSettings.toastSaved": "Zapisano ustawienia organizatora",
@@ -1656,6 +1666,16 @@ const I18N = {
     "delete.toastInvalid": "Password is incorrect",
     "delete.toastSuccess": "Account deleted",
     "delete.toastFailed": "Could not delete account",
+    "delete.subtitleAuth": "This action cannot be undone. Confirm your identity to delete your account.",
+    "delete.chooseMethod": "Choose how to confirm your identity",
+    "delete.passwordMethod": "Confirm with password",
+    "delete.googleMethod": "Confirm with Google",
+    "delete.appleMethod": "Confirm with Apple",
+    "delete.googleConfirm": "Confirm with Google and delete account",
+    "delete.appleConfirm": "Confirm with Apple and delete account",
+    "delete.authUnavailable": "No identity confirmation method is available",
+    "delete.googleFailed": "Could not confirm your identity with Google",
+    "delete.appleFailed": "Could not confirm your identity with Apple",
     "settings.toast.saveFailed": "Could not save settings",
     "partnerSettings.toastSaveFailed": "Could not save organizer settings",
     "partnerSettings.toastSaved": "Organizer settings saved",
@@ -2078,6 +2098,9 @@ const App = {
   selectedChatUserId: null,
   currentUserId: null,
   currentRevenueCatAppUserId: null,
+  hasPassword: false,
+  hasGoogleAuth: false,
+  hasAppleAuth: false,
   selectedGroupId: null,
 };
 
@@ -2792,14 +2815,9 @@ function selectAuthChoice(mode, role, method) {
     return;
   }
 
-  // Apple będzie korzystał z tego samego bezpośredniego UX
-  // po podpięciu natywnego Sign in with Apple.
   if (mode === "login" && App.authMethod === "apple") {
-    toast(
-      App.lang === "en"
-        ? "Sign in with Apple is being prepared."
-        : "Logowanie przez Apple jest jeszcze w przygotowaniu."
-    );
+    console.info("USLY APPLE AUTH: direct login from auth choice");
+    loginPrimary();
     return;
   }
 
@@ -2808,6 +2826,22 @@ function selectAuthChoice(mode, role, method) {
 }
 
 /* ------------------------- Login / Signup -------------------------- */
+function resetAuthProviderState() {
+  App.hasPassword = false;
+  App.hasGoogleAuth = false;
+  App.hasAppleAuth = false;
+}
+
+
+function syncAuthProviderState(meData) {
+  const data = meData || {};
+
+  App.hasPassword = Boolean(data.has_password);
+  App.hasGoogleAuth = Boolean(data.has_google_auth);
+  App.hasAppleAuth = Boolean(data.has_apple_auth);
+}
+
+
 function syncAccountEmail(email) {
   const cleanEmail = String(email || "").trim();
   if (!cleanEmail) return;
@@ -2825,6 +2859,146 @@ function syncAccountEmail(email) {
 
 async function loginPrimary() {
   console.error("USLY LOGIN DIAGNOSTIC: loginPrimary START");
+
+  if (App.authMethod === "apple") {
+    console.info("USLY APPLE AUTH: login START");
+
+    try {
+      const credentials = await requestAppleAuthCredentials();
+
+      const data = await apiFetch("/auth/apple", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_token: credentials.idToken,
+          authorization_code: credentials.authorizationCode,
+          nonce: credentials.nonce,
+          mode: "login",
+          expected_role:
+            App.role === "partner"
+              ? "partner"
+              : "user",
+        }),
+      });
+
+      const authData = data?.data || data || {};
+      const accessToken = authData.access_token;
+
+      if (!accessToken) {
+        console.error(
+          "USLY APPLE AUTH: backend access token missing"
+        );
+
+        toast(
+          App.lang === "en"
+            ? "Sign in with Apple could not be completed."
+            : "Nie udało się zakończyć logowania przez Apple."
+        );
+        return;
+      }
+
+      localStorage.setItem("usly_token", accessToken);
+
+      const me = await apiFetch("/auth/me");
+      const meData = me?.data || me || {};
+
+      syncAuthProviderState(meData);
+
+      App.currentUserId = meData.id ?? null;
+      App.currentRevenueCatAppUserId =
+        meData.revenuecat_app_user_id ?? null;
+
+      App.role =
+        meData.role === "partner"
+          ? "partner"
+          : "user";
+
+      selectRole(App.role);
+      syncAccountEmail(meData.email || "");
+
+      App.isLoggedIn = true;
+      $("appRoot")?.classList.add("isLoggedIn");
+      updateTabbars();
+
+      await syncMessageMutesFromBackend();
+      setupPushNotifications();
+
+      console.info(
+        "USLY APPLE AUTH: backend login OK user_id =",
+        App.currentUserId
+      );
+
+      if (App.role === "user") {
+        try {
+          const profile = await apiFetch("/users/me");
+
+          if (profile?.success && profile?.data) {
+            App.user.nick =
+              profile.data.nick || App.user.nick;
+
+            App.user.city =
+              profile.data.miasto || App.user.city;
+
+            App.user.bio =
+              profile.data.bio || "";
+
+            App.user.interests =
+              Array.isArray(profile.data.zainteresowania)
+                ? profile.data.zainteresowania
+                : App.user.interests;
+          }
+        } catch (profileError) {
+          console.error(
+            "USLY APPLE AUTH: profile refresh failed",
+            profileError
+          );
+        }
+
+        go("S4_NEARBY");
+      } else {
+        await loadPartnerProfile();
+        go("S9_PARTNER");
+      }
+
+      renderAll();
+      return;
+
+    } catch (err) {
+      const code = String(
+        err?.code ||
+        err?.data?.error?.code ||
+        err?.data?.code ||
+        err?.data?.detail ||
+        err?.message ||
+        ""
+      );
+
+      console.error(
+        "USLY APPLE AUTH: login ERROR",
+        code
+      );
+
+      const message =
+        code.includes("APPLE_ACCOUNT_NOT_REGISTERED")
+          ? (
+              App.lang === "en"
+                ? "No USLY account is registered with this Apple ID."
+                : "To Apple ID nie jest jeszcze powiązane z kontem USLY."
+            )
+          : code.includes("INSUFFICIENT_ROLE")
+          ? t("login.toast.roleMismatch")
+          : (
+              App.lang === "en"
+                ? "Sign in with Apple could not be completed."
+                : "Nie udało się zakończyć logowania przez Apple."
+            );
+
+      toast(message);
+      return;
+    }
+  }
 
   if (App.authMethod === "google") {
     console.error("USLY GOOGLE AUTH DIAGNOSTIC: login START");
@@ -2906,6 +3080,7 @@ async function loginPrimary() {
 
       const me = await apiFetch("/auth/me");
       const meData = me?.data || me || {};
+      syncAuthProviderState(meData);
 
       App.currentUserId = meData.id ?? null;
       App.currentRevenueCatAppUserId = meData.revenuecat_app_user_id ?? null;
@@ -3047,6 +3222,7 @@ async function loginPrimary() {
 
     const me = await apiFetch("/auth/me");
     const meData = me?.data || me || {};
+    syncAuthProviderState(meData);
     App.currentUserId = meData.id ?? null;
     App.currentRevenueCatAppUserId = meData.revenuecat_app_user_id ?? null;
     App.role = meData.role === "admin" ? "admin" : (meData.role === "partner" ? "partner" : "user");
@@ -3151,6 +3327,7 @@ function logout() {
 
   App.currentUserId = null;
   App.currentRevenueCatAppUserId = null;
+  resetAuthProviderState();
   App.selectedPersonId = null;
   App.selectedChatId = null;
   App.selectedChatUserId = null;
@@ -3222,12 +3399,15 @@ async function registerPrimary() {
   }
 
   const isGoogleRegistration = App.authMethod === "google";
+  const isAppleRegistration = App.authMethod === "apple";
+  const isSocialRegistration =
+    isGoogleRegistration || isAppleRegistration;
 
   const email = $("regEmail")?.value?.trim();
   const pass = $("regPass")?.value?.trim();
   const passRepeat = $("regPassRepeat")?.value?.trim();
 
-  if (!isGoogleRegistration) {
+  if (!isSocialRegistration) {
     if (!email || !pass || !passRepeat || pass.length < 8) {
       toast(t("register.toast.account_required"));
       return;
@@ -3316,6 +3496,231 @@ async function registerPrimary() {
   }
 
   try {
+    if (isAppleRegistration) {
+      console.info("USLY APPLE AUTH: register START");
+
+      const credentials = await requestAppleAuthCredentials();
+
+      const appleRegister = await apiFetch("/auth/apple", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_token: credentials.idToken,
+          authorization_code: credentials.authorizationCode,
+          nonce: credentials.nonce,
+          mode: "register",
+          expected_role:
+            App.role === "partner"
+              ? "partner"
+              : "user",
+          dob,
+          accept_terms: true,
+          accept_privacy: true,
+        }),
+      });
+
+      const appleAuthData =
+        appleRegister?.data || appleRegister || {};
+
+      const accessToken =
+        appleAuthData.access_token;
+
+      if (!accessToken) {
+        console.error(
+          "USLY APPLE AUTH: register backend token missing"
+        );
+
+        toast(
+          App.lang === "en"
+            ? "Apple registration could not be completed."
+            : "Nie udało się zakończyć rejestracji przez Apple."
+        );
+        return;
+      }
+
+      localStorage.setItem(
+        "usly_token",
+        accessToken
+      );
+
+      const me = await apiFetch("/auth/me");
+      const meData = me?.data || me || {};
+
+      syncAuthProviderState(meData);
+
+      App.currentUserId =
+        meData.id ?? null;
+
+      App.currentRevenueCatAppUserId =
+        meData.revenuecat_app_user_id ?? null;
+
+      App.role =
+        meData.role === "partner"
+          ? "partner"
+          : "user";
+
+      App.isLoggedIn = true;
+
+      await syncMessageMutesFromBackend();
+      setupPushNotifications();
+
+      if (App.role === "user") {
+        apiFetch("/users/me")
+          .then((profile) => {
+            if (profile?.success && profile?.data) {
+              App.user.nick =
+                profile.data.nick || App.user.nick;
+
+              App.user.city =
+                profile.data.miasto || App.user.city;
+
+              App.user.bio =
+                profile.data.bio || "";
+
+              App.user.interests =
+                Array.isArray(
+                  profile.data.zainteresowania
+                )
+                  ? profile.data.zainteresowania
+                  : [];
+
+              App.user.trainerInterests =
+                Array.isArray(
+                  profile.data.trainer_interests
+                )
+                  ? profile.data.trainer_interests
+                  : [];
+
+              App.user.plan =
+                profile.data.plan || App.user.plan;
+
+              App.user.avatarUrl =
+                profile.data.avatar_url ||
+                App.user.avatarUrl ||
+                "";
+
+              try {
+                localStorage.setItem(
+                  USLY_STORAGE_KEYS.userPlan,
+                  App.user.plan
+                );
+              } catch (_) {}
+            }
+          })
+          .catch((err) =>
+            console.error(
+              "USLY APPLE AUTH: post-register user profile failed",
+              err
+            )
+          );
+      } else {
+        await loadPartnerProfile();
+        await loadPartnerEvents();
+      }
+
+      $("appRoot")?.classList.add("isLoggedIn");
+      updateTabbars();
+      applyI18n();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() =>
+          toast(t("register.toast.created_logged_in"))
+        );
+      });
+
+      if (App.role === "user") {
+        if ($("setupNick")) {
+          $("setupNick").value =
+            App.user.nick || "";
+        }
+
+        if ($("setupCity")) {
+          $("setupCity").value =
+            App.user.city || "";
+        }
+
+        if ($("setupBio")) {
+          $("setupBio").value =
+            App.user.bio || "";
+        }
+
+        if ($("setupPrefAgeFrom")) {
+          $("setupPrefAgeFrom").value =
+            String(App.user.prefAgeFrom);
+        }
+
+        if ($("setupPrefAgeTo")) {
+          $("setupPrefAgeTo").value =
+            String(App.user.prefAgeTo);
+        }
+
+        safeSetText(
+          "bioCount",
+          String(
+            ($("setupBio")?.value || "").length
+          )
+        );
+
+        safeSetText(
+          "setupAgeDisplay",
+          t("settings.ageLabel", {
+            age: App.user.age || "—",
+          })
+        );
+
+        renderInterestChips("interestChips");
+        refreshInterestUi();
+
+        App.planScreenMode = "onboarding";
+        go("S11_PLANS");
+      } else {
+        if ($("setupOrgCity")) {
+          $("setupOrgCity").value =
+            App.partner.city || "";
+        }
+
+        if ($("setupOrgCategory")) {
+          $("setupOrgCategory").value =
+            App.partner.category || "inne";
+        }
+
+        if ($("setupOrgAbout")) {
+          $("setupOrgAbout").value =
+            App.partner.about || "";
+        }
+
+        safeSetText(
+          "setupOrgAboutCount",
+          String(
+            ($("setupOrgAbout")?.value || "").length
+          )
+        );
+
+        safeSetText(
+          "setupPartnerCompanyName",
+          App.partner.company ||
+            t("partnerSetup.title")
+        );
+
+        App.planScreenMode = "onboarding";
+        go("S11_PLANS");
+
+        setTimeout(
+          updateOrgLogoFallback,
+          0
+        );
+      }
+
+      console.info(
+        "USLY APPLE AUTH: register COMPLETE user_id =",
+        App.currentUserId
+      );
+
+      return;
+    }
+
     if (isGoogleRegistration) {
       console.error("USLY GOOGLE AUTH DIAGNOSTIC: register START");
 
@@ -3393,9 +3798,11 @@ async function registerPrimary() {
       localStorage.setItem("usly_token", accessToken);
 
       const me = await apiFetch("/auth/me");
-      App.currentUserId = me?.id ?? me?.data?.id ?? null;
+      const meData = me?.data || me || {};
+      syncAuthProviderState(meData);
+      App.currentUserId = meData.id ?? null;
       App.currentRevenueCatAppUserId =
-        me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
+        meData.revenuecat_app_user_id ?? null;
       App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
       App.isLoggedIn = true;
 
@@ -3517,9 +3924,11 @@ async function registerPrimary() {
     localStorage.setItem("usly_token", loginData.data.access_token);
 
     const me = await apiFetch("/auth/me");
-    App.currentUserId = me?.id ?? me?.data?.id ?? null;
+    const meData = me?.data || me || {};
+    syncAuthProviderState(meData);
+    App.currentUserId = meData.id ?? null;
     App.currentRevenueCatAppUserId =
-      me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
+      meData.revenuecat_app_user_id ?? null;
     App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
     App.isLoggedIn = true;
     await syncMessageMutesFromBackend();
@@ -11973,6 +12382,164 @@ function finishSessionStartup() {
 let googleSocialLoginInitializationStarted = false;
 let googleSocialLoginInitialized = false;
 
+let appleSocialLoginInitializationStarted = false;
+let appleSocialLoginInitialized = false;
+
+async function setupAppleSocialLogin() {
+  const platform = window.Capacitor?.getPlatform?.() || "web";
+
+  if (platform === "android") {
+    console.info("USLY APPLE AUTH: initialization blocked on Android");
+    return false;
+  }
+
+  if (appleSocialLoginInitializationStarted) {
+    return appleSocialLoginInitialized;
+  }
+
+  const config = window.USLY_CONFIG?.appleAuth || {};
+
+  const clientId =
+    platform === "ios"
+      ? String(config.iosClientId || "").trim()
+      : String(config.webClientId || "").trim();
+
+  const redirectUrl =
+    platform === "ios"
+      ? ""
+      : String(config.webRedirectUrl || "").trim();
+
+  if (!clientId) {
+    console.info(
+      "USLY APPLE AUTH: client ID unavailable for platform",
+      platform
+    );
+    return false;
+  }
+
+  if (platform === "web" && !redirectUrl) {
+    console.info("USLY APPLE AUTH: web redirect URL is not configured");
+    return false;
+  }
+
+  const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+
+  if (!SocialLogin?.initialize) {
+    console.error("USLY APPLE AUTH: SocialLogin.initialize unavailable");
+    return false;
+  }
+
+  appleSocialLoginInitializationStarted = true;
+
+  try {
+    await SocialLogin.initialize({
+      apple: {
+        clientId,
+        redirectUrl,
+        useProperTokenExchange: true,
+      },
+    });
+
+    appleSocialLoginInitialized = true;
+
+    console.info(
+      "USLY APPLE AUTH: initialization OK platform =",
+      platform
+    );
+
+    return true;
+  } catch (error) {
+    appleSocialLoginInitializationStarted = false;
+    appleSocialLoginInitialized = false;
+
+    console.error(
+      "USLY APPLE AUTH: initialization ERROR",
+      error
+    );
+
+    return false;
+  }
+}
+
+
+async function requestAppleAuthCredentials() {
+  const platform = window.Capacitor?.getPlatform?.() || "web";
+
+  if (platform === "android") {
+    throw new Error("APPLE_AUTH_UNAVAILABLE_ON_ANDROID");
+  }
+
+  const initialized = await setupAppleSocialLogin();
+
+  if (!initialized) {
+    throw new Error("APPLE_AUTH_NOT_AVAILABLE");
+  }
+
+  const nonceResponse = await apiFetch("/auth/apple/nonce", {
+    method: "POST",
+  });
+
+  const nonceData = nonceResponse?.data || nonceResponse || {};
+  const nonce = String(nonceData.nonce || "").trim();
+
+  if (!nonce) {
+    console.error("USLY APPLE AUTH: backend nonce missing");
+    throw new Error("APPLE_AUTH_NONCE_MISSING");
+  }
+
+  const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+
+  if (!SocialLogin?.login) {
+    console.error("USLY APPLE AUTH: SocialLogin.login unavailable");
+    throw new Error("APPLE_AUTH_NOT_AVAILABLE");
+  }
+
+  const appleResult = await SocialLogin.login({
+    provider: "apple",
+    options: {
+      scopes: ["email", "name"],
+      nonce,
+    },
+  });
+
+  const appleData = appleResult?.result || appleResult || {};
+
+  const idToken = String(
+    appleData.idToken || ""
+  ).trim();
+
+  const authorizationCode = String(
+    appleData.authorizationCode || ""
+  ).trim();
+
+  if (!idToken) {
+    console.error("USLY APPLE AUTH: missing idToken");
+    throw new Error("APPLE_ID_TOKEN_MISSING");
+  }
+
+  if (!authorizationCode) {
+    console.error("USLY APPLE AUTH: missing authorizationCode");
+    throw new Error("APPLE_AUTHORIZATION_CODE_MISSING");
+  }
+
+  console.info(
+    "USLY APPLE AUTH: credentials received",
+    {
+      platform,
+      hasIdToken: true,
+      hasAuthorizationCode: true,
+      hasNonce: true,
+    }
+  );
+
+  return {
+    idToken,
+    authorizationCode,
+    nonce,
+  };
+}
+
+
 async function setupGoogleSocialLogin() {
   console.error("USLY GOOGLE AUTH DIAGNOSTIC: initialize START");
 
@@ -12094,10 +12661,12 @@ async function init() {
       console.error("USLY SESSION DIAGNOSTIC: before auth/me");
       const me = await apiFetch("/auth/me");
       console.error("USLY SESSION DIAGNOSTIC: after auth/me");
-      App.currentUserId = me?.id ?? me?.data?.id ?? null;
+      const meData = me?.data || me || {};
+      syncAuthProviderState(meData);
+      App.currentUserId = meData.id ?? null;
       App.currentRevenueCatAppUserId =
-        me?.data?.revenuecat_app_user_id ?? me?.revenuecat_app_user_id ?? null;
-      App.role = (me?.data?.role || me?.role) === "partner" ? "partner" : "user";
+        meData.revenuecat_app_user_id ?? null;
+      App.role = meData.role === "partner" ? "partner" : "user";
       selectRole(App.role);
       syncAccountEmail(me?.data?.email || me?.email || "");
       App.isLoggedIn = true;
@@ -12560,35 +13129,222 @@ async function submitChangePassword() {
 }
 
 function openDeleteAccount() {
-  openModal(t("delete.modalTitle"), `
-    <div class="tStrong">${t("delete.heading")}</div>
-    <div class="sectionSub mt10">${t("delete.subtitle")}</div>
-    <label class="mt12">${t("delete.password")}</label>
-    <input id="deleteAccountPassword" type="password" placeholder="${t("delete.placeholder")}" />
-    <button class="btn danger mt16" type="button" onclick="submitDeleteAccount()">${t("delete.confirm")}</button>
-  `);
-}
+  const methods = [];
 
-async function submitDeleteAccount() {
-  const password = $("deleteAccountPassword")?.value?.trim() || "";
+  if (App.hasPassword) {
+    methods.push("password");
+  }
 
-  if (!password) {
-    toast(t("delete.toastFill"));
+  if (App.hasGoogleAuth) {
+    methods.push("google");
+  }
+
+  if (App.hasAppleAuth) {
+    const platform = window.Capacitor?.getPlatform?.() || "web";
+
+    if (platform !== "android") {
+      methods.push("apple");
+    }
+  }
+
+  if (methods.length === 0) {
+    toast(t("delete.authUnavailable"));
     return;
   }
 
+  const methodButtons = methods
+    .map((method) => {
+      const label =
+        method === "password"
+          ? t("delete.passwordMethod")
+          : method === "google"
+          ? t("delete.googleMethod")
+          : t("delete.appleMethod");
+
+      return `
+        <button
+          class="btn ${method === "password" ? "" : "ghost"} mt10"
+          type="button"
+          onclick="selectDeleteAccountMethod('${method}')"
+        >
+          ${label}
+        </button>
+      `;
+    })
+    .join("");
+
+  openModal(t("delete.modalTitle"), `
+    <div class="tStrong">${t("delete.heading")}</div>
+    <div class="sectionSub mt10">${t("delete.subtitleAuth")}</div>
+
+    ${
+      methods.length > 1
+        ? `<div class="sectionSub mt12">${t("delete.chooseMethod")}</div>`
+        : ""
+    }
+
+    <div id="deleteAccountMethodList" class="mt10">
+      ${methodButtons}
+    </div>
+
+    <div id="deleteAccountMethodPanel" class="mt12"></div>
+  `);
+
+  if (methods.length === 1) {
+    selectDeleteAccountMethod(methods[0]);
+  }
+}
+
+
+function selectDeleteAccountMethod(method) {
+  const panel = $("deleteAccountMethodPanel");
+
+  if (!panel) {
+    return;
+  }
+
+  const methodValue =
+    method === "google" || method === "apple"
+      ? method
+      : "password";
+
+  if (methodValue === "password") {
+    panel.innerHTML = `
+      <label>${t("delete.password")}</label>
+      <input
+        id="deleteAccountPassword"
+        type="password"
+        placeholder="${t("delete.placeholder")}"
+      />
+      <button
+        class="btn danger mt16"
+        type="button"
+        onclick="submitDeleteAccount('password')"
+      >
+        ${t("delete.confirm")}
+      </button>
+    `;
+    return;
+  }
+
+  if (methodValue === "google") {
+    panel.innerHTML = `
+      <button
+        class="btn danger mt8"
+        type="button"
+        onclick="submitDeleteAccount('google')"
+      >
+        ${t("delete.googleConfirm")}
+      </button>
+    `;
+    return;
+  }
+
+  panel.innerHTML = `
+    <button
+      class="btn danger mt8"
+      type="button"
+      onclick="submitDeleteAccount('apple')"
+    >
+      ${t("delete.appleConfirm")}
+    </button>
+  `;
+}
+
+async function submitDeleteAccount(method = "password") {
+  const methodValue =
+    method === "google" || method === "apple"
+      ? method
+      : "password";
+
   try {
+    let requestBody = {
+      method: methodValue,
+    };
+
+    if (methodValue === "password") {
+      const password =
+        $("deleteAccountPassword")?.value?.trim() || "";
+
+      if (!password) {
+        toast(t("delete.toastFill"));
+        return;
+      }
+
+      requestBody.password = password;
+    }
+
+    if (methodValue === "google") {
+      const initialized = await setupGoogleSocialLogin();
+
+      if (!initialized) {
+        toast(t("delete.googleFailed"));
+        return;
+      }
+
+      const SocialLogin =
+        window.Capacitor?.Plugins?.SocialLogin;
+
+      if (!SocialLogin?.login) {
+        toast(t("delete.googleFailed"));
+        return;
+      }
+
+      const googleResult = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+
+      const googleData =
+        googleResult?.result || googleResult || {};
+
+      const idToken =
+        String(googleData.idToken || "").trim();
+
+      if (!idToken) {
+        console.error(
+          "USLY DELETE ACCOUNT: Google idToken missing"
+        );
+        toast(t("delete.googleFailed"));
+        return;
+      }
+
+      requestBody.id_token = idToken;
+    }
+
+    if (methodValue === "apple") {
+      const credentials =
+        await requestAppleAuthCredentials();
+
+      requestBody.id_token =
+        credentials.idToken;
+
+      requestBody.authorization_code =
+        credentials.authorizationCode;
+
+      requestBody.nonce =
+        credentials.nonce;
+    }
+
     const res = await apiFetch("/auth/delete-account", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
 
     if (res?.success) {
-      try { localStorage.removeItem("usly_token"); } catch (_) {}
+      try {
+        localStorage.removeItem("usly_token");
+      } catch (_) {}
+
       App.isLoggedIn = false;
       App.currentUserId = null;
       App.currentRevenueCatAppUserId = null;
+
+      resetAuthProviderState();
+
       closeModal();
       toast(t("delete.toastSuccess"));
       go("S0_WELCOME");
@@ -12596,13 +13352,68 @@ async function submitDeleteAccount() {
       return;
     }
 
-    toast(res?.error?.message || t("delete.toastFailed"));
+    const responseCode =
+      String(res?.error?.code || "");
+
+    if (
+      responseCode ===
+      "APPLE_REVOCATION_FAILED"
+    ) {
+      toast(
+        App.lang === "en"
+          ? "Your account was not deleted because Apple access could not be revoked. Please try again."
+          : "Konto nie zostało usunięte, ponieważ nie udało się odwołać dostępu Apple. Spróbuj ponownie."
+      );
+      return;
+    }
+
+    toast(
+      res?.error?.message ||
+      t("delete.toastFailed")
+    );
+
   } catch (err) {
-    const msg =
-      err?.data?.detail === "PASSWORD_INVALID"
-        ? t("delete.toastInvalid")
-        : err?.userMessage || t("delete.toastFailed");
-    toast(msg);
+    const code = String(
+      err?.code ||
+      err?.data?.error?.code ||
+      err?.data?.code ||
+      err?.data?.detail ||
+      err?.message ||
+      ""
+    );
+
+    if (code.includes("PASSWORD_INVALID")) {
+      toast(t("delete.toastInvalid"));
+      return;
+    }
+
+    if (
+      code.includes(
+        "APPLE_REVOCATION_FAILED"
+      )
+    ) {
+      toast(
+        App.lang === "en"
+          ? "Your account was not deleted because Apple access could not be revoked. Please try again."
+          : "Konto nie zostało usunięte, ponieważ nie udało się odwołać dostępu Apple. Spróbuj ponownie."
+      );
+      return;
+    }
+
+    if (methodValue === "google") {
+      toast(t("delete.googleFailed"));
+      return;
+    }
+
+    if (methodValue === "apple") {
+      toast(t("delete.appleFailed"));
+      return;
+    }
+
+    toast(
+      err?.userMessage ||
+      t("delete.toastFailed")
+    );
   }
 }
 

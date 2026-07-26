@@ -209,6 +209,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
 from backend.api_response import ok, fail
+from backend.apple_auth import (
+    AppleAuthError,
+    verify_apple_identity_token,
+)
 from backend.error_codes import ErrorCode
 from backend.db.database import SessionLocal
 from backend.models import (
@@ -238,7 +242,19 @@ from backend.models import (
     DevicePushToken,
     PasswordResetToken,
     EmailVerificationToken,
+    AppleAuthNonce,
+    AppleAuthCredential,
     AiUsageLog,
+)
+from backend.secret_crypto import (
+    decrypt_secret,
+    encrypt_secret,
+)
+from backend.apple_token_exchange import (
+    AppleAuthorizationCodeError,
+    AppleTokenRevocationError,
+    exchange_apple_authorization_code,
+    revoke_apple_token,
 )
 from backend.revenuecat_config import load_revenuecat_config
 from backend.revenuecat_webhook import (
@@ -1898,6 +1914,17 @@ class GoogleLoginRequest(BaseModel):
     accept_privacy: bool = False
 
 
+class AppleLoginRequest(BaseModel):
+    id_token: str = Field(min_length=20)
+    authorization_code: str = Field(min_length=1)
+    nonce: str = Field(min_length=16, max_length=255)
+    mode: str = Field(pattern="^(login|register)$")
+    expected_role: str = Field(pattern="^(user|partner)$")
+    dob: date | None = None
+    accept_terms: bool = False
+    accept_privacy: bool = False
+
+
 @app.post("/auth/register")
 @limiter.limit("3/minute")
 def register(request: Request, payload: RegisterRequest):
@@ -2235,6 +2262,736 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
     expected_role: str | None = None
+
+
+def _consume_apple_auth_nonce(db, raw_nonce: str) -> None:
+    nonce_value = str(raw_nonce or "").strip()
+
+    if not nonce_value:
+        raise HTTPException(
+            status_code=400,
+            detail="APPLE_AUTH_NONCE_INVALID",
+        )
+
+    nonce_hash = hashlib.sha256(
+        nonce_value.encode("utf-8")
+    ).hexdigest()
+
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0)
+
+    updated_rows = (
+        db.query(AppleAuthNonce)
+        .filter(
+            AppleAuthNonce.nonce_hash == nonce_hash,
+            AppleAuthNonce.used_at.is_(None),
+            AppleAuthNonce.expires_at >= now_utc,
+        )
+        .update(
+            {AppleAuthNonce.used_at: now_utc},
+            synchronize_session=False,
+        )
+    )
+
+    if updated_rows != 1:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="APPLE_AUTH_NONCE_INVALID",
+        )
+
+    db.commit()
+
+
+def _verify_apple_auth_identity(
+    db,
+    payload: AppleLoginRequest,
+) -> dict:
+    apple_ios_client_id = os.getenv(
+        "APPLE_IOS_CLIENT_ID",
+        "",
+    ).strip()
+    apple_web_client_id = os.getenv(
+        "APPLE_WEB_CLIENT_ID",
+        "",
+    ).strip()
+
+    allowed_audiences = {
+        value
+        for value in (
+            apple_ios_client_id,
+            apple_web_client_id,
+        )
+        if value
+    }
+
+    if not allowed_audiences:
+        print(
+            "APPLE AUTH ERROR: "
+            "APPLE_IOS_CLIENT_ID / APPLE_WEB_CLIENT_ID not configured"
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="APPLE_AUTH_NOT_CONFIGURED",
+        )
+
+    try:
+        claims = verify_apple_identity_token(
+            payload.id_token,
+            allowed_audiences=allowed_audiences,
+            expected_nonce=payload.nonce,
+        )
+    except AppleAuthError as exc:
+        print(
+            "APPLE AUTH TOKEN ERROR:",
+            type(exc).__name__,
+        )
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    # Zużywamy nonce dopiero po poprawnej walidacji JWT.
+    _consume_apple_auth_nonce(
+        db,
+        payload.nonce,
+    )
+
+    apple_sub = str(
+        claims.get("sub") or ""
+    ).strip()
+
+    email = str(
+        claims.get("email") or ""
+    ).strip().lower()
+
+    email_verified_claim = claims.get("email_verified")
+    email_verified = (
+        email_verified_claim is True
+        or str(email_verified_claim).strip().lower() == "true"
+    )
+
+    audience = str(
+        claims.get("aud") or ""
+    ).strip()
+
+    if not apple_sub:
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    return {
+        "apple_sub": apple_sub,
+        "email": email or None,
+        "email_verified": email_verified,
+        "audience": audience,
+    }
+
+
+def _resolve_apple_auth_user(
+    db,
+    *,
+    apple_sub: str,
+    email: str | None,
+    request: Request,
+):
+    user_by_sub = (
+        db.query(User)
+        .filter(User.apple_sub == apple_sub)
+        .first()
+    )
+
+    user_by_email = None
+    if email:
+        user_by_email = (
+            db.query(User)
+            .filter(User.email == email)
+            .first()
+        )
+
+    if (
+        user_by_sub is not None
+        and user_by_email is not None
+        and user_by_sub.id != user_by_email.id
+    ):
+        _audit(
+            db,
+            action="APPLE_LOGIN_FAIL_ACCOUNT_CONFLICT",
+            request=request,
+            user_id=user_by_sub.id,
+            details=f"email={email}",
+        )
+        raise HTTPException(
+            status_code=409,
+            detail="APPLE_ACCOUNT_CONFLICT",
+        )
+
+    return user_by_sub or user_by_email
+
+
+def _store_apple_auth_credential(
+    db,
+    *,
+    user_id: int,
+    client_id: str,
+    refresh_token: str,
+) -> None:
+    client_id_value = str(client_id or "").strip()
+    refresh_token_value = str(refresh_token or "").strip()
+
+    if not client_id_value or not refresh_token_value:
+        raise HTTPException(
+            status_code=500,
+            detail="APPLE_CREDENTIAL_STORAGE_INVALID",
+        )
+
+    encrypted_refresh_token = encrypt_secret(
+        refresh_token_value
+    )
+
+    now = datetime.now(timezone.utc)
+
+    credential = (
+        db.query(AppleAuthCredential)
+        .filter(
+            AppleAuthCredential.user_id == user_id,
+            AppleAuthCredential.client_id == client_id_value,
+        )
+        .first()
+    )
+
+    if credential is None:
+        credential = AppleAuthCredential(
+            user_id=user_id,
+            client_id=client_id_value,
+            refresh_token_encrypted=encrypted_refresh_token,
+            revoked_at=None,
+            created_at=now,
+            updated_at=now,
+        )
+    else:
+        credential.refresh_token_encrypted = encrypted_refresh_token
+        credential.revoked_at = None
+        credential.updated_at = now
+
+    db.add(credential)
+    db.commit()
+
+
+def _exchange_apple_code_for_identity(
+    *,
+    authorization_code: str,
+    audience: str,
+) -> tuple[str, dict]:
+    audience_value = str(audience or "").strip()
+
+    apple_ios_client_id = os.getenv(
+        "APPLE_IOS_CLIENT_ID",
+        "",
+    ).strip()
+
+    apple_web_client_id = os.getenv(
+        "APPLE_WEB_CLIENT_ID",
+        "",
+    ).strip()
+
+    apple_web_redirect_uri = os.getenv(
+        "APPLE_WEB_REDIRECT_URI",
+        "",
+    ).strip()
+
+    if audience_value == apple_ios_client_id and apple_ios_client_id:
+        client_id = apple_ios_client_id
+        redirect_uri = None
+    elif audience_value == apple_web_client_id and apple_web_client_id:
+        if not apple_web_redirect_uri:
+            raise HTTPException(
+                status_code=503,
+                detail="APPLE_WEB_AUTH_NOT_CONFIGURED",
+            )
+
+        client_id = apple_web_client_id
+        redirect_uri = apple_web_redirect_uri
+    else:
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    try:
+        token_response = exchange_apple_authorization_code(
+            authorization_code,
+            client_id=client_id,
+            redirect_uri=redirect_uri,
+        )
+    except AppleAuthorizationCodeError as exc:
+        print(
+            "APPLE AUTH CODE EXCHANGE ERROR:",
+            type(exc).__name__,
+        )
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    refresh_token = str(
+        token_response.get("refresh_token") or ""
+    ).strip()
+
+    if not refresh_token:
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    # Preflight szyfrowania przed jakąkolwiek zmianą konta.
+    # Dzięki temu brak/nieprawidłowy klucz szyfrujący nie zostawi
+    # nowo utworzonego konta bez możliwego do przechowania credential.
+    encrypt_secret(refresh_token)
+
+    return client_id, token_response
+
+
+def _exchange_and_store_apple_credential(
+    db,
+    *,
+    user_id: int,
+    client_id: str,
+    authorization_code: str,
+    redirect_uri: str | None = None,
+) -> None:
+    try:
+        token_response = exchange_apple_authorization_code(
+            authorization_code,
+            client_id=client_id,
+            redirect_uri=redirect_uri,
+        )
+    except AppleAuthorizationCodeError as exc:
+        print(
+            "APPLE AUTH CODE EXCHANGE ERROR:",
+            type(exc).__name__,
+        )
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    refresh_token = str(
+        token_response.get("refresh_token") or ""
+    ).strip()
+
+    if not refresh_token:
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    _store_apple_auth_credential(
+        db,
+        user_id=user_id,
+        client_id=client_id,
+        refresh_token=refresh_token,
+    )
+
+
+def _revoke_stored_apple_credentials(
+    db,
+    *,
+    user_id: int,
+) -> int:
+    credentials = (
+        db.query(AppleAuthCredential)
+        .filter(
+            AppleAuthCredential.user_id == user_id,
+            AppleAuthCredential.revoked_at.is_(None),
+        )
+        .all()
+    )
+
+    revoked_count = 0
+
+    for credential in credentials:
+        refresh_token = decrypt_secret(
+            credential.refresh_token_encrypted
+        )
+
+        try:
+            revoke_apple_token(
+                refresh_token,
+                client_id=credential.client_id,
+                token_type_hint="refresh_token",
+            )
+        except AppleTokenRevocationError as exc:
+            print(
+                "APPLE TOKEN REVOCATION ERROR:",
+                type(exc).__name__,
+                f"user_id={user_id}",
+                f"client_id={credential.client_id}",
+            )
+            raise ApiException(
+                status_code=503,
+                code=ErrorCode.APPLE_REVOCATION_FAILED,
+            )
+
+        credential.revoked_at = datetime.now(timezone.utc)
+        credential.updated_at = credential.revoked_at
+
+        db.add(credential)
+        db.commit()
+
+        revoked_count += 1
+
+    return revoked_count
+
+
+def _best_effort_revoke_apple_credentials_for_admin_delete(
+    db,
+    *,
+    user_id: int,
+) -> dict:
+    try:
+        revoked_count = _revoke_stored_apple_credentials(
+            db,
+            user_id=user_id,
+        )
+
+        return {
+            "success": True,
+            "revoked_count": revoked_count,
+            "error": None,
+        }
+
+    except Exception as exc:
+        # Admin deletion must not be blocked by an external
+        # Apple revocation failure. The account data is still
+        # removed according to the deletion request.
+        db.rollback()
+
+        print(
+            "ADMIN APPLE REVOCATION ERROR:",
+            type(exc).__name__,
+            f"user_id={user_id}",
+        )
+
+        return {
+            "success": False,
+            "revoked_count": 0,
+            "error": type(exc).__name__,
+        }
+
+
+def _complete_apple_login(
+    db,
+    *,
+    user,
+    apple_sub: str,
+    email: str | None,
+    request: Request,
+    expected_role: str,
+):
+    if user is None:
+        _audit(
+            db,
+            action="APPLE_LOGIN_FAIL_USER_NOT_FOUND",
+            request=request,
+            user_id=None,
+            details=f"email={email or 'missing'}",
+        )
+        raise HTTPException(
+            status_code=404,
+            detail="APPLE_ACCOUNT_NOT_REGISTERED",
+        )
+
+    if user.status != UserStatus.ACTIVE.value:
+        raise ApiException(
+            status_code=403,
+            code=ErrorCode.ACCOUNT_INACTIVE,
+        )
+
+    if user.role != expected_role:
+        _audit(
+            db,
+            action="APPLE_LOGIN_FAIL_ROLE_MISMATCH",
+            request=request,
+            user_id=user.id,
+            details=(
+                f"email={email or 'missing'}, "
+                f"expected_role={expected_role}, "
+                f"actual_role={user.role}"
+            ),
+        )
+        raise ApiException(
+            status_code=403,
+            code=ErrorCode.INSUFFICIENT_ROLE,
+        )
+
+    if user.apple_sub and user.apple_sub != apple_sub:
+        raise HTTPException(
+            status_code=409,
+            detail="APPLE_ACCOUNT_CONFLICT",
+        )
+
+    if not user.apple_sub:
+        user.apple_sub = apple_sub
+
+    if email and not user.email_verified_at:
+        user.email_verified_at = datetime.now(timezone.utc)
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    access_token = create_access_token(user.id)
+
+    _audit(
+        db,
+        action="APPLE_LOGIN_SUCCESS",
+        request=request,
+        user_id=user.id,
+        details=f"email={email or user.email or 'missing'}",
+    )
+
+    return ok({
+        "access_token": access_token,
+        "token_type": "bearer",
+        "created": False,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "status": user.status,
+            "email_verified": bool(user.email_verified_at),
+            "email_verified_at": (
+                str(user.email_verified_at)
+                if user.email_verified_at
+                else None
+            ),
+        },
+    })
+
+
+def _complete_apple_register(
+    db,
+    *,
+    existing_user,
+    apple_sub: str,
+    email: str | None,
+    email_verified: bool,
+    payload: AppleLoginRequest,
+    request: Request,
+):
+    if existing_user is not None:
+        raise ApiException(
+            status_code=409,
+            code=ErrorCode.EMAIL_ALREADY_EXISTS,
+        )
+
+    if not email or not email_verified:
+        _audit(
+            db,
+            action="APPLE_REGISTER_FAIL_INVALID_EMAIL",
+            request=request,
+            user_id=None,
+            details=f"email={email or 'missing'}",
+        )
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    role_value = (
+        "partner"
+        if payload.expected_role == "partner"
+        else "user"
+    )
+
+    if not payload.accept_terms or not payload.accept_privacy:
+        raise ApiException(
+            status_code=422,
+            code=ErrorCode.TERMS_REQUIRED,
+        )
+
+    if role_value == "user":
+        if not payload.dob:
+            raise ApiException(
+                status_code=422,
+                code=ErrorCode.INVALID_INPUT,
+                message="Data urodzenia jest wymagana.",
+            )
+
+        if not _is_at_least_18(payload.dob):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.AGE_TOO_LOW,
+            )
+
+    now = datetime.now(timezone.utc)
+
+    user = User(
+        email=email,
+        password_hash=None,
+        apple_sub=apple_sub,
+        dob=payload.dob if role_value == "user" else None,
+        terms_accepted_at=now,
+        terms_version="v1",
+        privacy_version="v1",
+        role=role_value,
+        status=UserStatus.ACTIVE.value,
+        email_verified_at=now,
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    access_token = create_access_token(user.id)
+
+    _audit(
+        db,
+        action="APPLE_REGISTER_SUCCESS",
+        request=request,
+        user_id=user.id,
+        details=f"email={email}, role={role_value}",
+    )
+
+    return ok({
+        "access_token": access_token,
+        "token_type": "bearer",
+        "created": True,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "status": user.status,
+            "email_verified": True,
+            "email_verified_at": (
+                str(user.email_verified_at)
+                if user.email_verified_at
+                else None
+            ),
+        },
+    })
+
+
+@app.post("/auth/apple/nonce")
+@limiter.limit("10/minute")
+def create_apple_auth_nonce(request: Request):
+    raw_nonce = secrets.token_urlsafe(32)
+    nonce_hash = hashlib.sha256(raw_nonce.encode("utf-8")).hexdigest()
+
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(minutes=5)
+
+    db = SessionLocal()
+    try:
+        nonce_record = AppleAuthNonce(
+            nonce_hash=nonce_hash,
+            expires_at=expires_at,
+            used_at=None,
+            created_at=now,
+        )
+        db.add(nonce_record)
+        db.commit()
+
+        return ok({
+            "nonce": raw_nonce,
+            "expires_in": 300,
+        })
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@app.post("/auth/apple")
+@limiter.limit("5/minute")
+def apple_login(payload: AppleLoginRequest, request: Request):
+    db = SessionLocal()
+
+    try:
+        identity = _verify_apple_auth_identity(
+            db,
+            payload,
+        )
+
+        apple_sub = identity["apple_sub"]
+        email = identity["email"]
+        email_verified = identity["email_verified"]
+        audience = identity["audience"]
+
+        client_id, token_response = _exchange_apple_code_for_identity(
+            authorization_code=payload.authorization_code,
+            audience=audience,
+        )
+
+        user = _resolve_apple_auth_user(
+            db,
+            apple_sub=apple_sub,
+            email=email,
+            request=request,
+        )
+
+        if payload.mode == "login":
+            response = _complete_apple_login(
+                db,
+                user=user,
+                apple_sub=apple_sub,
+                email=email,
+                request=request,
+                expected_role=payload.expected_role,
+            )
+
+            resolved_user = (
+                db.query(User)
+                .filter(User.apple_sub == apple_sub)
+                .first()
+            )
+
+            if resolved_user is None:
+                raise HTTPException(
+                    status_code=500,
+                    detail="APPLE_AUTH_USER_RESOLUTION_FAILED",
+                )
+
+        else:
+            response = _complete_apple_register(
+                db,
+                existing_user=user,
+                apple_sub=apple_sub,
+                email=email,
+                email_verified=email_verified,
+                payload=payload,
+                request=request,
+            )
+
+            resolved_user = (
+                db.query(User)
+                .filter(User.apple_sub == apple_sub)
+                .first()
+            )
+
+            if resolved_user is None:
+                raise HTTPException(
+                    status_code=500,
+                    detail="APPLE_AUTH_USER_RESOLUTION_FAILED",
+                )
+
+        refresh_token = str(
+            token_response.get("refresh_token") or ""
+        ).strip()
+
+        _store_apple_auth_credential(
+            db,
+            user_id=resolved_user.id,
+            client_id=client_id,
+            refresh_token=refresh_token,
+        )
+
+        return response
+
+    finally:
+        db.close()
 
 
 @app.post("/auth/google")
@@ -2642,6 +3399,9 @@ def auth_me(current_user: User = Depends(get_current_user)):
         "mfa_enabled": bool(getattr(current_user, "mfa_enabled", False)) if current_user.role == UserRole.ADMIN.value else None,
         "email_verified": bool(getattr(current_user, "email_verified_at", None)),
         "email_verified_at": str(current_user.email_verified_at) if getattr(current_user, "email_verified_at", None) else None,
+        "has_password": bool(getattr(current_user, "password_hash", None)),
+        "has_google_auth": bool(getattr(current_user, "google_sub", None)),
+        "has_apple_auth": bool(getattr(current_user, "apple_sub", None)),
     }
 
 
@@ -2691,7 +3451,11 @@ class ResetPasswordRequest(BaseModel):
 
 
 class DeleteAccountRequest(BaseModel):
-    password: str = Field(min_length=8, max_length=128)
+    method: str = Field(default="password", pattern="^(password|google|apple)$")
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+    id_token: str | None = Field(default=None, min_length=20)
+    nonce: str | None = Field(default=None, min_length=16, max_length=255)
+    authorization_code: str | None = Field(default=None, min_length=1)
 
 
 # =========================
@@ -2934,6 +3698,10 @@ def cleanup_user_social_relations_for_soft_delete(db, user_id: int):
         EmailVerificationToken.user_id == user_id
     ).delete(synchronize_session=False)
 
+    db.query(AppleAuthCredential).filter(
+        AppleAuthCredential.user_id == user_id
+    ).delete(synchronize_session=False)
+
     db.query(UserNotification).filter(
         (UserNotification.user_id == user_id)
         | (UserNotification.partner_user_id == user_id)
@@ -2941,6 +3709,146 @@ def cleanup_user_social_relations_for_soft_delete(db, user_id: int):
 
 
 # =========================
+def _verify_delete_account_reauth(
+    db,
+    *,
+    user: User,
+    payload: DeleteAccountRequest,
+    request: Request,
+) -> None:
+    if payload.method == "password":
+        if not user.password_hash:
+            _audit(
+                db,
+                action="DELETE_ACCOUNT_FAIL",
+                request=request,
+                user_id=user.id,
+                details="password_auth_not_available",
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="PASSWORD_AUTH_NOT_AVAILABLE",
+            )
+
+        if not payload.password or not verify_password(
+            payload.password,
+            user.password_hash,
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="PASSWORD_INVALID",
+            )
+
+        return
+
+    if payload.method == "google":
+        if not user.google_sub:
+            raise HTTPException(
+                status_code=400,
+                detail="GOOGLE_AUTH_NOT_AVAILABLE",
+            )
+
+        id_token = str(payload.id_token or "").strip()
+
+        if not id_token:
+            raise HTTPException(
+                status_code=400,
+                detail="GOOGLE_ID_TOKEN_REQUIRED",
+            )
+
+        google_web_client_id = os.getenv(
+            "GOOGLE_WEB_CLIENT_ID",
+            "",
+        ).strip()
+
+        if not google_web_client_id:
+            raise HTTPException(
+                status_code=503,
+                detail="GOOGLE_AUTH_NOT_CONFIGURED",
+            )
+
+        try:
+            claims = google_id_token.verify_oauth2_token(
+                id_token,
+                google_auth_requests.Request(),
+                google_web_client_id,
+            )
+        except Exception:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        token_sub = str(
+            claims.get("sub") or ""
+        ).strip()
+
+        if not token_sub or token_sub != user.google_sub:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        return
+
+    if payload.method == "apple":
+        if not user.apple_sub:
+            raise HTTPException(
+                status_code=400,
+                detail="APPLE_AUTH_NOT_AVAILABLE",
+            )
+
+        if (
+            not payload.id_token
+            or not payload.nonce
+            or not payload.authorization_code
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="APPLE_REAUTH_REQUIRED",
+            )
+
+        identity = _verify_apple_auth_identity(
+            db,
+            payload,
+        )
+
+        if identity["apple_sub"] != user.apple_sub:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        client_id, token_response = _exchange_apple_code_for_identity(
+            authorization_code=payload.authorization_code,
+            audience=identity["audience"],
+        )
+
+        refresh_token = str(
+            token_response.get("refresh_token") or ""
+        ).strip()
+
+        if not refresh_token:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        _store_apple_auth_credential(
+            db,
+            user_id=user.id,
+            client_id=client_id,
+            refresh_token=refresh_token,
+        )
+
+        return
+
+    raise HTTPException(
+        status_code=400,
+        detail="DELETE_ACCOUNT_AUTH_METHOD_INVALID",
+    )
+
+
 @app.post("/auth/delete-account")
 def delete_account(
     payload: DeleteAccountRequest,
@@ -2953,9 +3861,19 @@ def delete_account(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        if not verify_password(payload.password, user.password_hash):
-            _audit(db, action="DELETE_ACCOUNT_FAIL", request=request, user_id=current_user.id, details="invalid_password")
-            raise HTTPException(status_code=400, detail="PASSWORD_INVALID")
+        _verify_delete_account_reauth(
+            db,
+            user=user,
+            payload=payload,
+            request=request,
+        )
+
+        # Apple authorization must be revoked regardless of which
+        # valid re-auth method confirmed this account deletion.
+        _revoke_stored_apple_credentials(
+            db,
+            user_id=user.id,
+        )
 
         owned_groups = (
             db.query(Group)
@@ -2973,6 +3891,8 @@ def delete_account(
 
         user.email = safe_email
         user.password_hash = None
+        user.google_sub = None
+        user.apple_sub = None
         user.status = UserStatus.DELETED.value
 
         db.add(user)
@@ -8590,6 +9510,13 @@ def admin_delete_user_account(
         for g in owned_groups:
             db.delete(g)
 
+        apple_revoke_result = (
+            _best_effort_revoke_apple_credentials_for_admin_delete(
+                db,
+                user_id=user.id,
+            )
+        )
+
         cleanup_user_social_relations_for_soft_delete(db, user.id)
 
         original_email = user.email
@@ -8597,6 +9524,8 @@ def admin_delete_user_account(
 
         user.email = safe_email
         user.password_hash = None
+        user.google_sub = None
+        user.apple_sub = None
         user.status = UserStatus.DELETED.value
 
         db.add(user)
@@ -8604,7 +9533,15 @@ def admin_delete_user_account(
             AuditLog(
                 user_id=user.id,
                 action="admin_delete_user_account",
-                details=f"admin_id={current_user.id}; admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; admin_level={current_user.admin_level or 'admin'}; original_email={original_email}",
+                details=(
+                    f"admin_id={current_user.id}; "
+                    f"admin_display_name={current_user.admin_display_name or current_user.email or f'Admin #{current_user.id}'}; "
+                    f"admin_level={current_user.admin_level or 'admin'}; "
+                    f"original_email={original_email}; "
+                    f"apple_revoke_success={apple_revoke_result.get('success')}; "
+                    f"apple_revoked_count={apple_revoke_result.get('revoked_count')}; "
+                    f"apple_revoke_error={apple_revoke_result.get('error')}"
+                ),
             )
         )
         db.commit()

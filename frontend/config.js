@@ -22,4 +22,10 @@ window.USLY_CONFIG = Object.freeze({
     androidPublicApiKey: "goog_jrfVwUwgRKZQdWQKobkbwFmasVP",
     iosPublicApiKey: "",
   }),
+
+  appleAuth: Object.freeze({
+    iosClientId: "com.usly.app",
+    webClientId: "",
+    webRedirectUrl: "",
+  }),
 });

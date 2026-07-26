@@ -19,6 +19,7 @@ class ErrorCode(str, Enum):
     # --- GENERIC ---
     INTERNAL_ERROR = "INTERNAL_ERROR"
     RATE_LIMITED = "RATE_LIMITED"
+    APPLE_REVOCATION_FAILED = "APPLE_REVOCATION_FAILED"
 
 
     # --- LOGIN ---
