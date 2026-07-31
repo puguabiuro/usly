@@ -20,7 +20,7 @@
 window.USLY_CONFIG = Object.freeze({
   revenueCat: Object.freeze({
     androidPublicApiKey: "goog_jrfVwUwgRKZQdWQKobkbwFmasVP",
-    iosPublicApiKey: "",
+    iosPublicApiKey: "appl_NRfvugeWVusDrYaSpQeQYYARooW",
   }),
 
   appleAuth: Object.freeze({

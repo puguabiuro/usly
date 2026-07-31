@@ -159,8 +159,8 @@ const I18N = {
     "plans.user.vip.feature6": "Oznaczenie trenera w maks. 5 zainteresowaniach",
     "plans.price.free": "0 zł",
     "plans.partner.free.price": "0 zł",
-    "plans.partner.pro.price": "129 zł / miesiąc",
-    "plans.partner.premium.price": "259 zł / miesiąc",
+    "plans.partner.pro.price": "129,99 zł / miesiąc",
+    "plans.partner.premium.price": "259,99 zł / miesiąc",
     "plans.partner.enterprise.price": "Indywidualnie",
     "plans.partner.free.feature1": "Maksymalnie 2 aktywne wydarzenia jednocześnie",
     "plans.partner.free.feature2": "Podstawowy podgląd panelu: aktywne wydarzenia",
@@ -926,15 +926,15 @@ const I18N = {
     "register.partner.plan_title": "Plan organizatora",
     "register.partner.plan_subtitle": "Wybierz dostęp dla miejsca.",
     "register.partner.plan.free": "FREE • 0 zł / mies.",
-    "register.partner.plan.pro": "PRO • 129 zł / mies.",
-    "register.partner.plan.premium": "PREMIUM • 259 zł / mies.",
+    "register.partner.plan.pro": "PRO • 129,99 zł / mies.",
+    "register.partner.plan.premium": "PREMIUM • 259,99 zł / mies.",
     "register.partner.plan.enterprise": "ENTERPRISE • indywidualnie",
     "register.user.plan_title": "Plan",
     "register.user.plan_subtitle": "Wybierz startowy dostęp.",
     "register.user.plan.free": "FREE • 0 zł / mies.",
-    "register.user.plan.plus": "PLUS • 29 zł / mies.",
-    "register.user.plan.premium": "PREMIUM • 49 zł / mies.",
-    "register.user.plan.vip": "VIP • 89 zł / mies.",
+    "register.user.plan.plus": "PLUS • 29,99 zł / mies.",
+    "register.user.plan.premium": "PREMIUM • 49,99 zł / mies.",
+    "register.user.plan.vip": "VIP • 89,99 zł / mies.",
     "register.plan_details": "Zobacz szczegóły planów",
     "register.accept_terms": "Akceptuję Regulamin*",
     "register.accept_privacy": "Akceptuję Politykę prywatności*",
@@ -1013,9 +1013,9 @@ const I18N = {
     "groups.create.toastInterest": "Podaj hashtag grupy",
     "groups.create.toastFailed": "Nie udało się utworzyć grupy",
     "groups.create.toastSuccess": "Grupa została utworzona",
-    "plans.user.plus.price": "29 zł / miesiąc",
-    "plans.user.premium.price": "49 zł / miesiąc",
-    "plans.user.vip.price": "89 zł / miesiąc",
+    "plans.user.plus.price": "29,99 zł / miesiąc",
+    "plans.user.premium.price": "49,99 zł / miesiąc",
+    "plans.user.vip.price": "89,99 zł / miesiąc",
     "plans.subtitle": "Zobacz różnice funkcji przed zalogowaniem.",
     "plans.preview": "Podgląd planów",
     "login.no_account": "Nie masz konta? Zarejestruj się",
@@ -1144,8 +1144,8 @@ const I18N = {
     "plans.user.vip.feature6": "Host badge in up to 5 interests",
     "plans.price.free": "0 PLN",
     "plans.partner.free.price": "0 PLN",
-    "plans.partner.pro.price": "129 PLN / month",
-    "plans.partner.premium.price": "259 PLN / month",
+    "plans.partner.pro.price": "129.99 PLN / month",
+    "plans.partner.premium.price": "259.99 PLN / month",
     "plans.partner.enterprise.price": "Custom",
     "plans.partner.free.feature1": "Up to 2 active events at the same time",
     "plans.partner.free.feature2": "Basic dashboard view: active events",
@@ -1863,15 +1863,15 @@ const I18N = {
     "register.partner.plan_title": "Organizer plan",
     "register.partner.plan_subtitle": "Choose access for your place.",
     "register.partner.plan.free": "FREE • 0 PLN / mo.",
-    "register.partner.plan.pro": "PRO • 129 PLN / mo.",
-    "register.partner.plan.premium": "PREMIUM • 259 PLN / mo.",
+    "register.partner.plan.pro": "PRO • 129.99 PLN / mo.",
+    "register.partner.plan.premium": "PREMIUM • 259.99 PLN / mo.",
     "register.partner.plan.enterprise": "ENTERPRISE • custom",
     "register.user.plan_title": "Plan",
     "register.user.plan_subtitle": "Choose your starting access.",
     "register.user.plan.free": "FREE • 0 PLN / mo.",
-    "register.user.plan.plus": "PLUS • 29 PLN / mo.",
-    "register.user.plan.premium": "PREMIUM • 49 PLN / mo.",
-    "register.user.plan.vip": "VIP • 89 PLN / mo.",
+    "register.user.plan.plus": "PLUS • 29.99 PLN / mo.",
+    "register.user.plan.premium": "PREMIUM • 49.99 PLN / mo.",
+    "register.user.plan.vip": "VIP • 89.99 PLN / mo.",
     "register.plan_details": "See plan details",
     "register.accept_terms": "I accept the Terms & Conditions*",
     "register.accept_privacy": "I accept the Privacy Policy*",
@@ -1950,9 +1950,9 @@ const I18N = {
     "groups.create.toastInterest": "Enter group hashtag",
     "groups.create.toastFailed": "Could not create group",
     "groups.create.toastSuccess": "Group created",
-    "plans.user.plus.price": "29 PLN / month",
-    "plans.user.premium.price": "49 PLN / month",
-    "plans.user.vip.price": "89 PLN / month",
+    "plans.user.plus.price": "29.99 PLN / month",
+    "plans.user.premium.price": "49.99 PLN / month",
+    "plans.user.vip.price": "89.99 PLN / month",
     "plans.subtitle": "See feature differences before logging in.",
     "plans.preview": "Preview plans",
     "login.no_account": "Don’t have an account? Register",
@@ -6876,8 +6876,10 @@ async function addSelectedEventToCalendar() {
     return;
   }
 
-  const startDate = new Date(ev.start_at);
-  const endDate = new Date(ev.end_at || new Date(startDate.getTime() + 60 * 60 * 1000));
+  const startDate = parseEventWallClockDate(ev.start_at);
+  const endDate = ev.end_at
+    ? parseEventWallClockDate(ev.end_at)
+    : new Date(startDate.getTime() + 60 * 60 * 1000);
 
   const location = [ev.where, ev.address, ev.city].filter(Boolean).join(", ");
   const description = [
@@ -8734,7 +8736,7 @@ async function savePartnerEventDraft() {
     return;
   }
 
-  const startAt = new Date(when);
+  const startAt = parseEventWallClockDate(when);
   if (Number.isNaN(startAt.getTime())) {
     toast(t("partnerEvent.invalidDate"));
     return;
@@ -8864,7 +8866,7 @@ function getPartnerActivePublishedEventsCount() {
   const now = new Date();
   return (Array.isArray(App.partnerEvents) ? App.partnerEvents : []).filter((ev) => {
     const status = String(ev?.status || "").toLowerCase();
-    const endAt = ev?.end_at ? new Date(ev.end_at) : null;
+    const endAt = ev?.end_at ? parseEventWallClockDate(ev.end_at) : null;
     return status === "published" && endAt && !Number.isNaN(endAt.getTime()) && endAt >= now;
   }).length;
 }
@@ -8909,7 +8911,7 @@ async function publishPartnerEvent() {
     }
   }
 
-  const startAt = new Date(when);
+  const startAt = parseEventWallClockDate(when);
   if (Number.isNaN(startAt.getTime())) {
     toast(t("partnerEvent.invalidDate"));
     return;
@@ -9159,7 +9161,7 @@ async function renderNotifications() {
 
       const notifBatches = await Promise.all(events.map(async (ev) => {
         const out = [];
-        const endedAt = parseUslyTimestamp(ev?.end_at);
+        const endedAt = parseEventWallClockDate(ev?.end_at);
         const archivedNotificationsCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
         if (endedAt && endedAt < archivedNotificationsCutoff) {
           return out;
@@ -9835,7 +9837,7 @@ async function refreshPartnerNotifBadgeCount() {
 
     const notifBatches = await Promise.all(events.map(async (ev) => {
       const out = [];
-      const endedAt = parseUslyTimestamp(ev?.end_at);
+      const endedAt = parseEventWallClockDate(ev?.end_at);
       const archivedNotifCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
       if (endedAt && endedAt < archivedNotifCutoff) {
         return out;
@@ -10382,7 +10384,7 @@ function renderPartnerEvents() {
 
   const formatWhen = (value) => {
     if (!value) return "Brak daty";
-    const d = new Date(value);
+    const d = parseEventWallClockDate(value);
     if (Number.isNaN(d.getTime())) return String(value);
     return d.toLocaleString("pl-PL", {
       year: "numeric",
@@ -10409,7 +10411,7 @@ function renderPartnerEvents() {
 
   const getLifecycleLabel = (ev) => {
     const status = String(ev.status || "draft").toLowerCase();
-    const endAt = ev?.end_at ? new Date(ev.end_at) : null;
+    const endAt = ev?.end_at ? parseEventWallClockDate(ev.end_at) : null;
 
     if (status === "archived") return t("partnerEvent.sectionArchivedTitle");
     if (status === "draft") return t("partnerEvent.statusDraft");
@@ -10429,7 +10431,7 @@ function renderPartnerEvents() {
         ? t("partnerEvent.freeSpotsShort", { count: ev.spots_left != null ? ev.spots_left : "—" })
         : "";
       const archiveLabel = (() => {
-        const endAt = ev?.end_at ? new Date(ev.end_at) : null;
+        const endAt = ev?.end_at ? parseEventWallClockDate(ev.end_at) : null;
         return endAt && !Number.isNaN(endAt.getTime()) && endAt < now
           ? t("partnerEvent.archiveShort")
           : t("partnerEvent.closeShort");
@@ -10479,7 +10481,7 @@ function renderPartnerEvents() {
 
   events.forEach((ev) => {
     const status = String(ev.status || "draft").toLowerCase();
-    const endAt = ev?.end_at ? new Date(ev.end_at) : null;
+    const endAt = ev?.end_at ? parseEventWallClockDate(ev.end_at) : null;
 
     if (status === "archived") {
       archived.push(ev);
@@ -11682,33 +11684,82 @@ function mapApiGroupToViewModel(g) {
   };
 }
 
-function toLocalDateTimeInputValue(value) {
-  if (!value) return "";
+/*
+ * Daty wydarzeń są godzinami lokalnymi wpisanymi przez organizatora.
+ * Nie wolno automatycznie traktować ich jako UTC ani dopisywać "Z".
+ */
+function parseEventWallClockDate(value) {
+  if (!value) return null;
+
   const raw = String(value).trim().replace(" ", "T");
-  const normalized = /[zZ]|[+-]\d\d:\d\d$/.test(raw) ? raw : `${raw}Z`;
-  const d = new Date(normalized);
-  if (Number.isNaN(d.getTime())) return raw.slice(0, 16);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const match = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/
+  );
+
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6] || 0);
+
+  const date = new Date(year, month, day, hour, minute, second, 0);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month ||
+    date.getDate() !== day ||
+    date.getHours() !== hour ||
+    date.getMinutes() !== minute ||
+    date.getSeconds() !== second
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function formatEventWallClockInput(value) {
+  if (!value) return "";
+
+  const raw = String(value).trim().replace(" ", "T");
+  const match = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
+  );
+
+  return match
+    ? `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}`
+    : "";
+}
+
+function toLocalDateTimeInputValue(value) {
+  return formatEventWallClockInput(value);
 }
 
 function toLocalApiDateTime(value) {
-  if (!value) return null;
-  const raw = String(value).trim();
-  return raw.length === 16 ? `${raw}:00` : raw;
+  const normalized = formatEventWallClockInput(value);
+  return normalized ? `${normalized}:00` : null;
 }
 
 function addHourToLocalDateTime(value) {
-  const raw = String(value || "").trim();
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return null;
-  const shifted = new Date(d.getTime() + 60 * 60 * 1000);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${shifted.getFullYear()}-${pad(shifted.getMonth() + 1)}-${pad(shifted.getDate())}T${pad(shifted.getHours())}:${pad(shifted.getMinutes())}:00`;
+  const date = parseEventWallClockDate(value);
+  if (!date) return null;
+
+  date.setHours(date.getHours() + 1);
+
+  const pad = (number) => String(number).padStart(2, "0");
+
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  );
 }
 
 function mapApiEventToViewModel(e) {
-  const start = e?.start_at ? new Date(e.start_at) : null;
+  const start = e?.start_at ? parseEventWallClockDate(e.start_at) : null;
   const when =
     start && !Number.isNaN(start.getTime())
       ? start.toLocaleString("pl-PL", {
@@ -11793,12 +11844,42 @@ async function loadNearbyPeople(lat = null, lng = null) {
 }
 
 async function loadNearbyEvents(lat, lng) {
+  const requestUserId = App.currentUserId;
+  let requestToken = "";
+  try {
+    requestToken = localStorage.getItem("usly_token") || "";
+  } catch (_) {}
+
+  const isCurrentSession = () => {
+    let currentToken = "";
+    try {
+      currentToken = localStorage.getItem("usly_token") || "";
+    } catch (_) {}
+
+    return (
+      App.isLoggedIn &&
+      String(App.currentUserId ?? "") === String(requestUserId ?? "") &&
+      currentToken === requestToken
+    );
+  };
+
   try {
     const data = await apiFetch(`/events?limit=100${nearbyLocationQuery(lat, lng)}`);
+
+    if (!isCurrentSession()) {
+      console.warn("loadNearbyEvents ignored stale session result");
+      return false;
+    }
+
     const items = Array.isArray(data?.data?.items) ? data.data.items : [];
     App.nearbyEvents = items.map(mapApiEventToViewModel);
     return true;
   } catch (err) {
+    if (!isCurrentSession()) {
+      console.warn("loadNearbyEvents ignored stale session error");
+      return false;
+    }
+
     console.error("loadNearbyEvents failed", err);
     App.nearbyEvents = [];
     return false;
@@ -11806,6 +11887,25 @@ async function loadNearbyEvents(lat, lng) {
 }
 
 async function loadEvents(lat = null, lng = null) {
+  const requestUserId = App.currentUserId;
+  let requestToken = "";
+  try {
+    requestToken = localStorage.getItem("usly_token") || "";
+  } catch (_) {}
+
+  const isCurrentSession = () => {
+    let currentToken = "";
+    try {
+      currentToken = localStorage.getItem("usly_token") || "";
+    } catch (_) {}
+
+    return (
+      App.isLoggedIn &&
+      String(App.currentUserId ?? "") === String(requestUserId ?? "") &&
+      currentToken === requestToken
+    );
+  };
+
   try {
     const [eventsResult, joinedResult, savedResult] = await Promise.allSettled([
       apiFetch(`/events?limit=100${nearbyLocationQuery(lat, lng)}`),
@@ -11849,6 +11949,11 @@ async function loadEvents(lat = null, lng = null) {
       );
     } else {
       console.error("loadEvents saved state failed", savedResult.reason);
+    }
+
+    if (!isCurrentSession()) {
+      console.warn("loadEvents ignored stale session result");
+      return false;
     }
 
     App.events = items.map(raw => {
@@ -11899,7 +12004,7 @@ async function loadPartnerEvents() {
 
     const enriched = await Promise.all(
       items.map(async (ev) => {
-        const endedAt = parseUslyTimestamp(ev?.end_at);
+        const endedAt = parseEventWallClockDate(ev?.end_at);
         const archivedStatsCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
         if (endedAt && endedAt < archivedStatsCutoff) {
           return {
@@ -13614,6 +13719,21 @@ function setupCapacitorAuthLinkListener() {
       if (event?.url) handleAuthLinkUrl(event.url);
     });
 
+    CapacitorApp.addListener("appStateChange", async ({ isActive }) => {
+      if (!isActive || !App.isLoggedIn) return;
+
+      await Promise.all([
+        loadNearbyPeople(),
+        loadNearbyEvents(),
+        loadEvents(),
+        loadMyGroups(),
+        loadGroups(),
+        refreshChatBadgeCount()
+      ]);
+
+      renderAll();
+    });
+
     if (CapacitorApp.getLaunchUrl) {
       CapacitorApp.getLaunchUrl()
         .then((event) => {
@@ -13640,23 +13760,12 @@ async function setupPushNotifications() {
   pushNotificationsSetupStarted = true;
 
   try {
-    const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
-    console.info("USLY push setup: plugin available =", Boolean(PushNotifications));
-    if (!PushNotifications) return;
-
     const platform = window.Capacitor?.getPlatform?.();
     console.info("USLY push setup: platform =", platform);
     if (platform !== "android" && platform !== "ios") return;
 
-    let permission = await PushNotifications.checkPermissions();
-    console.info("USLY push setup: permission =", permission?.receive);
-    if (permission.receive !== "granted") {
-      permission = await PushNotifications.requestPermissions();
-    }
-    if (permission.receive !== "granted") return;
-
-    PushNotifications.addListener("registration", async (token) => {
-      const tokenValue = token?.value || token;
+    const registerPushToken = async (tokenValue, tokenSource) => {
+      console.info("USLY push token source =", tokenSource);
       console.info("USLY push token:", tokenValue);
 
       if (!tokenValue || typeof window.apiFetch !== "function") return;
@@ -13677,19 +13786,93 @@ async function setupPushNotifications() {
       } catch (error) {
         console.error("USLY push token register failed", error);
       }
+    };
+
+    if (platform === "ios") {
+      const FirebaseMessaging =
+        window.Capacitor?.Plugins?.FirebaseMessaging;
+
+      console.info(
+        "USLY push setup: FirebaseMessaging available =",
+        Boolean(FirebaseMessaging)
+      );
+
+      if (!FirebaseMessaging) return;
+
+      let permission = await FirebaseMessaging.checkPermissions();
+      console.info("USLY push setup: permission =", permission?.receive);
+
+      if (permission.receive !== "granted") {
+        permission = await FirebaseMessaging.requestPermissions();
+      }
+
+      if (permission.receive !== "granted") return;
+
+      FirebaseMessaging.addListener("tokenReceived", async (event) => {
+        await registerPushToken(event?.token, "fcm-refresh");
+      });
+
+      FirebaseMessaging.addListener(
+        "notificationReceived",
+        (notification) => {
+          console.info("USLY push received:", notification);
+        }
+      );
+
+      FirebaseMessaging.addListener(
+        "notificationActionPerformed",
+        (action) => {
+          console.info("USLY push action:", action);
+        }
+      );
+
+      const tokenResult = await FirebaseMessaging.getToken();
+      await registerPushToken(tokenResult?.token, "fcm");
+
+      return;
+    }
+
+    const PushNotifications =
+      window.Capacitor?.Plugins?.PushNotifications;
+
+    console.info(
+      "USLY push setup: PushNotifications available =",
+      Boolean(PushNotifications)
+    );
+
+    if (!PushNotifications) return;
+
+    let permission = await PushNotifications.checkPermissions();
+    console.info("USLY push setup: permission =", permission?.receive);
+
+    if (permission.receive !== "granted") {
+      permission = await PushNotifications.requestPermissions();
+    }
+
+    if (permission.receive !== "granted") return;
+
+    PushNotifications.addListener("registration", async (token) => {
+      const tokenValue = token?.value || token;
+      await registerPushToken(tokenValue, "fcm");
     });
 
     PushNotifications.addListener("registrationError", (error) => {
       console.error("USLY push registration error", error);
     });
 
-    PushNotifications.addListener("pushNotificationReceived", (notification) => {
-      console.info("USLY push received:", notification);
-    });
+    PushNotifications.addListener(
+      "pushNotificationReceived",
+      (notification) => {
+        console.info("USLY push received:", notification);
+      }
+    );
 
-    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-      console.info("USLY push action:", action);
-    });
+    PushNotifications.addListener(
+      "pushNotificationActionPerformed",
+      (action) => {
+        console.info("USLY push action:", action);
+      }
+    );
 
     await PushNotifications.register();
   } catch (error) {

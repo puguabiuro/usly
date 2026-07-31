@@ -1,0 +1,14 @@
+diff --git a/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/SocialLoginPlugin.swift b/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/SocialLoginPlugin.swift
+index 0573a30..18f869f 100644
+--- a/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/SocialLoginPlugin.swift
++++ b/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/SocialLoginPlugin.swift
+@@ -409,7 +409,8 @@ public class SocialLoginPlugin: CAPPlugin, CAPBridgedPlugin {
+                 let appleResult: [String: Any] = [
+                     "accessToken": accessTokenObject ?? NSNull(),
+                     "profile": profileObject,
+-                    "idToken": appleResponse.idToken ?? ""
++                    "idToken": appleResponse.idToken ?? "",
++                    "authorizationCode": appleResponse.authorizationCode ?? ""
+                 ]
+ 
+                 call.resolve([

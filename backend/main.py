@@ -1598,6 +1598,23 @@ def serve_privacy_en_page():
     )
 
 
+@app.get("/bezpieczenstwo-dzieci", include_in_schema=False)
+def serve_child_safety_page():
+    return FileResponse(
+        FRONTEND_DIR / "bezpieczenstwo-dzieci.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get("/child-safety", include_in_schema=False)
+def serve_child_safety_en_page():
+    return FileResponse(
+        FRONTEND_DIR / "child-safety.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+
 @app.get("/delete-account", include_in_schema=False)
 def serve_delete_account_page():
     return FileResponse(
