@@ -4987,7 +4987,7 @@ def partner_create_event(
         if dt is None:
             return None
         if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
-            dt = dt.replace(tzinfo=ZoneInfo("Europe/Warsaw"))
+            return dt.replace(tzinfo=None)
         return dt.astimezone(timezone.utc).replace(tzinfo=None)
 
     def _to_str_or_none(v):
@@ -5096,7 +5096,7 @@ def partner_update_event(
             if dt is None:
                 return None
             if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
-                dt = dt.replace(tzinfo=ZoneInfo("Europe/Warsaw"))
+                return dt.replace(tzinfo=None)
             return dt.astimezone(timezone.utc).replace(tzinfo=None)
 
         def _to_str_or_none(v):
