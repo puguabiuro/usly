@@ -1,13 +1,26 @@
 (function () {
   const PRODUCT_IDS = {
-    user: {
-      plus: "usly_user_plus:monthly",
-      premium: "usly_user_premium:monthly",
-      vip: "usly_user_vip:monthly",
+    ios: {
+      user: {
+        plus: "usly_user_plus",
+        premium: "usly_user_premium",
+        vip: "usly_user_vip",
+      },
+      partner: {
+        pro: "usly_partner_pro",
+        premium: "usly_partner_premium",
+      },
     },
-    partner: {
-      pro: "usly_partner_pro:monthly",
-      premium: "usly_partner_premium:monthly",
+    android: {
+      user: {
+        plus: "usly_user_plus:monthly",
+        premium: "usly_user_premium:monthly",
+        vip: "usly_user_vip:monthly",
+      },
+      partner: {
+        pro: "usly_partner_pro:monthly",
+        premium: "usly_partner_premium:monthly",
+      },
     },
   };
 
@@ -20,7 +33,11 @@
   let configuredAppUserId = null;
 
   function getProductId(role, plan) {
-    return PRODUCT_IDS[String(role || "").toLowerCase()]?.[String(plan || "").toLowerCase()] || null;
+    const platform = getPlatform();
+    const normalizedRole = String(role || "").toLowerCase();
+    const normalizedPlan = String(plan || "").toLowerCase();
+
+    return PRODUCT_IDS[platform]?.[normalizedRole]?.[normalizedPlan] || null;
   }
 
   function getPlatform() {
