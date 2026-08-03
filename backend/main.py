@@ -11592,7 +11592,7 @@ def validate_promo_campaign(code: str):
     db = SessionLocal()
     try:
         campaign = db.query(PromoCampaign).filter(PromoCampaign.code == clean_code).first()
-        now = datetime.utcnow()
+        now = _normalize_datetime_for_compare(datetime.utcnow())
 
         if not campaign:
             raise HTTPException(status_code=404, detail="PROMO_CODE_NOT_FOUND")
@@ -11600,10 +11600,13 @@ def validate_promo_campaign(code: str):
         if campaign.status != "active":
             raise HTTPException(status_code=409, detail="PROMO_CODE_INACTIVE")
 
-        if campaign.valid_from and campaign.valid_from > now:
+        valid_from = _normalize_datetime_for_compare(campaign.valid_from)
+        valid_until = _normalize_datetime_for_compare(campaign.valid_until)
+
+        if valid_from and valid_from > now:
             raise HTTPException(status_code=409, detail="PROMO_CODE_NOT_STARTED")
 
-        if campaign.valid_until and campaign.valid_until < now:
+        if valid_until and valid_until < now:
             raise HTTPException(status_code=410, detail="PROMO_CODE_EXPIRED")
 
         if campaign.max_uses is not None and campaign.uses_count >= campaign.max_uses:
@@ -11646,12 +11649,18 @@ def redeem_promo_campaign(
     db = SessionLocal()
     try:
         campaign = db.query(PromoCampaign).filter(PromoCampaign.code == clean_code).first()
-        now = datetime.utcnow()
+        now = _normalize_datetime_for_compare(datetime.utcnow())
 
         if not campaign or campaign.status != "active":
             raise HTTPException(status_code=404, detail="PROMO_CODE_NOT_FOUND")
 
-        if campaign.valid_until and campaign.valid_until < now:
+        valid_from = _normalize_datetime_for_compare(campaign.valid_from)
+        valid_until = _normalize_datetime_for_compare(campaign.valid_until)
+
+        if valid_from and valid_from > now:
+            raise HTTPException(status_code=409, detail="PROMO_CODE_NOT_STARTED")
+
+        if valid_until and valid_until < now:
             raise HTTPException(status_code=410, detail="PROMO_CODE_EXPIRED")
 
         if campaign.max_uses is not None and campaign.uses_count >= campaign.max_uses:
