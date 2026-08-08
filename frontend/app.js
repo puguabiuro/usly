@@ -2830,6 +2830,8 @@ function resetAuthProviderState() {
   App.hasPassword = false;
   App.hasGoogleAuth = false;
   App.hasAppleAuth = false;
+
+  App.pendingSocialRegistration = null;
 }
 
 
@@ -2863,8 +2865,10 @@ async function loginPrimary() {
   if (App.authMethod === "apple") {
     console.info("USLY APPLE AUTH: login START");
 
+    let credentials = null;
+
     try {
-      const credentials = await requestAppleAuthCredentials();
+      credentials = await requestAppleAuthCredentials();
 
       const data = await apiFetch("/auth/apple", {
         method: "POST",
@@ -2980,14 +2984,52 @@ async function loginPrimary() {
         code
       );
 
+      if (code.includes("APPLE_ACCOUNT_NOT_REGISTERED")) {
+        if (
+          credentials?.idToken &&
+          credentials?.authorizationCode &&
+          credentials?.nonce
+        ) {
+          App.pendingSocialRegistration = {
+            provider: "apple",
+            idToken: credentials.idToken,
+            authorizationCode: credentials.authorizationCode,
+            nonce: credentials.nonce,
+            expectedRole:
+              App.role === "partner"
+                ? "partner"
+                : "user",
+          };
+
+          console.info(
+            "USLY APPLE AUTH: verified Apple identity saved for registration"
+          );
+        } else {
+          console.error(
+            "USLY APPLE AUTH: registration credentials unavailable after account-not-registered response"
+          );
+        }
+
+        toast(
+          App.lang === "en"
+            ? "This is your first time with this Apple ID. Complete your USLY profile to create your account."
+            : "To pierwszy raz z tym Apple ID. Uzupełnij profil, aby utworzyć konto USLY."
+        );
+
+        console.info(
+          "USLY APPLE AUTH: account not registered — opening Apple registration form"
+        );
+
+        selectAuthChoice(
+          "register",
+          App.role,
+          "apple"
+        );
+        return;
+      }
+
       const message =
-        code.includes("APPLE_ACCOUNT_NOT_REGISTERED")
-          ? (
-              App.lang === "en"
-                ? "No USLY account is registered with this Apple ID."
-                : "To Apple ID nie jest jeszcze powiązane z kontem USLY."
-            )
-          : code.includes("INSUFFICIENT_ROLE")
+        code.includes("INSUFFICIENT_ROLE")
           ? t("login.toast.roleMismatch")
           : (
               App.lang === "en"
@@ -3499,7 +3541,14 @@ async function registerPrimary() {
     if (isAppleRegistration) {
       console.info("USLY APPLE AUTH: register START");
 
-      const credentials = await requestAppleAuthCredentials();
+      const credentials =
+        App.pendingSocialRegistration?.provider === "apple"
+          ? {
+              idToken: App.pendingSocialRegistration.idToken,
+              authorizationCode: App.pendingSocialRegistration.authorizationCode,
+              nonce: App.pendingSocialRegistration.nonce,
+            }
+          : await requestAppleAuthCredentials();
 
       const appleRegister = await apiFetch("/auth/apple", {
         method: "POST",
@@ -3543,6 +3592,12 @@ async function registerPrimary() {
       localStorage.setItem(
         "usly_token",
         accessToken
+      );
+
+      App.pendingSocialRegistration = null;
+
+      console.info(
+        "USLY APPLE AUTH: pending social registration cleared"
       );
 
       const me = await apiFetch("/auth/me");
