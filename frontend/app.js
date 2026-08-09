@@ -2750,12 +2750,6 @@ function updatePlatformAuthProviderVisibility() {
       button.hidden = !showApple;
     });
 
-  console.info(
-    "USLY AUTH PLATFORM: platform =",
-    platform,
-    "apple visible =",
-    showApple
-  );
 }
 
 function updateAuthHeadings() {
@@ -2798,7 +2792,6 @@ function selectAuthChoice(mode, role, method) {
   const platform = window.Capacitor?.getPlatform?.() || "web";
 
   if (method === "apple" && platform === "android") {
-    console.info("USLY AUTH PLATFORM: Apple auth blocked on Android");
     return;
   }
 
@@ -2810,13 +2803,11 @@ function selectAuthChoice(mode, role, method) {
   // Social login nie wymaga formularza email/hasło.
   // Provider sam identyfikuje konto i zwraca zweryfikowany token.
   if (mode === "login" && App.authMethod === "google") {
-    console.info("USLY GOOGLE AUTH DIAGNOSTIC: direct login from auth choice");
     loginPrimary();
     return;
   }
 
   if (mode === "login" && App.authMethod === "apple") {
-    console.info("USLY APPLE AUTH: direct login from auth choice");
     loginPrimary();
     return;
   }
@@ -2860,11 +2851,8 @@ function syncAccountEmail(email) {
 }
 
 async function loginPrimary() {
-  console.error("USLY LOGIN DIAGNOSTIC: loginPrimary START");
 
   if (App.authMethod === "apple") {
-    console.info("USLY APPLE AUTH: login START");
-
     let credentials = null;
 
     try {
@@ -2928,11 +2916,6 @@ async function loginPrimary() {
 
       await syncMessageMutesFromBackend();
       setupPushNotifications();
-
-      console.info(
-        "USLY APPLE AUTH: backend login OK user_id =",
-        App.currentUserId
-      );
 
       if (App.role === "user") {
         try {
@@ -3000,10 +2983,6 @@ async function loginPrimary() {
                 ? "partner"
                 : "user",
           };
-
-          console.info(
-            "USLY APPLE AUTH: verified Apple identity saved for registration"
-          );
         } else {
           console.error(
             "USLY APPLE AUTH: registration credentials unavailable after account-not-registered response"
@@ -3014,10 +2993,6 @@ async function loginPrimary() {
           App.lang === "en"
             ? "This is your first time with this Apple ID. Complete your USLY profile to create your account."
             : "To pierwszy raz z tym Apple ID. Uzupełnij profil, aby utworzyć konto USLY."
-        );
-
-        console.info(
-          "USLY APPLE AUTH: account not registered — opening Apple registration form"
         );
 
         selectAuthChoice(
@@ -3043,13 +3018,12 @@ async function loginPrimary() {
   }
 
   if (App.authMethod === "google") {
-    console.error("USLY GOOGLE AUTH DIAGNOSTIC: login START");
 
     try {
       const initialized = await setupGoogleSocialLogin();
 
       if (!initialized) {
-        console.error("USLY GOOGLE AUTH DIAGNOSTIC: login initialization unavailable");
+        console.error("USLY GOOGLE AUTH: login initialization unavailable");
         toast(
           App.lang === "en"
             ? "Google Sign-In is currently unavailable."
@@ -3061,7 +3035,7 @@ async function loginPrimary() {
       const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
 
       if (!SocialLogin?.login) {
-        console.error("USLY GOOGLE AUTH DIAGNOSTIC: login plugin unavailable");
+        console.error("USLY GOOGLE AUTH: login plugin unavailable");
         toast(
           App.lang === "en"
             ? "Google Sign-In is currently unavailable."
@@ -3075,16 +3049,11 @@ async function loginPrimary() {
         options: {},
       });
 
-      console.info(
-        "USLY GOOGLE AUTH DIAGNOSTIC: native login response type =",
-        googleResult?.result?.responseType || googleResult?.responseType || null
-      );
-
       const googleData = googleResult?.result || googleResult;
       const idToken = googleData?.idToken || null;
 
       if (!idToken) {
-        console.error("USLY GOOGLE AUTH DIAGNOSTIC: missing idToken");
+        console.error("USLY GOOGLE AUTH: identity token missing");
         toast(
           App.lang === "en"
             ? "Google Sign-In did not return a valid identity token."
@@ -3109,7 +3078,7 @@ async function loginPrimary() {
       const accessToken = authData.access_token;
 
       if (!accessToken) {
-        console.error("USLY GOOGLE AUTH DIAGNOSTIC: backend access token missing");
+        console.error("USLY GOOGLE AUTH: backend access token missing");
         toast(
           App.lang === "en"
             ? "Google Sign-In could not be completed."
@@ -3141,11 +3110,6 @@ async function loginPrimary() {
       await syncMessageMutesFromBackend();
       setupPushNotifications();
 
-      console.info(
-        "USLY GOOGLE AUTH DIAGNOSTIC: backend login OK user_id =",
-        App.currentUserId
-      );
-
       if (App.role === "user") {
         try {
           const profile = await apiFetch("/users/me");
@@ -3172,7 +3136,7 @@ async function loginPrimary() {
           }
         } catch (profileError) {
           console.error(
-            "USLY GOOGLE AUTH DIAGNOSTIC: user profile load failed",
+            "USLY GOOGLE AUTH: user profile load failed",
             profileError
           );
         }
@@ -3191,12 +3155,10 @@ async function loginPrimary() {
           .then(() => renderAll())
           .catch((error) =>
             console.error(
-              "USLY GOOGLE AUTH DIAGNOSTIC: background refresh failed",
+              "USLY GOOGLE AUTH: background refresh failed",
               error
             )
           );
-
-        console.info("USLY GOOGLE AUTH DIAGNOSTIC: login COMPLETE");
         return;
       }
 
@@ -3217,16 +3179,14 @@ async function loginPrimary() {
         .then(() => renderAll())
         .catch((error) =>
           console.error(
-            "USLY GOOGLE AUTH DIAGNOSTIC: partner events load failed",
+            "USLY GOOGLE AUTH: partner events load failed",
             error
           )
         );
-
-      console.info("USLY GOOGLE AUTH DIAGNOSTIC: login COMPLETE");
       return;
     } catch (error) {
       console.error(
-        "USLY GOOGLE AUTH DIAGNOSTIC: login ERROR",
+        "USLY GOOGLE AUTH: login failed",
         error
       );
 
@@ -3270,7 +3230,6 @@ async function loginPrimary() {
     App.role = meData.role === "admin" ? "admin" : (meData.role === "partner" ? "partner" : "user");
     App.isLoggedIn = true;
     await syncMessageMutesFromBackend();
-    console.error("USLY LOGIN DIAGNOSTIC: before setupPushNotifications");
     setupPushNotifications();
 
     if (App.role === "admin") {
@@ -3539,8 +3498,6 @@ async function registerPrimary() {
 
   try {
     if (isAppleRegistration) {
-      console.info("USLY APPLE AUTH: register START");
-
       const credentials =
         App.pendingSocialRegistration?.provider === "apple"
           ? {
@@ -3595,10 +3552,6 @@ async function registerPrimary() {
       );
 
       App.pendingSocialRegistration = null;
-
-      console.info(
-        "USLY APPLE AUTH: pending social registration cleared"
-      );
 
       const me = await apiFetch("/auth/me");
       const meData = me?.data || me || {};
@@ -3768,16 +3721,10 @@ async function registerPrimary() {
         );
       }
 
-      console.info(
-        "USLY APPLE AUTH: register COMPLETE user_id =",
-        App.currentUserId
-      );
-
       return;
     }
 
     if (isGoogleRegistration) {
-      console.error("USLY GOOGLE AUTH DIAGNOSTIC: register START");
 
       const initialized = await setupGoogleSocialLogin();
 
@@ -3809,13 +3756,9 @@ async function registerPrimary() {
       const googleData = googleResult?.result || googleResult;
       const idToken = googleData?.idToken || null;
 
-      console.info(
-        "USLY GOOGLE AUTH DIAGNOSTIC: register native response type =",
-        googleData?.responseType || null
-      );
 
       if (!idToken) {
-        console.error("USLY GOOGLE AUTH DIAGNOSTIC: register missing idToken");
+        console.error("USLY GOOGLE AUTH: registration identity token missing");
         toast(
           App.lang === "en"
             ? "Google did not return a valid identity token."
@@ -3841,7 +3784,7 @@ async function registerPrimary() {
       const accessToken = googleAuthData.access_token;
 
       if (!accessToken) {
-        console.error("USLY GOOGLE AUTH DIAGNOSTIC: register backend token missing");
+        console.error("USLY GOOGLE AUTH: registration backend token missing");
         toast(
           App.lang === "en"
             ? "Google registration could not be completed."
@@ -3888,7 +3831,7 @@ async function registerPrimary() {
           }
         }).catch((err) =>
           console.error(
-            "USLY GOOGLE AUTH DIAGNOSTIC: post-register user profile failed",
+            "USLY GOOGLE AUTH: post-registration user profile load failed",
             err
           )
         );
@@ -3938,10 +3881,6 @@ async function registerPrimary() {
         setTimeout(updateOrgLogoFallback, 0);
       }
 
-      console.info(
-        "USLY GOOGLE AUTH DIAGNOSTIC: register COMPLETE user_id =",
-        App.currentUserId
-      );
 
       return;
     }
@@ -9667,13 +9606,6 @@ async function syncMessageMutesFromBackend() {
     writeMutedChatsMap(mutedChatsMap);
     writeMutedGroupsMap(mutedGroupsMap);
 
-    console.info(
-      "USLY mute sync: restored",
-      Object.keys(mutedChatsMap).length,
-      "private chats and",
-      Object.keys(mutedGroupsMap).length,
-      "groups"
-    );
   } catch (err) {
     console.error("USLY mute sync failed; keeping local mute state", err);
   }
@@ -12549,7 +12481,6 @@ async function setupAppleSocialLogin() {
   const platform = window.Capacitor?.getPlatform?.() || "web";
 
   if (platform === "android") {
-    console.info("USLY APPLE AUTH: initialization blocked on Android");
     return false;
   }
 
@@ -12570,15 +12501,10 @@ async function setupAppleSocialLogin() {
       : String(config.webRedirectUrl || "").trim();
 
   if (!clientId) {
-    console.info(
-      "USLY APPLE AUTH: client ID unavailable for platform",
-      platform
-    );
     return false;
   }
 
   if (platform === "web" && !redirectUrl) {
-    console.info("USLY APPLE AUTH: web redirect URL is not configured");
     return false;
   }
 
@@ -12601,11 +12527,6 @@ async function setupAppleSocialLogin() {
     });
 
     appleSocialLoginInitialized = true;
-
-    console.info(
-      "USLY APPLE AUTH: initialization OK platform =",
-      platform
-    );
 
     return true;
   } catch (error) {
@@ -12682,16 +12603,6 @@ async function requestAppleAuthCredentials() {
     throw new Error("APPLE_AUTHORIZATION_CODE_MISSING");
   }
 
-  console.info(
-    "USLY APPLE AUTH: credentials received",
-    {
-      platform,
-      hasIdToken: true,
-      hasAuthorizationCode: true,
-      hasNonce: true,
-    }
-  );
-
   return {
     idToken,
     authorizationCode,
@@ -12701,13 +12612,8 @@ async function requestAppleAuthCredentials() {
 
 
 async function setupGoogleSocialLogin() {
-  console.error("USLY GOOGLE AUTH DIAGNOSTIC: initialize START");
 
   if (googleSocialLoginInitializationStarted) {
-    console.info(
-      "USLY GOOGLE AUTH DIAGNOSTIC: initialize already started",
-      googleSocialLoginInitialized
-    );
     return googleSocialLoginInitialized;
   }
 
@@ -12716,22 +12622,12 @@ async function setupGoogleSocialLogin() {
   try {
     const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
 
-    console.info(
-      "USLY GOOGLE AUTH DIAGNOSTIC: plugin available =",
-      Boolean(SocialLogin)
-    );
-
     if (!SocialLogin?.initialize) {
       googleSocialLoginInitializationStarted = false;
       return false;
     }
 
     const platform = window.Capacitor?.getPlatform?.() || "web";
-
-    console.info(
-      "USLY GOOGLE AUTH DIAGNOSTIC: platform =",
-      platform
-    );
 
     await SocialLogin.initialize({
       google: {
@@ -12741,15 +12637,13 @@ async function setupGoogleSocialLogin() {
     });
 
     googleSocialLoginInitialized = true;
-
-    console.info("USLY GOOGLE AUTH DIAGNOSTIC: initialize OK");
     return true;
   } catch (error) {
     googleSocialLoginInitializationStarted = false;
     googleSocialLoginInitialized = false;
 
     console.error(
-      "USLY GOOGLE AUTH DIAGNOSTIC: initialize ERROR",
+      "USLY GOOGLE AUTH: initialization failed",
       error
     );
 
@@ -12758,7 +12652,6 @@ async function setupGoogleSocialLogin() {
 }
 
 async function init() {
-  console.error("USLY INIT DIAGNOSTIC: init START");
 
   updatePlatformAuthProviderVisibility();
 
@@ -12768,7 +12661,7 @@ async function init() {
     // Existing session does not need Google Social Login before the app can open.
     setupGoogleSocialLogin().catch((error) => {
       console.error(
-        "USLY STARTUP PERFORMANCE: background Google initialization failed",
+        "USLY GOOGLE AUTH: background initialization failed",
         error
       );
     });
@@ -12814,13 +12707,10 @@ async function init() {
   updateTabbars();
 
   const token = localStorage.getItem("usly_token");
-  console.error("USLY SESSION DIAGNOSTIC: auth token present =", Boolean(token));
 
   if (token) {
     try {
-      console.error("USLY SESSION DIAGNOSTIC: before auth/me");
       const me = await apiFetch("/auth/me");
-      console.error("USLY SESSION DIAGNOSTIC: after auth/me");
       const meData = me?.data || me || {};
       syncAuthProviderState(meData);
       App.currentUserId = meData.id ?? null;
@@ -12843,26 +12733,14 @@ async function init() {
       if (App.role === "user") {
         const restoredProfileFromCache = restoreUserProfileCache();
 
-        console.info(
-          "USLY STARTUP PERFORMANCE: profile cache restored =",
-          restoredProfileFromCache
-        );
-
         if (restoredProfileFromCache) {
           renderAll();
           bindMessageInputs();
           go("S4_NEARBY");
           finishSessionStartup();
 
-          console.info(
-            "USLY STARTUP PERFORMANCE: app visible before users/me refresh"
-          );
-
           apiFetch("/users/me")
             .then((profile) => {
-              console.info(
-                "USLY STARTUP PERFORMANCE: background users/me complete"
-              );
 
               if (profile?.success && profile?.data) {
                 App.user.nick = profile.data.nick || App.user.nick;
@@ -12923,10 +12801,7 @@ async function init() {
 
           return;
         }
-
-        console.error("USLY STARTUP PERFORMANCE: before users/me");
         const profile = await apiFetch("/users/me");
-        console.error("USLY STARTUP PERFORMANCE: after users/me");
 
         if (profile?.success && profile?.data) {
           App.user.nick = profile.data.nick || App.user.nick;
@@ -13805,25 +13680,19 @@ function setupCapacitorAuthLinkListener() {
 let pushNotificationsSetupStarted = false;
 
 async function setupPushNotifications() {
-  console.error("USLY PUSH DIAGNOSTIC: setupPushNotifications START");
   if (pushNotificationsSetupStarted) {
-    console.info("USLY push setup: already started");
     return;
   }
   if (!localStorage.getItem("usly_token")) {
-    console.info("USLY push setup: no auth token");
     return;
   }
   pushNotificationsSetupStarted = true;
 
   try {
     const platform = window.Capacitor?.getPlatform?.();
-    console.info("USLY push setup: platform =", platform);
     if (platform !== "android" && platform !== "ios") return;
 
     const registerPushToken = async (tokenValue, tokenSource) => {
-      console.info("USLY push token source =", tokenSource);
-      console.info("USLY push token:", tokenValue);
 
       if (!tokenValue || typeof window.apiFetch !== "function") return;
 
@@ -13839,7 +13708,6 @@ async function setupPushNotifications() {
             language: App.lang === "en" ? "en" : "pl",
           }),
         });
-        console.info("USLY push token registered");
       } catch (error) {
         console.error("USLY push token register failed", error);
       }
@@ -13849,15 +13717,9 @@ async function setupPushNotifications() {
       const FirebaseMessaging =
         window.Capacitor?.Plugins?.FirebaseMessaging;
 
-      console.info(
-        "USLY push setup: FirebaseMessaging available =",
-        Boolean(FirebaseMessaging)
-      );
-
       if (!FirebaseMessaging) return;
 
       let permission = await FirebaseMessaging.checkPermissions();
-      console.info("USLY push setup: permission =", permission?.receive);
 
       if (permission.receive !== "granted") {
         permission = await FirebaseMessaging.requestPermissions();
@@ -13872,14 +13734,12 @@ async function setupPushNotifications() {
       FirebaseMessaging.addListener(
         "notificationReceived",
         (notification) => {
-          console.info("USLY push received:", notification);
         }
       );
 
       FirebaseMessaging.addListener(
         "notificationActionPerformed",
         (action) => {
-          console.info("USLY push action:", action);
         }
       );
 
@@ -13892,15 +13752,9 @@ async function setupPushNotifications() {
     const PushNotifications =
       window.Capacitor?.Plugins?.PushNotifications;
 
-    console.info(
-      "USLY push setup: PushNotifications available =",
-      Boolean(PushNotifications)
-    );
-
     if (!PushNotifications) return;
 
     let permission = await PushNotifications.checkPermissions();
-    console.info("USLY push setup: permission =", permission?.receive);
 
     if (permission.receive !== "granted") {
       permission = await PushNotifications.requestPermissions();
@@ -13920,14 +13774,12 @@ async function setupPushNotifications() {
     PushNotifications.addListener(
       "pushNotificationReceived",
       (notification) => {
-        console.info("USLY push received:", notification);
       }
     );
 
     PushNotifications.addListener(
       "pushNotificationActionPerformed",
       (action) => {
-        console.info("USLY push action:", action);
       }
     );
 
