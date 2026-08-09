@@ -41,3 +41,7 @@ backups/
 node_modules/
 
 backend/venv_intel_backup/
+
+# Timestamped local working backups
+*.backup-*
+*.db.backup-*

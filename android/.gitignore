@@ -102,3 +102,6 @@ app/src/main/res/xml/config.xml
 
 # Android release signing secrets
 key.properties
+
+# Local Android Studio project state
+.idea/
