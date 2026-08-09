@@ -143,31 +143,31 @@ def _seed_groups(db):
             title="Kawosze Warszawa",
             description="Nowe kawiarnie, spotkania, degustacje.",
             interest_tag="kawa",
-            members_count=128,
+            members_count=0,
         ),
         Group(
             title="Kino i seriale",
             description="Polecajki, seanse, dyskusje.",
             interest_tag="kino",
-            members_count=214,
+            members_count=0,
         ),
         Group(
             title="Spacery i miasta",
             description="Trasy, parki, małe odkrycia.",
             interest_tag="spacer",
-            members_count=92,
+            members_count=0,
         ),
         Group(
             title="AI & Tech",
             description="Nowinki, projekty, dyskusje.",
             interest_tag="AI",
-            members_count=301,
+            members_count=0,
         ),
         Group(
             title="Fotografia",
             description="Kadry, sprzęt, sesje.",
             interest_tag="fotografia",
-            members_count=175,
+            members_count=0,
         ),
     ]
 
