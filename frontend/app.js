@@ -13343,9 +13343,11 @@ function openDeleteAccount() {
         : ""
     }
 
-    <div id="deleteAccountMethodList" class="mt10">
-      ${methodButtons}
-    </div>
+    ${
+      methods.length > 1
+        ? `<div id="deleteAccountMethodList" class="mt10">${methodButtons}</div>`
+        : ""
+    }
 
     <div id="deleteAccountMethodPanel" class="mt12"></div>
   `);
