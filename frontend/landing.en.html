@@ -7,15 +7,16 @@
   <meta name="description" content="USLY is a social/event app that helps people meet through shared interests, local events and groups. It is not a dating app." />
   <style>
     :root {
-      --bg: #fff7fb;
-      --card: rgba(255,255,255,.78);
-      --text: #21131b;
-      --muted: #735d69;
-      --pink: #ff4fa3;
-      --pink2: #ff8ac7;
+      --bg: #05060c;
+      --card: rgba(13,17,32,.78);
+      --text: #eaf0ff;
+      --muted: #aeb8cf;
+      --pink: #ff4bd4;
+      --pink2: #ff8ee8;
       --violet: #7b4dff;
-      --line: rgba(33,19,27,.12);
-      --shadow: 0 24px 70px rgba(255,79,163,.18);
+      --blue: #34e6ff;
+      --line: rgba(174,184,207,.16);
+      --shadow: 0 24px 70px rgba(0,0,0,.42);
       --radius: 30px;
     }
     * { box-sizing: border-box; }
@@ -24,9 +25,10 @@
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 15% 10%, rgba(255,79,163,.18), transparent 34%),
-        radial-gradient(circle at 85% 5%, rgba(123,77,255,.15), transparent 32%),
-        linear-gradient(180deg, #fff7fb 0%, #fff 58%, #fff7fb 100%);
+        radial-gradient(circle at 12% 8%, rgba(255,75,212,.18), transparent 34%),
+        radial-gradient(circle at 88% 8%, rgba(52,230,255,.14), transparent 32%),
+        radial-gradient(circle at 50% 92%, rgba(123,77,255,.16), transparent 38%),
+        linear-gradient(180deg, #05060c 0%, #07081a 55%, #05060c 100%);
       min-height: 100vh;
     }
     a { color: inherit; text-decoration: none; }
@@ -37,7 +39,7 @@
       top: 0;
       z-index: 10;
       backdrop-filter: blur(18px);
-      background: rgba(255,247,251,.74);
+      background: rgba(5,6,12,.76);
       border-bottom: 1px solid rgba(255,255,255,.55);
     }
     .nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
@@ -54,13 +56,13 @@
       padding: 0 14px;
       white-space: nowrap;
       border-radius: 999px;
-      border: 1px solid rgba(33,19,27,.12);
-      background: rgba(255,255,255,.82);
+      border: 1px solid var(--line);
+      background: rgba(13,17,32,.82);
       color: var(--text);
       font-weight: 900;
-      box-shadow: 0 10px 26px rgba(33,19,27,.07);
+      box-shadow: 0 10px 26px rgba(0,0,0,.22);
     }
-    .langSwitch:hover { background: white; transform: translateY(-1px); }
+    .langSwitch:hover { background: rgba(20,25,45,.96); transform: translateY(-1px); }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -70,14 +72,14 @@
       border-radius: 999px;
       font-weight: 900;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,.72);
-      box-shadow: 0 10px 28px rgba(33,19,27,.06);
+      background: rgba(13,17,32,.72);
+      box-shadow: 0 10px 28px rgba(0,0,0,.24);
     }
     .btn.primary {
       color: white;
       border: 0;
       background: linear-gradient(135deg, var(--pink), var(--violet));
-      box-shadow: 0 16px 36px rgba(255,79,163,.28);
+      box-shadow: 0 16px 36px rgba(255,75,212,.24);
     }
     .hero { padding: 70px 0 44px; }
     .heroGrid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 42px; align-items: center; }
@@ -87,7 +89,7 @@
       align-items: center;
       padding: 9px 14px;
       border-radius: 999px;
-      background: rgba(255,255,255,.72);
+      background: rgba(13,17,32,.72);
       border: 1px solid var(--line);
       color: var(--muted);
       font-weight: 800;
@@ -114,8 +116,8 @@
     .phoneCard {
       border-radius: 42px;
       padding: 18px;
-      background: rgba(255,255,255,.6);
-      border: 1px solid rgba(255,255,255,.9);
+      background: rgba(13,17,32,.66);
+      border: 1px solid rgba(174,184,207,.16);
       box-shadow: var(--shadow);
       transform: rotate(2deg);
     }
@@ -124,21 +126,22 @@
       min-height: 560px;
       padding: 24px;
       background:
-        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,247,251,.9)),
-        radial-gradient(circle at 50% 0%, rgba(255,79,163,.2), transparent 45%);
+        radial-gradient(circle at 20% 0%, rgba(255,75,212,.16), transparent 42%),
+        radial-gradient(circle at 85% 20%, rgba(52,230,255,.10), transparent 38%),
+        linear-gradient(180deg, rgba(10,13,26,.98), rgba(7,8,26,.96));
       border: 1px solid var(--line);
       overflow: hidden;
       position: relative;
     }
     .screenTop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-    .pill { padding: 8px 12px; border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
+    .pill { padding: 8px 12px; border-radius: 999px; background: rgba(18,23,42,.96); color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
     .event {
       margin-top: 14px;
       padding: 18px;
       border-radius: 24px;
-      background: rgba(255,255,255,.82);
+      background: rgba(13,17,32,.82);
       border: 1px solid var(--line);
-      box-shadow: 0 12px 32px rgba(33,19,27,.06);
+      box-shadow: 0 12px 32px rgba(0,0,0,.24);
     }
     .event strong { display:block; font-size: 18px; letter-spacing: -.03em; }
     .event span { display:block; margin-top: 7px; color: var(--muted); font-weight: 700; font-size: 13px; }
@@ -160,8 +163,8 @@
       padding: 24px;
       border-radius: var(--radius);
       background: var(--card);
-      border: 1px solid rgba(255,255,255,.9);
-      box-shadow: 0 18px 48px rgba(33,19,27,.06);
+      border: 1px solid rgba(174,184,207,.16);
+      box-shadow: 0 18px 48px rgba(0,0,0,.24);
     }
     .icon {
       width: 48px;
@@ -170,7 +173,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      background: linear-gradient(135deg, rgba(255,79,163,.14), rgba(123,77,255,.12));
+      background: linear-gradient(135deg, rgba(255,75,212,.18), rgba(52,230,255,.10), rgba(123,77,255,.16));
       font-size: 24px;
       margin-bottom: 16px;
     }
@@ -180,8 +183,8 @@
       margin: 28px 0 70px;
       padding: 34px;
       border-radius: 38px;
-      background: linear-gradient(135deg, rgba(255,79,163,.12), rgba(123,77,255,.12));
-      border: 1px solid rgba(255,255,255,.9);
+      background: linear-gradient(135deg, rgba(255,75,212,.12), rgba(52,230,255,.08), rgba(123,77,255,.14));
+      border: 1px solid rgba(174,184,207,.16);
       display: flex;
       justify-content: space-between;
       gap: 24px;
@@ -191,6 +194,309 @@
     .cta p { margin: 10px 0 0; color: var(--muted); font-weight: 700; line-height: 1.5; }
     footer { padding: 30px 0 42px; color: var(--muted); font-size: 13px; font-weight: 700; }
     .foot { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:22px; }
+
+    /* USLY neon depth layer */
+    body {
+      position: relative;
+      background:
+        radial-gradient(ellipse 52% 58% at -4% 22%, rgba(255,0,153,.34), transparent 67%),
+        radial-gradient(ellipse 44% 52% at 38% 42%, rgba(116,40,255,.22), transparent 70%),
+        radial-gradient(ellipse 52% 58% at 103% 27%, rgba(0,174,255,.32), transparent 67%),
+        radial-gradient(ellipse 36% 34% at 58% 68%, rgba(104,42,255,.18), transparent 72%),
+        linear-gradient(180deg, #05050d 0%, #080719 48%, #040610 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 5% 20%, rgba(255,42,181,.16), transparent 20%),
+        radial-gradient(circle at 95% 28%, rgba(52,230,255,.13), transparent 22%);
+      filter: blur(20px);
+    }
+
+    header {
+      border-bottom: 1px solid rgba(112,101,255,.20);
+      box-shadow: 0 10px 40px rgba(0,0,0,.20);
+    }
+
+    .btn {
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,75,212,.42);
+    }
+
+    .btn.primary {
+      background: linear-gradient(120deg, #ff36bd 0%, #c83cff 46%, #714cff 100%);
+      box-shadow:
+        0 10px 30px rgba(255,54,189,.30),
+        0 0 26px rgba(123,77,255,.20);
+    }
+
+    .btn.primary:hover {
+      box-shadow:
+        0 12px 38px rgba(255,54,189,.42),
+        0 0 34px rgba(52,230,255,.16);
+    }
+
+    .grad {
+      background: linear-gradient(120deg, #ff35bc 0%, #cf43ff 48%, #5d7cff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 20px rgba(180,60,255,.18));
+    }
+
+    .phoneCard {
+      position: relative;
+      background:
+        linear-gradient(#0a0c1a, #0a0c1a) padding-box,
+        linear-gradient(135deg, rgba(255,65,196,.80), rgba(123,77,255,.58), rgba(52,230,255,.82)) border-box;
+      border: 1px solid transparent;
+      box-shadow:
+        -22px 0 70px rgba(255,43,180,.18),
+        24px 8px 80px rgba(31,171,255,.20),
+        0 30px 80px rgba(0,0,0,.42);
+    }
+
+    .phoneCard::before {
+      content: "";
+      position: absolute;
+      inset: -35px;
+      z-index: -1;
+      border-radius: 70px;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255,49,188,.26), transparent 45%),
+        radial-gradient(circle at 90% 55%, rgba(40,184,255,.24), transparent 48%);
+      filter: blur(28px);
+      pointer-events: none;
+    }
+
+    .phone {
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255,55,194,.22), transparent 38%),
+        radial-gradient(circle at 95% 18%, rgba(41,187,255,.16), transparent 42%),
+        linear-gradient(180deg, rgba(10,10,29,.99), rgba(5,7,22,.98));
+      border-color: rgba(139,130,255,.22);
+    }
+
+    .bubble {
+      background: linear-gradient(110deg, #ff36bd 0%, #c83cff 47%, #377dff 100%);
+      box-shadow:
+        0 14px 38px rgba(218,50,255,.24),
+        0 0 28px rgba(52,230,255,.10);
+    }
+
+    .event {
+      border-color: rgba(110,125,255,.18);
+      background: rgba(10,13,30,.80);
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255,75,212,.08), transparent 42%),
+        linear-gradient(180deg, rgba(12,15,34,.88), rgba(7,9,24,.90));
+      border-color: rgba(110,125,255,.22);
+      box-shadow:
+        0 18px 50px rgba(0,0,0,.30),
+        0 0 28px rgba(105,65,255,.06);
+    }
+
+    .card:nth-child(1) {
+      border-color: rgba(255,75,212,.34);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30), 0 0 30px rgba(255,75,212,.08);
+    }
+
+    .card:nth-child(2) {
+      border-color: rgba(52,160,255,.34);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30), 0 0 30px rgba(52,160,255,.08);
+    }
+
+    .card:nth-child(3) {
+      border-color: rgba(123,77,255,.38);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30), 0 0 30px rgba(123,77,255,.09);
+    }
+
+    .icon {
+      box-shadow: 0 0 28px rgba(123,77,255,.13);
+    }
+
+    .cta {
+      background:
+        radial-gradient(circle at 5% 50%, rgba(255,53,188,.18), transparent 38%),
+        radial-gradient(circle at 95% 50%, rgba(52,190,255,.14), transparent 40%),
+        linear-gradient(135deg, rgba(18,13,39,.92), rgba(8,12,31,.92));
+      border-color: rgba(125,100,255,.26);
+      box-shadow: 0 20px 70px rgba(82,45,210,.12);
+    }
+
+
+    /* USLY final visual polish */
+    body {
+      background:
+        radial-gradient(ellipse 58% 62% at -6% 24%, rgba(255,20,166,.30), transparent 68%),
+        radial-gradient(ellipse 54% 60% at 35% 36%, rgba(131,48,255,.19), transparent 72%),
+        radial-gradient(ellipse 60% 64% at 103% 28%, rgba(20,175,255,.23), transparent 69%),
+        radial-gradient(ellipse 60% 42% at 58% 78%, rgba(82,52,220,.13), transparent 72%),
+        linear-gradient(180deg, #070610 0%, #09081b 52%, #050711 100%);
+    }
+
+    body::before {
+      opacity: .72;
+      filter: blur(32px);
+    }
+
+    .hero {
+      padding-top: 78px;
+      padding-bottom: 58px;
+    }
+
+    .heroGrid {
+      gap: 54px;
+    }
+
+    .eyebrow {
+      background: rgba(13,17,32,.66);
+      border-color: rgba(166,143,255,.20);
+      box-shadow: 0 8px 26px rgba(0,0,0,.18);
+    }
+
+    h1 {
+      text-shadow: 0 8px 38px rgba(89,63,210,.10);
+    }
+
+    .lead {
+      color: #bec7dc;
+    }
+
+    .note {
+      color: #929db7;
+    }
+
+    .actions {
+      gap: 13px;
+      margin-top: 32px;
+    }
+
+    .actions .btn.primary {
+      min-height: 48px;
+      padding-left: 20px;
+      padding-right: 20px;
+      box-shadow:
+        0 10px 30px rgba(255,54,189,.24),
+        0 0 22px rgba(123,77,255,.15);
+    }
+
+    .actions .btn:not(.primary) {
+      background: rgba(11,14,30,.78);
+      border-color: rgba(143,133,210,.24);
+      color: #e4e9f7;
+      box-shadow: 0 10px 28px rgba(0,0,0,.18);
+    }
+
+    .phoneCard {
+      transform: rotate(1.25deg);
+      box-shadow:
+        -18px 2px 58px rgba(255,43,180,.13),
+        20px 8px 62px rgba(31,171,255,.15),
+        0 30px 80px rgba(0,0,0,.38);
+    }
+
+    .phoneCard::before {
+      inset: -28px;
+      opacity: .72;
+      filter: blur(34px);
+    }
+
+    .phone {
+      border-color: rgba(133,142,255,.26);
+    }
+
+    .bubble {
+      box-shadow:
+        0 12px 32px rgba(218,50,255,.20),
+        0 0 20px rgba(52,230,255,.08);
+    }
+
+    .event {
+      background: rgba(10,13,30,.88);
+      border-color: rgba(114,129,214,.20);
+    }
+
+    section {
+      position: relative;
+    }
+
+    section::before {
+      content: "";
+      position: absolute;
+      width: 520px;
+      height: 260px;
+      left: 50%;
+      top: -80px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: -1;
+      background: radial-gradient(
+        ellipse,
+        rgba(103,64,255,.075),
+        transparent 70%
+      );
+      filter: blur(20px);
+    }
+
+    .sectionTitle {
+      color: #f2f4ff;
+    }
+
+    .sectionLead {
+      color: #aeb9d1;
+    }
+
+    .card {
+      transition:
+        transform .22s ease,
+        border-color .22s ease,
+        box-shadow .22s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(149,119,255,.38);
+      box-shadow:
+        0 22px 58px rgba(0,0,0,.32),
+        0 0 34px rgba(110,68,255,.10);
+    }
+
+    .cta {
+      border-color: rgba(136,113,255,.30);
+      box-shadow:
+        0 24px 70px rgba(50,35,145,.14),
+        inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        padding-top: 52px;
+      }
+
+      .heroGrid {
+        gap: 38px;
+      }
+
+      .phoneCard {
+        transform: none;
+      }
+    }
+
     @media (max-width: 860px) {
       .heroGrid { grid-template-columns: 1fr; }
       .phoneCard { transform: none; }
@@ -198,6 +504,65 @@
       .cta { flex-direction: column; align-items: flex-start; }
       .navLinks a:not(.btn):not(.langSwitch) { display: none; }
     }
+
+    /* USLY store CTA micro polish */
+
+    .hero {
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -90px;
+      width: min(900px, 88vw);
+      height: 240px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse at center,
+          rgba(111,67,255,.10) 0%,
+          rgba(79,55,190,.055) 38%,
+          transparent 72%);
+      filter: blur(18px);
+    }
+
+    .actions .btn:not(.primary) {
+      background: rgba(9,12,27,.48);
+      border-color: rgba(150,155,210,.16);
+      color: rgba(234,240,255,.82);
+      box-shadow: 0 8px 22px rgba(0,0,0,.12);
+    }
+
+    .actions .btn:not(.primary):hover {
+      background: rgba(13,17,34,.70);
+      border-color: rgba(160,150,230,.25);
+      color: #f2f4ff;
+    }
+
+    .storeIcon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      margin-right: 8px;
+      font-size: 19px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .storeIcon.apple {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transform: translateY(-1px);
+    }
+
+    .storeIcon.google {
+      font-size: 16px;
+      transform: translateY(-1px);
+    }
+
   </style>
 </head>
 <body>
@@ -210,7 +575,7 @@
       <nav class="navLinks">
         <a href="#jak-dziala">How it works</a>
         <a href="#dla-kogo">Who it is for</a>
-        <a class="langSwitch" href="/" aria-label="Przełącz język na polski"><span aria-hidden="true">🌐</span><span>Polski</span></a><a class="btn primary" href="/app">Open app</a>
+        <a class="langSwitch" href="/" aria-label="Przełącz język na polski"><span aria-hidden="true">🌐</span><span>Polski</span></a><a class="btn primary" href="/app">Sign in on the web</a>
       </nav>
     </div>
   </header>
@@ -226,10 +591,11 @@
             No dating pressure. No swiping. Just more reasons to get out and do something.
           </p>
           <div class="actions">
-            <a class="btn primary" href="/app">Open test version</a>
-            <a class="btn" href="#jak-dziala">See how it works</a>
+            <a class="btn primary" href="https://apps.apple.com/pl/app/usly/id6795206444" target="_blank" rel="noopener noreferrer"><span class="storeIcon apple" aria-hidden="true"></span>Download on the App Store</a>
+            <a class="btn primary" href="https://play.google.com/store/apps/details?id=com.usly.app" target="_blank" rel="noopener noreferrer"><span class="storeIcon google" aria-hidden="true">▶</span>Get it on Google Play</a>
+            <a class="btn" href="/app">Sign in on the web</a>
           </div>
-          <div class="note">The app is being prepared for publication in the App Store and Google Play.</div>
+          <div class="note">USLY is now available on the App Store and Google Play.</div>
         </div>
 
         <div class="phoneCard" aria-label="USLY app preview">
@@ -312,10 +678,14 @@
     <div class="wrap">
       <section class="cta">
         <div>
-          <h2>USLY is on its way to the stores.</h2>
-          <p>For now, you can open the test version of the app. App Store and Google Play links will appear after publication.</p>
+          <h2>Download USLY and log back into life.</h2>
+          <p>USLY is available for iPhone and Android. Download the app from your store or open the web version.</p>
         </div>
-        <a class="btn primary" href="/app">Go to app</a>
+        <div class="actions">
+          <a class="btn primary" href="https://apps.apple.com/pl/app/usly/id6795206444" target="_blank" rel="noopener noreferrer"><span class="storeIcon apple" aria-hidden="true"></span>App Store</a>
+          <a class="btn primary" href="https://play.google.com/store/apps/details?id=com.usly.app" target="_blank" rel="noopener noreferrer"><span class="storeIcon google" aria-hidden="true">▶</span>Google Play</a>
+          <a class="btn" href="/app">Sign in on the web</a>
+        </div>
       </section>
     </div>
   </main>

@@ -6,15 +6,16 @@
   <title>Kontakt – USLY</title>
   <style>
     :root {
-      --bg: #fff7fb;
-      --card: rgba(255,255,255,.78);
-      --text: #21131b;
-      --muted: #735d69;
-      --pink: #ff4fa3;
-      --pink2: #ff8ac7;
+      --bg: #05060c;
+      --card: rgba(13,17,32,.78);
+      --text: #eaf0ff;
+      --muted: #aeb8cf;
+      --pink: #ff4bd4;
+      --pink2: #ff84df;
       --violet: #7b4dff;
-      --line: rgba(33,19,27,.12);
-      --shadow: 0 24px 70px rgba(255,79,163,.18);
+      --blue: #34e6ff;
+      --line: rgba(174,184,207,.16);
+      --shadow: 0 24px 70px rgba(0,0,0,.34), 0 0 54px rgba(123,77,255,.10);
       --radius: 30px;
     }
     * { box-sizing: border-box; }
@@ -23,9 +24,10 @@
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 15% 10%, rgba(255,79,163,.18), transparent 34%),
-        radial-gradient(circle at 85% 5%, rgba(123,77,255,.15), transparent 32%),
-        linear-gradient(180deg, #fff7fb 0%, #fff 58%, #fff7fb 100%);
+        radial-gradient(circle at 12% 8%, rgba(255,75,212,.24), transparent 34%),
+        radial-gradient(circle at 86% 9%, rgba(52,230,255,.15), transparent 31%),
+        radial-gradient(circle at 54% 42%, rgba(123,77,255,.11), transparent 38%),
+        linear-gradient(180deg, #05060c 0%, #090a1c 54%, #05060c 100%);
       min-height: 100vh;
     }
     a { color: inherit; text-decoration: none; }
@@ -36,8 +38,8 @@
       top: 0;
       z-index: 10;
       backdrop-filter: blur(18px);
-      background: rgba(255,247,251,.74);
-      border-bottom: 1px solid rgba(255,255,255,.55);
+      background: rgba(5,6,12,.78);
+      border-bottom: 1px solid rgba(174,184,207,.12);
     }
     .nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
     .brand { display: flex; align-items: center; gap: 12px; font-weight: 900; letter-spacing: -.04em; font-size: 24px; }
@@ -52,14 +54,14 @@
       border-radius: 999px;
       font-weight: 900;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,.72);
-      box-shadow: 0 10px 28px rgba(33,19,27,.06);
+      background: rgba(13,17,32,.72);
+      box-shadow: 0 10px 28px rgba(0,0,0,.22);
     }
     .btn.primary {
       color: white;
       border: 0;
       background: linear-gradient(135deg, var(--pink), var(--violet));
-      box-shadow: 0 16px 36px rgba(255,79,163,.28);
+      box-shadow: 0 16px 36px rgba(255,75,212,.24);
     }
     .hero { padding: 70px 0 44px; }
     .heroGrid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 42px; align-items: center; }
@@ -69,7 +71,7 @@
       align-items: center;
       padding: 9px 14px;
       border-radius: 999px;
-      background: rgba(255,255,255,.72);
+      background: rgba(13,17,32,.72);
       border: 1px solid var(--line);
       color: var(--muted);
       font-weight: 800;
@@ -96,8 +98,8 @@
     .phoneCard {
       border-radius: 42px;
       padding: 18px;
-      background: rgba(255,255,255,.6);
-      border: 1px solid rgba(255,255,255,.9);
+      background: rgba(13,17,32,.66);
+      border: 1px solid rgba(174,184,207,.16);
       box-shadow: var(--shadow);
       transform: rotate(2deg);
     }
@@ -106,21 +108,21 @@
       min-height: 560px;
       padding: 24px;
       background:
-        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,247,251,.9)),
-        radial-gradient(circle at 50% 0%, rgba(255,79,163,.2), transparent 45%);
+        linear-gradient(180deg, rgba(10,13,26,.98), rgba(7,8,26,.96)),
+        radial-gradient(circle at 50% 0%, rgba(255,75,212,.16), transparent 45%);
       border: 1px solid var(--line);
       overflow: hidden;
       position: relative;
     }
     .screenTop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-    .pill { padding: 8px 12px; border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
+    .pill { padding: 8px 12px; border-radius: 999px; background: rgba(18,23,42,.96); color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
     .event {
       margin-top: 14px;
       padding: 18px;
       border-radius: 24px;
-      background: rgba(255,255,255,.82);
+      background: rgba(13,17,32,.82);
       border: 1px solid var(--line);
-      box-shadow: 0 12px 32px rgba(33,19,27,.06);
+      box-shadow: 0 12px 32px rgba(0,0,0,.24);
     }
     .event strong { display:block; font-size: 18px; letter-spacing: -.03em; }
     .event span { display:block; margin-top: 7px; color: var(--muted); font-weight: 700; font-size: 13px; }
@@ -142,8 +144,8 @@
       padding: 24px;
       border-radius: var(--radius);
       background: var(--card);
-      border: 1px solid rgba(255,255,255,.9);
-      box-shadow: 0 18px 48px rgba(33,19,27,.06);
+      border: 1px solid rgba(174,184,207,.16);
+      box-shadow: 0 18px 48px rgba(0,0,0,.24);
     }
     .icon {
       width: 48px;
@@ -152,7 +154,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      background: linear-gradient(135deg, rgba(255,79,163,.14), rgba(123,77,255,.12));
+      background: linear-gradient(135deg, rgba(255,75,212,.18), rgba(52,230,255,.10), rgba(123,77,255,.16));
       font-size: 24px;
       margin-bottom: 16px;
     }
@@ -162,8 +164,8 @@
       margin: 28px 0 70px;
       padding: 34px;
       border-radius: 38px;
-      background: linear-gradient(135deg, rgba(255,79,163,.12), rgba(123,77,255,.12));
-      border: 1px solid rgba(255,255,255,.9);
+      background: linear-gradient(135deg, rgba(255,75,212,.12), rgba(52,230,255,.08), rgba(123,77,255,.14));
+      border: 1px solid rgba(174,184,207,.16);
       display: flex;
       justify-content: space-between;
       gap: 24px;
@@ -189,7 +191,7 @@
       margin-top: 34px;
     }
     .contactCard {
-      background: rgba(255,255,255,.82);
+      background: rgba(13,17,32,.82);
       border: 1px solid var(--line);
       border-radius: 30px;
       box-shadow: var(--shadow);
@@ -217,14 +219,14 @@
     .contactField select,
     .contactField textarea {
       width: 100%;
-      border: 1px solid rgba(255,79,163,.28);
+      border: 1px solid rgba(255,75,212,.24);
       border-radius: 16px;
-      background: rgba(255,255,255,.78);
+      background: rgba(10,14,29,.82);
       padding: 15px 16px;
       font: inherit;
       color: var(--text);
       outline: none;
-      box-shadow: 0 8px 24px rgba(33,19,27,.04);
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
     }
     .contactField textarea { resize: vertical; min-height: 150px; }
     .contactField input:focus,
@@ -282,7 +284,7 @@
       </a>
       <nav class="navLinks">
         <a href="/">Strona główna</a>
-        <a class="btn primary" href="/app">Otwórz aplikację</a>
+        <a class="btn primary" href="/app">Zaloguj się w przeglądarce</a>
       </nav>
     </div>
   </header>
