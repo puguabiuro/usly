@@ -390,6 +390,58 @@ def _partner_event_interest_tag_limit(plan: str | None) -> int:
     return PARTNER_EVENT_INTEREST_TAG_LIMITS.get(safe_plan, PARTNER_EVENT_INTEREST_TAG_LIMITS["free"])
 
 
+INTEREST_CANONICAL_ALIASES = {
+    "foto": "fotografia",
+    "photo": "fotografia",
+    "photography": "fotografia",
+    "film": "kino",
+    "movie": "kino",
+    "movies": "kino",
+    "tech": "technologia",
+    "technology": "technologia",
+    "startup": "biznes",
+    "startups": "biznes",
+    "business": "biznes",
+    "walks": "spacer",
+    "walking": "spacer",
+    "spacery": "spacer",
+    "spacerowanie": "spacer",
+    "concert": "koncerty",
+    "concerts": "koncerty",
+    "koncert": "koncerty",
+    "board games": "planszówki",
+    "boardgaming": "planszówki",
+    "planszówka": "planszówki",
+    "gry planszowe": "planszówki",
+    "book": "książki",
+    "books": "książki",
+    "książka": "książki",
+    "travel": "podróże",
+    "travels": "podróże",
+    "podróż": "podróże",
+    "dog": "psy",
+    "dogs": "psy",
+    "pies": "psy",
+    "cat": "koty",
+    "cats": "koty",
+    "kot": "koty",
+    "bicycle": "rower",
+    "bike": "rower",
+    "cycling": "rower",
+    "rowery": "rower",
+    "jazda na rowerze": "rower",
+}
+
+
+def _normalize_interest_tag(value: str | None) -> str:
+    if not value:
+        return ""
+    tag = str(value).strip().lstrip("#").strip().lower()
+    if not tag:
+        return ""
+    return INTEREST_CANONICAL_ALIASES.get(tag, tag)
+
+
 def _normalize_event_interest_tags(raw_tags, fallback_tag: str | None = None) -> list[str]:
     source = raw_tags
     if source is None:
@@ -401,21 +453,27 @@ def _normalize_event_interest_tags(raw_tags, fallback_tag: str | None = None) ->
     result = []
     seen = set()
     for item in source or []:
-        tag = str(item or "").strip().lstrip("#")
-        if not tag:
+        raw_tag = str(item or "").strip().lstrip("#").strip()
+        if not raw_tag:
             continue
-        if len(tag) < 2 or len(tag) > 40:
+        if len(raw_tag) < 2 or len(raw_tag) > 40:
             raise HTTPException(status_code=422, detail="INVALID_EVENT_INTEREST_TAG")
-        key = tag.lower()
-        if key in seen:
+
+        tag = _normalize_interest_tag(raw_tag)
+        if not tag or tag in seen:
             continue
-        seen.add(key)
+
+        seen.add(tag)
         result.append(tag)
 
     if not result and fallback_tag:
-        fallback = str(fallback_tag or "").strip().lstrip("#")
-        if fallback:
-            result.append(fallback)
+        fallback_raw = str(fallback_tag or "").strip().lstrip("#").strip()
+        if fallback_raw:
+            if len(fallback_raw) < 2 or len(fallback_raw) > 40:
+                raise HTTPException(status_code=422, detail="INVALID_EVENT_INTEREST_TAG")
+            fallback = _normalize_interest_tag(fallback_raw)
+            if fallback:
+                result.append(fallback)
 
     if not result:
         raise HTTPException(status_code=422, detail="EVENT_INTEREST_TAG_REQUIRED")
@@ -4049,9 +4107,9 @@ def users_nearby(
             if not isinstance(raw, list):
                 return set()
             return {
-                str(x).strip().lower()
+                _normalize_interest_tag(str(x))
                 for x in raw
-                if str(x).strip()
+                if _normalize_interest_tag(str(x))
             }
 
         my_profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
@@ -4345,15 +4403,23 @@ def users_me_patch(
 
         if payload.zainteresowania is not None:
             cleaned: list[str] = []
+            seen_interests: set[str] = set()
             for item in payload.zainteresowania:
                 if item is None:
                     continue
-                t = item.strip()
-                if t == "":
+
+                raw_interest = str(item).strip().lstrip("#").strip()
+                if raw_interest == "":
                     continue
-                if len(t) > 40:
+                if len(raw_interest) > 40:
                     raise HTTPException(status_code=422, detail="interest_too_long_max_40")
-                cleaned.append(t)
+
+                interest = _normalize_interest_tag(raw_interest)
+                if not interest or interest in seen_interests:
+                    continue
+
+                seen_interests.add(interest)
+                cleaned.append(interest)
 
             interest_limits = {
                 "free": 5,
@@ -5472,23 +5538,11 @@ def list_events(
             except Exception:
                 raw_interests = []
 
-        def norm_tag(value: str | None) -> str:
-            if not value:
-                return ""
-            v = value.strip().lower()
-            aliases = {
-                "foto": "fotografia",
-                "photo": "fotografia",
-                "film": "kino",
-                "movies": "kino",
-                "movie": "kino",
-                "tech": "ai",
-                "startup": "biznes",
-                "startups": "biznes",
-            }
-            return aliases.get(v, v)
-
-        user_interest_set = {norm_tag(x) for x in raw_interests if x and str(x).strip()}
+        user_interest_set = {
+            _normalize_interest_tag(str(x))
+            for x in raw_interests
+            if _normalize_interest_tag(str(x))
+        }
 
         events = q.all()
 
@@ -5521,7 +5575,7 @@ def list_events(
             if not event_tags:
                 event_tags = [e.interest_tag]
 
-            normalized_event_tags = {norm_tag(tag) for tag in event_tags if tag and str(tag).strip()}
+            normalized_event_tags = {_normalize_interest_tag(tag) for tag in event_tags if tag and str(tag).strip()}
             score = 1 if normalized_event_tags & user_interest_set else 0
             scored.append((score, e))
 
@@ -7873,7 +7927,7 @@ def create_group(
             creator_id=current_user.id,
             title=payload.title,
             description=payload.description,
-            interest_tag=payload.interest_tag,
+            interest_tag=_normalize_interest_tag(payload.interest_tag),
         )
 
         db.add(g)
@@ -8255,23 +8309,11 @@ def list_suggested_groups(
             except Exception:
                 raw_interests = []
 
-        def norm_tag(value: str | None) -> str:
-            if not value:
-                return ""
-            v = value.strip().lower()
-            aliases = {
-                "foto": "fotografia",
-                "photo": "fotografia",
-                "film": "kino",
-                "movies": "kino",
-                "movie": "kino",
-                "tech": "ai",
-                "startup": "biznes",
-                "startups": "biznes",
-            }
-            return aliases.get(v, v)
-
-        user_interest_set = {norm_tag(x) for x in raw_interests if x and str(x).strip()}
+        user_interest_set = {
+            _normalize_interest_tag(str(x))
+            for x in raw_interests
+            if _normalize_interest_tag(str(x))
+        }
         joined_group_ids = {
             row[0]
             for row in db.query(GroupMembership.group_id)
@@ -8286,7 +8328,7 @@ def list_suggested_groups(
             if g.id in joined_group_ids:
                 continue
 
-            group_tag = norm_tag(g.interest_tag)
+            group_tag = _normalize_interest_tag(g.interest_tag)
             score = 1 if group_tag and group_tag in user_interest_set else 0
 
             scored.append(
@@ -8501,6 +8543,19 @@ def send_push_to_user(
                     body=localized_body,
                 ),
                 data=payload_data,
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        sound="default",
+                        channel_id="usly_default",
+                    ),
+                ),
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            sound="default",
+                        ),
+                    ),
+                ),
                 token=token_row.token,
             )
             message_id = messaging.send(message)

@@ -832,7 +832,9 @@ const I18N = {
     "settings.toast.saved": "Zapisano ustawienia",
     "photo.modalTitle": "Dodaj zdjęcie",
     "photo.heading": "Upload zdjęcia",
-    "photo.subtitle": "Dodaj zdjęcie profilowe albo zostaw puste pole i używaj placeholdera.",
+    "photo.subtitle": "Wybierz zdjęcie profilowe, a następnie ustaw jego kadr.",
+    "photo.cropHint": "Przesuń zdjęcie w ramce, aby ustawić kadr.",
+    "photo.zoom": "Powiększenie",
     "photo.save": "Zapisz zdjęcie",
     "photo.toast.pickFile": "Wybierz plik ze zdjęciem",
     "photo.toast.uploadFailed": "Nie udało się wgrać zdjęcia",
@@ -1769,7 +1771,9 @@ const I18N = {
     "settings.toast.saved": "Settings saved",
     "photo.modalTitle": "Add photo",
     "photo.heading": "Photo upload",
-    "photo.subtitle": "Add a profile photo or leave it empty and use the placeholder.",
+    "photo.subtitle": "Choose a profile photo, then adjust the crop.",
+    "photo.cropHint": "Move the photo inside the frame to adjust the crop.",
+    "photo.zoom": "Zoom",
     "photo.save": "Save photo",
     "photo.toast.pickFile": "Choose a photo file",
     "photo.toast.uploadFailed": "Could not upload photo",
@@ -2005,6 +2009,7 @@ function setLanguage(lang) {
   updateAuthHeadings();
 
   renderAll();
+  refreshLocalizedInterestDetailView();
 }
 
 function applyI18n(root = document) {
@@ -4979,7 +4984,7 @@ function initPartnerLogoUpload() {
 
 /* ------------------------- Avatar / Photo hooks -------------------------- */
 async function uploadUserAvatar(file) {
-  if (!file) return;
+  if (!file) return false;
 
   const form = new FormData();
   form.append("file", file);
@@ -4992,15 +4997,17 @@ async function uploadUserAvatar(file) {
 
     if (!data?.success || !data?.data?.avatar_url) {
       toast(data?.error?.message || t("photo.toast.uploadFailed"));
-      return;
+      return false;
     }
 
     App.user.avatarUrl = data.data.avatar_url;
     toast(t("photo.toast.saved"));
     renderAll();
     closeModal();
+    return true;
   } catch (err) {
     toast(err?.userMessage || t("photo.toast.uploadFailed"));
+    return false;
   }
 }
 
@@ -5048,26 +5055,225 @@ async function removePartnerLogo() {
   }
 }
 
+let avatarCropState = null;
+
+function clampAvatarCropPosition() {
+  const state = avatarCropState;
+  if (!state) return;
+
+  const scaledWidth = state.imageWidth * state.scale;
+  const scaledHeight = state.imageHeight * state.scale;
+  const maxX = Math.max(0, (scaledWidth - state.frameSize) / 2);
+  const maxY = Math.max(0, (scaledHeight - state.frameSize) / 2);
+
+  state.x = Math.max(-maxX, Math.min(maxX, state.x));
+  state.y = Math.max(-maxY, Math.min(maxY, state.y));
+}
+
+function renderAvatarCropPreview() {
+  const state = avatarCropState;
+  const img = $("avatarCropImage");
+  if (!state || !img) return;
+
+  clampAvatarCropPosition();
+  img.style.width = `${state.imageWidth * state.scale}px`;
+  img.style.height = `${state.imageHeight * state.scale}px`;
+  img.style.transform = `translate(calc(-50% + ${state.x}px), calc(-50% + ${state.y}px))`;
+}
+
+function initAvatarCropper(file) {
+  if (!file) return;
+
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+
+  image.onload = () => {
+    const cropArea = $("avatarCropArea");
+    const cropImage = $("avatarCropImage");
+    const zoom = $("avatarCropZoom");
+    const saveBtn = $("userAvatarUploadBtn");
+
+    if (!cropArea || !cropImage || !zoom || !saveBtn) {
+      URL.revokeObjectURL(objectUrl);
+      return;
+    }
+
+    cropArea.hidden = false;
+
+    const frameSize = cropArea.getBoundingClientRect().width || 260;
+    const minScale = Math.max(frameSize / image.naturalWidth, frameSize / image.naturalHeight);
+
+    avatarCropState = {
+      file,
+      objectUrl,
+      image,
+      imageWidth: image.naturalWidth,
+      imageHeight: image.naturalHeight,
+      frameSize,
+      minScale,
+      scale: minScale,
+      x: 0,
+      y: 0,
+      dragging: false,
+      startPointerX: 0,
+      startPointerY: 0,
+      startX: 0,
+      startY: 0
+    };
+
+    cropImage.src = objectUrl;
+    saveBtn.disabled = false;
+    zoom.disabled = false;
+
+    zoom.min = String(minScale);
+    zoom.max = String(minScale * 3);
+    zoom.step = String(Math.max(minScale / 100, 0.001));
+    zoom.value = String(minScale);
+
+    renderAvatarCropPreview();
+
+    zoom.oninput = () => {
+      if (!avatarCropState) return;
+      avatarCropState.scale = Number(zoom.value) || avatarCropState.minScale;
+      clampAvatarCropPosition();
+      renderAvatarCropPreview();
+    };
+
+    cropArea.onpointerdown = (event) => {
+      if (!avatarCropState) return;
+      avatarCropState.dragging = true;
+      avatarCropState.startPointerX = event.clientX;
+      avatarCropState.startPointerY = event.clientY;
+      avatarCropState.startX = avatarCropState.x;
+      avatarCropState.startY = avatarCropState.y;
+      cropArea.setPointerCapture?.(event.pointerId);
+    };
+
+    cropArea.onpointermove = (event) => {
+      if (!avatarCropState?.dragging) return;
+      avatarCropState.x = avatarCropState.startX + event.clientX - avatarCropState.startPointerX;
+      avatarCropState.y = avatarCropState.startY + event.clientY - avatarCropState.startPointerY;
+      renderAvatarCropPreview();
+    };
+
+    const stopDragging = (event) => {
+      if (!avatarCropState) return;
+      avatarCropState.dragging = false;
+      if (cropArea.hasPointerCapture?.(event.pointerId)) {
+        cropArea.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    cropArea.onpointerup = stopDragging;
+    cropArea.onpointercancel = stopDragging;
+  };
+
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    toast(t("photo.toast.uploadFailed"));
+  };
+
+  image.src = objectUrl;
+}
+
+async function createCroppedAvatarFile() {
+  const state = avatarCropState;
+  if (!state) return null;
+
+  clampAvatarCropPosition();
+
+  const outputSize = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = outputSize;
+  canvas.height = outputSize;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const scaleToOutput = outputSize / state.frameSize;
+  const drawnWidth = state.imageWidth * state.scale * scaleToOutput;
+  const drawnHeight = state.imageHeight * state.scale * scaleToOutput;
+  const centerX = outputSize / 2 + state.x * scaleToOutput;
+  const centerY = outputSize / 2 + state.y * scaleToOutput;
+
+  ctx.drawImage(
+    state.image,
+    centerX - drawnWidth / 2,
+    centerY - drawnHeight / 2,
+    drawnWidth,
+    drawnHeight
+  );
+
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
+  if (!blob) return null;
+
+  return new File([blob], "avatar.jpg", {
+    type: "image/jpeg",
+    lastModified: Date.now()
+  });
+}
+
 function openAddPhoto() {
+  avatarCropState = null;
+
   openModal(t("photo.modalTitle"), `
     <div class="tStrong">${t("photo.heading")}</div>
     <div class="sectionSub mt10">${t("photo.subtitle")}</div>
+
     <input id="userAvatarFileInput" type="file" accept="image/jpeg,image/png,image/webp" class="mt12" />
-    <button id="userAvatarUploadBtn" class="btn mt16" type="button">${t("photo.save")}</button>
+
+    <div id="avatarCropArea" class="avatarCropArea mt16" hidden>
+      <img id="avatarCropImage" class="avatarCropImage" alt="" draggable="false" />
+      <div class="avatarCropMask" aria-hidden="true"></div>
+    </div>
+
+    <div id="avatarCropControls" class="avatarCropControls mt12">
+      <div class="sectionSub">${t("photo.cropHint")}</div>
+      <label for="avatarCropZoom" class="sectionSub mt10">${t("photo.zoom")}</label>
+      <input id="avatarCropZoom" type="range" disabled />
+    </div>
+
+    <button id="userAvatarUploadBtn" class="btn mt16" type="button" disabled>${t("photo.save")}</button>
   `);
 
   setTimeout(() => {
     const btn = $("userAvatarUploadBtn");
     const input = $("userAvatarFileInput");
+    const zoom = $("avatarCropZoom");
     if (!btn || !input || btn.dataset.bound === "1") return;
 
-    btn.addEventListener("click", async () => {
+    input.addEventListener("change", () => {
       const file = input.files?.[0];
-      if (!file) {
+      if (!file) return;
+
+      if (avatarCropState?.objectUrl) {
+        URL.revokeObjectURL(avatarCropState.objectUrl);
+      }
+
+      initAvatarCropper(file);
+    });
+
+    btn.addEventListener("click", async () => {
+      if (!avatarCropState) {
         toast(t("photo.toast.pickFile"));
         return;
       }
-      await uploadUserAvatar(file);
+
+      btn.disabled = true;
+      try {
+        const croppedFile = await createCroppedAvatarFile();
+        if (!croppedFile) {
+          toast(t("photo.toast.uploadFailed"));
+          return;
+        }
+        const uploaded = await uploadUserAvatar(croppedFile);
+        if (uploaded && avatarCropState?.objectUrl) {
+          URL.revokeObjectURL(avatarCropState.objectUrl);
+          avatarCropState = null;
+        }
+      } finally {
+        btn.disabled = false;
+      }
     });
 
     btn.dataset.bound = "1";
@@ -5419,7 +5625,7 @@ function getEventTagsLabel(ev) {
   return tags
     .map(tag => normalizeTag(String(tag || "")))
     .filter(Boolean)
-    .map(tag => `#${tag}`)
+    .map(tag => `#${getLocalizedInterestLabel(tag)}`)
     .join(" ");
 }
 
@@ -5569,7 +5775,7 @@ function openPerson(personId) {
     chips.innerHTML = "";
     const shared = new Set(commonInterests(p).map(x => String(x).toLowerCase()));
     (p.interests || []).forEach(tag => {
-      const chip = makeChip(`#${tag}`, null);
+      const chip = makeChip(`#${getLocalizedInterestLabel(tag)}`, null);
       if (shared.has(String(tag).toLowerCase())) {
         chip.classList.add("isShared");
       }
@@ -5624,7 +5830,7 @@ function openPerson(personId) {
         fullChips.innerHTML = "";
         const shared = new Set(commonInterests(full).map(x => String(x).toLowerCase()));
         (full.interests || []).forEach(tag => {
-          const chip = makeChip(`#${tag}`, null);
+          const chip = makeChip(`#${getLocalizedInterestLabel(tag)}`, null);
           if (shared.has(String(tag).toLowerCase())) {
             chip.classList.add("isShared");
           }
@@ -6715,7 +6921,7 @@ function openEvent(eventId) {
     tags
       .map(tag => normalizeTag(String(tag || "")))
       .filter(Boolean)
-      .forEach(tag => chips.appendChild(makeChip(`#${tag}`, null)));
+      .forEach(tag => chips.appendChild(makeChip(`#${getLocalizedInterestLabel(tag)}`, null)));
   }
 
   safeSetText("evDesc", ev.desc || t("eventDetail.emptyDescription"));
@@ -7246,7 +7452,7 @@ async function openGroup(groupId) {
   }
 
   safeSetText("groupTitle", g.title);
-  safeSetText("groupTagline", g.interestTag ? `#${g.interestTag}` : "");
+  safeSetText("groupTagline", g.interestTag ? `#${getLocalizedInterestLabel(g.interestTag)}` : "");
 
   const joinCta = $("groupJoinCta");
   const input = $("groupInput");
@@ -7731,7 +7937,7 @@ async function openGroupPeopleScreen() {
   if (!g) return;
 
   safeSetText("groupPeopleTitle", t("groups.menu.people"));
-  safeSetText("groupPeopleTagline", g.title ? `${g.title}${g.interestTag ? ` • #${g.interestTag}` : ""}` : (g.interestTag ? `#${g.interestTag}` : ""));
+  safeSetText("groupPeopleTagline", g.title ? `${g.title}${g.interestTag ? ` • #${getLocalizedInterestLabel(g.interestTag)}` : ""}` : (g.interestTag ? `#${getLocalizedInterestLabel(g.interestTag)}` : ""));
 
   let groupPeople = { members: [], invited: [] };
   try {
@@ -7779,7 +7985,7 @@ async function openGroupPeopleScreen() {
             <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
             <div class="groupPeopleText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">${t("groupPeople.shared", { tags: commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ") })}</div>
+              <div class="listMeta">${t("groupPeople.shared", { tags: commonInterests(p).slice(0,3).map(x => `#${getLocalizedInterestLabel(x)}`).join(" ") })}</div>
             </div>
           </div>
           <div class="groupPeopleAction">
@@ -7939,7 +8145,7 @@ async function openInviteFriendToGroup() {
             <div class="listAvatar">${p.avatarUrl ? `<img src="${String(p.avatarUrl).startsWith("http") ? p.avatarUrl : `${API_BASE_URL}${p.avatarUrl}`}" alt="${p.nick}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : p.emoji}</div>
             <div class="groupInviteCardText">
               <div class="listTitle">${p.nick}</div>
-              <div class="listMeta">${t("groupPeople.shared", { tags: commonInterests(p).slice(0,3).map(x => `#${x}`).join(" ") })}</div>
+              <div class="listMeta">${t("groupPeople.shared", { tags: commonInterests(p).slice(0,3).map(x => `#${getLocalizedInterestLabel(x)}`).join(" ") })}</div>
             </div>
           </div>
           <div class="groupInviteCardAction">
@@ -8534,7 +8740,7 @@ function renderPartnerEventInterestTags() {
   selected.hidden = false;
   selectedText.innerHTML = tags.map((tag, index) => `
     <span class="chip eventInterestChip">
-      #${escapeHtml(tag)}
+      #${escapeHtml(getLocalizedInterestLabel(tag))}
       <button type="button" class="eventInterestChipRemove" data-index="${index}" aria-label="Usuń hashtag">×</button>
     </span>
   `).join("");
@@ -9943,7 +10149,7 @@ function renderNearby() {
             <div class="listTag nearbyMatchTag">${sharedScore(p)}%</div>
           </div>
         </div>
-        <div class="nearbyInterestChips">${(p.interests || []).slice(0,3).map(t => `<span class="nearbyInterestChip">#${escapeHtml(t)}</span>`).join("")}</div>
+        <div class="nearbyInterestChips">${(p.interests || []).slice(0,3).map(t => `<span class="nearbyInterestChip">#${escapeHtml(getLocalizedInterestLabel(t))}</span>`).join("")}</div>
       </div>
     `).join("");
     }
@@ -9978,7 +10184,7 @@ function renderNearby() {
           </div>
         </div>
         <div class="listBody">
-        #${ev.interest} • ${getEventCapacityCopy(ev).line}${getEventCapacityCopy(ev).alert ? ` • ${getEventCapacityCopy(ev).alert}` : ""}
+        #${getLocalizedInterestLabel(ev.interest)} • ${getEventCapacityCopy(ev).line}${getEventCapacityCopy(ev).alert ? ` • ${getEventCapacityCopy(ev).alert}` : ""}
         ${(ev.saved || ev.interested) ? `<div class="chips" style="margin-top:8px;">
           ${ev.saved ? `<div class="chip">${t("eventDetail.savedChip")}</div>` : ``}
           ${ev.interested ? `<div class="chip">${t("eventDetail.interestedChip")}</div>` : ``}
@@ -10011,7 +10217,7 @@ function renderEventsList() {
     const qClean = q.replace("#", "");
     events = events.filter(e =>
       e.title.toLowerCase().includes(q) ||
-      e.interest.toLowerCase().includes(qClean)
+      matchesInterestSearch(e.interest, qClean)
     );
   }
 
@@ -10038,7 +10244,7 @@ function renderEventsList() {
       </div>
 
       <div class="listBody">
-        #${ev.interest} • ${getEventCapacityCopy(ev).line}${getEventCapacityCopy(ev).alert ? ` • ${getEventCapacityCopy(ev).alert}` : ""}
+        #${getLocalizedInterestLabel(ev.interest)} • ${getEventCapacityCopy(ev).line}${getEventCapacityCopy(ev).alert ? ` • ${getEventCapacityCopy(ev).alert}` : ""}
 
         ${(ev.saved || ev.interested) ? `
           <div class="chips" style="margin-top:8px;">
@@ -10079,12 +10285,12 @@ async function renderGroups() {
   if (q) {
     myGroups = myGroups.filter(g =>
       (g.title || "").toLowerCase().includes(q) ||
-      (g.interestTag || "").toLowerCase().includes(q)
+      matchesInterestSearch(g.interestTag, q)
     );
 
     suggestedGroups = suggestedGroups.filter(g =>
       (g.title || "").toLowerCase().includes(q) ||
-      (g.interestTag || "").toLowerCase().includes(q)
+      matchesInterestSearch(g.interestTag, q)
     );
   }
 
@@ -10125,7 +10331,7 @@ const membersLabel = m === 1
             <div class="listAvatar">${premiumIcon("group", g.title || "Grupa")}</div>
             <div style="min-width:0;">
               <div class="listTitle">${g.title}</div>
-              <div class="listMeta">#${g.interestTag} • ${membersLabel}</div>
+              <div class="listMeta">#${getLocalizedInterestLabel(g.interestTag)} • ${membersLabel}</div>
             </div>
           </div>
           <div class="listRight">
@@ -10798,8 +11004,10 @@ function initInterestInputs() {
       if (!cfg.taId) return; // no typeahead needed
       const q = normalizeTag(input.value.trim());
       if (!q) { hideTypeahead(cfg.taId); return; }
+      const suggestions = getLocalizedInterestSuggestions();
+      const query = input.value.trim().replace(/^#/, "").toLowerCase();
       const items = suggestions
-        .filter(s => s.toLowerCase().startsWith(q.toLowerCase()))
+        .filter(s => s.toLowerCase().startsWith(query))
         .slice(0, 12);
       renderTypeahead(cfg.taId, items, (picked) => {
         addUserInterest(picked, cfg.chipsId);
@@ -10820,11 +11028,295 @@ function initInterestInputs() {
 function getInterestSuggestionsFromDatalist() {
   const dl = $("interestsDatalist");
   if (!dl) return [];
-  const opts = Array.from(dl.querySelectorAll("option"))
+
+  const canonical = Array.from(dl.querySelectorAll("option"))
     .map(o => (o.getAttribute("value") || "").trim())
     .filter(Boolean);
-  return Array.from(new Set(opts));
+
+  return Array.from(new Set(canonical));
 }
+
+function getLocalizedInterestSuggestions() {
+  const canonical = getInterestSuggestionsFromDatalist();
+
+  if (String(App.lang || "pl") !== "en") {
+    return canonical;
+  }
+
+  return canonical.map(tag => INTEREST_LABELS_EN[tag] || tag);
+}
+
+function getLocalizedInterestLabel(tag) {
+  const canonical = normalizeTag(String(tag || ""));
+  if (!canonical) return "";
+
+  if (String(App.lang || "pl") !== "en") {
+    return canonical;
+  }
+
+  return INTEREST_LABELS_EN[canonical] || canonical;
+}
+
+function refreshLocalizedInterestDetailView() {
+  if (App.currentView === "S5_PERSON_PROFILE" && App.selectedPersonId) {
+    const p = resolvePersonById(App.selectedPersonId);
+    const chips = $("personInterests");
+
+    if (p && chips) {
+      chips.innerHTML = "";
+      const shared = new Set(commonInterests(p).map(x => String(x).toLowerCase()));
+
+      (p.interests || []).forEach(tag => {
+        const chip = makeChip(`#${getLocalizedInterestLabel(tag)}`, null);
+        if (shared.has(String(tag).toLowerCase())) {
+          chip.classList.add("isShared");
+        }
+        chips.appendChild(chip);
+      });
+
+      renderPersonTrainerInterests(p);
+    }
+    return;
+  }
+
+  if (App.currentView === "S7B_EVENT_DETAIL" && App.selectedEventId) {
+    const ev = App.events.find(e => String(e.id) === String(App.selectedEventId));
+    const chips = $("evInterestChips");
+
+    if (ev && chips) {
+      chips.innerHTML = "";
+      const tags = Array.isArray(ev.interests) && ev.interests.length
+        ? ev.interests
+        : [ev.interest];
+
+      tags
+        .map(tag => normalizeTag(String(tag || "")))
+        .filter(Boolean)
+        .forEach(tag => chips.appendChild(makeChip(`#${getLocalizedInterestLabel(tag)}`, null)));
+    }
+    return;
+  }
+
+  if (App.currentView === "S8B_GROUP_THREAD" && App.selectedGroupId) {
+    const allGroups = [...(App.myGroups || []), ...(App.groups || [])];
+    const g = allGroups.find(x => String(x.id) === String(App.selectedGroupId));
+
+    if (g) {
+      safeSetText(
+        "groupTagline",
+        g.interestTag ? `#${getLocalizedInterestLabel(g.interestTag)}` : ""
+      );
+    }
+  }
+}
+
+const INTEREST_LABELS_EN = {
+  // Food / drinks
+  "kawa": "coffee",
+  "herbata": "tea",
+  "matcha": "matcha",
+  "kuchnia włoska": "Italian cuisine",
+  "kuchnia azjatycka": "Asian cuisine",
+  "gotowanie": "cooking",
+  "pieczenie": "baking",
+  "sushi": "sushi",
+  "wino": "wine",
+  "craft beer": "craft beer",
+  "degustacje": "tastings",
+  "restauracje": "restaurants",
+  "street food": "street food",
+  "wegetarianizm": "vegetarianism",
+  "weganizm": "veganism",
+  "pieczenie chleba": "bread baking",
+
+  // Music / culture
+  "muzyka": "music",
+  "koncerty": "concerts",
+  "festiwale": "festivals",
+  "jazz": "jazz",
+  "rock": "rock",
+  "pop": "pop",
+  "hip-hop": "hip-hop",
+  "elektronika": "electronic music",
+  "klasyczna": "classical music",
+  "śpiew": "singing",
+  "gitara": "guitar",
+  "piano": "piano",
+  "teatr": "theatre",
+  "opera": "opera",
+  "kino": "cinema",
+  "filmy": "movies",
+  "seriale": "TV series",
+  "fotografia": "photography",
+  "wystawy": "exhibitions",
+  "muzea": "museums",
+
+  // Sports / movement
+  "siłownia": "gym",
+  "bieganie": "running",
+  "biegi terenowe": "trail running",
+  "rower": "cycling",
+  "spacer": "walking",
+  "nordic walking": "nordic walking",
+  "trekking": "hiking",
+  "góry": "mountains",
+  "wspinaczka": "climbing",
+  "joga": "yoga",
+  "pilates": "pilates",
+  "crossfit": "crossfit",
+  "pływanie": "swimming",
+  "taniec": "dance",
+  "zumba": "zumba",
+  "sztuki walki": "martial arts",
+  "boks": "boxing",
+  "mma": "MMA",
+  "koszykówka": "basketball",
+  "piłka nożna": "football",
+  "siatkówka": "volleyball",
+  "siatkówka plażowa": "beach volleyball",
+  "tenis": "tennis",
+  "badminton": "badminton",
+  "padel": "padel",
+  "squash": "squash",
+  "golf": "golf",
+  "triathlon": "triathlon",
+  "rolki": "roller skating",
+  "deskorolka": "skateboarding",
+
+  // Water sports
+  "kajaki": "kayaking",
+  "SUP": "SUP",
+  "surfing": "surfing",
+  "windsurfing": "windsurfing",
+  "kitesurfing": "kitesurfing",
+  "żeglarstwo": "sailing",
+  "nurkowanie": "diving",
+  "snorkeling": "snorkeling",
+  "wakeboard": "wakeboarding",
+
+  // Winter sports
+  "narty": "skiing",
+  "snowboard": "snowboarding",
+  "łyżwy": "ice skating",
+  "narty biegowe": "cross-country skiing",
+  "skitouring": "ski touring",
+
+  // Tech / games
+  "technologia": "technology",
+  "startup": "startup",
+  "programowanie": "programming",
+  "AI": "AI",
+  "UX": "UX",
+  "design": "design",
+  "gry": "gaming",
+  "planszówki": "board games",
+  "RPG": "RPG",
+  "szachy": "chess",
+  "e-sport": "e-sports",
+  "retro gaming": "retro gaming",
+  "fantasy": "fantasy",
+  "sci-fi": "sci-fi",
+  "anime": "anime",
+  "manga": "manga",
+
+  // Personal growth / learning
+  "czytanie": "reading",
+  "książki": "books",
+  "psychologia": "psychology",
+  "rozwój osobisty": "personal growth",
+  "nauka języków": "language learning",
+  "podcasty": "podcasts",
+  "medytacja": "meditation",
+  "mindfulness": "mindfulness",
+  "filozofia": "philosophy",
+  "historia": "history",
+  "nauka": "science",
+  "astronomia": "astronomy",
+
+  // Creative
+  "rysunek": "drawing",
+  "malarstwo": "painting",
+  "grafika": "graphic design",
+  "ilustracja": "illustration",
+  "ceramika": "ceramics",
+  "DIY": "DIY",
+  "rękodzieło": "crafts",
+  "szydełkowanie": "crocheting",
+  "robienie na drutach": "knitting",
+  "kaligrafia": "calligraphy",
+  "pisanie": "writing",
+  "poezja": "poetry",
+
+  // Travel / outdoor
+  "podróże": "travel",
+  "city break": "city breaks",
+  "camping": "camping",
+  "vanlife": "vanlife",
+  "morze": "seaside",
+  "jeziora": "lakes",
+  "survival": "survival",
+  "bushcraft": "bushcraft",
+
+  // Animals / nature
+  "psy": "dogs",
+  "koty": "cats",
+  "zwierzęta": "animals",
+  "ogród": "gardening",
+  "rośliny": "plants",
+  "urban gardening": "urban gardening",
+  "ptaki": "birds",
+  "akwarystyka": "aquariums",
+
+  // Community / lifestyle / other
+  "wolontariat": "volunteering",
+  "eventy": "events",
+  "networking": "networking",
+  "biznes": "business",
+  "marketing": "marketing",
+  "social media": "social media",
+  "tworzenie treści": "content creation",
+  "montaż wideo": "video editing",
+  "podcast": "podcasting",
+  "stand-up": "stand-up",
+  "komedia": "comedy",
+  "gotowanie na mieście": "dining out",
+  "kawiarnie": "cafes",
+  "kultura miejska": "urban culture",
+  "architektura": "architecture",
+  "moda": "fashion",
+  "second hand": "second hand",
+  "streetwear": "streetwear",
+  "kosmetyki": "cosmetics",
+  "pielęgnacja": "skincare",
+  "tatuaże": "tattoos",
+  "motoryzacja": "cars",
+  "motocykle": "motorcycles",
+  "kolekcjonerstwo": "collecting",
+  "winyle": "vinyl",
+  "modelarstwo": "model making",
+  "origami": "origami",
+  "gry logiczne": "logic games",
+  "krzyżówki": "crosswords",
+  "sudoku": "sudoku",
+  "łamigłówki": "puzzles",
+  "escape roomy": "escape rooms",
+  "kryptowaluty": "cryptocurrencies",
+  "finanse osobiste": "personal finance",
+  "inwestowanie": "investing",
+  "nieruchomości": "real estate",
+  "zdrowe jedzenie": "healthy eating",
+  "meal prep": "meal prep",
+  "keto": "keto",
+  "zero waste": "zero waste",
+  "ekologia": "ecology",
+  "recykling": "recycling",
+  "thrifting": "thrifting",
+  "planowanie": "planning",
+  "organizacja": "organization",
+  "minimalizm": "minimalism",
+  "slow life": "slow living",
+  "mindset": "mindset",
+};
 
 const INTEREST_CANONICAL_ALIASES = {
   "ai": "AI",
@@ -10843,14 +11335,22 @@ const INTEREST_CANONICAL_ALIASES = {
   "tv series": "seriale",
   "concert": "koncerty",
   "concerts": "koncerty",
+  "koncert": "koncerty",
   "festival": "festiwale",
   "festivals": "festiwale",
   "photography": "fotografia",
   "photo": "fotografia",
   "gym": "siłownia",
   "running": "bieganie",
+  "bicycle": "rower",
+  "bike": "rower",
+  "cycling": "rower",
+  "rowery": "rower",
+  "jazda na rowerze": "rower",
   "walks": "spacer",
   "walking": "spacer",
+  "spacery": "spacer",
+  "spacerowanie": "spacer",
   "hiking": "trekking",
   "mountains": "góry",
   "climbing": "wspinaczka",
@@ -10866,12 +11366,16 @@ const INTEREST_CANONICAL_ALIASES = {
   "coding": "programowanie",
   "board games": "planszówki",
   "boardgaming": "planszówki",
+  "planszówka": "planszówki",
+  "gry planszowe": "planszówki",
   "rpg games": "RPG",
   "esport": "e-sport",
   "anime shows": "anime",
   "mangas": "manga",
   "reading": "czytanie",
   "books": "książki",
+  "book": "książki",
+  "książka": "książki",
   "personal growth": "rozwój osobisty",
   "languages": "nauka języków",
   "language learning": "nauka języków",
@@ -10886,10 +11390,15 @@ const INTEREST_CANONICAL_ALIASES = {
   "writing": "pisanie",
   "travel": "podróże",
   "travels": "podróże",
+  "podróż": "podróże",
   "city breaks": "city break",
   "camping trips": "camping",
+  "dog": "psy",
   "dogs": "psy",
+  "pies": "psy",
+  "cat": "koty",
   "cats": "koty",
+  "kot": "koty",
   "animals": "zwierzęta",
   "plants": "rośliny",
   "volunteering": "wolontariat",
@@ -10928,6 +11437,26 @@ const INTEREST_CANONICAL_ALIASES = {
   "mindset work": "mindset",
 };
 
+function matchesInterestSearch(tag, query) {
+  const rawQuery = String(query || "").replace(/^#\s*/, "").trim().toLowerCase();
+  if (!rawQuery) return true;
+
+  const rawTag = String(tag || "").replace(/^#\s*/, "").trim();
+  if (!rawTag) return false;
+
+  const canonicalTag = normalizeTag(rawTag);
+  const canonicalQuery = normalizeTag(rawQuery);
+
+  if (canonicalTag.toLowerCase() === canonicalQuery.toLowerCase()) {
+    return true;
+  }
+
+  return (
+    rawTag.toLowerCase().includes(rawQuery) ||
+    getLocalizedInterestLabel(canonicalTag).toLowerCase().includes(rawQuery)
+  );
+}
+
 function normalizeTag(val) {
   if (!val) return "";
 
@@ -10945,6 +11474,13 @@ function normalizeTag(val) {
   const aliasTarget = INTEREST_CANONICAL_ALIASES[lower];
   if (aliasTarget) {
     return canonicalByLower.get(aliasTarget.toLowerCase()) || aliasTarget;
+  }
+
+  const canonicalFromEnglish = Object.entries(INTEREST_LABELS_EN)
+    .find(([, englishLabel]) => String(englishLabel).toLowerCase() === lower)?.[0];
+
+  if (canonicalFromEnglish) {
+    return canonicalByLower.get(canonicalFromEnglish.toLowerCase()) || canonicalFromEnglish;
   }
 
   return raw;
@@ -11053,7 +11589,7 @@ function renderInterestChips(chipsId) {
 
   box.innerHTML = "";
   App.user.interests.forEach(t => {
-    const chip = makeChip(`#${t}`, () => removeUserInterest(t, chipsId));
+    const chip = makeChip(`#${getLocalizedInterestLabel(t)}`, () => removeUserInterest(t, chipsId));
     box.appendChild(chip);
   });
   renderTrainerInterestBoxes();
@@ -11129,7 +11665,7 @@ function renderTrainerInterestBox(boxId) {
     <div class="trainerInterestChoices">
       ${interests.map(tag => {
         const active = trainerInterests.some(x => String(x).toLowerCase() === String(tag).toLowerCase());
-        return `<button class="trainerInterestChip ${active ? "active" : ""}" type="button" onclick="toggleTrainerInterest(decodeURIComponent('${encodeURIComponent(String(tag))}'))">${active ? "🎓 " : ""}#${escapeHtml(tag)}</button>`;
+        return `<button class="trainerInterestChip ${active ? "active" : ""}" type="button" onclick="toggleTrainerInterest(decodeURIComponent('${encodeURIComponent(String(tag))}'))">${active ? "🎓 " : ""}#${escapeHtml(getLocalizedInterestLabel(tag))}</button>`;
       }).join("")}
     </div>
   `;
@@ -11157,7 +11693,7 @@ function renderPersonTrainerInterests(person) {
     <div class="personTrainerBox">
       <div class="personTrainerTitle">🎓 ${t("profileInterests.leadsClassesTitle")}</div>
       <div class="personTrainerChips">
-        ${trainerTags.map(tag => `<span class="personTrainerChip">#${escapeHtml(tag)}</span>`).join("")}
+        ${trainerTags.map(tag => `<span class="personTrainerChip">#${escapeHtml(getLocalizedInterestLabel(tag))}</span>`).join("")}
       </div>
     </div>
   `;
@@ -13753,6 +14289,14 @@ async function setupPushNotifications() {
       window.Capacitor?.Plugins?.PushNotifications;
 
     if (!PushNotifications) return;
+
+    await PushNotifications.createChannel({
+      id: "usly_default",
+      name: "USLY",
+      description: "Powiadomienia USLY",
+      importance: 4,
+      vibration: true,
+    });
 
     let permission = await PushNotifications.checkPermissions();
 
