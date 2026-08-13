@@ -2511,10 +2511,31 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
 }
 
 function back() {
-  if (App.history.length <= 1) return go("S0_WELCOME");
+  const loggedInRoot =
+    App.role === "partner" ? "S9_PARTNER" : "S4_NEARBY";
+
+  if (App.isLoggedIn) {
+    while (
+      App.history.length > 1 &&
+      ["S0_WELCOME", "S1_LOGIN", "S2_REGISTER", "S3_PROFILE_SETUP", "S3B_PARTNER_SETUP"].includes(
+        App.history[App.history.length - 2]
+      )
+    ) {
+      App.history.splice(App.history.length - 2, 1);
+    }
+
+    if (App.history.length <= 1 || App.currentView === loggedInRoot) {
+      return;
+    }
+  } else if (App.history.length <= 1) {
+    return go("S0_WELCOME");
+  }
+
   // Remove current
   App.history.pop();
-  const prev = App.history[App.history.length - 1] || "S0_WELCOME";
+  const prev =
+    App.history[App.history.length - 1] ||
+    (App.isLoggedIn ? loggedInRoot : "S0_WELCOME");
 
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   const prevEl = $(prev);
