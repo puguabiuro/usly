@@ -6,6 +6,7 @@ const Admin = {
   },
   users: [],
   events: [],
+  groups: [],
   me: null,
 };
 
@@ -28,7 +29,7 @@ function adminCanView(view) {
   const level = adminLevel();
   if (level === "owner") return true;
   if (view === "owner-approval") return false;
-  if (level === "operations") return ["reports", "users", "staff", "events", "promo"].includes(view);
+  if (level === "operations") return ["reports", "users", "staff", "events", "groups", "promo"].includes(view);
   if (level === "moderation" || level === "support") return view === "reports";
   return view === "reports";
 }
@@ -499,6 +500,77 @@ async function reloadAdminEvents() {
   }
 }
 
+function renderAdminGroups(items) {
+  const box = document.getElementById("adminGroupsList");
+  setAdminCount("adminGroupsCount", items.length);
+
+  if (!box) return;
+
+  if (!items.length) {
+    box.innerHTML = adminEmpty("Brak grup.");
+    return;
+  }
+
+  box.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Grupa</th>
+          <th>Właściciel</th>
+          <th>Tag</th>
+          <th>Członkowie</th>
+          <th>Utworzono</th>
+          <th>Aktualizacja</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((g) => `
+          <tr>
+            <td><strong>#${escapeAdmin(g.id)}</strong></td>
+            <td>${escapeAdmin(g.title || "—")}</td>
+            <td>
+              ${escapeAdmin(g.creator_name || "—")}<br>
+              <span>${escapeAdmin(g.creator_email || "—")}</span>
+            </td>
+            <td>${escapeAdmin(g.interest_tag || "—")}</td>
+            <td>${escapeAdmin(g.members_count ?? 0)}</td>
+            <td>${escapeAdmin(g.created_at || "—")}</td>
+            <td>${escapeAdmin(g.updated_at || "—")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function reloadAdminGroups() {
+  try {
+    const res = await window.apiFetch("/admin/groups");
+    const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+    const query = String(document.getElementById("adminGroupSearch")?.value || "").trim().toLowerCase();
+
+    Admin.groups = items;
+
+    const filtered = items.filter((g) => {
+      const haystack = [
+        g.id,
+        g.title,
+        g.creator_name,
+        g.creator_email,
+        g.interest_tag,
+      ].map(v => String(v || "").toLowerCase()).join(" ");
+
+      return !query || haystack.includes(query);
+    });
+
+    renderAdminGroups(filtered);
+  } catch (e) {
+    console.error("reloadAdminGroups error", e);
+    adminToast(e?.userMessage || "Nie udało się pobrać grup.");
+  }
+}
+
 function renderAdminUsers(items) {
   const box = document.getElementById("adminUsersList");
   setAdminCount("adminUsersCount", items.length);
@@ -523,6 +595,7 @@ function renderAdminUsers(items) {
           <th>Moderacja</th>
           <th>Miasto</th>
           <th>Data ur.</th>
+          <th>Zakres wieku</th>
           <th>E-mail</th>
           <th>Utworzono</th>
           <th>Akcje</th>
@@ -558,6 +631,11 @@ function renderAdminUsers(items) {
             </td>
             <td>${escapeAdmin(u.city || "—")}</td>
             <td>${escapeAdmin(u.dob || "—")}</td>
+            <td>${
+              u.age_min != null && u.age_max != null
+                ? `${escapeAdmin(u.age_min)}–${escapeAdmin(u.age_max)} lat`
+                : "—"
+            }</td>
             <td>${
               u.email_verified
                 ? `Zweryfikowany<br><span>${escapeAdmin(u.email_verified_at || "—")}</span>`
@@ -3563,6 +3641,7 @@ function showAdminView(view) {
   const usersView = document.getElementById("adminUsersView");
   const staffView = document.getElementById("adminStaffView");
   const eventsView = document.getElementById("adminEventsView");
+  const groupsView = document.getElementById("adminGroupsView");
   const promoView = document.getElementById("adminPromoView");
 
   document.querySelectorAll("[data-admin-view]").forEach((btn) => {
@@ -3575,6 +3654,7 @@ function showAdminView(view) {
   if (usersView) usersView.hidden = view !== "users";
   if (staffView) staffView.hidden = view !== "staff";
   if (eventsView) eventsView.hidden = view !== "events";
+  if (groupsView) groupsView.hidden = view !== "groups";
   if (promoView) promoView.hidden = view !== "promo";
 
   if (view === "dashboard" && typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
@@ -3589,6 +3669,7 @@ function showAdminView(view) {
     if (typeof reloadAdminStaffAuditLog === "function") reloadAdminStaffAuditLog().catch(() => {});
   }
   if (view === "events") reloadAdminEvents().catch(() => {});
+  if (view === "groups") reloadAdminGroups().catch(() => {});
   if (view === "promo" && typeof reloadAdminPromoCampaigns === "function") reloadAdminPromoCampaigns().catch(() => {});
 }
 
@@ -3610,6 +3691,7 @@ document.getElementById("adminUsersRoleFilter")?.addEventListener("change", relo
 document.getElementById("adminUsersStatusFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersPlanFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersEmailFilter")?.addEventListener("change", reloadAdminUsers);
+document.getElementById("adminGroupSearch")?.addEventListener("input", reloadAdminGroups);
 
 
 function exportAdminDashboardCsv() {

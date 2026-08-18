@@ -300,6 +300,7 @@ ADMIN_PERMISSION_LEVELS = {
     "reports": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS, ADMIN_LEVEL_MODERATION, ADMIN_LEVEL_SUPPORT},
     "users": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
     "events": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
+    "groups": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
     "plans": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
     "account_status": {ADMIN_LEVEL_OWNER, ADMIN_LEVEL_OPERATIONS},
     "account_delete": {ADMIN_LEVEL_OWNER},
@@ -10833,6 +10834,54 @@ def admin_list_staff(current_user: User = Depends(require_role("admin"))):
         db.close()
 
 
+@app.get("/admin/groups")
+def admin_list_groups(current_user: User = Depends(require_role("admin"))):
+    require_admin_permission(current_user, "groups")
+
+    db = SessionLocal()
+    try:
+        groups = (
+            db.query(Group)
+            .order_by(Group.created_at.desc(), Group.id.desc())
+            .all()
+        )
+
+        creator_ids = {g.creator_id for g in groups if g.creator_id}
+        creators = {}
+        if creator_ids:
+            creator_rows = db.query(User).filter(User.id.in_(creator_ids)).all()
+            creators = {u.id: u for u in creator_rows}
+
+        user_profiles = {
+            p.user_id: p
+            for p in db.query(UserProfile).filter(UserProfile.user_id.in_(creator_ids)).all()
+        } if creator_ids else {}
+
+        items = []
+        for group in groups:
+            creator = creators.get(group.creator_id)
+            creator_profile = user_profiles.get(group.creator_id)
+
+            items.append({
+                "id": group.id,
+                "title": group.title,
+                "creator_id": group.creator_id,
+                "creator_name": (
+                    getattr(creator_profile, "nick", None)
+                    or (creator.email if creator else None)
+                ),
+                "creator_email": creator.email if creator else None,
+                "interest_tag": group.interest_tag,
+                "members_count": group.members_count,
+                "created_at": str(group.created_at) if group.created_at else None,
+                "updated_at": str(group.updated_at) if group.updated_at else None,
+            })
+
+        return ok({"items": items, "count": len(items)})
+    finally:
+        db.close()
+
+
 @app.get("/admin/users")
 def admin_list_users(current_user: User = Depends(require_role("admin"))):
     require_admin_permission(current_user, "users")
@@ -10967,6 +11016,8 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "admin_level": user.admin_level,
                 "city": city,
                 "dob": str(user.dob) if getattr(user, "dob", None) else None,
+                "age_min": getattr(user_profile, "age_min", None) if user_profile else None,
+                "age_max": getattr(user_profile, "age_max", None) if user_profile else None,
                 "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
                 "email_verified": bool(getattr(user, "email_verified_at", None)),
                 "mfa_enabled": bool(getattr(user, "mfa_enabled", False)),

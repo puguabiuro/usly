@@ -113,6 +113,7 @@
       <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
       <button class="adminNav" type="button" data-admin-view="staff">Admini</button>
       <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
+      <button class="adminNav" type="button" data-admin-view="groups">Grupy</button>
       <button class="adminNav" type="button" data-admin-view="promo">Program Ambasadorski</button>
     </aside>
 
@@ -500,6 +501,28 @@
             </div>
             <div id="adminEventsMetrics" class="adminMetricGrid"></div>
             <div id="adminEventsList" class="adminTableBox">Ładowanie...</div>
+          </article>
+        </section>
+      </section>
+
+      <section id="adminGroupsView" hidden>
+        <section class="adminFilters">
+          <label>
+            Szukaj grupy
+            <input id="adminGroupSearch" class="adminFieldInput" type="search" placeholder="Nazwa, właściciel, e-mail, tag, ID..." />
+          </label>
+        </section>
+
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Centrum grup</h2>
+              <span id="adminGroupsCount">0</span>
+            </div>
+            <div class="adminSystemHint">
+              Podgląd utworzonych grup, ich właścicieli, tagów zainteresowań i liczby członków.
+            </div>
+            <div id="adminGroupsList" class="adminTableBox">Ładowanie...</div>
           </article>
         </section>
       </section>
