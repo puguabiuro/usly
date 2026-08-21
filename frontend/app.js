@@ -4149,14 +4149,27 @@ async function applyPlanPromoCode(role) {
 
     let redemption = null;
     if (App.isLoggedIn && App.role === normalizedRole) {
+      const promoPlatform = window.Capacitor?.getPlatform?.() || "web";
+
       redemption = await apiFetch("/promo-campaigns/redeem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: promo.code || code, platform: "web" }),
+        body: JSON.stringify({
+          code: promo.code || code,
+          platform: ["ios", "android"].includes(promoPlatform) ? promoPlatform : "web",
+        }),
       });
+
       App.activePromoCode.redemption_id = redemption?.data?.id || null;
       App.activePromoCode.redemption_status = redemption?.data?.status || "reserved";
       App.activePromoCode.already_redeemed = !!redemption?.data?.already_redeemed;
+
+      if (
+        normalizedRole === "user" &&
+        App.activePromoCode.redemption_status === "activated"
+      ) {
+        await refreshPlanAfterStorePurchase("user");
+      }
     }
 
     refreshPlanPromoPrices(normalizedRole);

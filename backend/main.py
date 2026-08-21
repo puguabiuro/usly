@@ -11796,11 +11796,35 @@ def redeem_promo_campaign(
                 "android_promo_code": campaign.android_promo_code,
             })
 
+        is_usly95_lifetime = campaign.code == "USLY95"
+
+        if is_usly95_lifetime:
+            if current_user.role != UserRole.USER.value:
+                raise HTTPException(status_code=403, detail="PROMO_CODE_NOT_FOR_THIS_ROLE")
+
+            profile = (
+                db.query(UserProfile)
+                .filter(UserProfile.user_id == current_user.id)
+                .first()
+            )
+            if not profile:
+                raise HTTPException(status_code=404, detail="USER_PROFILE_NOT_FOUND")
+
+            profile.plan = "premium"
+            profile.plan_source = "promo"
+            profile.plan_status = "active"
+            profile.plan_updated_at = now
+            profile.plan_expires_at = None
+            profile.plan_expiry_notice_14d_sent_at = None
+            profile.plan_expiry_notice_7d_sent_at = None
+            profile.updated_at = now
+            db.add(profile)
+
         redemption = PromoRedemption(
             campaign_id=campaign.id,
             user_id=current_user.id,
             platform=platform,
-            status="reserved",
+            status="activated" if is_usly95_lifetime else "reserved",
             created_at=now,
         )
         campaign.uses_count = int(campaign.uses_count or 0) + 1
@@ -11811,7 +11835,12 @@ def redeem_promo_campaign(
         db.add(AuditLog(
             user_id=current_user.id,
             action="promo_campaign_redeemed",
-            details=f"code={campaign.code}; campaign_id={campaign.id}; platform={platform or '-'}; status=reserved",
+            details=(
+                f"code={campaign.code}; campaign_id={campaign.id}; "
+                f"platform={platform or '-'}; "
+                f"status={'activated' if is_usly95_lifetime else 'reserved'}; "
+                f"benefit={'premium_lifetime' if is_usly95_lifetime else '-'}"
+            ),
         ))
         db.commit()
         db.refresh(redemption)
