@@ -3020,6 +3020,303 @@ async function reloadAdminDashboard() {
     const eventsInRange = events.filter(ev => inRange(ev.created_at));
     const reportsInRange = [...userReports, ...eventReports, ...bugReports].filter(r => inRange(r.created_at || r.createdAt || r.date));
 
+    // ADMIN 2.0 — dzienny przyrost i odpływ kont.
+    // Źródło: /admin/social-summary -> account_growth_timeline.
+    // Serie: Towarzysze, Organizatorzy, konta usunięte.
+    const accountGrowthBox = document.getElementById("adminDashboardAccountGrowth");
+    const accountGrowthRange = document.getElementById("adminDashboardAccountGrowthRange");
+
+    const backendAccountGrowthSource = Array.isArray(socialSummary.account_growth_timeline)
+      ? socialSummary.account_growth_timeline
+      : [];
+
+    // Preview / backward-compatible fallback:
+    // dopóki produkcyjny backend nie zwraca account_growth_timeline,
+    // rejestracje budujemy z rzeczywistego User.created_at z /admin/users.
+    // Po wdrożeniu backendowego timeline ten fallback przestaje być używany.
+    const accountGrowthSource = backendAccountGrowthSource.length
+      ? backendAccountGrowthSource
+      : (() => {
+          const byDay = new Map();
+
+          users.forEach((u) => {
+            const createdAt = toDate(u.created_at);
+            if (!createdAt) return;
+
+            const year = createdAt.getFullYear();
+            const month = String(createdAt.getMonth() + 1).padStart(2, "0");
+            const day = String(createdAt.getDate()).padStart(2, "0");
+            const key = `${year}-${month}-${day}`;
+
+            if (!byDay.has(key)) {
+              byDay.set(key, {
+                date: key,
+                users_created: 0,
+                partners_created: 0,
+                deleted: 0,
+              });
+            }
+
+            const bucket = byDay.get(key);
+            const role = String(u.role || "").toLowerCase();
+
+            if (role === "user") {
+              bucket.users_created += 1;
+            } else if (role === "partner") {
+              bucket.partners_created += 1;
+            }
+          });
+
+          return Array.from(byDay.values())
+            .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+        })();
+
+    const accountGrowthStart = (() => {
+      if (rangeValue !== "all") {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - Math.max(Number(rangeValue) - 1, 0));
+        return start;
+      }
+
+      const dates = accountGrowthSource
+        .map(item => toDate(item.date))
+        .filter(Boolean);
+
+      if (!dates.length) return null;
+
+      const first = new Date(Math.min(...dates.map(d => d.getTime())));
+      first.setHours(0, 0, 0, 0);
+      return first;
+    })();
+
+    const accountGrowthEnd = new Date();
+    accountGrowthEnd.setHours(0, 0, 0, 0);
+
+    const accountGrowthSourceByDay = new Map(
+      accountGrowthSource.map(item => [
+        String(item.date || "").slice(0, 10),
+        item,
+      ])
+    );
+
+    const accountGrowthDays = [];
+
+    if (accountGrowthStart) {
+      for (
+        let cursor = new Date(accountGrowthStart);
+        cursor <= accountGrowthEnd;
+        cursor.setDate(cursor.getDate() + 1)
+      ) {
+        const year = cursor.getFullYear();
+        const month = String(cursor.getMonth() + 1).padStart(2, "0");
+        const day = String(cursor.getDate()).padStart(2, "0");
+        const key = `${year}-${month}-${day}`;
+
+        const source = accountGrowthSourceByDay.get(key) || {};
+
+        accountGrowthDays.push({
+          key,
+          date: new Date(cursor),
+          users: Number(source.users_created || 0),
+          partners: Number(source.partners_created || 0),
+          deleted: Number(source.deleted || 0),
+        });
+      }
+    }
+
+    const totalUsersCreated = accountGrowthDays.reduce(
+      (sum, item) => sum + item.users,
+      0
+    );
+
+    const totalPartnersCreated = accountGrowthDays.reduce(
+      (sum, item) => sum + item.partners,
+      0
+    );
+
+    const totalCreated = totalUsersCreated + totalPartnersCreated;
+
+    const totalDeleted = accountGrowthDays.reduce(
+      (sum, item) => sum + item.deleted,
+      0
+    );
+
+    const netGrowth = totalCreated - totalDeleted;
+
+    const accountGrowthAverage = accountGrowthDays.length
+      ? totalCreated / accountGrowthDays.length
+      : 0;
+
+    const accountGrowthBest = accountGrowthDays.reduce((best, item) => {
+      const total = item.users + item.partners;
+      const bestTotal = best ? best.users + best.partners : -1;
+      return total > bestTotal ? item : best;
+    }, null);
+
+    const accountGrowthMax = Math.max(
+      ...accountGrowthDays.flatMap(item => [
+        item.users,
+        item.partners,
+        item.deleted,
+      ]),
+      1
+    );
+
+    if (accountGrowthRange) {
+      accountGrowthRange.textContent =
+        rangeValue === "all"
+          ? "Cały okres"
+          : `Ostatnie ${rangeValue} dni`;
+    }
+
+    document.querySelectorAll("[data-account-growth-range]").forEach((btn) => {
+      btn.classList.toggle(
+        "is-active",
+        String(btn.dataset.accountGrowthRange || "") === rangeValue
+      );
+    });
+
+    if (accountGrowthBox) {
+      const bestTotal = accountGrowthBest
+        ? accountGrowthBest.users + accountGrowthBest.partners
+        : 0;
+
+      const chartColumns = accountGrowthDays.map((item) => {
+        const userHeight = (item.users / accountGrowthMax) * 100;
+        const partnerHeight = (item.partners / accountGrowthMax) * 100;
+        const deletedHeight = (item.deleted / accountGrowthMax) * 100;
+
+        const created = item.users + item.partners;
+        const net = created - item.deleted;
+
+        return `
+          <div class="adminAccountGrowthDay">
+            <div class="adminAccountGrowthPlot">
+              <div
+                class="adminAccountGrowthBar adminAccountGrowthBarUser"
+                style="height:${userHeight}%"
+                title="Towarzysze: ${item.users}"
+              >
+                ${item.users ? `<span>${item.users}</span>` : ""}
+              </div>
+
+              <div
+                class="adminAccountGrowthBar adminAccountGrowthBarPartner"
+                style="height:${partnerHeight}%"
+                title="Organizatorzy: ${item.partners}"
+              >
+                ${item.partners ? `<span>${item.partners}</span>` : ""}
+              </div>
+
+              <div
+                class="adminAccountGrowthBar adminAccountGrowthBarDeleted"
+                style="height:${deletedHeight}%"
+                title="Usunięte: ${item.deleted}"
+              >
+                ${item.deleted ? `<span>${item.deleted}</span>` : ""}
+              </div>
+            </div>
+
+            <div class="adminAccountGrowthDate">
+              ${item.date.toLocaleDateString("pl-PL", {
+                day: "2-digit",
+                month: "2-digit",
+              })}
+            </div>
+
+            <div class="adminAccountGrowthNet ${net < 0 ? "is-negative" : ""}">
+              ${net > 0 ? "+" : ""}${net}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Współrzędne X linii wyznaczamy dopiero po wyrenderowaniu kolumn.
+      // Dzięki temu punkt korzysta z rzeczywistego środka konkretnego dnia
+      // zamiast odtwarzać geometrię flexa ręcznie.
+      const accountGrowthPlotHeight = 220;
+
+      accountGrowthBox.innerHTML = `
+        <div class="adminAccountGrowthMetrics">
+          <div class="adminRoleCard">
+            <span>Nowe konta</span>
+            <strong>${totalCreated}</strong>
+          </div>
+
+          <div class="adminRoleCard">
+            <span>Towarzysze</span>
+            <strong>${totalUsersCreated}</strong>
+          </div>
+
+          <div class="adminRoleCard">
+            <span>Organizatorzy</span>
+            <strong>${totalPartnersCreated}</strong>
+          </div>
+
+          <div class="adminRoleCard">
+            <span>Usunięte</span>
+            <strong>${totalDeleted}</strong>
+          </div>
+
+          <div class="adminRoleCard">
+            <span>Przyrost netto</span>
+            <strong>${netGrowth > 0 ? "+" : ""}${netGrowth}</strong>
+          </div>
+
+          <div class="adminRoleCard">
+            <span>Średnio / dzień</span>
+            <strong>${accountGrowthAverage.toLocaleString("pl-PL", {
+              maximumFractionDigits: 1
+            })}</strong>
+          </div>
+
+          <div class="adminRoleCard">
+            <span>Najlepszy dzień</span>
+            <strong>${bestTotal}</strong>
+            <small>
+              ${accountGrowthBest
+                ? accountGrowthBest.date.toLocaleDateString("pl-PL")
+                : "—"}
+            </small>
+          </div>
+        </div>
+
+        <div class="adminAccountGrowthLegend">
+          <span><i class="adminAccountGrowthLegendUser"></i>Towarzysze</span>
+          <span><i class="adminAccountGrowthLegendPartner"></i>Organizatorzy</span>
+          <span><i class="adminAccountGrowthLegendDeleted"></i>Usunięte konta</span>
+        </div>
+
+        <div class="adminAccountGrowthChartScroll">
+          <div class="adminAccountGrowthChart">
+
+
+            ${chartColumns || adminEmpty("Brak danych o zmianach liczby kont.")}
+          </div>
+        </div>
+
+        <div class="adminHistoryMeta">
+          Liczba pod datą pokazuje dzienny bilans netto: nowe konta minus konta usunięte.
+          Dane o usunięciach pochodzą z rzeczywistych operacji zapisanych w AuditLog.
+        </div>
+      `;
+
+      document
+        .querySelectorAll("[data-account-growth-range]")
+        .forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const nextRange = String(btn.dataset.accountGrowthRange || "30");
+            const rangeSelect = document.getElementById("adminDashboardRange");
+
+            if (rangeSelect) {
+              rangeSelect.value = nextRange;
+              rangeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          });
+        });
+    }
+
     const activeUsers = users.filter(u => String(u.status || "active") === "active");
     const partners = users.filter(u => String(u.role || "") === "partner");
     const admins = users.filter(u => String(u.role || "") === "admin");
@@ -3140,54 +3437,65 @@ async function reloadAdminDashboard() {
     if (summaryBox) {
       summaryBox.innerHTML = `
         <div class="adminDashboardBlock">
-          <div class="adminMiniSectionTitle">Stan całej aplikacji</div>
-          <div class="adminMetricGrid">
-            <div class="adminMetricCard"><span>Aktywni użytkownicy</span><strong>${activeUsers.length}</strong></div>
-            <div class="adminMetricCard"><span>Organizatorzy</span><strong>${partners.length}</strong></div>
-            <div class="adminMetricCard"><span>Admini</span><strong>${admins.length}</strong></div>
-            <div class="adminMetricCard"><span>Aktywne wydarzenia</span><strong>${activeEvents.length}</strong></div>
-            <div class="adminMetricCard"><span>Zakończone wydarzenia</span><strong>${endedEvents.length}</strong></div>
-            <div class="adminMetricCard"><span>Szkice wydarzeń</span><strong>${draftEvents.length}</strong></div>
-            <div class="adminMetricCard"><span>Archiwum wydarzeń</span><strong>${archivedEvents.length}</strong></div>
-            <div><span>Otwarte zgłoszenia</span><strong>${openReports.length}</strong></div>
-            <div class="adminMetricCard"><span>Bug reporty</span><strong>${bugReports.length}</strong></div>
-          </div>
-        </div>
+          <div class="adminMiniSectionTitle">USLY teraz</div>
 
-        <div class="adminDashboardBlock adminDashboardBlockHighlighted" data-admin-csv-section="Społeczność">
-          <div class="adminMiniSectionTitle">Społeczność</div>
           <div class="adminMetricGrid">
-            <div class="adminMetricCard" data-admin-csv-metric="Grupy"><span>Grupy</span><strong>${Number(socialSummary.groups_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Członkostwa w grupach"><span>Członkostwa w grupach</span><strong>${Number(socialSummary.group_memberships_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Aktywne znajomości"><span>Aktywne znajomości</span><strong>${Number(socialSummary.active_friendships_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Oczekujące zaproszenia do znajomych"><span>Oczekujące zaproszenia do znajomych</span><strong>${Number(socialSummary.pending_friend_requests_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Oczekujące zaproszenia do grup"><span>Oczekujące zaproszenia do grup</span><strong>${Number(socialSummary.pending_group_invitations_count || 0)}</strong></div>
-          </div>
-        </div>
+            <div class="adminMetricCard">
+              <span>Aktywni użytkownicy</span>
+              <strong>${activeUsers.length}</strong>
+            </div>
 
-        <div class="adminDashboardBlock adminDashboardBlockHighlighted" data-admin-csv-section="Bezpieczeństwo i zgodność">
-          <div class="adminMiniSectionTitle">Bezpieczeństwo i zgodność</div>
-          <div class="adminMetricGrid">
-            <div class="adminMetricCard" data-admin-csv-metric="Aktywne blokady użytkowników"><span>Aktywne blokady użytkowników</span><strong>${Number(socialSummary.user_blocks_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Zablokowane konta"><span>Zablokowane konta</span><strong>${Number(socialSummary.blocked_accounts_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Usunięte konta"><span>Usunięte konta</span><strong>${Number(socialSummary.deleted_accounts_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Aktywne konta bez weryfikacji e-mail"><span>Aktywne konta bez weryfikacji e-mail</span><strong>${Number(socialSummary.unverified_accounts_count || 0)}</strong></div>
-            <div class="adminMetricCard" data-admin-csv-metric="Otwarte zgłoszenia"><span>Otwarte zgłoszenia</span><strong>${openReports.length}</strong></div>
+            <div class="adminMetricCard">
+              <span>Organizatorzy</span>
+              <strong>${partners.length}</strong>
+            </div>
+
+            <div class="adminMetricCard">
+              <span>Aktywne wydarzenia</span>
+              <strong>${activeEvents.length}</strong>
+            </div>
+
+            <div class="adminMetricCard">
+              <span>Otwarte zgłoszenia</span>
+              <strong>${openReports.length}</strong>
+            </div>
+
+            <div class="adminMetricCard">
+              <span>Bug reporty</span>
+              <strong>${bugReports.length}</strong>
+            </div>
           </div>
         </div>
 
         <div class="adminDashboardBlock adminDashboardBlockHighlighted">
-          <div class="adminMiniSectionTitle">W wybranym okresie: ${rangeValue === "all" ? "cały okres" : `ostatnie ${rangeValue} dni`}</div>
+          <div class="adminMiniSectionTitle">
+            Ostatnie ${rangeValue === "all" ? "— cały okres" : `${rangeValue} dni`}
+          </div>
+
           <div class="adminMetricGrid">
-            <div class="adminMetricCard"><span>Nowe konta</span><strong>${usersInRange.length}</strong></div>
-            <div class="adminMetricCard"><span>Nowe wydarzenia</span><strong>${eventsInRange.length}</strong></div>
-            <div class="adminMetricCard"><span>Zgłoszenia</span><strong>${reportsInRange.length}</strong></div>
+            <div class="adminMetricCard">
+              <span>Nowe konta</span>
+              <strong>${usersInRange.length}</strong>
+            </div>
+
+            <div class="adminMetricCard">
+              <span>Nowe wydarzenia</span>
+              <strong>${eventsInRange.length}</strong>
+            </div>
+
+            <div class="adminMetricCard">
+              <span>Nowe zgłoszenia</span>
+              <strong>${reportsInRange.length}</strong>
+            </div>
           </div>
         </div>
 
         <div class="adminDashboardBlock adminDashboardBlockHighlighted">
           <div class="adminMiniSectionTitle">Top 15 zainteresowań #</div>
-          <div class="adminHistoryMeta">Przełącz widok: razem, zainteresowania Towarzyszy albo hashtagi wydarzeń. Pomaga planować treści na Instagram, TikTok i kampanie.</div>
+          <div class="adminHistoryMeta">
+            Najczęściej używane zainteresowania Towarzyszy i hashtagi wydarzeń.
+            Przełącz widok, aby zobaczyć dane razem lub osobno.
+          </div>
           ${renderTopInterestsSwitchChart()}
         </div>
       `;
@@ -3201,8 +3509,13 @@ async function reloadAdminDashboard() {
     const userPrices = { free: 0, plus: 19, premium: 39, vip: 79 };
     const partnerPrices = { free: 0, pro: 99, premium: 199, enterprise: 0 };
 
-    const freeSources = new Set(["barter", "free", "trial"]);
-    const isPaidAccount = (u) => !freeSources.has(String(u.plan_source || "manual").toLowerCase());
+    const isPaidAccount = (u) => {
+      const plan = String(u.plan || "free").toLowerCase();
+      const source = String(u.plan_source || "").toLowerCase();
+      const status = String(u.plan_status || "").toLowerCase();
+
+      return source === "paid" && status === "active" && plan !== "free";
+    };
 
     const growthBox = document.getElementById("adminDashboardGrowth");
     const growthLabel = document.getElementById("adminDashboardGrowthRangeLabel");
@@ -3233,71 +3546,58 @@ async function reloadAdminDashboard() {
     }
 
     if (growthBox) {
+      const paidGrowthMax = Math.max(
+        paidUsersInRange.length,
+        paidPartnersInRange.length,
+        1
+      );
+
+      const paidUserHeight =
+        (paidUsersInRange.length / paidGrowthMax) * 100;
+
+      const paidPartnerHeight =
+        (paidPartnersInRange.length / paidGrowthMax) * 100;
+
       growthBox.innerHTML = `
-        <div class="adminRoleSplitGrid">
-          <div class="adminRoleCard">
-            <div class="adminRoleCardHead">
-              <span>Towarzysze</span>
-              <strong>${usersInRangeByRole.user.length}</strong>
+        <div class="adminPaidGrowthLayout">
+          <div class="adminPaidGrowthChart">
+
+            <div class="adminPaidGrowthColumn">
+              <div class="adminPaidGrowthPlot">
+                <div
+                  class="adminPaidGrowthBar adminPaidGrowthBarUser"
+                  style="height:${paidUserHeight}%"
+                >
+                  <span>${paidUsersInRange.length}</span>
+                </div>
+              </div>
+              <strong>Towarzysze</strong>
+              <small>nowe płatne konta</small>
             </div>
 
-            <div class="adminRoleMetrics">
-              <div>
-                <span>Nowi płatni</span>
-                <strong>${paidUsersInRange.length}</strong>
+            <div class="adminPaidGrowthColumn">
+              <div class="adminPaidGrowthPlot">
+                <div
+                  class="adminPaidGrowthBar adminPaidGrowthBarPartner"
+                  style="height:${paidPartnerHeight}%"
+                >
+                  <span>${paidPartnersInRange.length}</span>
+                </div>
               </div>
-
-              <div>
-                <span>Added MRR</span>
-                <strong>${newUserMrr} zł</strong>
-              </div>
-
-              <div>
-                <span>Free</span>
-                <strong>${usersInRangeByRole.user.filter(u => String(u.plan || "free") === "free").length}</strong>
-              </div>
-
-              <div>
-                <span>Premium+</span>
-                <strong>${usersInRangeByRole.user.filter(u => ["premium","vip"].includes(String(u.plan || "").toLowerCase())).length}</strong>
-              </div>
+              <strong>Organizatorzy</strong>
+              <small>nowe płatne konta</small>
             </div>
+
           </div>
 
-          <div class="adminRoleCard">
-            <div class="adminRoleCardHead">
-              <span>Organizatorzy</span>
-              <strong>${usersInRangeByRole.partner.length}</strong>
-            </div>
-
-            <div class="adminRoleMetrics">
-              <div>
-                <span>Nowi płatni</span>
-                <strong>${paidPartnersInRange.length}</strong>
-              </div>
-
-              <div>
-                <span>Added MRR</span>
-                <strong>${newPartnerMrr} zł</strong>
-              </div>
-
-              <div>
-                <span>Free</span>
-                <strong>${usersInRangeByRole.partner.filter(u => String(u.plan || "free") === "free").length}</strong>
-              </div>
-
-              <div>
-                <span>Premium+</span>
-                <strong>${usersInRangeByRole.partner.filter(u => ["premium","enterprise"].includes(String(u.plan || "").toLowerCase())).length}</strong>
-              </div>
-            </div>
+          <div class="adminPaidGrowthMrr">
+            <span>Added MRR</span>
+            <strong>${totalNewMrr} zł</strong>
+            <small>
+              Nowy miesięczny przychód z płatnych kont
+              utworzonych w wybranym okresie.
+            </small>
           </div>
-        </div>
-
-        <div class="adminRevenueHero">
-          <span>Added MRR in selected period</span>
-          <strong>${totalNewMrr} zł</strong>
-          <small>Current MRR to aktywna baza. Added MRR pokazuje tylko nowy przyrost z wybranego okresu.</small>
         </div>
       `;
     }
@@ -3305,118 +3605,113 @@ async function reloadAdminDashboard() {
 
 const planBox = document.getElementById("adminDashboardPlans");
     const planCount = document.getElementById("adminDashboardPlansCount");
-const buildPlanRows = (role, prices) => {
-      const roleUsers = users.filter(u => String(u.role || "") === role);
-      const rowsByPlan = roleUsers.reduce((acc, u) => {
-        const plan = String(u.plan || "free").toLowerCase();
-        const source = String(u.plan_source || "manual").toLowerCase();
-        const status = String(u.plan_status || "active").toLowerCase();
-        const paid = isPaidAccount(u);
-        const price = paid ? Number(prices[plan] || 0) : 0;
-        const key = `${plan}|${source}|${status}`;
-        if (!acc[key]) acc[key] = { plan, source, status, count: 0, revenue: 0 };
-        acc[key].count += 1;
-        acc[key].revenue += price;
-        return acc;
-      }, {});
 
-      return Object.values(rowsByPlan).sort((a, b) => b.count - a.count);
-    };
-
-    const userPlanRows = buildPlanRows("user", userPrices);
-    const partnerPlanRows = buildPlanRows("partner", partnerPrices);
-    const monthlyRevenue = [...userPlanRows, ...partnerPlanRows].reduce((sum, row) => sum + row.revenue, 0);
-
-    const usersOnly = users.filter(u => String(u.role || "") === "user");
-    const partnersOnly = users.filter(u => String(u.role || "") === "partner");
-    const usersOnlyInRange = usersInRange.filter(u => String(u.role || "") === "user");
-    const partnersOnlyInRange = usersInRange.filter(u => String(u.role || "") === "partner");
-
-    const roleStats = (roleUsers, roleUsersInRange, prices) => {
-      const paid = roleUsers.filter(u => isPaidAccount(u) && Number(prices[String(u.plan || "free").toLowerCase()] || 0) > 0);
-      const barter = roleUsers.filter(u => String(u.plan_source || "").toLowerCase() === "barter");
-      const ambassador = roleUsers.filter(u => String(u.plan_source || "").toLowerCase() === "ambassador");
-      const promo = roleUsers.filter(u => String(u.plan_source || "").toLowerCase() === "promo");
-      const free = roleUsers.filter(u => String(u.plan || "free").toLowerCase() === "free");
-      const mrr = roleUsers.reduce((sum, u) => {
-        const plan = String(u.plan || "free").toLowerCase();
-        return sum + (isPaidAccount(u) ? Number(prices[plan] || 0) : 0);
-      }, 0);
-      const newMrr = roleUsersInRange.reduce((sum, u) => {
-        const plan = String(u.plan || "free").toLowerCase();
-        return sum + (isPaidAccount(u) ? Number(prices[plan] || 0) : 0);
-      }, 0);
+    const adminPlanSourceLabel = (source) => {
+      const key = String(source || "").toLowerCase();
 
       return {
-        total: roleUsers.length,
-        newCount: roleUsersInRange.length,
-        paid: paid.length,
-        barter: barter.length,
-        ambassador: ambassador.length,
-        promo: promo.length,
-        free: free.length,
-        mrr,
-        newMrr,
-      };
+        system: "Dostęp bezpłatny",
+        paid: "Zakup",
+        promo: "Promocja / kampania",
+        ambassador: "Program ambasadorski",
+        barter: "Barter / współpraca",
+        manual: "Nadany przez administratora",
+        test: "Dostęp testowy",
+        brak: "Brak informacji",
+      }[key] || source || "Brak informacji";
     };
 
-    const userStats = roleStats(usersOnly, usersOnlyInRange, userPrices);
-    const partnerStats = roleStats(partnersOnly, partnersOnlyInRange, partnerPrices);
+    const buildPlanStructure = (role, allowedPlans) => {
+      const roleUsers = users.filter(
+        u => String(u.role || "").toLowerCase() === role
+      );
 
-    const renderRoleCards = () => `
-      <div class="adminRoleSplitGrid">
-        <div class="adminRoleCard">
-          <div class="adminRoleCardHead">
-            <span>Towarzysze</span>
-            <strong>${userStats.total}</strong>
-          </div>
-          <div class="adminRoleMetrics">
-            <div><span>Nowi w okresie</span><strong>${userStats.newCount}</strong></div>
-            <div><span>Płatni</span><strong>${userStats.paid}</strong></div>
-            <div><span>Barter</span><strong>${userStats.barter}</strong></div>
-            <div><span>Ambasador</span><strong>${userStats.ambassador}</strong></div>
-            <div><span>Promo</span><strong>${userStats.promo}</strong></div>
-            <div><span>Free</span><strong>${userStats.free}</strong></div>
-            <div><span>MRR</span><strong>${userStats.mrr} zł</strong></div>
-            <div><span>Nowy MRR</span><strong>${userStats.newMrr} zł</strong></div>
-          </div>
-        </div>
+      return allowedPlans.map(plan => {
+        const planUsers = roleUsers.filter(
+          u => String(u.plan || "free").toLowerCase() === plan
+        );
 
-        <div class="adminRoleCard">
-          <div class="adminRoleCardHead">
-            <span>Organizatorzy</span>
-            <strong>${partnerStats.total}</strong>
-          </div>
-          <div class="adminRoleMetrics">
-            <div><span>Nowi w okresie</span><strong>${partnerStats.newCount}</strong></div>
-            <div><span>Płatni</span><strong>${partnerStats.paid}</strong></div>
-            <div><span>Barter</span><strong>${partnerStats.barter}</strong></div>
-            <div><span>Ambasador</span><strong>${partnerStats.ambassador}</strong></div>
-            <div><span>Promo</span><strong>${partnerStats.promo}</strong></div>
-            <div><span>Free</span><strong>${partnerStats.free}</strong></div>
-            <div><span>MRR</span><strong>${partnerStats.mrr} zł</strong></div>
-            <div><span>Nowy MRR</span><strong>${partnerStats.newMrr} zł</strong></div>
-          </div>
-        </div>
-      </div>
-    `;
+        const sources = planUsers.reduce((acc, u) => {
+          const source = String(u.plan_source || "brak").toLowerCase();
+          acc[source] = (acc[source] || 0) + 1;
+          return acc;
+        }, {});
 
-    const renderPlanSection = (title, rows, total) => `
-      <div class="adminMiniSectionTitle">${escapeAdmin(title)}</div>
-      ${rows.map((row) => {
-        const width = total ? Math.max(8, Math.round((row.count / total) * 100)) : 0;
-        return `
-          <div class="adminChartRow">
-            <div>
-              <strong>${escapeAdmin(row.plan)}</strong>
-              <span>${escapeAdmin(row.source)} / ${escapeAdmin(row.status)} / ${row.revenue} zł MRR</span>
+        return {
+          plan,
+          count: planUsers.length,
+          sources,
+        };
+      });
+    };
+
+    const userPlanStructure = buildPlanStructure(
+      "user",
+      ["free", "plus", "premium", "vip"]
+    );
+
+    const partnerPlanStructure = buildPlanStructure(
+      "partner",
+      ["free", "pro", "premium", "enterprise"]
+    );
+
+    const renderPlanStructure = (title, rows) => {
+      const total = rows.reduce((sum, row) => sum + row.count, 0);
+      const max = Math.max(...rows.map(row => row.count), 1);
+
+      return `
+        <div class="adminMiniSectionTitle">${escapeAdmin(title)}</div>
+
+        ${rows.map(row => {
+          const width = (row.count / max) * 100;
+          const share = total
+            ? Math.round((row.count / total) * 100)
+            : 0;
+
+          return `
+            <div class="adminChartRow">
+              <div>
+                <strong>${escapeAdmin(row.plan)}</strong>
+                <span>
+                  ${share}% kont tej roli
+                  ${row.count && row.plan !== "free"
+                    ? ` · ${Object.entries(row.sources)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([source, count]) =>
+                          `${escapeAdmin(adminPlanSourceLabel(source))}: ${count}`
+                        )
+                        .join(" · ")}`
+                    : ""}
+                </span>
+              </div>
+
+              <div class="adminChartBar">
+                <i style="width:${width}%"></i>
+              </div>
+
+              <b>${row.count}</b>
             </div>
-            <div class="adminChartBar"><i style="width:${width}%"></i></div>
-            <b>${row.count}</b>
-          </div>
-        `;
-      }).join("") || adminEmpty("Brak danych.")}
-    `;
+          `;
+        }).join("")}
+      `;
+    };
+
+    if (planCount) {
+      planCount.textContent = `${users.length} kont`;
+    }
+
+    if (planBox) {
+      planBox.innerHTML = `
+        ${renderPlanStructure("Towarzysze", userPlanStructure)}
+        ${renderPlanStructure("Organizatorzy", partnerPlanStructure)}
+
+        <div class="adminHistoryMeta">
+          Struktura pokazuje aktualnie przypisane pakiety.
+          Sposób uzyskania planu — płatność, promocja, ambasador lub barter —
+          analizowany jest oddzielnie.
+        </div>
+      `;
+    }
 
     const healthBox = document.getElementById("adminDashboardHealth");
     const healthStatus = document.getElementById("adminDashboardHealthStatus");
@@ -3607,19 +3902,6 @@ const buildPlanRows = (role, prices) => {
       `;
     }
 
-    if (planCount) planCount.textContent = `${monthlyRevenue} zł MRR`;
-    if (planBox) {
-      planBox.innerHTML = `
-        <div class="adminRevenueHero">
-          <span>Szacowany miesięczny przychód</span>
-          <strong>${monthlyRevenue} zł</strong>
-          <small>Barter i custom/enterprise bez ceny liczone jako 0 zł.</small>
-        </div>
-        ${renderRoleCards()}
-        ${renderPlanSection("Plany Towarzyszy", userPlanRows, usersOnly.length)}
-        ${renderPlanSection("Plany Organizatorów", partnerPlanRows, partnersOnly.length)}
-      `;
-    }
   } catch (e) {
     console.error("reloadAdminDashboard error", e);
     if (summaryBox) summaryBox.innerHTML = adminEmpty("Nie udało się pobrać danych dashboardu.");
@@ -3642,6 +3924,7 @@ function showAdminView(view) {
   const staffView = document.getElementById("adminStaffView");
   const eventsView = document.getElementById("adminEventsView");
   const groupsView = document.getElementById("adminGroupsView");
+  const plansView = document.getElementById("adminPlansView");
   const promoView = document.getElementById("adminPromoView");
 
   document.querySelectorAll("[data-admin-view]").forEach((btn) => {
@@ -3655,6 +3938,7 @@ function showAdminView(view) {
   if (staffView) staffView.hidden = view !== "staff";
   if (eventsView) eventsView.hidden = view !== "events";
   if (groupsView) groupsView.hidden = view !== "groups";
+  if (plansView) plansView.hidden = view !== "plans";
   if (promoView) promoView.hidden = view !== "promo";
 
   if (view === "dashboard" && typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
@@ -3795,6 +4079,29 @@ document.getElementById("adminDashboardExportBtn")?.addEventListener("click", ex
 document.getElementById("adminDashboardRange")?.addEventListener("change", () => {
   if (typeof reloadAdminDashboard === "function") reloadAdminDashboard().catch(() => {});
 });
+
+document.getElementById("adminPromoAnalyticsRangeFilter")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-promo-range]");
+  if (!btn) return;
+
+  adminPromoAnalyticsRange = String(btn.dataset.promoRange || "all");
+
+  document
+    .querySelectorAll("#adminPromoAnalyticsRangeFilter [data-promo-range]")
+    .forEach(item => {
+      item.classList.toggle(
+        "is-active",
+        String(item.dataset.promoRange || "") === adminPromoAnalyticsRange
+      );
+    });
+
+  const campaignId = document.getElementById("adminPromoAnalyticsCampaign")?.value;
+
+  if (campaignId) {
+    reloadAdminPromoAnalytics(campaignId).catch(() => {});
+  }
+});
+
 
 document.getElementById("adminMfaSetupBtn")?.addEventListener("click", () => {
   startAdminMfaSetup();
@@ -4147,12 +4454,297 @@ function renderAdminPromoCampaigns(items) {
   `;
 }
 
+let adminPromoAnalyticsRange = "all";
+
+function adminPromoAnalyticsRangeLabel(range) {
+  const labels = {
+    "7": "7 dni",
+    "14": "14 dni",
+    "30": "30 dni",
+    "90": "90 dni",
+    "all": "Cały okres",
+  };
+
+  return labels[String(range || "all")] || "Cały okres";
+}
+
+function adminPromoAnalyticsDateInRange(value, range) {
+  if (!value) return false;
+  if (String(range || "all") === "all") return true;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const days = Number(range);
+  if (!Number.isFinite(days) || days <= 0) return true;
+
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - (days - 1));
+
+  return date >= cutoff;
+}
+
+async function reloadAdminPromoAnalytics(campaignId) {
+  const resultBox = document.getElementById("adminPromoAnalyticsResult");
+
+  if (!resultBox) return;
+
+  if (!campaignId) {
+    resultBox.innerHTML = adminEmpty(
+      "Wybierz kampanię, aby zobaczyć jej rzeczywiste wyniki."
+    );
+    return;
+  }
+
+  resultBox.innerHTML = adminEmpty("Ładowanie analityki kampanii...");
+
+  try {
+    const res = await window.apiFetch(`/admin/promo-campaigns/${campaignId}`);
+    const campaign = res?.data?.campaign || {};
+    const redemptions = Array.isArray(res?.data?.redemptions)
+      ? res.data.redemptions
+      : [];
+
+    const activatedAll = redemptions.filter(
+      r => String(r.status || "").toLowerCase() === "activated"
+    );
+
+    const reservedAll = redemptions.filter(
+      r => String(r.status || "").toLowerCase() === "reserved"
+    );
+
+    const activatedInRange = activatedAll.filter(r =>
+      adminPromoAnalyticsDateInRange(
+        r.activated_at || r.created_at,
+        adminPromoAnalyticsRange
+      )
+    );
+
+    const reservedInRange = reservedAll.filter(r =>
+      adminPromoAnalyticsDateInRange(
+        r.created_at,
+        adminPromoAnalyticsRange
+      )
+    );
+
+    const activated = activatedInRange.length;
+    const reserved = reservedInRange.length;
+
+    const totalActivated = activatedAll.length;
+
+    const maxUses = Number(campaign.max_uses || 0);
+
+    const usedPercent = maxUses
+      ? Math.min(100, (totalActivated / maxUses) * 100)
+      : null;
+
+    const usedPercentLabel = usedPercent === null
+      ? null
+      : usedPercent < 0.01
+        ? "<0,01"
+        : usedPercent < 1
+          ? usedPercent.toFixed(2).replace(".", ",")
+          : usedPercent.toFixed(1).replace(".", ",");
+
+    const remainingUses = maxUses
+      ? Math.max(maxUses - totalActivated, 0)
+      : null;
+
+    const remainingPercent = maxUses
+      ? Math.max(100 - usedPercent, 0)
+      : null;
+
+    const remainingPercentLabel = remainingPercent === null
+      ? null
+      : remainingPercent.toFixed(2).replace(".", ",");
+
+    const usageBarWidth = usedPercent === null
+      ? 0
+      : Math.max(0, Math.min(usedPercent, 100));
+
+    resultBox.innerHTML = `
+      <div class="adminMetricGrid">
+        <div class="adminMetricCard">
+          <span>Aktywowane</span>
+          <strong>${activated}</strong>
+          <small>Rzeczywiste aktywacje kodu</small>
+        </div>
+
+        <div class="adminMetricCard">
+          <span>Oczekujące</span>
+          <strong>${reserved}</strong>
+          <small>Rezerwacje bez zakończonej aktywacji</small>
+        </div>
+
+        <div class="adminMetricCard adminPromoUsageCard">
+          <span>Wykorzystanie limitu</span>
+          <strong>${usedPercent === null ? "Bez limitu" : `${usedPercentLabel}%`}</strong>
+          <small>${maxUses ? `${totalActivated} z ${maxUses}` : "Kampania bez limitu użyć"}</small>
+
+          ${maxUses ? `
+            <div class="adminPromoUsageTrack" aria-hidden="true">
+              <i style="width:${usageBarWidth}%"></i>
+            </div>
+            <div class="adminPromoUsageRemaining">
+              Pozostało: ${remainingUses} (${remainingPercentLabel}%)
+            </div>
+          ` : ""}
+        </div>
+      </div>
+
+      ${(() => {
+        const activatedRows = activatedInRange;
+
+        const activationsByDay = activatedRows.reduce((acc, r) => {
+          // Legacy fallback:
+          // starsze bezpośrednie aktywacje USLY95 nie zapisywały activated_at.
+          // Dla nich created_at jest rzeczywistym momentem utworzenia
+          // redemptionu już ze statusem "activated".
+          const activationDate = r.activated_at || r.created_at;
+          const date = new Date(activationDate);
+
+          if (Number.isNaN(date.getTime())) return acc;
+
+          const key = [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, "0"),
+            String(date.getDate()).padStart(2, "0"),
+          ].join("-");
+
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+
+        const dayRows = Object.entries(activationsByDay)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([date, count]) => ({ date, count }));
+
+        if (!dayRows.length) {
+          return `
+            <div class="adminPromoTimeline">
+              <div class="adminPromoTimelineHead">
+                <div>
+                  <strong>Aktywacje w czasie</strong>
+                  <span>Rzeczywiste aktywacje kodu według daty aktywacji.</span>
+                </div>
+              </div>
+
+              <div class="adminEmpty">
+                Brak aktywacji do pokazania na wykresie.
+              </div>
+            </div>
+          `;
+        }
+
+        const maxDayValue = Math.max(
+          ...dayRows.map(row => row.count),
+          1
+        );
+
+        return `
+          <div class="adminPromoTimeline">
+            <div class="adminPromoTimelineHead">
+              <div>
+                <strong>Aktywacje w czasie</strong>
+                <span>Rzeczywiste aktywacje kodu według daty aktywacji.</span>
+              </div>
+
+              <div class="adminPromoTimelineTotal">
+                ${activatedRows.length} aktywacje
+              </div>
+            </div>
+
+            <div class="adminPromoBarChart">
+              ${dayRows.map(row => {
+                const height = Math.max(
+                  8,
+                  (row.count / maxDayValue) * 100
+                );
+
+                const date = new Date(`${row.date}T12:00:00`);
+
+                const label = Number.isNaN(date.getTime())
+                  ? row.date
+                  : date.toLocaleDateString("pl-PL", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    });
+
+                return `
+                  <div class="adminPromoBarColumn"
+                       title="${escapeAdmin(row.date)} — ${row.count}">
+                    <div class="adminPromoBarValue">
+                      ${row.count}
+                    </div>
+
+                    <div class="adminPromoBarTrack">
+                      <i style="height:${height}%"></i>
+                    </div>
+
+                    <div class="adminPromoBarLabel">
+                      ${escapeAdmin(label)}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+
+            <div class="adminPromoChartLegend">
+              <i></i>
+              <span>Aktywacje</span>
+            </div>
+          </div>
+        `;
+      })()}
+    `;
+  } catch (e) {
+    console.error("reloadAdminPromoAnalytics error", e);
+    resultBox.innerHTML = adminEmpty("Nie udało się pobrać analityki kampanii.");
+  }
+}
+
+
 async function reloadAdminPromoCampaigns() {
   try {
     const res = await window.apiFetch("/admin/promo-campaigns");
     const items = Array.isArray(res?.data?.items) ? res.data.items : [];
     Admin.promoCampaigns = items;
     renderAdminPromoCampaigns(items);
+
+    const analyticsBox = document.getElementById("adminPromoAnalytics");
+
+    if (analyticsBox) {
+      if (!items.length) {
+        analyticsBox.innerHTML = adminEmpty("Brak kampanii do analizy.");
+      } else {
+        analyticsBox.innerHTML = `
+          <div class="adminPromoAnalyticsControls">
+            <label>
+              <span>Kampania</span>
+              <select id="adminPromoAnalyticsCampaign" class="adminFieldInput">
+                <option value="">Wybierz kampanię</option>
+                ${items.map(c => `
+                  <option value="${escapeAdmin(c.id)}">
+                    ${escapeAdmin(c.code)}${c.name ? ` — ${escapeAdmin(c.name)}` : ""}
+                  </option>
+                `).join("")}
+              </select>
+            </label>
+          </div>
+
+          <div id="adminPromoAnalyticsResult">
+            ${adminEmpty("Wybierz kampanię, aby zobaczyć jej rzeczywiste wyniki.")}
+          </div>
+        `;
+
+        document
+          .getElementById("adminPromoAnalyticsCampaign")
+          ?.addEventListener("change", (event) => {
+            reloadAdminPromoAnalytics(event.target.value).catch(() => {});
+          });
+      }
+    }
   } catch (e) {
     console.error("reloadAdminPromoCampaigns error", e);
     adminToast(e?.userMessage || "Nie udało się pobrać kodów promocyjnych.");

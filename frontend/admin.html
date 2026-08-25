@@ -114,6 +114,7 @@
       <button class="adminNav" type="button" data-admin-view="staff">Admini</button>
       <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
       <button class="adminNav" type="button" data-admin-view="groups">Grupy</button>
+      <button class="adminNav" type="button" data-admin-view="plans">Plany</button>
       <button class="adminNav" type="button" data-admin-view="promo">Program Ambasadorski</button>
     </aside>
 
@@ -153,9 +154,20 @@
             <div id="adminDashboardSummary" class="adminTableBox">Ładowanie dashboardu...</div>
           </article>
 
+          <section class="adminAnalyticsToolbar">
+            <span class="adminAnalyticsToolbarLabel">Zakres analizy</span>
+            <div class="adminAccountGrowthRangeButtons">
+              <button type="button" class="adminAccountGrowthRangeBtn" data-account-growth-range="7">7 dni</button>
+              <button type="button" class="adminAccountGrowthRangeBtn" data-account-growth-range="14">14 dni</button>
+              <button type="button" class="adminAccountGrowthRangeBtn is-active" data-account-growth-range="30">30 dni</button>
+              <button type="button" class="adminAccountGrowthRangeBtn" data-account-growth-range="90">90 dni</button>
+              <button type="button" class="adminAccountGrowthRangeBtn" data-account-growth-range="all">Cały okres</button>
+            </div>
+          </section>
+
           <article class="adminPanel adminPanelWide">
             <div class="adminPanelHead">
-              <h2>Growth In Selected Period</h2>
+              <h2>Wzrost płatnych kont</h2>
               <span id="adminDashboardGrowthRangeLabel">—</span>
             </div>
             <div id="adminDashboardGrowth" class="adminTableBox">Ładowanie...</div>
@@ -163,7 +175,15 @@
 
           <article class="adminPanel adminPanelWide">
             <div class="adminPanelHead">
-              <h2>User Growth / Role Split</h2>
+              <h2>Przyrost kont</h2>
+              <span id="adminDashboardAccountGrowthRange">—</span>
+            </div>
+            <div id="adminDashboardAccountGrowth" class="adminTableBox">Ładowanie...</div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Struktura planów</h2>
               <span id="adminDashboardPlansCount">0</span>
             </div>
             <div id="adminDashboardPlans" class="adminTableBox">Ładowanie...</div>
@@ -197,13 +217,6 @@
             </div>
           </article>
 
-          <article class="adminPanel adminPanelWide">
-            <div class="adminPanelHead">
-              <h2>MRR Timeline / Role Split</h2>
-              <span>Monthly</span>
-            </div>
-            <div id="adminDashboardMrrTimeline" class="adminTableBox">Ładowanie...</div>
-          </article>
 
           <article class="adminPanel adminPanelWide">
             <div class="adminPanelHead">
@@ -527,6 +540,25 @@
         </section>
       </section>
 
+      <section id="adminPlansView" hidden>
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Plany i subskrypcje</h2>
+              <span id="adminPlansUpdatedAt">—</span>
+            </div>
+
+            <div class="adminSystemHint">
+              Rzeczywista struktura planów i subskrypcji użytkowników USLY.
+            </div>
+
+            <div id="adminPlansAnalytics" class="adminTableBox">
+              <div class="adminEmpty">Analityka planów zostanie załadowana tutaj.</div>
+            </div>
+          </article>
+        </section>
+      </section>
+
       <section id="adminPromoView" hidden>
         <section class="adminFilters">
           <button class="adminPrimary" type="button" id="adminCreatePromoBtn">Utwórz kod</button>
@@ -535,7 +567,28 @@
         <section class="adminGrid">
           <article class="adminPanel adminPanelWide">
             <div class="adminPanelHead">
-              <h2>Program Ambasadorski / Kody Promocyjne</h2>
+              <h2>Analityka kampanii</h2>
+              <div class="adminPromoRangeFilter" id="adminPromoAnalyticsRangeFilter">
+                <button type="button" data-promo-range="7">7 dni</button>
+                <button type="button" data-promo-range="14">14 dni</button>
+                <button type="button" data-promo-range="30">30 dni</button>
+                <button type="button" data-promo-range="90">90 dni</button>
+                <button type="button" data-promo-range="all" class="is-active">Cały okres</button>
+              </div>
+            </div>
+
+            <div class="adminSystemHint">
+              Rzeczywiste aktywacje kodów promocyjnych. Dane kampanii nie są wliczane do Revenue ani MRR.
+            </div>
+
+            <div id="adminPromoAnalytics" class="adminTableBox">
+              <div class="adminEmpty">Wybierz kampanię, aby zobaczyć jej wyniki.</div>
+            </div>
+          </article>
+
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <h2>Zarządzanie kampaniami</h2>
               <span id="adminPromoCount">0</span>
             </div>
             <div class="adminSystemHint">

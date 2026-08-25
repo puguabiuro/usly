@@ -10183,6 +10183,118 @@ def verify_store_purchase(
         db.close()
 
 
+@app.get("/admin/plans/analytics")
+def admin_plans_analytics(
+    current_user: User = Depends(require_role("admin")),
+):
+    require_admin_permission(current_user, "plans")
+
+    db = SessionLocal()
+    try:
+        user_profiles = db.query(UserProfile).all()
+        partner_profiles = db.query(PartnerProfile).all()
+
+        def summarize_profiles(profiles):
+            total = len(profiles)
+            paid = 0
+            free = 0
+            plans = {}
+            sources = {}
+            statuses = {}
+
+            for profile in profiles:
+                plan = str(getattr(profile, "plan", None) or "free").strip().lower()
+                source = str(getattr(profile, "plan_source", None) or "none").strip().lower()
+                status = str(getattr(profile, "plan_status", None) or "none").strip().lower()
+
+                plans[plan] = plans.get(plan, 0) + 1
+                sources[source] = sources.get(source, 0) + 1
+                statuses[status] = statuses.get(status, 0) + 1
+
+                if plan == "free":
+                    free += 1
+                else:
+                    paid += 1
+
+            return {
+                "total": total,
+                "free": free,
+                "paid": paid,
+                "plans": plans,
+                "sources": sources,
+                "statuses": statuses,
+            }
+
+        users = summarize_profiles(user_profiles)
+        partners = summarize_profiles(partner_profiles)
+
+        store_purchases = db.query(StorePurchase).all()
+
+        purchases_by_platform = {}
+        purchases_by_environment = {}
+        purchases_by_status = {}
+        purchases_by_plan = {}
+        purchases_by_store = {}
+
+        for purchase in store_purchases:
+            platform = str(
+                getattr(purchase, "platform", None) or "unknown"
+            ).strip().lower()
+
+            environment = str(
+                getattr(purchase, "environment", None) or "unknown"
+            ).strip().lower()
+
+            status = str(
+                getattr(purchase, "status", None) or "unknown"
+            ).strip().lower()
+
+            plan = str(
+                getattr(purchase, "plan", None) or "unknown"
+            ).strip().lower()
+
+            store = str(
+                getattr(purchase, "store", None) or "unknown"
+            ).strip().lower()
+
+            purchases_by_platform[platform] = (
+                purchases_by_platform.get(platform, 0) + 1
+            )
+            purchases_by_environment[environment] = (
+                purchases_by_environment.get(environment, 0) + 1
+            )
+            purchases_by_status[status] = (
+                purchases_by_status.get(status, 0) + 1
+            )
+            purchases_by_plan[plan] = (
+                purchases_by_plan.get(plan, 0) + 1
+            )
+            purchases_by_store[store] = (
+                purchases_by_store.get(store, 0) + 1
+            )
+
+        purchases = {
+            "total": len(store_purchases),
+            "platforms": purchases_by_platform,
+            "environments": purchases_by_environment,
+            "statuses": purchases_by_status,
+            "plans": purchases_by_plan,
+            "stores": purchases_by_store,
+        }
+
+        return ok({
+            "total_profiles": users["total"] + partners["total"],
+            "total_free": users["free"] + partners["free"],
+            "total_paid": users["paid"] + partners["paid"],
+            "users": users,
+            "partners": partners,
+            "purchases": purchases,
+            "generated_at": datetime.utcnow().isoformat(),
+        })
+    finally:
+        db.close()
+
+
 @app.post("/admin/users/{user_id}/plan")
 def admin_update_user_plan(
     user_id: int,
@@ -10710,6 +10822,81 @@ def admin_social_summary(current_user: User = Depends(require_role("admin"))):
             User.email_verified_at.is_(None),
         ).count()
 
+        # ADMIN 2.0 — rzeczywisty dzienny przyrost kont.
+        # Rejestracje: User.created_at, rozdzielone według typu konta.
+        # Usunięcia: AuditLog.created_at dla obu obsługiwanych flow usuwania.
+        account_growth_by_day = {}
+
+        growth_users = (
+            db.query(User)
+            .filter(
+                User.role.in_([
+                    UserRole.USER.value,
+                    UserRole.PARTNER.value,
+                ])
+            )
+            .all()
+        )
+
+        for growth_user in growth_users:
+            if not growth_user.created_at:
+                continue
+
+            day_key = growth_user.created_at.date().isoformat()
+            day = account_growth_by_day.setdefault(
+                day_key,
+                {
+                    "date": day_key,
+                    "users_created": 0,
+                    "partners_created": 0,
+                    "deleted": 0,
+                },
+            )
+
+            if growth_user.role == UserRole.USER.value:
+                day["users_created"] += 1
+            elif growth_user.role == UserRole.PARTNER.value:
+                day["partners_created"] += 1
+
+        deletion_logs = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.action.in_([
+                    "DELETE_ACCOUNT_SUCCESS",
+                    "admin_delete_user_account",
+                ])
+            )
+            .all()
+        )
+
+        for deletion_log in deletion_logs:
+            if not deletion_log.created_at:
+                continue
+
+            day_key = deletion_log.created_at.date().isoformat()
+            day = account_growth_by_day.setdefault(
+                day_key,
+                {
+                    "date": day_key,
+                    "users_created": 0,
+                    "partners_created": 0,
+                    "deleted": 0,
+                },
+            )
+            day["deleted"] += 1
+
+        account_growth_timeline = []
+
+        for day_key in sorted(account_growth_by_day):
+            day = account_growth_by_day[day_key]
+            created_total = (
+                day["users_created"]
+                + day["partners_created"]
+            )
+            day["created_total"] = created_total
+            day["net"] = created_total - day["deleted"]
+            account_growth_timeline.append(day)
+
         return ok({
             "groups_count": groups_count,
             "group_memberships_count": group_memberships_count,
@@ -10720,6 +10907,7 @@ def admin_social_summary(current_user: User = Depends(require_role("admin"))):
             "blocked_accounts_count": blocked_accounts_count,
             "deleted_accounts_count": deleted_accounts_count,
             "unverified_accounts_count": unverified_accounts_count,
+            "account_growth_timeline": account_growth_timeline,
         })
     finally:
         db.close()
@@ -11826,6 +12014,7 @@ def redeem_promo_campaign(
             platform=platform,
             status="activated" if is_usly95_lifetime else "reserved",
             created_at=now,
+            activated_at=now if is_usly95_lifetime else None,
         )
         campaign.uses_count = int(campaign.uses_count or 0) + 1
         campaign.updated_at = now
