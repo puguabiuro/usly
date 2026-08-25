@@ -3911,6 +3911,63 @@ const planBox = document.getElementById("adminDashboardPlans");
 
 
 
+async function reloadAdminPlans() {
+  const box = document.getElementById("adminPlansAnalytics");
+  const updatedAt = document.getElementById("adminPlansUpdatedAt");
+
+  if (!box) return;
+
+  box.innerHTML = adminEmpty("Ładowanie analityki planów...");
+
+  try {
+    const res = await window.apiFetch("/admin/plans/analytics");
+    const data = res?.data || {};
+
+    const totalProfiles = Number(data.total_profiles || 0);
+    const totalFree = Number(data.total_free || 0);
+    const totalPaid = Number(data.total_paid || 0);
+
+    box.innerHTML = `
+      <div class="adminMetricGrid">
+        <div class="adminMetricCard">
+          <span>Wszystkie profile</span>
+          <strong>${totalProfiles}</strong>
+          <small>Towarzysze i Organizatorzy</small>
+        </div>
+
+        <div class="adminMetricCard">
+          <span>Plan Free</span>
+          <strong>${totalFree}</strong>
+          <small>Profile korzystające z planu bezpłatnego</small>
+        </div>
+
+        <div class="adminMetricCard">
+          <span>Plany płatne</span>
+          <strong>${totalPaid}</strong>
+          <small>Profile z planem innym niż Free</small>
+        </div>
+      </div>
+    `;
+
+    if (updatedAt) {
+      const generatedAt = data.generated_at
+        ? new Date(data.generated_at)
+        : new Date();
+
+      updatedAt.textContent = Number.isNaN(generatedAt.getTime())
+        ? "Aktualne dane"
+        : `Aktualizacja: ${generatedAt.toLocaleString("pl-PL")}`;
+    }
+
+    console.log("OK: załadowano analitykę Planów", data);
+  } catch (e) {
+    console.error("reloadAdminPlans error", e);
+    box.innerHTML = adminEmpty("Nie udało się pobrać analityki planów.");
+    adminToast(e?.userMessage || "Nie udało się pobrać analityki planów.");
+  }
+}
+
+
 function showAdminView(view) {
   if (!adminCanView(view)) {
     adminToast("Brak dostępu do tej sekcji dla Twojego poziomu admina.");
@@ -3954,6 +4011,7 @@ function showAdminView(view) {
   }
   if (view === "events") reloadAdminEvents().catch(() => {});
   if (view === "groups") reloadAdminGroups().catch(() => {});
+  if (view === "plans" && typeof reloadAdminPlans === "function") reloadAdminPlans().catch(() => {});
   if (view === "promo" && typeof reloadAdminPromoCampaigns === "function") reloadAdminPromoCampaigns().catch(() => {});
 }
 
