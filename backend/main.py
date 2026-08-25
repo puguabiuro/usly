@@ -11360,6 +11360,7 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "dob": str(user.dob) if getattr(user, "dob", None) else None,
                 "age_min": getattr(user_profile, "age_min", None) if user_profile else None,
                 "age_max": getattr(user_profile, "age_max", None) if user_profile else None,
+                "nearby_radius_km": getattr(user_profile, "nearby_radius_km", None) if user_profile else None,
                 "email_verified_at": str(user.email_verified_at) if getattr(user, "email_verified_at", None) else None,
                 "email_verified": bool(getattr(user, "email_verified_at", None)),
                 "mfa_enabled": bool(getattr(user, "mfa_enabled", False)),

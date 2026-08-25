@@ -596,6 +596,7 @@ function renderAdminUsers(items) {
           <th>Miasto</th>
           <th>Data ur.</th>
           <th>Zakres wieku</th>
+          <th>Zasięg</th>
           <th>E-mail</th>
           <th>Utworzono</th>
           <th>Akcje</th>
@@ -634,6 +635,11 @@ function renderAdminUsers(items) {
             <td>${
               u.age_min != null && u.age_max != null
                 ? `${escapeAdmin(u.age_min)}–${escapeAdmin(u.age_max)} lat`
+                : "—"
+            }</td>
+            <td>${
+              u.nearby_radius_km != null
+                ? `${escapeAdmin(u.nearby_radius_km)} km`
                 : "—"
             }</td>
             <td>${
