@@ -3919,9 +3919,246 @@ async function reloadAdminPlans() {
 
   box.innerHTML = adminEmpty("Ładowanie analityki planów...");
 
+  const catalog = {
+    user: [
+      {
+        id: "free",
+        name: "FREE",
+        price: "0 zł",
+        desc: "Podstawowe korzystanie z USLY i poznawanie ludzi w Twojej okolicy.",
+        features: [
+          "Rozmowy 1:1 ze znajomymi",
+          "Dołączanie do 1 grupy jednocześnie",
+          "Brak możliwości tworzenia własnych grup",
+          "Do 5 zainteresowań w profilu",
+          "1 awatar AI miesięcznie"
+        ]
+      },
+      {
+        id: "plus",
+        name: "PLUS",
+        price: "29,99 zł / miesiąc",
+        desc: "Większa swoboda w poznawaniu ludzi i korzystaniu z grup.",
+        features: [
+          "Tworzenie 1 własnej grupy",
+          "Dołączanie do maks. 3 grup",
+          "Do 10 zainteresowań w profilu",
+          "Lepsza swoboda korzystania z aplikacji na co dzień",
+          "5 awatarów AI miesięcznie"
+        ]
+      },
+      {
+        id: "premium",
+        name: "PREMIUM",
+        price: "49,99 zł / miesiąc",
+        desc: "Pełniejsze korzystanie z USLY i rozwijanie swojej sieci znajomości.",
+        features: [
+          "Tworzenie do 3 własnych grup",
+          "Brak limitu dołączania do grup",
+          "Dodawanie znajomych do grup",
+          "Do 20 zainteresowań w profilu",
+          "15 awatarów AI miesięcznie",
+          "Oznaczenie trenera w maks. 2 zainteresowaniach"
+        ]
+      },
+      {
+        id: "vip",
+        name: "VIP",
+        price: "89,99 zł / miesiąc",
+        desc: "Maksymalne możliwości i pełna swoboda w USLY.",
+        features: [
+          "Tworzenie grup bez limitu",
+          "Brak limitów w grupach i kontaktach",
+          "Dodawanie znajomych do grup",
+          "Nieograniczona liczba zainteresowań",
+          "30 awatarów AI miesięcznie",
+          "Oznaczenie trenera w maks. 5 zainteresowaniach"
+        ]
+      }
+    ],
+    partner: [
+      {
+        id: "free",
+        name: "FREE",
+        price: "0 zł",
+        desc: "Plan na start dla organizatorów, którzy chcą sprawdzić USLY i uruchomić pierwsze działania bez kosztu stałego.",
+        features: [
+          "Maksymalnie 2 aktywne wydarzenia jednocześnie",
+          "Podstawowy podgląd panelu: aktywne wydarzenia",
+          "Brak wiadomości do uczestników",
+          "Brak broadcastu i brak wyróżnienia wydarzeń",
+          "1 hashtag/kategoria na wydarzenie"
+        ]
+      },
+      {
+        id: "pro",
+        name: "PRO",
+        price: "129,99 zł / miesiąc",
+        desc: "Dla organizatorów, którzy prowadzą wydarzenia regularnie i chcą sprawniej zarządzać relacją z uczestnikami.",
+        features: [
+          "Maksymalnie 5 aktywnych wydarzeń jednocześnie",
+          "Rozszerzony podgląd panelu: aktywne, szkice i zapisy łącznie",
+          "Możliwość pisania do uczestników",
+          "Bez broadcastu i bez wyróżnienia wydarzeń",
+          "Do 2 hashtagów/kategorii na wydarzenie"
+        ]
+      },
+      {
+        id: "premium",
+        name: "PREMIUM",
+        price: "259,99 zł / miesiąc",
+        desc: "Dla organizatorów, którzy chcą skalować działania, pracować na pełnych danych i mocniej promować swoje wydarzenia.",
+        features: [
+          "Nielimitowana liczba aktywnych wydarzeń",
+          "Pełny podgląd panelu: aktywne, szkice, zapisy łącznie i frekwencja",
+          "Możliwość wysyłki broadcastu do uczestników",
+          "Wyróżnienie wydarzeń w aplikacji",
+          "Do 5 hashtagów/kategorii na wydarzenie"
+        ]
+      },
+      {
+        id: "enterprise",
+        name: "ENTERPRISE",
+        price: "Indywidualnie",
+        desc: "Dla większych partnerów, sieci i marek, które potrzebują indywidualnego zakresu działań, raportowania i wdrożenia.",
+        features: [
+          "Wszystko z planu PREMIUM",
+          "Obsługa wielu scenariuszy i działań niestandardowych",
+          "Najpełniejszy zakres raportowania i komunikacji",
+          "Zakres wdrożenia ustalany indywidualnie",
+          "Indywidualny zakres hashtagów/kategorii wydarzeń"
+        ]
+      }
+    ]
+  };
+
+  const labelMap = {
+    free: "FREE",
+    plus: "PLUS",
+    premium: "PREMIUM",
+    vip: "VIP",
+    pro: "PRO",
+    enterprise: "ENTERPRISE",
+    paid: "Płatność",
+    promo: "Promocja",
+    ambassador: "Ambasador",
+    manual: "Ręcznie",
+    barter: "Barter",
+    test: "Test",
+    system: "System",
+    none: "Brak źródła",
+    active: "Aktywny",
+    inactive: "Nieaktywny",
+    expired: "Wygasły",
+    trial: "Trial",
+    cancelled: "Anulowany",
+    verified: "Zweryfikowany",
+    ios: "iOS",
+    android: "Android",
+    app_store: "App Store",
+    play_store: "Google Play",
+    production: "Production",
+    sandbox: "Sandbox",
+    unknown: "Brak danych"
+  };
+
+  const label = value => labelMap[value] || String(value || "—");
+
+  const percent = (value, total) =>
+    total > 0 ? ((Number(value || 0) / total) * 100).toFixed(1) : "0.0";
+
+  const renderBars = (items, total) => {
+    const rows = Object.entries(items || {})
+      .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0));
+
+    if (!rows.length) return adminEmpty("Brak danych.");
+
+    return `
+      <div class="adminPlansBars">
+        ${rows.map(([key, value]) => {
+          const count = Number(value || 0);
+          const share = total > 0
+            ? Math.min((count / total) * 100, 100)
+            : 0;
+          const width = Math.max(share, count ? 3 : 0);
+
+          return `
+            <div class="adminPlansBarRow">
+              <div class="adminPlansBarLabel">
+                <strong>${escapeAdmin(label(key))}</strong>
+                <span>${count} · ${percent(count, total)}%</span>
+              </div>
+              <div class="adminPlansBarTrack">
+                <div class="adminPlansBarFill" style="width:${width}%"></div>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  };
+
+  const renderCatalog = (role, stats) => {
+    const total = Number(stats?.total || 0);
+
+    return `
+      <div class="adminPlansCatalog">
+        ${catalog[role].map(plan => {
+          const count = Number(stats?.plans?.[plan.id] || 0);
+
+          return `
+            <article class="adminPlanCatalogCard">
+              <div class="adminPlanCatalogHead">
+                <div>
+                  <span class="adminPlanRole">${role === "user" ? "TOWARZYSZ" : "ORGANIZATOR"}</span>
+                  <h3>${escapeAdmin(plan.name)}</h3>
+                </div>
+                <div class="adminPlanPrice">${escapeAdmin(plan.price)}</div>
+              </div>
+
+              <div class="adminPlanUsage">
+                <strong>${count}</strong>
+                <span>aktywnych profili · ${percent(count, total)}%</span>
+              </div>
+
+              <div class="adminPlanUsageTrack">
+                <div
+                  class="adminPlanUsageFill"
+                  style="width:${Math.min(Number(percent(count, total)), 100)}%"
+                ></div>
+              </div>
+
+              <p class="adminPlanDescription">${escapeAdmin(plan.desc)}</p>
+
+              <ul class="adminPlanFeatures">
+                ${plan.features.map(feature => `
+                  <li>${escapeAdmin(feature)}</li>
+                `).join("")}
+              </ul>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    `;
+  };
+
+  const renderBreakdown = (title, data, total) => `
+    <article class="adminPanel">
+      <div class="adminPanelHead">
+        <h2>${escapeAdmin(title)}</h2>
+        <span>${Number(total || 0)}</span>
+      </div>
+      ${renderBars(data, Number(total || 0))}
+    </article>
+  `;
+
   try {
     const res = await window.apiFetch("/admin/plans/analytics");
     const data = res?.data || {};
+
+    const users = data.users || {};
+    const partners = data.partners || {};
+    const purchases = data.purchases || {};
 
     const totalProfiles = Number(data.total_profiles || 0);
     const totalFree = Number(data.total_free || 0);
@@ -3936,16 +4173,369 @@ async function reloadAdminPlans() {
         </div>
 
         <div class="adminMetricCard">
-          <span>Plan Free</span>
+          <span>Plan FREE</span>
           <strong>${totalFree}</strong>
-          <small>Profile korzystające z planu bezpłatnego</small>
+          <small>${percent(totalFree, totalProfiles)}% wszystkich profili</small>
         </div>
 
         <div class="adminMetricCard">
           <span>Plany płatne</span>
           <strong>${totalPaid}</strong>
-          <small>Profile z planem innym niż Free</small>
+          <small>${percent(totalPaid, totalProfiles)}% wszystkich profili</small>
         </div>
+
+        <div class="adminMetricCard">
+          <span>Zakupy zapisane</span>
+          <strong>${Number(purchases.total || 0)}</strong>
+          <small>Zweryfikowane rekordy StorePurchase</small>
+        </div>
+      </div>
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">STRUKTURA UŻYTKOWNIKÓW</span>
+          <h2>Rozkład planów</h2>
+          <p>Rzeczywisty udział poszczególnych planów w aktualnej bazie USLY.</p>
+        </div>
+      </div>
+
+      <div class="adminGrid adminPlansAnalyticsGrid">
+        ${renderBreakdown(
+          "Towarzysze",
+          users.plans,
+          users.total
+        )}
+
+        ${renderBreakdown(
+          "Organizatorzy",
+          partners.plans,
+          partners.total
+        )}
+      </div>
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">OFERTA USLY</span>
+          <h2>Plany Towarzysza</h2>
+          <p>Ceny, zakres funkcji i rzeczywiste wykorzystanie każdego pakietu.</p>
+        </div>
+      </div>
+
+      ${renderCatalog("user", users)}
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">OFERTA USLY</span>
+          <h2>Plany Organizatora</h2>
+          <p>Ceny, możliwości i rzeczywista liczba profili na każdym poziomie.</p>
+        </div>
+      </div>
+
+      ${renderCatalog("partner", partners)}
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">PLANY PONAD FREE</span>
+          <h2>Źródła planów</h2>
+          <p>
+            Sposób uzyskania planów innych niż FREE.
+            Konta FREE i ich techniczne źródła nie są tutaj uwzględniane.
+          </p>
+        </div>
+      </div>
+
+      <div class="adminGrid adminPlansAnalyticsGrid">
+        ${renderBreakdown(
+          "Źródła · Towarzysze",
+          users.sources,
+          users.paid
+        )}
+
+        ${renderBreakdown(
+          "Źródła · Organizatorzy",
+          partners.sources,
+          partners.paid
+        )}
+
+        ${renderBreakdown(
+          "Status · Towarzysze",
+          users.statuses,
+          users.paid
+        )}
+
+        ${renderBreakdown(
+          "Status · Organizatorzy",
+          partners.statuses,
+          partners.paid
+        )}
+      </div>
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">PROMOCJE I KODY</span>
+          <h2>Aktywacje z kampanii promocyjnych</h2>
+          <p>
+            Rzeczywiste wykorzystanie kodów promocyjnych i liczba
+            aktualnie aktywnych planów ponad FREE pochodzących z kampanii.
+          </p>
+        </div>
+      </div>
+
+      ${
+        Array.isArray(data.promotions?.campaigns)
+        && data.promotions.campaigns.length
+          ? `
+            <div class="adminPlansPromoGrid">
+              ${data.promotions.campaigns.map(campaign => {
+                const uses = Number(campaign.uses_count || 0);
+                const activated = Number(campaign.activated_total || 0);
+                const usersCount = Number(campaign.activated_users || 0);
+                const partnersCount = Number(campaign.activated_partners || 0);
+
+                const maxUses = campaign.max_uses == null
+                  ? "bez limitu"
+                  : String(campaign.max_uses);
+
+                const planEntries = Object.entries(campaign.plans || {});
+                const platformEntries = Object.entries(
+                  campaign.platforms || {}
+                );
+
+                const benefit = campaign.benefit_type === "discount_percent"
+                  ? `${Number(campaign.benefit_value || 0)}% rabatu`
+                  : campaign.benefit_type === "lifetime"
+                    ? "Lifetime"
+                    : campaign.benefit_type === "free_months"
+                      ? `${Number(campaign.benefit_value || campaign.benefit_duration_months || 0)} mies.`
+                      : String(campaign.benefit_type || "—");
+
+                return `
+                  <article class="adminPlanCatalogCard">
+                    <div class="adminPlanCatalogTop">
+                      <div>
+                        <span class="adminPlansEyebrow">
+                          ${escapeAdmin(campaign.status || "—")}
+                        </span>
+                        <h3>${escapeAdmin(campaign.code || "—")}</h3>
+                        <p>
+                          ${escapeAdmin(campaign.name || "Kampania promocyjna")}
+                        </p>
+                      </div>
+
+                      <div class="adminPlanCatalogPrice">
+                        ${escapeAdmin(benefit)}
+                      </div>
+                    </div>
+
+                    <div class="adminMetricGrid">
+                      <div class="adminMetricCard">
+                        <span>Użycia kodu</span>
+                        <strong>${uses}</strong>
+                        <small>Limit: ${escapeAdmin(maxUses)}</small>
+                      </div>
+
+                      <div class="adminMetricCard">
+                        <span>Aktywne plany</span>
+                        <strong>${activated}</strong>
+                        <small>
+                          Ponad FREE · aktywne obecnie
+                        </small>
+                      </div>
+
+                      <div class="adminMetricCard">
+                        <span>Towarzysze</span>
+                        <strong>${usersCount}</strong>
+                        <small>Aktywacje z tej kampanii</small>
+                      </div>
+
+                      <div class="adminMetricCard">
+                        <span>Organizatorzy</span>
+                        <strong>${partnersCount}</strong>
+                        <small>Aktywacje z tej kampanii</small>
+                      </div>
+                    </div>
+
+                    <div class="adminPlansPromoDetails">
+                      <div>
+                        <strong>Plany</strong>
+                        <span>
+                          ${
+                            planEntries.length
+                              ? planEntries
+                                  .map(
+                                    ([plan, count]) =>
+                                      `${escapeAdmin(plan.toUpperCase())}: ${Number(count || 0)}`
+                                  )
+                                  .join(" · ")
+                              : "Brak aktywnych planów"
+                          }
+                        </span>
+                      </div>
+
+                      <div>
+                        <strong>Platformy</strong>
+                        <span>
+                          ${
+                            platformEntries.length
+                              ? platformEntries
+                                  .map(
+                                    ([platform, count]) =>
+                                      `${escapeAdmin(platform)}: ${Number(count || 0)}`
+                                  )
+                                  .join(" · ")
+                              : "Brak danych"
+                          }
+                        </span>
+                      </div>
+
+                      <div>
+                        <strong>Grupa docelowa</strong>
+                        <span>
+                          ${escapeAdmin(campaign.target_role || "—")}
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                `;
+              }).join("")}
+            </div>
+          `
+          : `
+            <div class="adminSystemHint adminPlansFootnote">
+              Brak kampanii promocyjnych zapisanych w systemie.
+            </div>
+          `
+      }
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">SPRZEDAŻ W SKLEPACH</span>
+          <h2>Zakupy App Store i Google Play</h2>
+          <p>
+            Produkcyjne zakupy są oddzielone od transakcji testowych.
+            Sandbox nie jest liczony jako rzeczywista sprzedaż.
+          </p>
+        </div>
+      </div>
+
+      <div class="adminMetricGrid">
+        <div class="adminMetricCard">
+          <span>Zakupy produkcyjne</span>
+          <strong>${Number(purchases.production?.total || 0)}</strong>
+          <small>App Store i Google Play · production</small>
+        </div>
+
+        <div class="adminMetricCard">
+          <span>Transakcje testowe</span>
+          <strong>${Number(purchases.sandbox?.total || 0)}</strong>
+          <small>Sandbox · nie są sprzedażą</small>
+        </div>
+
+        <div class="adminMetricCard">
+          <span>Wszystkie zapisy StorePurchase</span>
+          <strong>${Number(purchases.total || 0)}</strong>
+          <small>Production + sandbox</small>
+        </div>
+      </div>
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">PRODUCTION</span>
+          <h2>Rzeczywiste zakupy</h2>
+          <p>
+            Wyłącznie transakcje zapisane jako środowisko produkcyjne.
+          </p>
+        </div>
+      </div>
+
+      ${
+        Number(purchases.production?.total || 0) > 0
+          ? `
+            <div class="adminGrid adminPlansAnalyticsGrid">
+              ${renderBreakdown(
+                "Platforma",
+                purchases.production?.platforms,
+                purchases.production?.total
+              )}
+
+              ${renderBreakdown(
+                "Sklep",
+                purchases.production?.stores,
+                purchases.production?.total
+              )}
+
+              ${renderBreakdown(
+                "Status",
+                purchases.production?.statuses,
+                purchases.production?.total
+              )}
+
+              ${renderBreakdown(
+                "Plan",
+                purchases.production?.plans,
+                purchases.production?.total
+              )}
+            </div>
+          `
+          : `
+            <div class="adminSystemHint adminPlansFootnote">
+              Brak zapisanych produkcyjnych zakupów App Store lub Google Play.
+            </div>
+          `
+      }
+
+      <div class="adminPlansSectionHead">
+        <div>
+          <span class="adminPlansEyebrow">SANDBOX</span>
+          <h2>Dane testowe</h2>
+          <p>
+            Transakcje wykonane podczas testów płatności.
+            Nie są uwzględniane jako rzeczywista sprzedaż.
+          </p>
+        </div>
+      </div>
+
+      ${
+        Number(purchases.sandbox?.total || 0) > 0
+          ? `
+            <div class="adminGrid adminPlansAnalyticsGrid">
+              ${renderBreakdown(
+                "Platforma testowa",
+                purchases.sandbox?.platforms,
+                purchases.sandbox?.total
+              )}
+
+              ${renderBreakdown(
+                "Sklep testowy",
+                purchases.sandbox?.stores,
+                purchases.sandbox?.total
+              )}
+
+              ${renderBreakdown(
+                "Status testu",
+                purchases.sandbox?.statuses,
+                purchases.sandbox?.total
+              )}
+
+              ${renderBreakdown(
+                "Testowany plan",
+                purchases.sandbox?.plans,
+                purchases.sandbox?.total
+              )}
+            </div>
+          `
+          : `
+            <div class="adminSystemHint adminPlansFootnote">
+              Brak zapisanych transakcji sandbox.
+            </div>
+          `
+      }
+
+      <div class="adminSystemHint adminPlansFootnote">
+        Struktura planów pochodzi z aktualnych profili USLY.
+        Źródła i statusy powyżej dotyczą wyłącznie planów innych niż FREE.
+        Zakupy produkcyjne i testowe są prezentowane oddzielnie.
+        Revenue i MRR nie są tutaj estymowane.
       </div>
     `;
 
@@ -3959,14 +4549,13 @@ async function reloadAdminPlans() {
         : `Aktualizacja: ${generatedAt.toLocaleString("pl-PL")}`;
     }
 
-    console.log("OK: załadowano analitykę Planów", data);
+    console.log("OK: załadowano pełną analitykę Planów", data);
   } catch (e) {
     console.error("reloadAdminPlans error", e);
     box.innerHTML = adminEmpty("Nie udało się pobrać analityki planów.");
     adminToast(e?.userMessage || "Nie udało się pobrać analityki planów.");
   }
 }
-
 
 function showAdminView(view) {
   if (!adminCanView(view)) {

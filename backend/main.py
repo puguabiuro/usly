@@ -10203,18 +10203,29 @@ def admin_plans_analytics(
             statuses = {}
 
             for profile in profiles:
-                plan = str(getattr(profile, "plan", None) or "free").strip().lower()
-                source = str(getattr(profile, "plan_source", None) or "none").strip().lower()
-                status = str(getattr(profile, "plan_status", None) or "none").strip().lower()
+                plan = str(
+                    getattr(profile, "plan", None) or "free"
+                ).strip().lower()
+                source = str(
+                    getattr(profile, "plan_source", None) or "none"
+                ).strip().lower()
+                status = str(
+                    getattr(profile, "plan_status", None) or "none"
+                ).strip().lower()
 
                 plans[plan] = plans.get(plan, 0) + 1
-                sources[source] = sources.get(source, 0) + 1
-                statuses[status] = statuses.get(status, 0) + 1
 
                 if plan == "free":
                     free += 1
-                else:
-                    paid += 1
+                    continue
+
+                paid += 1
+
+                # Źródło i status są analityką planów ponad FREE.
+                # FREE może historycznie posiadać techniczne wartości
+                # manual/system/none, które nie opisują pozyskania planu.
+                sources[source] = sources.get(source, 0) + 1
+                statuses[status] = statuses.get(status, 0) + 1
 
             return {
                 "total": total,
@@ -10273,6 +10284,146 @@ def admin_plans_analytics(
                 purchases_by_store.get(store, 0) + 1
             )
 
+        production_purchases = [
+            purchase
+            for purchase in store_purchases
+            if str(
+                getattr(purchase, "environment", None) or ""
+            ).strip().lower() == "production"
+        ]
+
+        sandbox_purchases = [
+            purchase
+            for purchase in store_purchases
+            if str(
+                getattr(purchase, "environment", None) or ""
+            ).strip().lower() == "sandbox"
+        ]
+
+        def summarize_store_rows(rows):
+            result = {
+                "total": len(rows),
+                "platforms": {},
+                "statuses": {},
+                "plans": {},
+                "stores": {},
+            }
+
+            for purchase in rows:
+                for field, target in (
+                    ("platform", "platforms"),
+                    ("status", "statuses"),
+                    ("plan", "plans"),
+                    ("store", "stores"),
+                ):
+                    value = str(
+                        getattr(purchase, field, None) or "unknown"
+                    ).strip().lower()
+
+                    result[target][value] = (
+                        result[target].get(value, 0) + 1
+                    )
+
+            return result
+
+        # ADMIN 2.0 — promocje powiązane z aktualnymi planami ponad FREE.
+        # Liczymy wyłącznie rzeczywiste aktywacje:
+        # redemption=activated + aktualny plan aktywny + plan != free.
+        promo_campaign_rows = (
+            db.query(PromoCampaign)
+            .order_by(PromoCampaign.created_at.desc(), PromoCampaign.id.desc())
+            .limit(200)
+            .all()
+        )
+
+        promo_campaigns = []
+
+        for campaign in promo_campaign_rows:
+            redemption_rows = (
+                db.query(PromoRedemption, User, UserProfile, PartnerProfile)
+                .join(User, User.id == PromoRedemption.user_id)
+                .outerjoin(UserProfile, UserProfile.user_id == User.id)
+                .outerjoin(PartnerProfile, PartnerProfile.user_id == User.id)
+                .filter(PromoRedemption.campaign_id == campaign.id)
+                .all()
+            )
+
+            activated_total = 0
+            activated_users = 0
+            activated_partners = 0
+            plan_breakdown = {}
+            platform_breakdown = {}
+
+            for redemption, user, user_profile, partner_profile in redemption_rows:
+                profile = (
+                    partner_profile
+                    if user.role == UserRole.PARTNER.value
+                    else user_profile
+                )
+
+                plan = str(
+                    getattr(profile, "plan", None) or "free"
+                ).strip().lower()
+
+                plan_status = str(
+                    getattr(profile, "plan_status", None) or "none"
+                ).strip().lower()
+
+                is_active_promo_plan = (
+                    str(redemption.status or "").strip().lower() == "activated"
+                    and plan_status == "active"
+                    and plan != "free"
+                )
+
+                if not is_active_promo_plan:
+                    continue
+
+                activated_total += 1
+
+                if user.role == UserRole.PARTNER.value:
+                    activated_partners += 1
+                else:
+                    activated_users += 1
+
+                plan_breakdown[plan] = plan_breakdown.get(plan, 0) + 1
+
+                platform = str(
+                    redemption.platform or "unknown"
+                ).strip().lower()
+
+                platform_breakdown[platform] = (
+                    platform_breakdown.get(platform, 0) + 1
+                )
+
+            promo_campaigns.append({
+                "id": campaign.id,
+                "code": campaign.code,
+                "name": campaign.name,
+                "status": campaign.status,
+                "target_role": campaign.target_role,
+                "benefit_type": campaign.benefit_type,
+                "benefit_value": campaign.benefit_value,
+                "benefit_duration_months": campaign.benefit_duration_months,
+                "uses_count": int(campaign.uses_count or 0),
+                "max_uses": campaign.max_uses,
+                "activated_total": activated_total,
+                "activated_users": activated_users,
+                "activated_partners": activated_partners,
+                "plans": plan_breakdown,
+                "platforms": platform_breakdown,
+                "valid_from": campaign.valid_from.isoformat() if campaign.valid_from else None,
+                "valid_until": campaign.valid_until.isoformat() if campaign.valid_until else None,
+            })
+
+        promo_analytics = {
+            "campaigns_total": len(promo_campaigns),
+            "activated_total": sum(
+                item["activated_total"]
+                for item in promo_campaigns
+            ),
+            "campaigns": promo_campaigns,
+        }
+
         purchases = {
             "total": len(store_purchases),
             "platforms": purchases_by_platform,
@@ -10280,6 +10431,8 @@ def admin_plans_analytics(
             "statuses": purchases_by_status,
             "plans": purchases_by_plan,
             "stores": purchases_by_store,
+            "production": summarize_store_rows(production_purchases),
+            "sandbox": summarize_store_rows(sandbox_purchases),
         }
 
         return ok({
@@ -10289,6 +10442,7 @@ def admin_plans_analytics(
             "users": users,
             "partners": partners,
             "purchases": purchases,
+            "promotions": promo_analytics,
             "generated_at": datetime.utcnow().isoformat(),
         })
     finally:

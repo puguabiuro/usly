@@ -2055,3 +2055,269 @@ body{
   background: rgba(71, 125, 255, 0.18);
   border-color: rgba(71, 125, 255, 0.5);
 }
+
+/* ===== ADMIN 2.0 — PLANS ANALYTICS ===== */
+
+.adminPlansSectionHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 34px 0 16px;
+}
+
+.adminPlansSectionHead h2 {
+  margin: 3px 0 5px;
+  font-size: 22px;
+}
+
+.adminPlansSectionHead p {
+  margin: 0;
+  color: var(--adminMuted, #96a3b7);
+  font-size: 13px;
+}
+
+.adminPlansEyebrow {
+  color: #55d9ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.adminPlansAnalyticsGrid {
+  align-items: stretch;
+}
+
+.adminPlansBars {
+  padding: 8px 0 2px;
+}
+
+.adminPlansBarRow {
+  margin: 15px 0;
+}
+
+.adminPlansBarLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 7px;
+  font-size: 13px;
+}
+
+.adminPlansBarLabel span {
+  color: var(--adminMuted, #96a3b7);
+  white-space: nowrap;
+}
+
+.adminPlansBarTrack,
+.adminPlanUsageTrack {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+}
+
+.adminPlansBarFill,
+.adminPlanUsageFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #32c7ff, #7c5cff);
+}
+
+.adminPlansCatalog {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.adminPlanCatalogCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20,31,49,.96),
+      rgba(13,21,35,.96)
+    );
+}
+
+.adminPlanCatalogHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adminPlanCatalogHead h3 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.adminPlanRole {
+  color: #55d9ff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+
+.adminPlanPrice {
+  max-width: 130px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.adminPlanUsage {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.adminPlanUsage strong {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.adminPlanUsage span {
+  color: var(--adminMuted, #96a3b7);
+  font-size: 11px;
+}
+
+.adminPlanUsageTrack {
+  margin-top: 9px;
+  height: 6px;
+}
+
+.adminPlanDescription {
+  min-height: 54px;
+  margin: 17px 0 10px;
+  color: var(--adminMuted, #a6b1c2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.adminPlanFeatures {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adminPlanFeatures li {
+  position: relative;
+  margin: 8px 0;
+  padding-left: 17px;
+  color: #d8dfeb;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.adminPlanFeatures li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #55d9ff;
+  font-weight: 800;
+}
+
+.adminPlansFootnote {
+  margin-top: 26px;
+}
+
+@media (max-width: 1350px) {
+  .adminPlansCatalog {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .adminPlansCatalog {
+    grid-template-columns: 1fr;
+  }
+
+  .adminPlansSectionHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* ===== ADMIN 2.0 — PLANS PROMOTIONS ===== */
+
+.adminPlansPromoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.adminPlansPromoGrid .adminPlanCatalogCard {
+  min-width: 0;
+}
+
+.adminPlansPromoGrid .adminMetricGrid {
+  margin-top: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.adminPlansPromoGrid .adminMetricCard {
+  min-width: 0;
+}
+
+.adminPlansPromoDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.adminPlansPromoDetails > div {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.adminPlansPromoDetails strong,
+.adminPlansPromoDetails span {
+  display: block;
+}
+
+.adminPlansPromoDetails strong {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.adminPlansPromoDetails span {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1180px) {
+  .adminPlansPromoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .adminPlansPromoGrid .adminMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .adminPlansPromoGrid .adminMetricGrid,
+  .adminPlansPromoDetails {
+    grid-template-columns: 1fr;
+  }
+}
