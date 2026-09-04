@@ -3,6 +3,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from backend.request_id_middleware import RequestIdMiddleware
+from backend.promo_entitlements import has_usly95_lifetime
 # -*- coding: utf-8 -*-
 
 import os
@@ -4495,11 +4496,27 @@ def users_me_patch(
             requested_plan = str(payload.plan or "").strip().lower()
             if requested_plan != "free":
                 raise HTTPException(status_code=403, detail="PAID_PLAN_REQUIRES_STORE_PURCHASE")
-            profile.plan = "free"
-            profile.plan_source = "manual"
-            profile.plan_status = "active"
-            profile.plan_updated_at = datetime.utcnow()
-            profile.plan_expires_at = None
+
+            has_lifetime_promo = has_usly95_lifetime(
+                db,
+                current_user.id,
+            )
+
+            if has_lifetime_promo:
+                now = datetime.utcnow()
+                profile.plan = "premium"
+                profile.plan_source = "promo"
+                profile.plan_status = "active"
+                profile.plan_updated_at = now
+                profile.plan_expires_at = None
+                profile.plan_expiry_notice_14d_sent_at = None
+                profile.plan_expiry_notice_7d_sent_at = None
+            else:
+                profile.plan = "free"
+                profile.plan_source = "manual"
+                profile.plan_status = "active"
+                profile.plan_updated_at = datetime.utcnow()
+                profile.plan_expires_at = None
 
         # Przybliżona lokalizacja (anonimizowana)
         if payload.location_lat is not None and payload.location_lng is not None:
