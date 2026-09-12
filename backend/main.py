@@ -4,6 +4,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from backend.request_id_middleware import RequestIdMiddleware
 from backend.promo_entitlements import has_usly95_lifetime
+from backend.store_entitlements import get_active_store_purchase
 # -*- coding: utf-8 -*-
 
 import os
@@ -4512,11 +4513,30 @@ def users_me_patch(
                 profile.plan_expiry_notice_14d_sent_at = None
                 profile.plan_expiry_notice_7d_sent_at = None
             else:
-                profile.plan = "free"
-                profile.plan_source = "manual"
-                profile.plan_status = "active"
-                profile.plan_updated_at = datetime.utcnow()
-                profile.plan_expires_at = None
+                now = datetime.utcnow()
+                active_purchase = get_active_store_purchase(
+                    db,
+                    user_id=current_user.id,
+                    now=now,
+                )
+
+                if active_purchase is not None:
+                    profile.plan = active_purchase.plan
+                    profile.plan_source = "paid"
+                    profile.plan_status = "active"
+                    profile.plan_updated_at = now
+                    profile.plan_expires_at = (
+                        active_purchase.plan_expires_at
+                        or active_purchase.expires_at
+                    )
+                    profile.plan_expiry_notice_14d_sent_at = None
+                    profile.plan_expiry_notice_7d_sent_at = None
+                else:
+                    profile.plan = "free"
+                    profile.plan_source = "manual"
+                    profile.plan_status = "active"
+                    profile.plan_updated_at = now
+                    profile.plan_expires_at = None
 
         # Przybliżona lokalizacja (anonimizowana)
         if payload.location_lat is not None and payload.location_lng is not None:
