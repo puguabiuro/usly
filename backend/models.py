@@ -734,6 +734,12 @@ class Group(Base):
         index=True,
     )
 
+    interest_tags_json: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+    )
+
     members_count: Mapped[int] = mapped_column(
         Integer,
         nullable=False,

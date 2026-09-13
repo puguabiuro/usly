@@ -393,6 +393,22 @@ def _partner_event_interest_tag_limit(plan: str | None) -> int:
     return PARTNER_EVENT_INTEREST_TAG_LIMITS.get(safe_plan, PARTNER_EVENT_INTEREST_TAG_LIMITS["free"])
 
 
+USER_GROUP_INTEREST_TAG_LIMITS = {
+    "free": 0,
+    "plus": 1,
+    "premium": 2,
+    "vip": 4,
+}
+
+
+def _user_group_interest_tag_limit(plan: str | None) -> int:
+    safe_plan = str(plan or "free").strip().lower()
+    return USER_GROUP_INTEREST_TAG_LIMITS.get(
+        safe_plan,
+        USER_GROUP_INTEREST_TAG_LIMITS["free"],
+    )
+
+
 INTEREST_CANONICAL_ALIASES = {
     "foto": "fotografia",
     "photo": "fotografia",
@@ -443,6 +459,84 @@ def _normalize_interest_tag(value: str | None) -> str:
     if not tag:
         return ""
     return INTEREST_CANONICAL_ALIASES.get(tag, tag)
+
+
+def _split_group_interest_tags(raw_value: str | None) -> list[str]:
+    value = str(raw_value or "").strip()
+    if not value:
+        return []
+
+    parts = []
+
+    for comma_part in value.split(","):
+        comma_part = comma_part.strip()
+        if not comma_part:
+            continue
+
+        if "#" in comma_part[1:]:
+            parts.extend(comma_part.split("#"))
+        else:
+            parts.append(comma_part)
+
+    return [
+        part.strip().lstrip("#").strip()
+        for part in parts
+        if part.strip().lstrip("#").strip()
+    ]
+
+
+def _normalize_group_interest_tags(raw_value: str | None) -> list[str]:
+    result = []
+    seen = set()
+
+    for raw_tag in _split_group_interest_tags(raw_value):
+        if len(raw_tag) < 2 or len(raw_tag) > 40:
+            raise HTTPException(status_code=422, detail="INVALID_GROUP_INTEREST_TAG")
+
+        tag = _normalize_interest_tag(raw_tag)
+        if not tag or tag in seen:
+            continue
+
+        seen.add(tag)
+        result.append(tag)
+
+    if not result:
+        raise HTTPException(status_code=422, detail="GROUP_INTEREST_TAG_REQUIRED")
+
+    return result
+
+
+def _group_interest_tags(group: Group) -> list[str]:
+    if group.interest_tags_json:
+        try:
+            stored_tags = json.loads(group.interest_tags_json) or []
+        except Exception:
+            stored_tags = []
+
+        result = []
+        seen = set()
+
+        for stored_tag in stored_tags:
+            tag = _normalize_interest_tag(str(stored_tag))
+            if not tag or tag in seen:
+                continue
+            seen.add(tag)
+            result.append(tag)
+
+        if result:
+            return result
+
+    result = []
+    seen = set()
+
+    for raw_tag in _split_group_interest_tags(group.interest_tag):
+        tag = _normalize_interest_tag(raw_tag)
+        if not tag or tag in seen:
+            continue
+        seen.add(tag)
+        result.append(tag)
+
+    return result
 
 
 def _normalize_event_interest_tags(raw_tags, fallback_tag: str | None = None) -> list[str]:
@@ -2334,7 +2428,7 @@ def get_privacy():
 class CreateGroupRequest(BaseModel):
     title: str = Field(min_length=3, max_length=120)
     description: str | None = Field(default=None, max_length=600)
-    interest_tag: str = Field(min_length=2, max_length=50)
+    interest_tag: str = Field(min_length=2, max_length=200)
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -7649,6 +7743,7 @@ def list_group_invitations(
                     "id": group.id,
                     "title": group.title,
                     "interest_tag": group.interest_tag,
+                    "interest_tags": _group_interest_tags(group),
                 },
                 "user": {
                     "id": inv.inviter_user_id,
@@ -7669,6 +7764,7 @@ def list_group_invitations(
                     "id": group.id,
                     "title": group.title,
                     "interest_tag": group.interest_tag,
+                    "interest_tags": _group_interest_tags(group),
                 },
                 "user": {
                     "id": inv.invitee_user_id,
@@ -7910,6 +8006,7 @@ def list_my_groups(
                     "title": g.title,
                     "description": g.description,
                     "interest_tag": g.interest_tag,
+                    "interest_tags": _group_interest_tags(g),
                     "members_count": g.members_count,
                     "joined_at": m.joined_at,
                     "is_creator": g.creator_id == current_user.id,
@@ -7961,11 +8058,21 @@ def create_group(
             if created_count >= limit:
                 raise HTTPException(status_code=400, detail="GROUP_CREATE_LIMIT_REACHED")
 
+        interest_tags = _normalize_group_interest_tags(payload.interest_tag)
+        tag_limit = _user_group_interest_tag_limit(profile.plan)
+
+        if len(interest_tags) > tag_limit:
+            raise HTTPException(
+                status_code=422,
+                detail="GROUP_INTEREST_TAG_LIMIT_REACHED",
+            )
+
         g = Group(
             creator_id=current_user.id,
             title=payload.title,
             description=payload.description,
-            interest_tag=_normalize_interest_tag(payload.interest_tag),
+            interest_tag=interest_tags[0],
+            interest_tags_json=json.dumps(interest_tags, ensure_ascii=False),
         )
 
         db.add(g)
@@ -8015,6 +8122,7 @@ def list_groups(
                     "title": g.title,
                     "description": g.description,
                     "interest_tag": g.interest_tag,
+                    "interest_tags": _group_interest_tags(g),
                     "members_count": g.members_count,
                     "created_at": g.created_at,
                     "updated_at": g.updated_at,
@@ -8366,8 +8474,13 @@ def list_suggested_groups(
             if g.id in joined_group_ids:
                 continue
 
-            group_tag = _normalize_interest_tag(g.interest_tag)
-            score = 1 if group_tag and group_tag in user_interest_set else 0
+            group_tags = _group_interest_tags(g)
+
+            score = sum(
+                1
+                for group_tag in group_tags
+                if group_tag in user_interest_set
+            )
 
             scored.append(
                 {
@@ -8375,6 +8488,7 @@ def list_suggested_groups(
                     "title": g.title,
                     "description": g.description,
                     "interest_tag": g.interest_tag,
+                    "interest_tags": _group_interest_tags(g),
                     "members_count": g.members_count,
                     "created_at": g.created_at,
                     "updated_at": g.updated_at,
@@ -8502,6 +8616,7 @@ def get_group_details(group_id: int):
                 "title": g.title,
                 "description": g.description,
                 "interest_tag": g.interest_tag,
+                "interest_tags": _group_interest_tags(g),
                 "members_count": g.members_count,
                 "created_at": g.created_at,
                 "updated_at": g.updated_at,
@@ -11251,6 +11366,7 @@ def admin_list_groups(current_user: User = Depends(require_role("admin"))):
                 ),
                 "creator_email": creator.email if creator else None,
                 "interest_tag": group.interest_tag,
+                "interest_tags": _group_interest_tags(group),
                 "members_count": group.members_count,
                 "created_at": str(group.created_at) if group.created_at else None,
                 "updated_at": str(group.updated_at) if group.updated_at else None,
