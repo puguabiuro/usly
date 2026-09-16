@@ -1100,16 +1100,19 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
 }
 
 
-#peInterestSelected{
+#peInterestSelected,
+#createGroupInterestSelected{
   display:block;
   margin-top:10px;
 }
 
-#peInterestSelected[hidden]{
+#peInterestSelected[hidden],
+#createGroupInterestSelected[hidden]{
   display:none !important;
 }
 
-#peInterestSelected .chip{
+#peInterestSelected .chip,
+#createGroupInterestSelected .chip{
   display:inline-flex;
   align-items:center;
   margin:0 8px 8px 0;
@@ -1127,12 +1130,14 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
 }
 
 
-#peInterestSelected .eventInterestChip{
+#peInterestSelected .eventInterestChip,
+#createGroupInterestSelected .eventInterestChip{
   gap:8px;
   padding-right:7px;
 }
 
-#peInterestSelected .eventInterestChipRemove{
+#peInterestSelected .eventInterestChipRemove,
+#createGroupInterestSelected .eventInterestChipRemove{
   width:22px;
   height:22px;
   border-radius:999px;
@@ -3646,13 +3651,16 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
               </div>
   
               <label class="mt12" data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>
-              <input id="peAddress" type="text" placeholder="np. Studio Aurora albo ul. Słoneczna 12" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
+              <div id="peLocationInputWrap">
+                <input id="peAddress" type="text" placeholder="np. Studio Aurora albo ul. Słoneczna 12" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
+                <div class="hintText mt6" data-i18n="partnerCreate.locationHint">Wpisz miejsce, potwierdź lokalizację i wybierz właściwy wynik z listy.</div>
+              </div>
 
               <input id="peWhere" type="hidden" />
               <input id="peResolvedAddress" type="hidden" />
 
               <div class="row mt10" style="gap:10px;align-items:center;flex-wrap:wrap;">
-                <button class="btn secondary small" id="peFindPlaceBtn" type="button" data-i18n="partnerCreate.findPlace">Znajdź miejsce na mapie</button>
+                <button class="btn secondary small" id="peFindPlaceBtn" type="button" data-i18n="partnerCreate.findPlace">Potwierdź lokalizację</button>
                 <span class="hintText" id="peSelectedPlaceHint" hidden></span>
               </div>
 
@@ -3724,7 +3732,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
   
               <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
                 <button class="btn secondary" type="button" onclick="savePartnerEventDraft()" data-i18n="partnerCreate.saveDraft">Zapisz szkic</button>
-                <button class="btn" type="button" onclick="publishPartnerEvent()" data-i18n="partnerCreate.publish">Utwórz wydarzenie</button>
+                <button class="btn" id="pePublishBtn" type="button" onclick="publishPartnerEvent()" data-i18n="partnerCreate.publish" hidden>Opublikuj wydarzenie</button>
               </div>
             </div>
           </div>

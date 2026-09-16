@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from enum import StrEnum
 from typing import Literal, Optional
 
@@ -154,18 +154,20 @@ def _to_utc_naive(dt: datetime) -> datetime:
 
 
 class EventCreate(BaseModel):
-    title: str = Field(min_length=3, max_length=120)
+    title: Optional[str] = Field(default=None, max_length=120)
     description: Optional[str] = Field(default=None, max_length=2000)
-    city: str = Field(min_length=2, max_length=80)
-    where: str = Field(min_length=2, max_length=120)
+    city: Optional[str] = Field(default=None, max_length=80)
+    where: Optional[str] = Field(default=None, max_length=120)
     address: Optional[str] = Field(default=None, max_length=240)
     location_lat: Optional[float] = Field(default=None, ge=-90, le=90)
     location_lng: Optional[float] = Field(default=None, ge=-180, le=180)
-    interest_tag: str = Field(min_length=2, max_length=40)
+    interest_tag: Optional[str] = Field(default=None, max_length=40)
     interest_tags: Optional[list[str]] = Field(default=None, max_length=10)
 
-    start_at: datetime
-    end_at: datetime
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    draft_date: Optional[date] = None
+    draft_time: Optional[time] = None
 
     capacity: Optional[int] = Field(default=None, ge=1, le=100000)
 
@@ -182,12 +184,15 @@ class EventCreate(BaseModel):
     @model_validator(mode="after")
     def _validate_all(self):
         # czas -> UTC naive
-        self.start_at = _to_utc_naive(self.start_at)
-        self.end_at = _to_utc_naive(self.end_at)
+        if self.start_at is not None:
+            self.start_at = _to_utc_naive(self.start_at)
+        if self.end_at is not None:
+            self.end_at = _to_utc_naive(self.end_at)
 
         # daty
-        if not (self.start_at < self.end_at):
-            raise ValueError("INVALID_EVENT_DATES")
+        if self.start_at is not None and self.end_at is not None:
+            if not (self.start_at < self.end_at):
+                raise ValueError("INVALID_EVENT_DATES")
 
         # pricing
         if self.pricing_type == "free":
@@ -195,20 +200,13 @@ class EventCreate(BaseModel):
                 raise ValueError("FREE_EVENT_MUST_NOT_HAVE_PRICES_OR_LINK")
 
         elif self.pricing_type == "paid_fixed":
-            if self.price_fixed is None:
-                raise ValueError("PAID_FIXED_REQUIRES_PRICE_FIXED")
-            if self.payment_link is None:
-                raise ValueError("PAID_EVENT_REQUIRES_PAYMENT_LINK")
             if self.price_min is not None or self.price_max is not None:
                 raise ValueError("PAID_FIXED_MUST_NOT_HAVE_RANGE")
 
         elif self.pricing_type == "paid_range":
-            if self.price_min is None or self.price_max is None:
-                raise ValueError("PAID_RANGE_REQUIRES_PRICE_MIN_MAX")
-            if self.price_min > self.price_max:
-                raise ValueError("PAID_RANGE_MIN_MUST_BE_LTE_MAX")
-            if self.payment_link is None:
-                raise ValueError("PAID_EVENT_REQUIRES_PAYMENT_LINK")
+            if self.price_min is not None and self.price_max is not None:
+                if self.price_min > self.price_max:
+                    raise ValueError("PAID_RANGE_MIN_MUST_BE_LTE_MAX")
             if self.price_fixed is not None:
                 raise ValueError("PAID_RANGE_MUST_NOT_HAVE_FIXED_PRICE")
 
@@ -216,18 +214,20 @@ class EventCreate(BaseModel):
 
 
 class EventUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=3, max_length=120)
+    title: Optional[str] = Field(default=None, max_length=120)
     description: Optional[str] = Field(default=None, max_length=2000)
-    city: Optional[str] = Field(default=None, min_length=2, max_length=80)
-    where: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    city: Optional[str] = Field(default=None, max_length=80)
+    where: Optional[str] = Field(default=None, max_length=120)
     address: Optional[str] = Field(default=None, max_length=240)
     location_lat: Optional[float] = Field(default=None, ge=-90, le=90)
     location_lng: Optional[float] = Field(default=None, ge=-180, le=180)
-    interest_tag: Optional[str] = Field(default=None, min_length=2, max_length=40)
+    interest_tag: Optional[str] = Field(default=None, max_length=40)
     interest_tags: Optional[list[str]] = Field(default=None, max_length=10)
 
     start_at: Optional[datetime] = None
     end_at: Optional[datetime] = None
+    draft_date: Optional[date] = None
+    draft_time: Optional[time] = None
 
     capacity: Optional[int] = Field(default=None, ge=1, le=100000)
     status: Optional[EventStatusType] = None
@@ -271,20 +271,12 @@ class EventUpdate(BaseModel):
                 raise ValueError("FREE_EVENT_MUST_NOT_HAVE_PRICES_OR_LINK")
 
         if self.pricing_type == "paid_fixed":
-            if self.price_fixed is None and touches_pricing_fields:
-                raise ValueError("PAID_FIXED_REQUIRES_PRICE_FIXED")
-            if self.payment_link is None and touches_pricing_fields:
-                raise ValueError("PAID_EVENT_REQUIRES_PAYMENT_LINK")
             if self.price_min is not None or self.price_max is not None:
                 raise ValueError("PAID_FIXED_MUST_NOT_HAVE_RANGE")
 
         if self.pricing_type == "paid_range":
-            if (self.price_min is None or self.price_max is None) and touches_pricing_fields:
-                raise ValueError("PAID_RANGE_REQUIRES_PRICE_MIN_MAX")
             if self.price_min is not None and self.price_max is not None and self.price_min > self.price_max:
                 raise ValueError("PAID_RANGE_MIN_MUST_BE_LTE_MAX")
-            if self.payment_link is None and touches_pricing_fields:
-                raise ValueError("PAID_EVENT_REQUIRES_PAYMENT_LINK")
             if self.price_fixed is not None:
                 raise ValueError("PAID_RANGE_MUST_NOT_HAVE_FIXED_PRICE")
 
@@ -295,18 +287,20 @@ class EventOut(BaseModel):
     id: int
     partner_user_id: int
 
-    title: str
+    title: Optional[str]
     description: Optional[str]
-    city: str
-    where: str
+    city: Optional[str]
+    where: Optional[str]
     address: Optional[str] = None
     location_lat: Optional[float] = None
     location_lng: Optional[float] = None
-    interest_tag: str
+    interest_tag: Optional[str]
     interest_tags: Optional[list[str]] = None
 
-    start_at: datetime
-    end_at: datetime
+    start_at: Optional[datetime]
+    end_at: Optional[datetime]
+    draft_date: Optional[date] = None
+    draft_time: Optional[time] = None
     capacity: Optional[int]
 
     status: str

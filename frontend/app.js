@@ -401,6 +401,11 @@ const I18N = {
     "chat.defaultEventTitle": "📣 Wydarzenie",
     "chat.checkingContent": "Sprawdzamy treść wiadomości…",
     "groups.menu.title": "Menu grupy",
+    "groups.menu.edit": "Edytuj grupę",
+    "groups.edit.modalTitle": "Edytuj grupę",
+    "groups.edit.submit": "Zapisz zmiany",
+    "groups.edit.toastSuccess": "Zmiany w grupie zostały zapisane",
+    "groups.edit.toastFailed": "Nie udało się zapisać zmian",
     "groups.menu.notificationsOn": "Włącz powiadomienia",
     "groups.menu.notificationsOff": "Wycisz grupę",
     "groups.menu.people": "Ludzie w grupie",
@@ -570,7 +575,8 @@ const I18N = {
     "partnerCreate.timeHint": "GG:MM",
     "partnerCreate.where": "Gdzie odbywa się wydarzenie? *",
     "partnerCreate.addressPlaceholder": "np. Studio Aurora albo ul. Słoneczna 12",
-    "partnerCreate.findPlace": "Znajdź miejsce na mapie",
+    "partnerCreate.findPlace": "Potwierdź lokalizację",
+    "partnerCreate.locationHint": "Wpisz miejsce, potwierdź lokalizację i wybierz właściwy wynik z listy.",
     "partnerCreate.interest": "Zainteresowanie / hashtag *",
     "partnerCreate.interestPlaceholder": "np. muzyka",
     "partnerCreate.description": "Opis",
@@ -590,9 +596,13 @@ const I18N = {
     "partnerCreate.priceTo": "Do (zł)",
     "partnerCreate.ticketLink": "Link do biletów / rezerwacji",
     "partnerCreate.saveDraft": "Zapisz szkic",
-    "partnerCreate.publish": "Utwórz wydarzenie",
+    "partnerCreate.publish": "Opublikuj wydarzenie",
     "partnerCreate.resume": "Wznów wydarzenie",
     "partnerCreate.publishExisting": "Opublikuj",
+    "partnerCreate.editTitle": "Edytuj wydarzenie",
+    "partnerCreate.update": "Zaktualizuj wydarzenie",
+    "partnerCreate.resumeTitle": "Wznów wydarzenie",
+    "partnerCreate.editDraftTitle": "Edytuj szkic",
     "partnerEvent.featured": "Wyróżnione",
     "partnerEvent.signupsShort": "{{count}} zapisów",
     "partnerEvent.observersShort": "{{count}} obserwacji",
@@ -767,12 +777,12 @@ const I18N = {
     "partnerPlace.notFound": "Nie znaleziono miejsca. Doprecyzuj adres lub nazwę.",
     "partnerPlace.searchFailed": "Nie udało się wyszukać miejsca.",
     "partnerPlace.defaultPlace": "Miejsce",
-    "partnerPlace.selectedLabel": "Wybrano:",
+    "partnerPlace.selectedLabel": "✓ Lokalizacja potwierdzona",
     "partnerPlace.defaultLower": "miejsce",
-    "partnerPlace.selectedToast": "Miejsce wydarzenia zostało wybrane",
+    "partnerPlace.selectedToast": "Lokalizacja została potwierdzona",
+    "partnerPlace.change": "Zmień",
     "partnerEvent.editorOpened": "Otwarto wydarzenie do edycji",
     "partnerEvent.partnerOnly": "To jest dostępne tylko dla organizatora",
-    "partnerEvent.draftRequired": "Aby zapisać szkic, uzupełnij: nazwa, miasto, kiedy, gdzie, hashtag",
     "partnerEvent.invalidDate": "Podaj poprawną datę wydarzenia",
     "partnerEvent.interestLimitReached": "Ten plan pozwala dodać maks. {{limit}} hashtagów do wydarzenia.",
     "partnerEvent.invalidCapacity": "Podaj poprawną liczbę miejsc",
@@ -783,8 +793,18 @@ const I18N = {
     "partnerEvent.draftSaveFailed": "Nie udało się zapisać szkicu",
     "partnerEvent.draftSaved": "Zapisano szkic wydarzenia",
     "partnerEvent.createdAsDraft": "Zapisano wydarzenie jako szkic",
-    "partnerEvent.publishRequiredExisting": "Uzupełnij: nazwa, miasto, kiedy",
-    "partnerEvent.publishRequiredNew": "Uzupełnij: nazwa, miasto, kiedy, gdzie, hashtag",
+    "partnerEvent.notReadyToPublish": "Uzupełnij przed publikacją: {{fields}}.",
+    "partnerEvent.missing.title": "nazwa",
+    "partnerEvent.missing.city": "miasto",
+    "partnerEvent.missing.date": "data",
+    "partnerEvent.missing.time": "godzina",
+    "partnerEvent.missing.location": "lokalizacja",
+    "partnerEvent.missing.interest": "zainteresowanie",
+    "partnerEvent.missing.capacity": "liczba miejsc",
+    "partnerEvent.missing.price": "cena",
+    "partnerEvent.missing.priceFrom": "cena od",
+    "partnerEvent.missing.priceTo": "cena do",
+    "partnerEvent.missing.ticketLink": "link do biletów / rezerwacji",
     "partnerEvent.saveChangesFailed": "Nie udało się zapisać zmian wydarzenia",
     "partnerEvent.updated": "Zaktualizowano wydarzenie",
     "partnerEvent.draftSavedPublishFailed": "Zapisano szkic, ale nie udało się go opublikować",
@@ -1377,6 +1397,11 @@ const I18N = {
     "chat.defaultEventTitle": "📣 Event",
     "chat.checkingContent": "Checking message content…",
     "groups.menu.title": "Group menu",
+    "groups.menu.edit": "Edit group",
+    "groups.edit.modalTitle": "Edit group",
+    "groups.edit.submit": "Save changes",
+    "groups.edit.toastSuccess": "Group changes have been saved",
+    "groups.edit.toastFailed": "Could not save changes",
     "groups.menu.notificationsOn": "Turn on notifications",
     "groups.menu.notificationsOff": "Mute group",
     "groups.menu.people": "People in group",
@@ -1509,7 +1534,8 @@ const I18N = {
     "partnerCreate.timeHint": "HH:MM",
     "partnerCreate.where": "Where does the event take place? *",
     "partnerCreate.addressPlaceholder": "e.g. Aurora Studio or 12 Sunny Street",
-    "partnerCreate.findPlace": "Find place on map",
+    "partnerCreate.findPlace": "Confirm location",
+    "partnerCreate.locationHint": "Enter a place, confirm the location, then select the correct result from the list.",
     "partnerCreate.interest": "Interest / hashtag *",
     "partnerCreate.interestPlaceholder": "e.g. music",
     "partnerCreate.description": "Description",
@@ -1529,9 +1555,13 @@ const I18N = {
     "partnerCreate.priceTo": "To (PLN)",
     "partnerCreate.ticketLink": "Ticket / reservation link",
     "partnerCreate.saveDraft": "Save draft",
-    "partnerCreate.publish": "Create event",
+    "partnerCreate.publish": "Publish event",
     "partnerCreate.resume": "Resume event",
     "partnerCreate.publishExisting": "Publish",
+    "partnerCreate.editTitle": "Edit event",
+    "partnerCreate.update": "Update event",
+    "partnerCreate.resumeTitle": "Resume event",
+    "partnerCreate.editDraftTitle": "Edit draft",
     "partnerEvent.featured": "Featured",
     "partnerEvent.signupsShort": "{{count}} signups",
     "partnerEvent.observersShort": "{{count}} observers",
@@ -1706,12 +1736,12 @@ const I18N = {
     "partnerPlace.notFound": "Place not found. Refine the address or name.",
     "partnerPlace.searchFailed": "Could not search for the place.",
     "partnerPlace.defaultPlace": "Place",
-    "partnerPlace.selectedLabel": "Selected:",
+    "partnerPlace.selectedLabel": "✓ Location confirmed",
     "partnerPlace.defaultLower": "place",
-    "partnerPlace.selectedToast": "Event place selected",
+    "partnerPlace.selectedToast": "Location confirmed",
+    "partnerPlace.change": "Change",
     "partnerEvent.editorOpened": "Event opened for editing",
     "partnerEvent.partnerOnly": "This is available only for organizers",
-    "partnerEvent.draftRequired": "To save a draft, fill in: name, city, date, place and hashtag",
     "partnerEvent.invalidDate": "Enter a valid event date",
     "partnerEvent.interestLimitReached": "This plan allows up to {{limit}} event hashtags.",
     "partnerEvent.invalidCapacity": "Enter a valid number of spots",
@@ -1722,8 +1752,18 @@ const I18N = {
     "partnerEvent.draftSaveFailed": "Could not save draft",
     "partnerEvent.draftSaved": "Event draft saved",
     "partnerEvent.createdAsDraft": "Event saved as draft",
-    "partnerEvent.publishRequiredExisting": "Fill in: name, city and date",
-    "partnerEvent.publishRequiredNew": "Fill in: name, city, date, place and hashtag",
+    "partnerEvent.notReadyToPublish": "Complete before publishing: {{fields}}.",
+    "partnerEvent.missing.title": "name",
+    "partnerEvent.missing.city": "city",
+    "partnerEvent.missing.date": "date",
+    "partnerEvent.missing.time": "time",
+    "partnerEvent.missing.location": "location",
+    "partnerEvent.missing.interest": "interest",
+    "partnerEvent.missing.capacity": "number of spots",
+    "partnerEvent.missing.price": "price",
+    "partnerEvent.missing.priceFrom": "price from",
+    "partnerEvent.missing.priceTo": "price to",
+    "partnerEvent.missing.ticketLink": "ticket / reservation link",
     "partnerEvent.saveChangesFailed": "Could not save event changes",
     "partnerEvent.updated": "Event updated",
     "partnerEvent.draftSavedPublishFailed": "Draft saved, but it could not be published",
@@ -4754,26 +4794,156 @@ function refreshCreateGroupUi() {
   }
 }
 
-function openCreateGroupModal() {
+const USER_GROUP_INTEREST_TAG_LIMITS = {
+  free: 0,
+  plus: 1,
+  premium: 3,
+  vip: 5,
+};
+
+function getUserGroupInterestTagLimit() {
+  const plan = String(App.user?.plan || "free").toLowerCase();
+  return USER_GROUP_INTEREST_TAG_LIMITS[plan] ?? USER_GROUP_INTEREST_TAG_LIMITS.free;
+}
+
+function getCreateGroupInterestTags() {
+  if (!Array.isArray(App.createGroupInterestTags)) {
+    App.createGroupInterestTags = [];
+  }
+  return App.createGroupInterestTags;
+}
+
+function setCreateGroupInterestTags(tags) {
+  const clean = [];
+  const seen = new Set();
+
+  (tags || []).forEach((raw) => {
+    const tag = normalizeTag(String(raw || "").replaceAll("#", " ").trim());
+    if (!tag || seen.has(tag.toLowerCase())) return;
+
+    seen.add(tag.toLowerCase());
+    clean.push(tag);
+  });
+
+  App.createGroupInterestTags = clean;
+  return clean;
+}
+
+function commitCreateGroupInterestTag() {
+  const input = $("createGroupInterest");
+  if (!input) return;
+
+  const tag = normalizeTag(
+    String(input.value || "")
+      .replaceAll("#", " ")
+      .trim()
+  );
+
+  if (!tag) {
+    input.value = "";
+    return;
+  }
+
+  const tags = getCreateGroupInterestTags();
+  const limit = getUserGroupInterestTagLimit();
+
+  if (tags.some(
+    x => normalizeTag(String(x || "")).toLowerCase() === tag.toLowerCase()
+  )) {
+    input.value = "";
+    renderCreateGroupInterestTags();
+    return;
+  }
+
+  if (tags.length >= limit) {
+    input.value = "";
+    renderCreateGroupInterestTags();
+    return;
+  }
+
+  setCreateGroupInterestTags([...tags, tag]);
+  input.value = "";
+  renderCreateGroupInterestTags();
+}
+
+function renderCreateGroupInterestTags() {
+  const selected = $("createGroupInterestSelected");
+  const selectedText = $("createGroupInterestSelectedText");
+  const input = $("createGroupInterest");
+  const wrap = $("createGroupInterestInputWrap");
+
+  if (!selected || !selectedText || !input || !wrap) return;
+
+  const tags = getCreateGroupInterestTags();
+  const limit = getUserGroupInterestTagLimit();
+
+  selectedText.innerHTML = tags.map((tag, index) => `
+    <span class="chip eventInterestChip">
+      #${escapeHtml(getLocalizedInterestLabel(tag))}
+      <button type="button" class="eventInterestChipRemove createGroupInterestChipRemove" data-index="${index}" aria-label="Usuń hashtag">×</button>
+    </span>
+  `).join("");
+
+  input.disabled = tags.length >= limit;
+  wrap.style.display = tags.length >= limit ? "none" : "";
+
+  let counter = $("createGroupInterestCounter");
+  if (!counter) {
+    counter = document.createElement("div");
+    counter.id = "createGroupInterestCounter";
+    counter.className = "sectionSub mt8";
+    selected.insertAdjacentElement("afterend", counter);
+  }
+
+  counter.textContent = `${tags.length}/${limit}`;
+}
+
+function openEditGroupModal(groupId) {
+  const allGroups = [...(App.myGroups || []), ...(App.groups || [])];
+  const group = allGroups.find(
+    x => String(x.id) === String(groupId)
+  );
+
+  if (!group || !group.isCreator) return;
+
+  openCreateGroupModal(group);
+}
+
+function openCreateGroupModal(groupToEdit = null) {
+  const isEdit = !!groupToEdit;
   const rules = getUserGroupCreateRules();
 
-  if (!rules.canCreate) {
+  if (!isEdit && !rules.canCreate) {
     toast(t("groups.create.toastLocked"));
     return;
   }
 
-  openModal(t("groups.create.modalTitle"), `
+  if (isEdit && !groupToEdit?.isCreator) {
+    return;
+  }
+
+  setCreateGroupInterestTags(
+    isEdit ? getGroupInterestTags(groupToEdit) : []
+  );
+
+  openModal(
+    isEdit ? t("groups.edit.modalTitle") : t("groups.create.modalTitle"),
+    `
+    <span data-hide-modal-footer="1" hidden></span>
     <label>${t("groups.create.title")}</label>
-    <input id="createGroupTitle" type="text" placeholder="${t("groups.create.titlePlaceholder")}" />
+    <input id="createGroupTitle" type="text" placeholder="${t("groups.create.titlePlaceholder")}" value="${isEdit ? escapeHtml(groupToEdit.title || "") : ""}" />
 
     <label class="mt12">${t("groups.create.interest")}</label>
-    <div class="hashRow">
+    <div class="hashRow" id="createGroupInterestInputWrap">
       <span class="hashPrefix">#</span>
       <input id="createGroupInterest" type="text" placeholder="${t("groups.create.interestPlaceholder")}" />
     </div>
+    <div id="createGroupInterestSelected">
+      <span id="createGroupInterestSelectedText"></span>
+    </div>
 
     <label class="mt12">${t("groups.create.description")}</label>
-    <textarea id="createGroupDesc" maxlength="600" placeholder="${t("groups.create.descriptionPlaceholder")}"></textarea>
+    <textarea id="createGroupDesc" maxlength="600" placeholder="${t("groups.create.descriptionPlaceholder")}">${isEdit ? escapeHtml(groupToEdit.desc || "") : ""}</textarea>
 
     <div class="sectionSub mt12">
       ${rules.createLimit == null
@@ -4782,15 +4952,46 @@ function openCreateGroupModal() {
     </div>
 
     <div class="row mt16">
-      <button class="btn" type="button" onclick="submitCreateGroup()">${t("groups.create.submit")}</button>
+      <button class="btn" type="button" onclick="${isEdit ? `submitEditGroup('${groupToEdit.id}')` : "submitCreateGroup()"}">${isEdit ? t("groups.edit.submit") : t("groups.create.submit")}</button>
       <button class="btn secondary" type="button" onclick="closeModal()">${t("groups.create.cancel")}</button>
     </div>
   `);
+
+  setTimeout(() => renderCreateGroupInterestTags(), 0);
 }
 
-async function submitCreateGroup() {
+document.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.(".createGroupInterestChipRemove");
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const index = Number(btn.dataset.index);
+  const tags = getCreateGroupInterestTags();
+
+  if (!Number.isInteger(index) || index < 0 || index >= tags.length) return;
+
+  setCreateGroupInterestTags(tags.filter((_, i) => i !== index));
+  renderCreateGroupInterestTags();
+
+  setTimeout(() => $("createGroupInterest")?.focus(), 0);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.target?.id !== "createGroupInterest") return;
+
+  if (e.key === "Enter" || e.key === " " || e.key === "," || e.key === ".") {
+    e.preventDefault();
+    e.stopPropagation();
+    commitCreateGroupInterestTag();
+  }
+});
+
+async function submitEditGroup(groupId) {
   const title = $("createGroupTitle")?.value?.trim();
-  const interest = normalizeTag($("createGroupInterest")?.value?.trim());
+  commitCreateGroupInterestTag();
+  const interestTags = getCreateGroupInterestTags();
   const description = $("createGroupDesc")?.value?.trim() || "";
 
   if (!title || title.length < 3) {
@@ -4798,7 +4999,55 @@ async function submitCreateGroup() {
     return;
   }
 
-  if (!interest || interest.length < 2) {
+  if (!interestTags.length) {
+    toast(t("groups.create.toastInterest"));
+    return;
+  }
+
+  try {
+    const data = await apiFetch(`/groups/${groupId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        description,
+        interest_tag: interestTags.join(","),
+      }),
+    });
+
+    if (!data?.success) {
+      toast(data?.error?.message || t("groups.edit.toastFailed"));
+      return;
+    }
+
+    closeModal();
+
+    await Promise.all([loadMyGroups(), loadGroups()]);
+    renderGroups();
+
+    if (String(App.selectedGroupId) === String(groupId)) {
+      await openGroup(groupId);
+    }
+
+    toast(t("groups.edit.toastSuccess"));
+  } catch (err) {
+    toast(err?.userMessage || t("groups.edit.toastFailed"));
+  }
+}
+
+
+async function submitCreateGroup() {
+  const title = $("createGroupTitle")?.value?.trim();
+  commitCreateGroupInterestTag();
+  const interestTags = getCreateGroupInterestTags();
+  const description = $("createGroupDesc")?.value?.trim() || "";
+
+  if (!title || title.length < 3) {
+    toast(t("groups.create.toastTitle"));
+    return;
+  }
+
+  if (!interestTags.length) {
     toast(t("groups.create.toastInterest"));
     return;
   }
@@ -4810,7 +5059,7 @@ async function submitCreateGroup() {
       body: JSON.stringify({
         title,
         description,
-        interest_tag: interest,
+        interest_tag: interestTags.join(","),
       }),
     });
 
@@ -5810,7 +6059,7 @@ function openPerson(personId) {
     const shared = new Set(commonInterests(p).map(x => String(x).toLowerCase()));
     (p.interests || []).forEach(tag => {
       const chip = makeChip(`#${getLocalizedInterestLabel(tag)}`, null);
-      if (shared.has(String(tag).toLowerCase())) {
+      if (shared.has(normalizeTag(String(tag || "")).toLowerCase())) {
         chip.classList.add("isShared");
       }
       chips.appendChild(chip);
@@ -5865,7 +6114,7 @@ function openPerson(personId) {
         const shared = new Set(commonInterests(full).map(x => String(x).toLowerCase()));
         (full.interests || []).forEach(tag => {
           const chip = makeChip(`#${getLocalizedInterestLabel(tag)}`, null);
-          if (shared.has(String(tag).toLowerCase())) {
+          if (shared.has(normalizeTag(String(tag || "")).toLowerCase())) {
             chip.classList.add("isShared");
           }
           fullChips.appendChild(chip);
@@ -7486,7 +7735,7 @@ async function openGroup(groupId) {
   }
 
   safeSetText("groupTitle", g.title);
-  safeSetText("groupTagline", g.interestTag ? `#${getLocalizedInterestLabel(g.interestTag)}` : "");
+  safeSetText("groupTagline", formatGroupInterestTags(g));
 
   const joinCta = $("groupJoinCta");
   const input = $("groupInput");
@@ -7907,6 +8156,15 @@ function openGroupMenu() {
            </button>
 
     ${
+      isCreator
+        ? `<button class="btn secondary mt12" type="button"
+             onclick="closeModal(); openEditGroupModal('${groupId}');">
+             ${t("groups.menu.edit")}
+           </button>`
+        : ``
+    }
+
+    ${
       inGroup && isCreator
         ? `<button class="btn danger mt12" type="button"
              onclick="closeGroup('${groupId}'); closeModal();">
@@ -7971,7 +8229,13 @@ async function openGroupPeopleScreen() {
   if (!g) return;
 
   safeSetText("groupPeopleTitle", t("groups.menu.people"));
-  safeSetText("groupPeopleTagline", g.title ? `${g.title}${g.interestTag ? ` • #${getLocalizedInterestLabel(g.interestTag)}` : ""}` : (g.interestTag ? `#${getLocalizedInterestLabel(g.interestTag)}` : ""));
+  const groupPeopleTags = formatGroupInterestTags(g);
+  safeSetText(
+    "groupPeopleTagline",
+    g.title
+      ? `${g.title}${groupPeopleTags ? ` • ${groupPeopleTags}` : ""}`
+      : groupPeopleTags
+  );
 
   let groupPeople = { members: [], invited: [] };
   try {
@@ -7990,13 +8254,14 @@ async function openGroupPeopleScreen() {
   const memberIds = new Set((groupPeople.members || []).map(x => String(x.id)));
   const invitedIds = new Set((groupPeople.invited || []).map(x => String(x.id)));
   const myId = String(App.currentUserId || "");
-  const tag = String(g.interestTag || "").toLowerCase();
+  const groupTags = getGroupInterestTags(g);
 
   const similarFriends = allFriends
     .filter(f => {
       const id = String(f.id || "");
       if (!Array.isArray(f.interests)) return false;
-      if (!f.interests.map(x => x.toLowerCase()).includes(tag)) return false;
+      const friendTags = f.interests.map(x => normalizeTag(String(x || ""))).filter(Boolean);
+      if (!friendTags.some(tag => groupTags.includes(tag))) return false;
       if (!id || id === myId) return false;
       if (memberIds.has(id)) return false;
       if (invitedIds.has(id)) return false;
@@ -8150,13 +8415,14 @@ async function openInviteFriendToGroup() {
   const memberIds = new Set((groupPeople.members || []).map(x => String(x.id)));
   const invitedIds = new Set((groupPeople.invited || []).map(x => String(x.id)));
   const myId = String(App.user?.id || "");
-  const tag = String(g.interestTag || "").toLowerCase();
+  const groupTags = getGroupInterestTags(g);
 
   const similarFriends = allFriends
     .filter(f => {
       const id = String(f.id || "");
       if (!Array.isArray(f.interests)) return false;
-      if (!f.interests.map(x => x.toLowerCase()).includes(tag)) return false;
+      const friendTags = f.interests.map(x => normalizeTag(String(x || ""))).filter(Boolean);
+      if (!friendTags.some(tag => groupTags.includes(tag))) return false;
       if (!id || id === myId) return false;
       if (memberIds.has(id)) return false;
       if (invitedIds.has(id)) return false;
@@ -8339,6 +8605,7 @@ function initPartnerPricingFields() {
 
   syncPartnerPricingFields();
   syncPartnerCapacityFields();
+  initPartnerEventPublishReadiness();
 }
 
 function syncPartnerEventSubmitBtn() {
@@ -8348,22 +8615,22 @@ function syncPartnerEventSubmitBtn() {
   if (!btn) return;
 
   if (App.partnerEventFormMode === "published_edit") {
-    btn.textContent = "Zaktualizuj wydarzenie";
-    if (titleEl) titleEl.textContent = "Edytuj wydarzenie";
+    btn.textContent = t("partnerCreate.update");
+    if (titleEl) titleEl.textContent = t("partnerCreate.editTitle");
     if (draftBtn) draftBtn.style.display = "none";
     return;
   }
 
   if (App.partnerEventFormMode === "archived_edit") {
     btn.textContent = t("partnerCreate.resume");
-    if (titleEl) titleEl.textContent = "Wznów wydarzenie";
+    if (titleEl) titleEl.textContent = t("partnerCreate.resumeTitle");
     if (draftBtn) draftBtn.style.display = "none";
     return;
   }
 
   if (App.partnerEventFormMode === "draft_edit") {
     btn.textContent = t("partnerCreate.publishExisting");
-    if (titleEl) titleEl.textContent = "Edytuj szkic";
+    if (titleEl) titleEl.textContent = t("partnerCreate.editDraftTitle");
     if (draftBtn) draftBtn.style.display = "";
     return;
   }
@@ -8402,6 +8669,8 @@ function clearPartnerEventForm() {
   if ($("peUnlimitedCapacity")) $("peUnlimitedCapacity").checked = true;
   syncPartnerPricingFields();
   syncPartnerCapacityFields();
+  invalidatePartnerEventPlaceConfirmation();
+  syncPartnerEventPublishButton();
 }
 
 function openNewPartnerEventForm() {
@@ -8633,6 +8902,36 @@ function openPartnerEventParticipantsView(eventId) {
 
 
 
+function invalidatePartnerEventPlaceConfirmation() {
+  const inputWrap = $("peLocationInputWrap");
+  if (inputWrap) inputWrap.hidden = false;
+
+  if ($("peWhere")) $("peWhere").value = "";
+  if ($("peResolvedAddress")) $("peResolvedAddress").value = "";
+  if ($("peLocationLat")) $("peLocationLat").value = "";
+  if ($("peLocationLng")) $("peLocationLng").value = "";
+
+  const hint = $("peSelectedPlaceHint");
+  if (hint) {
+    hint.hidden = true;
+    hint.innerHTML = "";
+  }
+
+  const results = $("pePlaceResults");
+  if (results) results.innerHTML = "";
+
+  const btn = $("peFindPlaceBtn");
+  if (btn) {
+    btn.hidden = false;
+    btn.setAttribute("data-i18n", "partnerCreate.findPlace");
+    btn.textContent = t("partnerCreate.findPlace");
+    btn.dataset.placeConfirmed = "false";
+  }
+
+  syncPartnerEventPublishButton();
+}
+
+
 async function searchPartnerEventPlace() {
   const address = $("peAddress")?.value?.trim() || "";
   const city = $("peCity")?.value?.trim() || "";
@@ -8659,12 +8958,39 @@ async function searchPartnerEventPlace() {
     }
 
     renderPartnerPlaceResults(results);
+    if (btn) btn.hidden = true;
   } catch (e) {
     console.error("searchPartnerEventPlace error", e);
     toast(t("partnerPlace.searchFailed"));
   } finally {
     if (btn) btn.disabled = false;
   }
+}
+
+
+function showPartnerEventPlaceConfirmation(name = "", address = "") {
+  const inputWrap = $("peLocationInputWrap");
+  if (inputWrap) inputWrap.hidden = true;
+
+  const placeBtn = $("peFindPlaceBtn");
+  if (placeBtn) {
+    placeBtn.hidden = false;
+    placeBtn.setAttribute("data-i18n", "partnerPlace.change");
+    placeBtn.textContent = t("partnerPlace.change");
+    placeBtn.dataset.placeConfirmed = "true";
+  }
+
+  const hint = $("peSelectedPlaceHint");
+  if (hint) {
+    hint.hidden = false;
+    hint.innerHTML = `
+      <span class="partnerPlaceConfirmedLabel">${t("partnerPlace.selectedLabel")}</span>
+      <span class="partnerPlaceConfirmedName">${escapeHtml(name || address || t("partnerPlace.defaultLower"))}</span>
+      ${address ? `<span class="partnerPlaceConfirmedAddress">${escapeHtml(address)}</span>` : ""}
+    `;
+  }
+
+  syncPartnerEventPublishButton();
 }
 
 
@@ -8678,20 +9004,15 @@ function renderPartnerPlaceResults(results = []) {
   }
 
   box.innerHTML = `
-    <div class="card" style="padding:10px;display:flex;flex-direction:column;gap:10px;">
+    <div class="partnerPlaceResultsList">
       ${results.map((place, idx) => `
         <button
           type="button"
-          class="btn secondary"
+          class="partnerPlaceResult"
           data-place-index="${idx}"
-          style="justify-content:flex-start;text-align:left;"
         >
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <strong>${escapeHtml(place.name || t("partnerPlace.defaultPlace"))}</strong>
-            <span style="font-size:12px;opacity:.75;">
-              ${escapeHtml(place.address || "")}
-            </span>
-          </div>
+          <span class="partnerPlaceResultName">${escapeHtml(place.name || t("partnerPlace.defaultPlace"))}</span>
+          <span class="partnerPlaceResultAddress">${escapeHtml(place.address || "")}</span>
         </button>
       `).join("")}
     </div>
@@ -8710,14 +9031,10 @@ function renderPartnerPlaceResults(results = []) {
       if ($("peLocationLat")) $("peLocationLat").value = place.lat || "";
       if ($("peLocationLng")) $("peLocationLng").value = place.lng || "";
 
-      const hint = $("peSelectedPlaceHint");
-      if (hint) {
-        hint.hidden = false;
-        hint.innerHTML = `
-          <span style="display:block;font-weight:900;">${t("partnerPlace.selectedLabel")} ${escapeHtml(place.name || place.address || t("partnerPlace.defaultLower"))}</span>
-          ${place.address ? `<span style="display:block;font-size:12px;opacity:.75;margin-top:4px;">${escapeHtml(place.address)}</span>` : ""}
-        `;
-      }
+      showPartnerEventPlaceConfirmation(
+        place.name || typedPlaceName,
+        place.address || ""
+      );
 
       if (box) box.innerHTML = "";
       toast(t("partnerPlace.selectedToast"));
@@ -8813,7 +9130,9 @@ function commitSingleEventTag() {
   const tags = getPartnerEventInterestTags();
   const limit = getPartnerEventInterestTagLimit();
 
-  if (tags.map(x => x.toLowerCase()).includes(tag.toLowerCase())) {
+  if (tags.some(
+    x => normalizeTag(String(x || "")).toLowerCase() === tag.toLowerCase()
+  )) {
     input.value = "";
     renderPartnerEventInterestTags();
     return;
@@ -8829,6 +9148,7 @@ function commitSingleEventTag() {
   setPartnerEventInterestTags([...tags, tag]);
   input.value = "";
   renderPartnerEventInterestTags();
+  syncPartnerEventPublishButton();
 }
 
 function syncPartnerEventDateTimeFields() {
@@ -8878,6 +9198,12 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+document.addEventListener("input", (e) => {
+  if (e.target?.id === "peAddress") {
+    invalidatePartnerEventPlaceConfirmation();
+  }
+});
+
 document.addEventListener("change", (e) => {
   if (e.target?.id === "peInterest") {
     commitSingleEventTag();
@@ -8893,10 +9219,17 @@ document.addEventListener("click", (e) => {
   const btn = e.target?.closest?.("#peFindPlaceBtn");
   if (!btn) return;
   e.preventDefault();
+
+  if (btn.dataset.placeConfirmed === "true") {
+    invalidatePartnerEventPlaceConfirmation();
+    $("peAddress")?.focus();
+    return;
+  }
+
   searchPartnerEventPlace();
 });
 
-function openPartnerEventEditor(eventId) {
+function openPartnerEventEditor(eventId, options = {}) {
   const ev = (App.partnerEvents || []).find(x => String(x.id) === String(eventId));
   if (!ev) return;
 
@@ -8912,13 +9245,47 @@ function openPartnerEventEditor(eventId) {
   if (ev.start_at) {
     setPartnerEventDateTimeFields(String(ev.start_at).trim().replace(" ", "T").slice(0, 16));
   } else {
-    setPartnerEventDateTimeFields("");
+    const draftDate = String(ev.draft_date || "").slice(0, 10);
+    const draftTime = String(ev.draft_time || "").slice(0, 5);
+
+    if ($("peDate")) $("peDate").value = draftDate;
+    if ($("peTime")) $("peTime").value = draftTime;
+    syncPartnerEventDateTimeFields();
   }
   if ($("peWhere")) $("peWhere").value = ev.where || ev.location || "";
   if ($("peAddress")) $("peAddress").value = ev.where || ev.address || ev.location || "";
   if ($("peResolvedAddress")) $("peResolvedAddress").value = ev.address || "";
   if ($("peLocationLat")) $("peLocationLat").value = ev.location_lat ?? "";
   if ($("peLocationLng")) $("peLocationLng").value = ev.location_lng ?? "";
+
+  const hasConfirmedLocation =
+    Boolean(ev.where || ev.location) &&
+    Boolean(ev.address) &&
+    ev.location_lat != null &&
+    ev.location_lng != null;
+
+  if (hasConfirmedLocation) {
+    showPartnerEventPlaceConfirmation(
+      ev.where || ev.location || "",
+      ev.address || ""
+    );
+  } else {
+    const inputWrap = $("peLocationInputWrap");
+    if (inputWrap) inputWrap.hidden = false;
+
+    const placeBtn = $("peFindPlaceBtn");
+    if (placeBtn) {
+      placeBtn.textContent = t("partnerCreate.findPlace");
+      placeBtn.dataset.placeConfirmed = "false";
+    }
+
+    const hint = $("peSelectedPlaceHint");
+    if (hint) {
+      hint.hidden = true;
+      hint.innerHTML = "";
+    }
+  }
+
   setPartnerEventInterestTags(Array.isArray(ev.interest_tags) && ev.interest_tags.length ? ev.interest_tags : [ev.interest_tag || ev.interest || ""]);
   if ($("peInterest")) $("peInterest").value = "";
   renderPartnerEventInterestTags();
@@ -8938,8 +9305,11 @@ function openPartnerEventEditor(eventId) {
   if ($("peCapacity")) $("peCapacity").value = ev.capacity != null ? ev.capacity : "";
   syncPartnerPricingFields();
   syncPartnerCapacityFields();
+  syncPartnerEventPublishButton();
 
-  toast(t("partnerEvent.editorOpened"));
+  if (!options.silent) {
+    toast(t("partnerEvent.editorOpened"));
+  }
   go("S9_PARTNER_CREATE");
   renderPartnerEventParticipants();
 }
@@ -8956,27 +9326,29 @@ async function savePartnerEventDraft() {
 
   const title = $("peTitle")?.value?.trim();
   const city = normalizeCity($("peCity")?.value);
+  const draftDate = $("peDate")?.value?.trim() || null;
+  const draftTime = $("peTime")?.value?.trim() || null;
   const when = $("peWhen")?.value?.trim();
   const where = $("peWhere")?.value?.trim();
-  const address = $("peResolvedAddress")?.value?.trim() || $("peAddress")?.value?.trim() || null;
+  const address = $("peResolvedAddress")?.value?.trim() || null;
   const locationLat = $("peLocationLat")?.value ? Number($("peLocationLat")?.value) : null;
   const locationLng = $("peLocationLng")?.value ? Number($("peLocationLng")?.value) : null;
   const interestTags = getPartnerEventInterestTags();
   const interest = interestTags[0] || normalizeTag($("peInterest")?.value?.trim());
   const desc = $("peDesc")?.value?.trim();
 
-  if (!title || !city || !when || !where || !interest) {
-    toast(t("partnerEvent.draftRequired"));
-    return;
-  }
+  let startAt = null;
+  let endAt = null;
 
-  const startAt = parseEventWallClockDate(when);
-  if (Number.isNaN(startAt.getTime())) {
-    toast(t("partnerEvent.invalidDate"));
-    return;
-  }
+  if (when) {
+    startAt = parseEventWallClockDate(when);
+    if (Number.isNaN(startAt.getTime())) {
+      toast(t("partnerEvent.invalidDate"));
+      return;
+    }
 
-  const endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
+    endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
+  }
 
   const paidMode = $("pePaidMode")?.value || "free";
   const price = Number($("pePrice")?.value || 0);
@@ -8987,7 +9359,7 @@ async function savePartnerEventDraft() {
   const capacityRaw = $("peCapacity")?.value?.trim() || "";
   const capacityValue = capacityRaw ? Number(capacityRaw) : 0;
 
-  if (!unlimitedCapacity) {
+  if (!unlimitedCapacity && capacityRaw) {
     if (!Number.isInteger(capacityValue) || capacityValue < 1) {
       toast(t("partnerEvent.invalidCapacity"));
       return;
@@ -8995,26 +9367,26 @@ async function savePartnerEventDraft() {
   }
 
   if (paidMode === "paid_fixed") {
-    if (!ticketLink) {
-      toast(t("partnerEvent.ticketRequired"));
-      return;
-    }
-    if (!(price > 0)) {
+    const priceRaw = $("pePrice")?.value?.trim() || "";
+    if (priceRaw && !(price > 0)) {
       toast(t("partnerEvent.invalidPrice"));
       return;
     }
   }
 
   if (paidMode === "paid_range") {
-    if (!ticketLink) {
-      toast(t("partnerEvent.ticketRequired"));
-      return;
-    }
-    if (!(priceFrom > 0) || !(priceTo > 0)) {
+    const priceFromRaw = $("pePriceFrom")?.value?.trim() || "";
+    const priceToRaw = $("pePriceTo")?.value?.trim() || "";
+
+    if (priceFromRaw && !(priceFrom > 0)) {
       toast(t("partnerEvent.invalidPriceRange"));
       return;
     }
-    if (priceFrom > priceTo) {
+    if (priceToRaw && !(priceTo > 0)) {
+      toast(t("partnerEvent.invalidPriceRange"));
+      return;
+    }
+    if (priceFromRaw && priceToRaw && priceFrom > priceTo) {
       toast(t("partnerEvent.priceRangeOrder"));
       return;
     }
@@ -9027,27 +9399,32 @@ async function savePartnerEventDraft() {
   };
 
   const payload = {
-    title,
-    description: desc || "",
-    city,
-    where,
-    address,
+    title: title || null,
+    description: desc || null,
+    city: city || null,
+    where: where || null,
+    address: address || null,
     location_lat: locationLat,
     location_lng: locationLng,
-    interest_tag: interest,
-    interest_tags: interestTags.length ? interestTags : [interest],
-    start_at: toLocalApiDateTime(when),
-    end_at: addHourToLocalDateTime(when),
+    interest_tag: interest || null,
+    interest_tags: interestTags.length ? interestTags : [],
+    start_at: when ? toLocalApiDateTime(when) : null,
+    end_at: when ? addHourToLocalDateTime(when) : null,
+    draft_date: draftDate,
+    draft_time: draftTime,
     pricing_type: pricingTypeMap[paidMode] || "free",
     payment_link: ticketLink,
-    capacity: unlimitedCapacity ? null : capacityValue,
+    capacity: unlimitedCapacity || !capacityRaw ? null : capacityValue,
   };
 
   if (payload.pricing_type === "paid_fixed") {
-    payload.price_fixed = Math.round(price * 100);
+    const priceRaw = $("pePrice")?.value?.trim() || "";
+    payload.price_fixed = priceRaw ? Math.round(price * 100) : null;
   } else if (payload.pricing_type === "paid_range") {
-    payload.price_min = Math.round(priceFrom * 100);
-    payload.price_max = Math.round(priceTo * 100);
+    const priceFromRaw = $("pePriceFrom")?.value?.trim() || "";
+    const priceToRaw = $("pePriceTo")?.value?.trim() || "";
+    payload.price_min = priceFromRaw ? Math.round(priceFrom * 100) : null;
+    payload.price_max = priceToRaw ? Math.round(priceTo * 100) : null;
   }
 
   try {
@@ -9116,6 +9493,183 @@ function getPartnerPublishLimitBlockMessage() {
 }
 
 
+function syncPartnerEventPublishButton() {
+  const btn = $("pePublishBtn");
+  if (!btn) return;
+
+  btn.hidden = !isPartnerEventReadyToPublish();
+}
+
+
+function initPartnerEventPublishReadiness() {
+  const form = $("S9_PARTNER_CREATE");
+  if (!form || form.dataset.publishReadinessBound === "1") return;
+
+  const sync = () => {
+    syncPartnerEventPublishButton();
+
+    form.querySelectorAll(".partnerEventFieldMissing").forEach(el => {
+      const stillMissing = getPartnerEventMissingPublishFields()
+        .some(item => item.elementId === el.id);
+
+      if (!stillMissing) {
+        el.classList.remove("partnerEventFieldMissing");
+        el.removeAttribute("aria-invalid");
+      }
+    });
+  };
+
+  form.addEventListener("input", sync);
+  form.addEventListener("change", sync);
+  form.dataset.publishReadinessBound = "1";
+
+  sync();
+}
+
+
+function getPartnerEventMissingPublishFields() {
+  const missing = [];
+
+  const title = $("peTitle")?.value?.trim() || "";
+  const city = normalizeCity($("peCity")?.value);
+  const date = $("peDate")?.value?.trim() || "";
+  const time = $("peTime")?.value?.trim() || "";
+  const where = $("peWhere")?.value?.trim() || "";
+  const address = $("peResolvedAddress")?.value?.trim() || "";
+  const latRaw = $("peLocationLat")?.value?.trim() || "";
+  const lngRaw = $("peLocationLng")?.value?.trim() || "";
+  const interestTags = getPartnerEventInterestTags();
+  const pendingInterest = normalizeTag($("peInterest")?.value?.trim());
+
+  if (!title) missing.push({ key: "title", elementId: "peTitle" });
+  if (!city) missing.push({ key: "city", elementId: "peCity" });
+  if (!date) missing.push({ key: "date", elementId: "peDate" });
+  if (!time) missing.push({ key: "time", elementId: "peTime" });
+
+  if (!where || !address || !latRaw || !lngRaw) {
+    missing.push({ key: "location", elementId: "peAddress" });
+  }
+
+  if (!interestTags.length && !pendingInterest) {
+    missing.push({ key: "interest", elementId: "peInterest" });
+  }
+
+  const unlimitedCapacity = $("peUnlimitedCapacity")?.checked !== false;
+  if (!unlimitedCapacity) {
+    const capacityRaw = $("peCapacity")?.value?.trim() || "";
+    const capacityValue = Number(capacityRaw);
+    if (!capacityRaw || !Number.isInteger(capacityValue) || capacityValue < 1) {
+      missing.push({ key: "capacity", elementId: "peCapacity" });
+    }
+  }
+
+  const paidMode = $("pePaidMode")?.value || "free";
+  const ticketLink = $("peTicketLink")?.value?.trim() || "";
+
+  if (paidMode === "paid_fixed") {
+    const price = Number($("pePrice")?.value || 0);
+    if (!(price > 0)) missing.push({ key: "price", elementId: "pePrice" });
+    if (!ticketLink) missing.push({ key: "ticketLink", elementId: "peTicketLink" });
+  }
+
+  if (paidMode === "paid_range") {
+    const priceFrom = Number($("pePriceFrom")?.value || 0);
+    const priceTo = Number($("pePriceTo")?.value || 0);
+
+    if (!(priceFrom > 0)) missing.push({ key: "priceFrom", elementId: "pePriceFrom" });
+    if (!(priceTo > 0) || (priceFrom > 0 && priceTo > 0 && priceFrom > priceTo)) {
+      missing.push({ key: "priceTo", elementId: "pePriceTo" });
+    }
+    if (!ticketLink) missing.push({ key: "ticketLink", elementId: "peTicketLink" });
+  }
+
+  return missing;
+}
+
+
+function showPartnerEventMissingPublishFields() {
+  const form = $("S9_PARTNER_CREATE");
+  if (!form) return;
+
+  form.querySelectorAll(".partnerEventFieldMissing").forEach(el => {
+    el.classList.remove("partnerEventFieldMissing");
+    el.removeAttribute("aria-invalid");
+  });
+
+  const missing = getPartnerEventMissingPublishFields();
+
+  missing.forEach(item => {
+    const el = $(item.elementId);
+    if (!el) return;
+
+    el.classList.add("partnerEventFieldMissing");
+    el.setAttribute("aria-invalid", "true");
+  });
+
+  const fields = missing
+    .map(item => t(`partnerEvent.missing.${item.key}`))
+    .join(", ");
+
+  if (fields) {
+    toast(t("partnerEvent.notReadyToPublish", { fields }));
+  }
+
+  return missing;
+}
+
+
+function isPartnerEventReadyToPublish() {
+  const title = $("peTitle")?.value?.trim() || "";
+  const city = normalizeCity($("peCity")?.value);
+  const when = $("peWhen")?.value?.trim() || "";
+  const where = $("peWhere")?.value?.trim() || "";
+  const address = $("peResolvedAddress")?.value?.trim() || "";
+  const latRaw = $("peLocationLat")?.value?.trim() || "";
+  const lngRaw = $("peLocationLng")?.value?.trim() || "";
+  const interestTags = getPartnerEventInterestTags();
+  const pendingInterest = normalizeTag($("peInterest")?.value?.trim());
+  const hasInterest = interestTags.length > 0 || Boolean(pendingInterest);
+
+  if (!title || !city || !when || !where || !address || !latRaw || !lngRaw || !hasInterest) {
+    return false;
+  }
+
+  const startAt = parseEventWallClockDate(when);
+  if (Number.isNaN(startAt.getTime())) {
+    return false;
+  }
+
+  const unlimitedCapacity = $("peUnlimitedCapacity")?.checked !== false;
+  if (!unlimitedCapacity) {
+    const capacityRaw = $("peCapacity")?.value?.trim() || "";
+    const capacityValue = Number(capacityRaw);
+    if (!capacityRaw || !Number.isInteger(capacityValue) || capacityValue < 1) {
+      return false;
+    }
+  }
+
+  const paidMode = $("pePaidMode")?.value || "free";
+  const ticketLink = $("peTicketLink")?.value?.trim() || "";
+
+  if (paidMode === "paid_fixed") {
+    const price = Number($("pePrice")?.value || 0);
+    if (!ticketLink || !(price > 0)) {
+      return false;
+    }
+  }
+
+  if (paidMode === "paid_range") {
+    const priceFrom = Number($("pePriceFrom")?.value || 0);
+    const priceTo = Number($("pePriceTo")?.value || 0);
+    if (!ticketLink || !(priceFrom > 0) || !(priceTo > 0) || priceFrom > priceTo) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 async function publishPartnerEvent() {
   if (App.role !== "partner") {
     toast(t("partnerEvent.partnerOnly"));
@@ -9133,16 +9687,9 @@ async function publishPartnerEvent() {
   const interest = interestTags[0] || normalizeTag($("peInterest")?.value?.trim());
   const desc = $("peDesc")?.value?.trim();
 
-  if (App.selectedPartnerEventId) {
-    if (!title || !city || !when) {
-      toast(t("partnerEvent.publishRequiredExisting"));
-      return;
-    }
-  } else {
-    if (!title || !city || !when || !where || !interest) {
-      toast(t("partnerEvent.publishRequiredNew"));
-      return;
-    }
+  if (!isPartnerEventReadyToPublish()) {
+    showPartnerEventMissingPublishFields();
+    return;
   }
 
   const startAt = parseEventWallClockDate(when);
@@ -10310,7 +10857,7 @@ async function renderGroups() {
 
   if (myInterestTags.length) {
     suggestedGroups = suggestedGroups.filter(g =>
-      myInterestTags.includes(normalizeTag(String(g.interestTag || "")))
+      getGroupInterestTags(g).some(tag => myInterestTags.includes(tag))
     );
   } else {
     suggestedGroups = [];
@@ -10319,12 +10866,12 @@ async function renderGroups() {
   if (q) {
     myGroups = myGroups.filter(g =>
       (g.title || "").toLowerCase().includes(q) ||
-      matchesInterestSearch(g.interestTag, q)
+      getGroupInterestTags(g).some(tag => matchesInterestSearch(tag, q))
     );
 
     suggestedGroups = suggestedGroups.filter(g =>
       (g.title || "").toLowerCase().includes(q) ||
-      matchesInterestSearch(g.interestTag, q)
+      getGroupInterestTags(g).some(tag => matchesInterestSearch(tag, q))
     );
   }
 
@@ -10365,7 +10912,7 @@ const membersLabel = m === 1
             <div class="listAvatar">${premiumIcon("group", g.title || "Grupa")}</div>
             <div style="min-width:0;">
               <div class="listTitle">${g.title}</div>
-              <div class="listMeta">#${getLocalizedInterestLabel(g.interestTag)} • ${membersLabel}</div>
+              <div class="listMeta">${formatGroupInterestTags(g)} • ${membersLabel}</div>
             </div>
           </div>
           <div class="listRight">
@@ -10609,8 +11156,19 @@ function renderPartnerEvents() {
 
   const now = new Date();
 
-  const formatWhen = (value) => {
-    if (!value) return "Brak daty";
+  const formatWhen = (value, draftDate = null) => {
+    if (!value) {
+      const partialDate = String(draftDate || "").slice(0, 10);
+      if (!partialDate) return "Brak daty";
+
+      const parts = partialDate.split("-");
+      if (parts.length === 3) {
+        return `${parts[2]}.${parts[1]}.${parts[0]}`;
+      }
+
+      return partialDate;
+    }
+
     const d = parseEventWallClockDate(value);
     if (Number.isNaN(d.getTime())) return String(value);
     return d.toLocaleString("pl-PL", {
@@ -10670,7 +11228,7 @@ function renderPartnerEvents() {
             <div class="listAvatar">${premiumIcon("calendar", "Wydarzenie")}</div>
             <div style="min-width:0;">
               <div class="listTitle">${ev.title || "Bez nazwy"}</div>
-              <div class="listMeta">📅 ${formatWhen(ev.start_at)}</div>
+              <div class="listMeta">📅 ${formatWhen(ev.start_at, ev.draft_date)}</div>
               <div class="listMeta">📍 ${ev.where || "Brak miejsca"}${ev.city ? ` · ${ev.city}` : ""}</div>
               ${isFeatured ? `<div class="mt12"><span class="listTag featured">${t("partnerEvent.featured")}</span></div>` : ""}
             </div>
@@ -10797,8 +11355,66 @@ function togglePartnerEventSection(key) {
   renderPartnerEvents();
 }
 
+function isStoredPartnerEventReadyToPublish(ev) {
+  if (!ev) return false;
+
+  const title = String(ev.title || "").trim();
+  const city = String(ev.city || "").trim();
+  const where = String(ev.where || ev.location || "").trim();
+  const address = String(ev.address || "").trim();
+  const lat = Number(ev.location_lat);
+  const lng = Number(ev.location_lng);
+  const interestTags = Array.isArray(ev.interest_tags)
+    ? ev.interest_tags.filter(Boolean)
+    : [];
+  const interest = String(ev.interest_tag || ev.interest || "").trim();
+  const startAt = ev.start_at ? parseEventWallClockDate(ev.start_at) : null;
+
+  if (
+    !title ||
+    !city ||
+    !where ||
+    !address ||
+    ev.location_lat == null ||
+    ev.location_lng == null ||
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    (!interestTags.length && !interest) ||
+    !startAt ||
+    Number.isNaN(startAt.getTime())
+  ) {
+    return false;
+  }
+
+  if (ev.capacity != null && (!(Number(ev.capacity) > 0) || !Number.isInteger(Number(ev.capacity)))) {
+    return false;
+  }
+
+  const pricingType = String(ev.pricing_type || "free");
+
+  if (pricingType === "paid_fixed") {
+    if (!(Number(ev.price_fixed) > 0) || !String(ev.payment_link || "").trim()) return false;
+  }
+
+  if (pricingType === "paid_range") {
+    const min = Number(ev.price_min);
+    const max = Number(ev.price_max);
+    if (!(min > 0) || !(max > 0) || min > max || !String(ev.payment_link || "").trim()) return false;
+  }
+
+  return true;
+}
+
+
 async function quickPublishPartnerEvent(eventId) {
   if (!eventId) return;
+
+  const ev = (App.partnerEvents || []).find(x => String(x.id) === String(eventId));
+  if (!isStoredPartnerEventReadyToPublish(ev)) {
+    openPartnerEventEditor(eventId, { silent: true });
+    showPartnerEventMissingPublishFields();
+    return;
+  }
 
   try {
     const publishBlockMessage = getPartnerPublishLimitBlockMessage();
@@ -11102,7 +11718,7 @@ function refreshLocalizedInterestDetailView() {
 
       (p.interests || []).forEach(tag => {
         const chip = makeChip(`#${getLocalizedInterestLabel(tag)}`, null);
-        if (shared.has(String(tag).toLowerCase())) {
+        if (shared.has(normalizeTag(String(tag || "")).toLowerCase())) {
           chip.classList.add("isShared");
         }
         chips.appendChild(chip);
@@ -11138,7 +11754,7 @@ function refreshLocalizedInterestDetailView() {
     if (g) {
       safeSetText(
         "groupTagline",
-        g.interestTag ? `#${getLocalizedInterestLabel(g.interestTag)}` : ""
+        formatGroupInterestTags(g)
       );
     }
   }
@@ -11374,6 +11990,7 @@ const INTEREST_CANONICAL_ALIASES = {
   "festivals": "festiwale",
   "photography": "fotografia",
   "photo": "fotografia",
+  "foto": "fotografia",
   "gym": "siłownia",
   "running": "bieganie",
   "bicycle": "rower",
@@ -11425,6 +12042,7 @@ const INTEREST_CANONICAL_ALIASES = {
   "travel": "podróże",
   "travels": "podróże",
   "podróż": "podróże",
+  "podróżowanie": "podróże",
   "city breaks": "city break",
   "camping trips": "camping",
   "dog": "psy",
@@ -11439,6 +12057,7 @@ const INTEREST_CANONICAL_ALIASES = {
   "events": "eventy",
   "network": "networking",
   "business": "biznes",
+  "startups": "startup",
   "content creation": "tworzenie treści",
   "video editing": "montaż wideo",
   "podcasts": "podcasty",
@@ -11587,7 +12206,9 @@ async function syncUserInterests() {
 function addUserInterest(tag, chipsId) {
   const cleanTag = normalizeTag(tag);
   if (!cleanTag) return;
-  const exists = App.user.interests.some(x => x.toLowerCase() === cleanTag.toLowerCase());
+  const exists = App.user.interests.some(
+    x => normalizeTag(String(x || "")).toLowerCase() === cleanTag.toLowerCase()
+  );
   if (exists) {
     toast(t("profileInterests.alreadyAdded"));
     return;
@@ -11607,7 +12228,9 @@ function addUserInterest(tag, chipsId) {
 
 function removeUserInterest(tag, chipsId) {
   const cleanTag = normalizeTag(tag);
-  App.user.interests = App.user.interests.filter(x => x.toLowerCase() !== cleanTag.toLowerCase());
+  App.user.interests = App.user.interests.filter(
+    x => normalizeTag(String(x || "")).toLowerCase() !== cleanTag.toLowerCase()
+  );
   App.user.trainerInterests = (Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [])
     .filter(x => String(x).toLowerCase() !== cleanTag.toLowerCase());
   try { localStorage.setItem("usly_user_interests", JSON.stringify(App.user.interests)); } catch(_) {}
@@ -11646,10 +12269,14 @@ function toggleTrainerInterest(tag) {
   if (!clean || !isTrainerPlan()) return;
 
   const current = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
-  const exists = current.some(x => String(x).toLowerCase() === clean.toLowerCase());
+  const exists = current.some(
+    x => normalizeTag(String(x || "")).toLowerCase() === clean.toLowerCase()
+  );
 
   if (exists) {
-    App.user.trainerInterests = current.filter(x => String(x).toLowerCase() !== clean.toLowerCase());
+    App.user.trainerInterests = current.filter(
+      x => normalizeTag(String(x || "")).toLowerCase() !== clean.toLowerCase()
+    );
   } else {
     const limit = getTrainerInterestLimit();
     if (current.length >= limit) {
@@ -11698,7 +12325,9 @@ function renderTrainerInterestBox(boxId) {
     </div>
     <div class="trainerInterestChoices">
       ${interests.map(tag => {
-        const active = trainerInterests.some(x => String(x).toLowerCase() === String(tag).toLowerCase());
+        const active = trainerInterests.some(
+          x => normalizeTag(String(x || "")).toLowerCase() === normalizeTag(String(tag || "")).toLowerCase()
+        );
         return `<button class="trainerInterestChip ${active ? "active" : ""}" type="button" onclick="toggleTrainerInterest(decodeURIComponent('${encodeURIComponent(String(tag))}'))">${active ? "🎓 " : ""}#${escapeHtml(getLocalizedInterestLabel(tag))}</button>`;
       }).join("")}
     </div>
@@ -12081,9 +12710,20 @@ function setActiveTabs() {
 
 /* ------------------------- Helpers: matching interests -------------------------- */
 function commonInterests(person) {
-  const a = (App.user.interests || []).map(x => x.toLowerCase());
-  const b = (person.interests || []).map(x => x.toLowerCase());
-  return a.filter(x => b.includes(x));
+  const myInterests = (App.user.interests || [])
+    .map(x => normalizeTag(String(x || "")))
+    .filter(Boolean);
+
+  const personInterests = new Set(
+    (person.interests || [])
+      .map(x => normalizeTag(String(x || "")))
+      .filter(Boolean)
+      .map(x => x.toLowerCase())
+  );
+
+  return [...new Set(
+    myInterests.filter(tag => personInterests.has(tag.toLowerCase()))
+  )];
 }
 
 function sharedScore(person) {
@@ -12145,8 +12785,14 @@ function formatDistanceFromMe(person) {
 }
 
 function suggestPeopleByInterest(tag) {
-  const t = tag.toLowerCase();
-  return App.people.filter(p => (p.interests || []).map(x => x.toLowerCase()).includes(t));
+  const target = normalizeTag(String(tag || "")).toLowerCase();
+  if (!target) return [];
+
+  return App.people.filter(p =>
+    (p.interests || []).some(
+      interest => normalizeTag(String(interest || "")).toLowerCase() === target
+    )
+  );
 }
 
 function matchesUserEventInterest(ev) {
@@ -12230,11 +12876,34 @@ function normalizeBlockedReason(reason, fallbackKey = "chat.blocked.content") {
   return value;
 }
 
+function getGroupInterestTags(g) {
+  const source = Array.isArray(g?.interestTags) && g.interestTags.length
+    ? g.interestTags
+    : [g?.interestTag];
+
+  return [...new Set(
+    source
+      .map(x => normalizeTag(String(x || "")))
+      .filter(Boolean)
+  )];
+}
+
+function formatGroupInterestTags(g) {
+  return getGroupInterestTags(g)
+    .map(tag => `#${getLocalizedInterestLabel(tag)}`)
+    .join(" ");
+}
+
 function mapApiGroupToViewModel(g) {
+  const interestTags = Array.isArray(g.interest_tags) && g.interest_tags.length
+    ? g.interest_tags.map(x => normalizeTag(String(x || ""))).filter(Boolean)
+    : [normalizeTag(String(g.interest_tag || ""))].filter(Boolean);
+
   return {
     id: String(g.id),
     title: g.title || "Grupa",
-    interestTag: g.interest_tag || "",
+    interestTag: interestTags[0] || "",
+    interestTags,
     members: Number(g.members_count || 0),
     desc: g.description || "",
     isCreator: !!g.is_creator,

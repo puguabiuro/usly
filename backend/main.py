@@ -396,8 +396,8 @@ def _partner_event_interest_tag_limit(plan: str | None) -> int:
 USER_GROUP_INTEREST_TAG_LIMITS = {
     "free": 0,
     "plus": 1,
-    "premium": 2,
-    "vip": 4,
+    "premium": 3,
+    "vip": 5,
 }
 
 
@@ -413,13 +413,11 @@ INTEREST_CANONICAL_ALIASES = {
     "foto": "fotografia",
     "photo": "fotografia",
     "photography": "fotografia",
-    "film": "kino",
     "movie": "kino",
     "movies": "kino",
     "tech": "technologia",
     "technology": "technologia",
-    "startup": "biznes",
-    "startups": "biznes",
+    "startups": "startup",
     "business": "biznes",
     "walks": "spacer",
     "walking": "spacer",
@@ -438,6 +436,7 @@ INTEREST_CANONICAL_ALIASES = {
     "travel": "podróże",
     "travels": "podróże",
     "podróż": "podróże",
+    "podróżowanie": "podróże",
     "dog": "psy",
     "dogs": "psy",
     "pies": "psy",
@@ -449,6 +448,87 @@ INTEREST_CANONICAL_ALIASES = {
     "cycling": "rower",
     "rowery": "rower",
     "jazda na rowerze": "rower",
+    'ai': 'AI',
+    'artificial intelligence': 'AI',
+    'ux/ui': 'UX',
+    'ui/ux': 'UX',
+    'user experience': 'UX',
+    'coffee': 'kawa',
+    'cafe': 'kawiarnie',
+    'tea': 'herbata',
+    'matcha tea': 'matcha',
+    'films': 'filmy',
+    'series': 'seriale',
+    'tv series': 'seriale',
+    'festival': 'festiwale',
+    'festivals': 'festiwale',
+    'gym': 'siłownia',
+    'running': 'bieganie',
+    'hiking': 'trekking',
+    'mountains': 'góry',
+    'climbing': 'wspinaczka',
+    'yoga': 'joga',
+    'pilates workout': 'pilates',
+    'swimming': 'pływanie',
+    'dance': 'taniec',
+    'martial arts': 'sztuki walki',
+    'boxing': 'boks',
+    'programming': 'programowanie',
+    'coding': 'programowanie',
+    'rpg games': 'RPG',
+    'esport': 'e-sport',
+    'anime shows': 'anime',
+    'mangas': 'manga',
+    'reading': 'czytanie',
+    'personal growth': 'rozwój osobisty',
+    'languages': 'nauka języków',
+    'language learning': 'nauka języków',
+    'meditation': 'medytacja',
+    'science': 'nauka',
+    'drawing': 'rysunek',
+    'painting': 'malarstwo',
+    'graphics': 'grafika',
+    'illustration': 'ilustracja',
+    'ceramics': 'ceramika',
+    'crafts': 'rękodzieło',
+    'writing': 'pisanie',
+    'city breaks': 'city break',
+    'camping trips': 'camping',
+    'animals': 'zwierzęta',
+    'plants': 'rośliny',
+    'volunteering': 'wolontariat',
+    'events': 'eventy',
+    'network': 'networking',
+    'content creation': 'tworzenie treści',
+    'video editing': 'montaż wideo',
+    'podcasts': 'podcasty',
+    'podcasting': 'podcast',
+    'standup': 'stand-up',
+    'comedy': 'komedia',
+    'cafes': 'kawiarnie',
+    'urban culture': 'kultura miejska',
+    'architecture': 'architektura',
+    'fashion': 'moda',
+    'skincare': 'pielęgnacja',
+    'tattoos': 'tatuaże',
+    'cars': 'motoryzacja',
+    'motorcycles': 'motocykle',
+    'vinyl': 'winyle',
+    'logic games': 'gry logiczne',
+    'crosswords': 'krzyżówki',
+    'puzzles': 'łamigłówki',
+    'escape rooms': 'escape roomy',
+    'crypto': 'kryptowaluty',
+    'personal finance': 'finanse osobiste',
+    'investing': 'inwestowanie',
+    'real estate': 'nieruchomości',
+    'healthy food': 'zdrowe jedzenie',
+    'meal prep sunday': 'meal prep',
+    'eco': 'ekologia',
+    'recycling': 'recykling',
+    'planning': 'planowanie',
+    'organization': 'organizacja',
+    'mindset work': 'mindset',
 }
 
 
@@ -539,7 +619,7 @@ def _group_interest_tags(group: Group) -> list[str]:
     return result
 
 
-def _normalize_event_interest_tags(raw_tags, fallback_tag: str | None = None) -> list[str]:
+def _normalize_event_interest_tags(raw_tags, fallback_tag: str | None = None, allow_empty: bool = False) -> list[str]:
     source = raw_tags
     if source is None:
         source = [fallback_tag] if fallback_tag else []
@@ -572,11 +652,68 @@ def _normalize_event_interest_tags(raw_tags, fallback_tag: str | None = None) ->
             if fallback:
                 result.append(fallback)
 
-    if not result:
+    if not result and not allow_empty:
         raise HTTPException(status_code=422, detail="EVENT_INTEREST_TAG_REQUIRED")
 
     return result
 
+
+
+def _validate_event_for_publish(event: Event) -> None:
+    missing_fields = []
+
+    if not str(event.title or "").strip():
+        missing_fields.append("title")
+    if not str(event.city or "").strip():
+        missing_fields.append("city")
+    if event.start_at is None:
+        missing_fields.append("start_at")
+    if event.end_at is None:
+        missing_fields.append("end_at")
+    if not str(event.where or "").strip():
+        missing_fields.append("where")
+
+    # Publikacja wymaga miejsca faktycznie wybranego z wyników Google Places.
+    if (
+        not str(event.address or "").strip()
+        or event.location_lat is None
+        or event.location_lng is None
+    ):
+        missing_fields.append("location")
+
+    interest_tags = _normalize_event_interest_tags(
+        json.loads(event.interest_tags_json) if event.interest_tags_json else None,
+        event.interest_tag,
+        allow_empty=True,
+    )
+    if not interest_tags:
+        missing_fields.append("interest")
+
+    if event.pricing_type == "paid_fixed":
+        if not event.price_fixed or event.price_fixed <= 0:
+            missing_fields.append("price")
+        if not str(event.payment_link or "").strip():
+            missing_fields.append("payment_link")
+
+    elif event.pricing_type == "paid_range":
+        if not event.price_min or not event.price_max:
+            missing_fields.append("price_range")
+        elif event.price_min <= 0 or event.price_max <= 0 or event.price_min > event.price_max:
+            raise HTTPException(status_code=422, detail="INVALID_EVENT_PRICE_RANGE")
+        if not str(event.payment_link or "").strip():
+            missing_fields.append("payment_link")
+
+    if missing_fields:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "EVENT_PUBLISH_MISSING_FIELDS",
+                "fields": missing_fields,
+            },
+        )
+
+    if event.start_at >= event.end_at:
+        raise HTTPException(status_code=422, detail="INVALID_EVENT_DATES")
 
 
 
@@ -2429,6 +2566,13 @@ class CreateGroupRequest(BaseModel):
     title: str = Field(min_length=3, max_length=120)
     description: str | None = Field(default=None, max_length=600)
     interest_tag: str = Field(min_length=2, max_length=200)
+
+
+class UpdateGroupRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=120)
+    description: str | None = Field(default=None, max_length=600)
+    interest_tag: str | None = Field(default=None, min_length=2, max_length=200)
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -5148,8 +5292,14 @@ def partner_search_places(
         # Lokalny fallback dla macOS/Python, gdy certyfikaty systemowe nie są podpięte w venv.
         # Produkcyjnie na Render powinien działać standardowy SSL.
         insecure_context = ssl._create_unverified_context()
-        with urllib.request.urlopen(req, timeout=10, context=insecure_context) as response:
-            data = json.loads(response.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=10, context=insecure_context) as response:
+                data = json.loads(response.read().decode("utf-8"))
+        except Exception as fallback_exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"GOOGLE_PLACES_SEARCH_FAILED:{fallback_exc}",
+            )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"GOOGLE_PLACES_SEARCH_FAILED:{exc}")
 
@@ -5215,7 +5365,11 @@ def partner_create_event(
         partner_profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == current_user.id).first()
         partner_plan = str(getattr(partner_profile, "plan", None) or "free").lower()
         tag_limit = _partner_event_interest_tag_limit(partner_plan)
-        interest_tags = _normalize_event_interest_tags(getattr(payload, "interest_tags", None), payload.interest_tag)
+        interest_tags = _normalize_event_interest_tags(
+            getattr(payload, "interest_tags", None),
+            payload.interest_tag,
+            allow_empty=True,
+        )
 
         if len(interest_tags) > tag_limit:
             raise HTTPException(status_code=422, detail="EVENT_INTEREST_TAG_LIMIT_REACHED")
@@ -5229,10 +5383,12 @@ def partner_create_event(
             address=payload.address,
             location_lat=payload.location_lat,
             location_lng=payload.location_lng,
-            interest_tag=interest_tags[0],
+            interest_tag=interest_tags[0] if interest_tags else None,
             interest_tags_json=json.dumps(interest_tags, ensure_ascii=False),
             start_at=_to_utc_naive(payload.start_at),
             end_at=_to_utc_naive(payload.end_at),
+            draft_date=payload.draft_date,
+            draft_time=payload.draft_time,
             capacity=payload.capacity,
             event_cover_url=payload.event_cover_url,
             pricing_type=payload.pricing_type,
@@ -5248,6 +5404,7 @@ def partner_create_event(
         response_interest_tags = _normalize_event_interest_tags(
             json.loads(event.interest_tags_json) if event.interest_tags_json else None,
             event.interest_tag,
+            allow_empty=True,
         )
 
         return ok(
@@ -5265,6 +5422,8 @@ def partner_create_event(
                 interest_tags=response_interest_tags,
                 start_at=event.start_at,
                 end_at=event.end_at,
+                draft_date=event.draft_date,
+                draft_time=event.draft_time,
                 capacity=event.capacity,
                 status=event.status,
                 created_at=event.created_at,
@@ -5300,6 +5459,9 @@ def partner_update_event(
         current_end = _ensure_utc(event.end_at)
         previous_where = event.where
         previous_city = event.city
+        previous_address = event.address
+        previous_location_lat = event.location_lat
+        previous_location_lng = event.location_lng
 
         new_start = _ensure_utc(payload.start_at) if payload.start_at is not None else current_start
         new_end = _ensure_utc(payload.end_at) if payload.end_at is not None else current_end
@@ -5319,53 +5481,87 @@ def partner_update_event(
                 return None
             return str(v)
 
-        if payload.title is not None:
+        fields_set = payload.model_fields_set
+
+        if "title" in fields_set:
             event.title = payload.title
-        if payload.description is not None:
+        if "description" in fields_set:
             event.description = payload.description
-        if payload.city is not None:
+        if "city" in fields_set:
             event.city = payload.city
-        if payload.where is not None:
+        if "where" in fields_set:
             event.where = payload.where
-        if payload.address is not None:
+        if "address" in fields_set:
             event.address = payload.address
-        if payload.location_lat is not None:
+        if "location_lat" in fields_set:
             event.location_lat = payload.location_lat
-        if payload.location_lng is not None:
+        if "location_lng" in fields_set:
             event.location_lng = payload.location_lng
-        if getattr(payload, "interest_tags", None) is not None or payload.interest_tag is not None:
+        if "interest_tags" in fields_set or "interest_tag" in fields_set:
             partner_profile = db.query(PartnerProfile).filter(PartnerProfile.user_id == current_user.id).first()
             partner_plan = str(getattr(partner_profile, "plan", None) or "free").lower()
             tag_limit = _partner_event_interest_tag_limit(partner_plan)
-            interest_tags = _normalize_event_interest_tags(getattr(payload, "interest_tags", None), payload.interest_tag or event.interest_tag)
+
+            raw_interest_tags = payload.interest_tags if "interest_tags" in fields_set else None
+            fallback_interest_tag = payload.interest_tag if "interest_tag" in fields_set else None
+            interest_tags = _normalize_event_interest_tags(
+                raw_interest_tags,
+                fallback_interest_tag,
+                allow_empty=True,
+            )
 
             if len(interest_tags) > tag_limit:
                 raise HTTPException(status_code=422, detail="EVENT_INTEREST_TAG_LIMIT_REACHED")
 
-            event.interest_tag = interest_tags[0]
+            event.interest_tag = interest_tags[0] if interest_tags else None
             event.interest_tags_json = json.dumps(interest_tags, ensure_ascii=False)
-        if payload.start_at is not None:
+        if "start_at" in fields_set:
             event.start_at = _to_utc_naive(payload.start_at)
-        if payload.end_at is not None:
+        if "end_at" in fields_set:
             event.end_at = _to_utc_naive(payload.end_at)
-        if payload.capacity is not None:
+        if "draft_date" in fields_set:
+            event.draft_date = payload.draft_date
+        if "draft_time" in fields_set:
+            event.draft_time = payload.draft_time
+        if "capacity" in fields_set:
             event.capacity = payload.capacity
-        if payload.status is not None:
-            event.status = payload.status
+        if "status" in payload.model_fields_set:
+            raise HTTPException(
+                status_code=422,
+                detail="EVENT_STATUS_USE_STATUS_ENDPOINTS",
+            )
 
         if payload.event_cover_url is not None:
             event.event_cover_url = payload.event_cover_url
 
-        if payload.pricing_type is not None:
+        if "pricing_type" in fields_set:
+            if payload.pricing_type is None:
+                raise HTTPException(status_code=422, detail="EVENT_PRICING_TYPE_REQUIRED")
             event.pricing_type = payload.pricing_type
-        if payload.price_fixed is not None:
+
+            # Keep persisted pricing fields consistent when the pricing mode changes.
+            if payload.pricing_type == "free":
+                event.price_fixed = None
+                event.price_min = None
+                event.price_max = None
+                event.payment_link = None
+            elif payload.pricing_type == "paid_fixed":
+                event.price_min = None
+                event.price_max = None
+            elif payload.pricing_type == "paid_range":
+                event.price_fixed = None
+
+        if "price_fixed" in fields_set:
             event.price_fixed = payload.price_fixed
-        if payload.price_min is not None:
+        if "price_min" in fields_set:
             event.price_min = payload.price_min
-        if payload.price_max is not None:
+        if "price_max" in fields_set:
             event.price_max = payload.price_max
-        if payload.payment_link is not None:
+        if "payment_link" in fields_set:
             event.payment_link = _to_str_or_none(payload.payment_link)
+
+        if event.status == "published":
+            _validate_event_for_publish(event)
 
         event_time_changed = (
             current_start != _ensure_utc(event.start_at)
@@ -5374,6 +5570,9 @@ def partner_update_event(
         event_location_changed = (
             previous_where != event.where
             or previous_city != event.city
+            or previous_address != event.address
+            or previous_location_lat != event.location_lat
+            or previous_location_lng != event.location_lng
         )
         event_key_details_changed = event_time_changed or event_location_changed
 
@@ -5447,6 +5646,7 @@ def partner_update_event(
         response_interest_tags = _normalize_event_interest_tags(
             json.loads(event.interest_tags_json) if event.interest_tags_json else None,
             event.interest_tag,
+            allow_empty=True,
         )
 
         return ok(
@@ -5464,6 +5664,8 @@ def partner_update_event(
                 interest_tags=response_interest_tags,
                 start_at=event.start_at,
                 end_at=event.end_at,
+                draft_date=event.draft_date,
+                draft_time=event.draft_time,
                 capacity=event.capacity,
                 status=event.status,
                 created_at=event.created_at,
@@ -5524,6 +5726,8 @@ def partner_publish_event(
 
         if event.status not in {"draft", "archived"}:
             raise HTTPException(status_code=409, detail="INVALID_STATUS_TRANSITION")
+
+        _validate_event_for_publish(event)
 
         if event.status == "archived":
             last_admin_status_log = (
@@ -5761,6 +5965,8 @@ def list_events(
                     "interest_tags": event_tags,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
+                    "draft_date": e.draft_date,
+                    "draft_time": e.draft_time,
                     "capacity": e.capacity,
                     "signups_count": signups_count,
                     "spots_left": spots_left,
@@ -5990,6 +6196,8 @@ def partner_list_events(
                     "interest_tags": event_tags,
                     "start_at": e.start_at,
                     "end_at": e.end_at,
+                    "draft_date": e.draft_date,
+                    "draft_time": e.draft_time,
                     "capacity": e.capacity,
                     "status": e.status,
                     "created_at": e.created_at,
@@ -8095,6 +8303,71 @@ def create_group(
 
     finally:
         db.close()
+
+@app.patch("/groups/{group_id}")
+def update_group(
+    group_id: int,
+    payload: UpdateGroupRequest,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        group = db.query(Group).filter(Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=404, detail="GROUP_NOT_FOUND")
+
+        if group.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="GROUP_EDIT_FORBIDDEN")
+
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+        if not profile:
+            raise HTTPException(status_code=400, detail="PROFILE_NOT_FOUND")
+
+        fields_set = payload.model_fields_set
+
+        if "title" in fields_set:
+            group.title = payload.title.strip()
+
+        if "description" in fields_set:
+            group.description = payload.description.strip() if payload.description else None
+
+        if "interest_tag" in fields_set:
+            interest_tags = _normalize_group_interest_tags(payload.interest_tag)
+            tag_limit = _user_group_interest_tag_limit(profile.plan)
+
+            if len(interest_tags) > tag_limit:
+                raise HTTPException(
+                    status_code=422,
+                    detail="GROUP_INTEREST_TAG_LIMIT_REACHED",
+                )
+
+            group.interest_tag = interest_tags[0]
+            group.interest_tags_json = json.dumps(
+                interest_tags,
+                ensure_ascii=False,
+            )
+
+        db.commit()
+        db.refresh(group)
+
+        return ok(
+            {
+                "id": group.id,
+                "title": group.title,
+                "description": group.description,
+                "interest_tag": group.interest_tag,
+                "interest_tags": _group_interest_tags(group),
+                "members_count": group.members_count,
+                "is_creator": True,
+            }
+        )
+    finally:
+        db.close()
+
 
 @app.get("/groups")
 def list_groups(

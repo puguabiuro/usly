@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, date
+from datetime import datetime, date, time
 from enum import StrEnum
 
-from sqlalchemy import String, DateTime, Date, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint, Boolean, Float
+from sqlalchemy import String, DateTime, Date, Time, ForeignKey, Text, CheckConstraint, Index, Integer, UniqueConstraint, Boolean, Float
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.database import Base
@@ -495,9 +495,9 @@ class Event(Base):
         index=True,
     )
 
-    title: Mapped[str] = mapped_column(
+    title: Mapped[str | None] = mapped_column(
         String(120),
-        nullable=False,
+        nullable=True,
     )
 
     description: Mapped[str | None] = mapped_column(
@@ -506,15 +506,15 @@ class Event(Base):
         default=None,
     )
 
-    city: Mapped[str] = mapped_column(
+    city: Mapped[str | None] = mapped_column(
         String(80),
-        nullable=False,
+        nullable=True,
     )
 
-    where: Mapped[str] = mapped_column(
+    where: Mapped[str | None] = mapped_column(
         String(120),
-        nullable=False,
-        default="",
+        nullable=True,
+        default=None,
     )
 
     address: Mapped[str | None] = mapped_column(
@@ -535,9 +535,9 @@ class Event(Base):
         default=None,
     )
 
-    interest_tag: Mapped[str] = mapped_column(
+    interest_tag: Mapped[str | None] = mapped_column(
         String(40),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 
@@ -548,14 +548,28 @@ class Event(Base):
     )
 
     # trzymamy UTC, frontend wysyła ISO
-    start_at: Mapped[datetime] = mapped_column(
+    start_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
-        nullable=False,
+        nullable=True,
     )
 
-    end_at: Mapped[datetime] = mapped_column(
+    end_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
-        nullable=False,
+        nullable=True,
+    )
+
+    # Robocza data/godzina szkicu — pozwala zachować częściowo
+    # uzupełniony termin bez tworzenia sztucznego start_at.
+    draft_date: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True,
+        default=None,
+    )
+
+    draft_time: Mapped[time | None] = mapped_column(
+        Time,
+        nullable=True,
+        default=None,
     )
 
     # NULL = brak limitu

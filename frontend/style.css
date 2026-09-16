@@ -6084,3 +6084,134 @@ button[id^="notifBtn"]:active{
 #S4_NEARBY .backBtn:disabled::after{
   opacity: 0 !important;
 }
+
+/* Organizer event — missing fields required for publication */
+#S9_PARTNER_CREATE .partnerEventFieldMissing{
+  border-color: rgba(255,95,125,.72) !important;
+  box-shadow:
+    0 14px 34px rgba(0,0,0,.20),
+    0 0 0 3px rgba(255,95,125,.12) !important;
+}
+
+#S9_PARTNER_CREATE .partnerEventFieldMissing:focus{
+  border-color: rgba(255,95,125,.90) !important;
+  box-shadow:
+    0 16px 40px rgba(0,0,0,.28),
+    0 0 0 4px rgba(255,95,125,.16) !important;
+}
+
+/* Organizer event — location action */
+#S9_PARTNER_CREATE #peFindPlaceBtn{
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(52,230,255,.42);
+  background: rgba(52,230,255,.10);
+  box-shadow: 0 8px 22px rgba(0,0,0,.18);
+  font-weight: 850;
+  opacity: 1;
+}
+
+#S9_PARTNER_CREATE #peFindPlaceBtn:hover,
+#S9_PARTNER_CREATE #peFindPlaceBtn:focus{
+  border-color: rgba(52,230,255,.72);
+  background: rgba(52,230,255,.16);
+  box-shadow:
+    0 10px 26px rgba(0,0,0,.22),
+    0 0 0 3px rgba(52,230,255,.08);
+}
+
+/* Organizer event — confirmed location */
+#S9_PARTNER_CREATE #peSelectedPlaceHint{
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(52,230,255,.16);
+  background: rgba(52,230,255,.045);
+  line-height: 1.3;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceConfirmedLabel{
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: .68;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceConfirmedName{
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceConfirmedAddress{
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: .62;
+}
+
+/* Organizer event — location helper before confirmation */
+#S9_PARTNER_CREATE #peLocationInputWrap .hintText{
+  margin-top: 5px !important;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 500;
+  opacity: .62;
+  max-width: 340px;
+}
+
+/* Organizer event — place search results */
+#S9_PARTNER_CREATE #pePlaceResults{
+  margin-top: 7px !important;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceResultsList{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(7,8,20,.30);
+}
+
+#S9_PARTNER_CREATE .partnerPlaceResult{
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceResult:last-child{
+  border-bottom: 0;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceResult:hover,
+#S9_PARTNER_CREATE .partnerPlaceResult:focus{
+  background: rgba(52,230,255,.07);
+  outline: none;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceResultName{
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#S9_PARTNER_CREATE .partnerPlaceResultAddress{
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: .62;
+}
