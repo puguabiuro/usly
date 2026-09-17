@@ -5133,7 +5133,7 @@ async function saveSettings() {
 
   const trainerPlan = ["premium", "vip"].includes(String(App.user.plan || "").toLowerCase());
   const trainerInterests = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
-  if (trainerPlan && trainerInterests.length) {
+  if (trainerPlan) {
     payload.trainer_interests = trainerInterests;
   }
 
@@ -5739,7 +5739,7 @@ async function finishProfileSetup() {
 
   const trainerPlan = ["premium", "vip"].includes(String(App.user.plan || "").toLowerCase());
   const trainerInterests = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
-  if (trainerPlan && trainerInterests.length) {
+  if (trainerPlan) {
     payload.trainer_interests = trainerInterests;
   }
 
@@ -12181,7 +12181,7 @@ async function syncUserInterests() {
         };
         const trainerPlan = ["premium", "vip"].includes(String(App.user.plan || "").toLowerCase());
         const trainerInterests = Array.isArray(App.user.trainerInterests) ? App.user.trainerInterests : [];
-        if (trainerPlan && trainerInterests.length) {
+        if (trainerPlan) {
           payload.trainer_interests = trainerInterests;
         }
         return payload;
