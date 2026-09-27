@@ -23,3 +23,5 @@ pyotp==2.9.0
 firebase-admin==6.5.0
 qrcode[pil]==8.2
 google-auth==2.56.1
+
+psycopg[binary]==3.2.10
