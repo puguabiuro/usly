@@ -216,6 +216,7 @@ from backend.apple_auth import (
     verify_apple_identity_token,
 )
 from backend.error_codes import ErrorCode
+from sqlalchemy import func
 from backend.db.database import SessionLocal
 from backend.models import (
     User,
@@ -234,6 +235,9 @@ from backend.models import (
     GroupMembership,
     Message,
     Friendship,
+    OrganizerFollow,
+    OrganizerRating,
+    TrainerRating,
     GroupInvitation,
     PrivateChatMute,
     GroupMute,
@@ -274,7 +278,7 @@ from backend.revenuecat_sync_persistence import (
     RevenueCatSyncPersistenceError,
     RevenueCatSyncPersistenceService,
 )
-from backend.schemas import EventCreate, EventUpdate, EventOut, PrivateMessageCreate, GroupMessageCreate, MessageOut
+from backend.schemas import EventCreate, EventUpdate, EventOut, TrainerEventCreate, TrainerEventUpdate, PrivateMessageCreate, GroupMessageCreate, MessageOut
 from backend.security import (
     hash_password,
 require_role,
@@ -668,8 +672,6 @@ def _validate_event_for_publish(event: Event) -> None:
         missing_fields.append("city")
     if event.start_at is None:
         missing_fields.append("start_at")
-    if event.end_at is None:
-        missing_fields.append("end_at")
     if not str(event.where or "").strip():
         missing_fields.append("where")
 
@@ -712,7 +714,9 @@ def _validate_event_for_publish(event: Event) -> None:
             },
         )
 
-    if event.start_at >= event.end_at:
+    # Koniec wydarzenia jest opcjonalny.
+    # Jeśli organizator go poda, musi być późniejszy niż początek.
+    if event.end_at is not None and event.start_at >= event.end_at:
         raise HTTPException(status_code=422, detail="INVALID_EVENT_DATES")
 
 
@@ -812,6 +816,64 @@ def _apply_plan_limits_after_downgrade(db, user: User, target_plan: str, now: da
     profile.updated_at = current_time
     db.add(profile)
     return result
+
+
+def _get_active_trainer_interests(profile: UserProfile) -> list[str]:
+    """
+    Return trainer specializations currently available to a Towarzysz.
+
+    Trainer capability is active only for plans that allow trainer interests.
+    Returned values must also still exist in the user's normal interests.
+    This helper is read-only and never modifies the profile.
+    """
+    if not profile:
+        return []
+
+    safe_plan = str(getattr(profile, "plan", None) or "free").strip().lower()
+    trainer_limit = USER_TRAINER_INTEREST_LIMITS.get(safe_plan, 0)
+
+    if trainer_limit <= 0:
+        return []
+
+    try:
+        interests = json.loads(profile.zainteresowania_json) if profile.zainteresowania_json else []
+    except Exception:
+        interests = []
+
+    try:
+        trainer_interests = (
+            json.loads(profile.trainer_interests_json)
+            if profile.trainer_interests_json
+            else []
+        )
+    except Exception:
+        trainer_interests = []
+
+    if not isinstance(interests, list) or not isinstance(trainer_interests, list):
+        return []
+
+    interests_by_lower = {
+        str(item).strip().lower(): str(item).strip()
+        for item in interests
+        if str(item).strip()
+    }
+
+    active = []
+    seen = set()
+
+    for item in trainer_interests:
+        key = str(item).strip().lower()
+
+        if not key or key in seen or key not in interests_by_lower:
+            continue
+
+        active.append(interests_by_lower[key])
+        seen.add(key)
+
+        if len(active) >= trainer_limit:
+            break
+
+    return active
 
 
 def _expire_profile_plan_if_needed(db, user: User, profile, now: datetime | None = None) -> dict | None:
@@ -1611,11 +1673,30 @@ def join_event(
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
-        # 2) musi by published
+        # 2) musi być published
         if event.status != "published":
             raise HTTPException(status_code=409, detail="EVENT_NOT_PUBLISHED")
 
-        # 3) capacity (jeli ustawione)
+        # Właściciel nie może zapisać się na własne wydarzenie.
+        # Ma to znaczenie również dla późniejszej kwalifikacji do ocen Trenera.
+        if event.partner_user_id == current_user.id:
+            raise HTTPException(
+                status_code=409,
+                detail="CANNOT_JOIN_OWN_EVENT",
+            )
+
+        # Nie można dołączyć do wydarzenia, które już się zakończyło.
+        now_utc = datetime.now(timezone.utc)
+        if (
+            event.end_at is not None
+            and _ensure_utc(event.end_at) <= now_utc
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="EVENT_ALREADY_ENDED",
+            )
+
+        # 3) capacity (jeśli ustawione)
         if event.capacity is not None:
             current_count = (
                 db.query(EventSignup)
@@ -4856,6 +4937,22 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
             db.commit()
             db.refresh(profile)
 
+        organizer_ratings = (
+            db.query(OrganizerRating)
+            .filter(OrganizerRating.organizer_user_id == current_user.id)
+            .all()
+        )
+
+        rating_count = len(organizer_ratings)
+        rating_average = (
+            round(
+                sum(item.rating for item in organizer_ratings) / rating_count,
+                1,
+            )
+            if rating_count
+            else None
+        )
+
         return ok(
             {
                 "user_id": current_user.id,
@@ -4869,6 +4966,8 @@ def partners_me(current_user: User = Depends(require_role("partner"))):
                 "plan_expires_at": profile.plan_expires_at,
                 "bio": profile.bio,
                 "logo_url": profile.logo_url,
+                "rating_average": rating_average,
+                "rating_count": rating_count,
             }
         )
     finally:
@@ -5318,6 +5417,123 @@ def partner_search_places(
 
 
 # =========================
+# TRAINER PLACES SEARCH — GOOGLE PLACES PROXY
+# =========================
+@app.get("/trainer/places/search")
+def trainer_search_places(
+    q: str = Query(..., min_length=2, max_length=200),
+    city: Optional[str] = Query(default=None, max_length=80),
+    current_user: User = Depends(require_role("user")),
+):
+    import json
+    import os
+    import ssl
+    import urllib.error
+    import urllib.request
+
+    # Sam endpoint jest dostępny dla Towarzysza, ale korzystanie z niego
+    # w module Trenera wymaga aktywnej specjalizacji trenerskiej.
+    db = SessionLocal()
+    try:
+        profile = db.query(UserProfile).filter(
+            UserProfile.user_id == current_user.id
+        ).first()
+
+        active_trainer_interests = _get_active_trainer_interests(profile)
+        if not active_trainer_interests:
+            raise HTTPException(
+                status_code=403,
+                detail="TRAINER_INTEREST_REQUIRED",
+            )
+    finally:
+        db.close()
+
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="GOOGLE_MAPS_API_KEY_NOT_CONFIGURED",
+        )
+
+    query = ", ".join([
+        part
+        for part in [q.strip(), (city or "").strip(), "Polska"]
+        if part
+    ])
+
+    body = json.dumps({
+        "textQuery": query,
+        "languageCode": "pl",
+        "regionCode": "PL",
+        "maxResultCount": 5,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://places.googleapis.com/v1/places:searchText",
+        data=body,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": (
+                "places.displayName,"
+                "places.formattedAddress,"
+                "places.location"
+            ),
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.URLError as exc:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(exc):
+            raise HTTPException(
+                status_code=502,
+                detail=f"GOOGLE_PLACES_SEARCH_FAILED:{exc}",
+            )
+
+        insecure_context = ssl._create_unverified_context()
+
+        try:
+            with urllib.request.urlopen(
+                req,
+                timeout=10,
+                context=insecure_context,
+            ) as response:
+                data = json.loads(response.read().decode("utf-8"))
+        except Exception as fallback_exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"GOOGLE_PLACES_SEARCH_FAILED:{fallback_exc}",
+            )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GOOGLE_PLACES_SEARCH_FAILED:{exc}",
+        )
+
+    items = []
+
+    for place in data.get("places", []) or []:
+        loc = place.get("location") or {}
+        display = place.get("displayName") or {}
+
+        items.append({
+            "name": (
+                display.get("text")
+                or place.get("formattedAddress")
+                or "Miejsce"
+            ),
+            "address": place.get("formattedAddress") or "",
+            "lat": loc.get("latitude"),
+            "lng": loc.get("longitude"),
+        })
+
+    return ok({"items": items})
+
+
+# =========================
 # EVENTS  CORE
 # PARTNER: CREATE + UPDATE EVENT
 # =========================
@@ -5376,6 +5592,7 @@ def partner_create_event(
 
         event = Event(
             partner_user_id=current_user.id,
+            event_type="organizer",
             title=payload.title,
             description=payload.description,
             city=payload.city,
@@ -5448,7 +5665,12 @@ def partner_update_event(
 ):
     db = SessionLocal()
     try:
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -5692,7 +5914,12 @@ def partner_delete_event(
 ):
     db = SessionLocal()
     try:
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -5717,7 +5944,12 @@ def partner_publish_event(
 ):
     db = SessionLocal()
     try:
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -5765,6 +5997,7 @@ def partner_publish_event(
             active_events_count = (
                 db.query(Event)
                 .filter(Event.partner_user_id == current_user.id)
+                .filter(Event.event_type == "organizer")
                 .filter(Event.status == "published")
                 .filter(Event.end_at >= now_utc)
                 .count()
@@ -5791,7 +6024,12 @@ def partner_archive_event(
 ):
     db = SessionLocal()
     try:
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -5930,17 +6168,48 @@ def list_events(
             if not event_tags:
                 event_tags = [e.interest_tag]
 
-            partner_profile = (
-                db.query(PartnerProfile)
-                .filter(PartnerProfile.user_id == e.partner_user_id)
-                .first()
-            )
+            partner_profile = None
+            trainer_profile = None
+
+            if e.event_type == "trainer":
+                trainer_profile = (
+                    db.query(UserProfile)
+                    .filter(UserProfile.user_id == e.partner_user_id)
+                    .first()
+                )
+            else:
+                partner_profile = (
+                    db.query(PartnerProfile)
+                    .filter(PartnerProfile.user_id == e.partner_user_id)
+                    .first()
+                )
 
             signups_count = (
                 db.query(EventSignup)
                 .filter(EventSignup.event_id == e.id)
                 .count()
             )
+
+            saved = (
+                db.query(EventSave.id)
+                .filter(
+                    EventSave.event_id == e.id,
+                    EventSave.user_id == current_user.id,
+                )
+                .first()
+                is not None
+            )
+
+            interested = (
+                db.query(EventSignup.id)
+                .filter(
+                    EventSignup.event_id == e.id,
+                    EventSignup.user_id == current_user.id,
+                )
+                .first()
+                is not None
+            )
+
             spots_left = None
             if e.capacity is not None:
                 spots_left = max(e.capacity - signups_count, 0)
@@ -5949,11 +6218,83 @@ def list_events(
                 {
                     "id": e.id,
                     "partner_user_id": e.partner_user_id,
-                    "partner_name": getattr(partner_profile, "nazwa", "") or "",
-                    "partner_category": getattr(partner_profile, "kategoria", "") or "",
-                    "partner_bio": getattr(partner_profile, "bio", "") or "",
-                    "partner_logo_url": getattr(partner_profile, "logo_url", "") or "",
-                    "partner_city": getattr(partner_profile, "miasto", "") or "",
+                    "event_type": e.event_type,
+
+                    # Pola kompatybilności używane przez obecny frontend.
+                    # Dla wydarzenia Trenera źródłem jest UserProfile.
+                    "partner_name": (
+                        (getattr(trainer_profile, "nick", "") or "")
+                        if e.event_type == "trainer"
+                        else (getattr(partner_profile, "nazwa", "") or "")
+                    ),
+                    "partner_category": (
+                        "trainer"
+                        if e.event_type == "trainer"
+                        else (getattr(partner_profile, "kategoria", "") or "")
+                    ),
+                    "partner_bio": (
+                        (getattr(trainer_profile, "bio", "") or "")
+                        if e.event_type == "trainer"
+                        else (getattr(partner_profile, "bio", "") or "")
+                    ),
+                    "partner_logo_url": (
+                        (getattr(trainer_profile, "avatar_url", "") or "")
+                        if e.event_type == "trainer"
+                        else (getattr(partner_profile, "logo_url", "") or "")
+                    ),
+                    "partner_city": (
+                        (getattr(trainer_profile, "miasto", "") or "")
+                        if e.event_type == "trainer"
+                        else (getattr(partner_profile, "miasto", "") or "")
+                    ),
+                    "partner_plan": (
+                        (getattr(trainer_profile, "plan", "free") or "free").lower()
+                        if e.event_type == "trainer"
+                        else (getattr(partner_profile, "plan", "free") or "free").lower()
+                    ),
+
+                    # Promowanie pozostaje mechanizmem Organizatora.
+                    "is_promoted": (
+                        False
+                        if e.event_type == "trainer"
+                        else (
+                            (getattr(partner_profile, "plan", "free") or "free").lower()
+                            in {"premium", "enterprise"}
+                        )
+                    ),
+
+                    # Jawne dane Trenera dla nowego UI.
+                    "trainer_user_id": (
+                        e.partner_user_id
+                        if e.event_type == "trainer"
+                        else None
+                    ),
+                    "trainer_name": (
+                        getattr(trainer_profile, "nick", None)
+                        if e.event_type == "trainer"
+                        else None
+                    ),
+                    "trainer_avatar_url": (
+                        getattr(trainer_profile, "avatar_url", None)
+                        if e.event_type == "trainer"
+                        else None
+                    ),
+                    "trainer_city": (
+                        getattr(trainer_profile, "miasto", None)
+                        if e.event_type == "trainer"
+                        else None
+                    ),
+                    "trainer_bio": (
+                        getattr(trainer_profile, "bio", None)
+                        if e.event_type == "trainer"
+                        else None
+                    ),
+                    "trainer_specialization": (
+                        e.interest_tag
+                        if e.event_type == "trainer"
+                        else None
+                    ),
+
                     "title": e.title,
                     "description": e.description,
                     "city": e.city,
@@ -5970,15 +6311,17 @@ def list_events(
                     "capacity": e.capacity,
                     "signups_count": signups_count,
                     "spots_left": spots_left,
+                    "saved": saved,
+                    "interested": interested,
                     "status": e.status,
                     "created_at": e.created_at,
                     "updated_at": e.updated_at,
                     "event_cover_url": e.event_cover_url,
                     "pricing_type": e.pricing_type,
                     "price_fixed": e.price_fixed,
-                    "price_min": e.price_min,
-                    "price_max": e.price_max,
-                    "payment_link": e.payment_link,
+                    "price_min": None if e.event_type == "trainer" else e.price_min,
+                    "price_max": None if e.event_type == "trainer" else e.price_max,
+                    "payment_link": None if e.event_type == "trainer" else e.payment_link,
                     "_score": score,
                 }
             )
@@ -6014,47 +6357,202 @@ def get_event_details(
             .first()
         )
         if not event:
-            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+            raise HTTPException(
+                status_code=404,
+                detail="EVENT_NOT_FOUND",
+            )
 
         block_exists = (
             db.query(UserBlock)
             .filter(
-                ((UserBlock.blocker_user_id == current_user.id) & (UserBlock.blocked_user_id == event.partner_user_id)) |
-                ((UserBlock.blocker_user_id == event.partner_user_id) & (UserBlock.blocked_user_id == current_user.id))
+                (
+                    (UserBlock.blocker_user_id == current_user.id)
+                    & (UserBlock.blocked_user_id == event.partner_user_id)
+                )
+                |
+                (
+                    (UserBlock.blocker_user_id == event.partner_user_id)
+                    & (UserBlock.blocked_user_id == current_user.id)
+                )
             )
             .first()
         )
         if block_exists:
-            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+            raise HTTPException(
+                status_code=404,
+                detail="EVENT_NOT_FOUND",
+            )
+
+        partner_profile = None
+        trainer_profile = None
+
+        if event.event_type == "trainer":
+            trainer_profile = (
+                db.query(UserProfile)
+                .filter(UserProfile.user_id == event.partner_user_id)
+                .first()
+            )
+        else:
+            partner_profile = (
+                db.query(PartnerProfile)
+                .filter(PartnerProfile.user_id == event.partner_user_id)
+                .first()
+            )
+
+        owner_user = (
+            db.query(User)
+            .filter(User.id == event.partner_user_id)
+            .first()
+            if event.partner_user_id
+            else None
+        )
 
         signups_count = (
             db.query(EventSignup)
             .filter(EventSignup.event_id == event.id)
             .count()
         )
+
         spots_left = None
         if event.capacity is not None:
-            spots_left = max(event.capacity - signups_count, 0)
+            spots_left = max(
+                event.capacity - signups_count,
+                0,
+            )
+
+        saved = (
+            db.query(EventSave.id)
+            .filter(
+                EventSave.event_id == event.id,
+                EventSave.user_id == current_user.id,
+            )
+            .first()
+            is not None
+        )
+
+        interested = (
+            db.query(EventSignup.id)
+            .filter(
+                EventSignup.event_id == event.id,
+                EventSignup.user_id == current_user.id,
+            )
+            .first()
+            is not None
+        )
 
         event_tags = []
         if getattr(event, "interest_tags_json", None):
             try:
-                event_tags = json.loads(event.interest_tags_json) or []
+                event_tags = (
+                    json.loads(event.interest_tags_json) or []
+                )
             except Exception:
                 event_tags = []
-        if not event_tags:
+
+        if not event_tags and event.interest_tag:
             event_tags = [event.interest_tag]
+
+        if event.event_type == "trainer":
+            owner_name = (
+                getattr(trainer_profile, "nick", None)
+                if trainer_profile
+                else None
+            )
+            owner_logo_url = (
+                getattr(trainer_profile, "avatar_url", None)
+                if trainer_profile
+                else None
+            )
+            owner_city = (
+                getattr(trainer_profile, "miasto", None)
+                if trainer_profile
+                else None
+            )
+            owner_bio = (
+                getattr(trainer_profile, "bio", None)
+                if trainer_profile
+                else None
+            )
+        else:
+            owner_name = (
+                getattr(partner_profile, "nazwa", None)
+                if partner_profile
+                else None
+            )
+            owner_logo_url = (
+                getattr(partner_profile, "logo_url", None)
+                if partner_profile
+                else None
+            )
+            owner_city = (
+                getattr(partner_profile, "miasto", None)
+                if partner_profile
+                else None
+            )
+            owner_bio = (
+                getattr(partner_profile, "bio", None)
+                if partner_profile
+                else None
+            )
 
         return ok(
             {
                 "id": event.id,
                 "partner_user_id": event.partner_user_id,
-            "organizer_name": getattr(partner_profile, "nazwa", None) if partner_profile else None,
-            "organizer_logo_url": getattr(partner_profile, "logo_url", None) if partner_profile else None,
-            "organizer_email": db.query(User).filter(User.id == event.partner_user_id).first().email if event.partner_user_id else None,
+                "event_type": event.event_type,
+
+                # Kompatybilność z obecnym frontendem.
+                "partner_name": owner_name,
+                "partner_logo_url": owner_logo_url,
+                "partner_city": owner_city,
+                "partner_bio": owner_bio,
+                "organizer_name": owner_name,
+                "organizer_logo_url": owner_logo_url,
+                "organizer_email": (
+                    owner_user.email
+                    if owner_user
+                    else None
+                ),
+
+                # Jawne dane Trenera dla nowego UI.
+                "trainer_user_id": (
+                    event.partner_user_id
+                    if event.event_type == "trainer"
+                    else None
+                ),
+                "trainer_name": (
+                    owner_name
+                    if event.event_type == "trainer"
+                    else None
+                ),
+                "trainer_avatar_url": (
+                    owner_logo_url
+                    if event.event_type == "trainer"
+                    else None
+                ),
+                "trainer_city": (
+                    owner_city
+                    if event.event_type == "trainer"
+                    else None
+                ),
+                "trainer_bio": (
+                    owner_bio
+                    if event.event_type == "trainer"
+                    else None
+                ),
+                "trainer_specialization": (
+                    event.interest_tag
+                    if event.event_type == "trainer"
+                    else None
+                ),
+
                 "title": event.title,
                 "description": event.description,
                 "city": event.city,
+                "where": event.where,
+                "address": event.address,
+                "location_lat": event.location_lat,
+                "location_lng": event.location_lng,
                 "interest_tag": event.interest_tag,
                 "interest_tags": event_tags,
                 "start_at": event.start_at,
@@ -6062,15 +6560,29 @@ def get_event_details(
                 "capacity": event.capacity,
                 "signups_count": signups_count,
                 "spots_left": spots_left,
+                "saved": saved,
+                "interested": interested,
                 "status": event.status,
                 "created_at": event.created_at,
                 "updated_at": event.updated_at,
                 "event_cover_url": event.event_cover_url,
                 "pricing_type": event.pricing_type,
                 "price_fixed": event.price_fixed,
-                "price_min": event.price_min,
-                "price_max": event.price_max,
-                "payment_link": event.payment_link,
+                "price_min": (
+                    None
+                    if event.event_type == "trainer"
+                    else event.price_min
+                ),
+                "price_max": (
+                    None
+                    if event.event_type == "trainer"
+                    else event.price_max
+                ),
+                "payment_link": (
+                    None
+                    if event.event_type == "trainer"
+                    else event.payment_link
+                ),
             }
         )
     finally:
@@ -6121,6 +6633,73 @@ async def upload_event_cover(
 
 
 # =========================
+# UPLOADS — TRAINER EVENT COVER
+# =========================
+@app.post("/trainer/uploads/event-cover")
+async def upload_trainer_event_cover(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        profile = db.query(UserProfile).filter(
+            UserProfile.user_id == current_user.id
+        ).first()
+
+        active_trainer_interests = _get_active_trainer_interests(profile)
+        if not active_trainer_interests:
+            raise HTTPException(
+                status_code=403,
+                detail="TRAINER_INTEREST_REQUIRED",
+            )
+    finally:
+        db.close()
+
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail="invalid_file_type",
+        )
+
+    content = await file.read()
+
+    if len(content) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=422,
+            detail="file_too_large_max_5mb",
+        )
+
+    ext_map = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/webp": "webp",
+    }
+
+    ext = ext_map.get(file.content_type, "bin")
+    filename = f"{uuid4().hex}.{ext}"
+
+    if require_r2_or_allow_local_uploads():
+        event_cover_url = upload_media_to_r2(
+            key=f"event-covers/{filename}",
+            content=content,
+            content_type=file.content_type,
+        )
+    else:
+        path = EVENT_COVERS_DIR / filename
+
+        with open(path, "wb") as f:
+            f.write(content)
+
+        event_cover_url = (
+            f"/uploads/static/event-covers/{filename}"
+        )
+
+    return ok({
+        "event_cover_url": event_cover_url
+    })
+
+
+# =========================
 # EVENTS  PARTNER: LISTA SWOICH EVENTW
 # =========================
 @app.get("/partners/events")
@@ -6140,6 +6719,7 @@ def partner_list_events(
         q = (
             db.query(Event)
             .filter(Event.partner_user_id == current_user.id)
+            .filter(Event.event_type == "organizer")
             .filter(
                 (Event.status == EventStatus.DRAFT.value)
                 | (Event.end_at >= partner_archive_cutoff)
@@ -6235,7 +6815,12 @@ def partner_get_event_details(
 ):
     db = SessionLocal()
     try:
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -6388,12 +6973,12 @@ def my_saved_events(
 def my_event_signups(
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    sort: str = "created_at_desc",  # created_at_desc | created_at_asc | start_at_asc | start_at_desc
+    sort: str = "created_at_desc",
+    completed_days: int | None = Query(None, ge=1, le=90),
     current_user: User = Depends(require_role("user")),
 ):
     db = SessionLocal()
     try:
-        # sort
         if sort not in {"created_at_desc", "created_at_asc", "start_at_asc", "start_at_desc"}:
             raise HTTPException(status_code=422, detail="INVALID_SORT")
 
@@ -6404,9 +6989,22 @@ def my_event_signups(
             .filter(Event.status == "published")
         )
 
+        # Opcjonalne archiwum zakończonych wydarzeń.
+        # Bez completed_days endpoint zachowuje dotychczasowe działanie.
+        if completed_days is not None:
+            now = datetime.now(timezone.utc)
+            cutoff = now - timedelta(days=completed_days)
+
+            event_end = func.coalesce(Event.end_at, Event.start_at)
+
+            q = q.filter(
+                event_end.isnot(None),
+                event_end <= now,
+                event_end >= cutoff,
+            )
+
         total = q.count()
 
-        # order by
         if sort == "created_at_desc":
             q = q.order_by(EventSignup.created_at.desc())
         elif sort == "created_at_asc":
@@ -6418,34 +7016,275 @@ def my_event_signups(
 
         rows = q.offset(offset).limit(limit).all()
 
+        event_ids = [event.id for _, event in rows]
+
+        organizer_ratings_by_event = {}
+        trainer_ratings_by_event = {}
+        trainer_profiles_by_user = {}
+        partner_profiles_by_user = {}
+
+        if completed_days is not None and event_ids:
+            owner_ids = {
+                event.partner_user_id
+                for _, event in rows
+                if event.partner_user_id is not None
+            }
+
+            if owner_ids:
+                trainer_profiles_by_user = {
+                    profile.user_id: profile
+                    for profile in (
+                        db.query(UserProfile)
+                        .filter(UserProfile.user_id.in_(owner_ids))
+                        .all()
+                    )
+                }
+
+                partner_profiles_by_user = {
+                    profile.user_id: profile
+                    for profile in (
+                        db.query(PartnerProfile)
+                        .filter(PartnerProfile.user_id.in_(owner_ids))
+                        .all()
+                    )
+                }
+
+            organizer_ratings_by_event = {
+                item.event_id: item
+                for item in (
+                    db.query(OrganizerRating)
+                    .filter(
+                        OrganizerRating.user_id == current_user.id,
+                        OrganizerRating.event_id.in_(event_ids),
+                    )
+                    .all()
+                )
+            }
+
+            trainer_ratings_by_event = {
+                item.event_id: item
+                for item in (
+                    db.query(TrainerRating)
+                    .filter(
+                        TrainerRating.user_id == current_user.id,
+                        TrainerRating.event_id.in_(event_ids),
+                    )
+                    .all()
+                )
+            }
+
         items = []
+
         for signup, event in rows:
+            event_data = {
+                "id": event.id,
+                "title": event.title,
+                "city": event.city,
+                "start_at": event.start_at,
+                "end_at": event.end_at,
+                "status": event.status,
+                "capacity": event.capacity,
+                "event_cover_url": event.event_cover_url,
+                "pricing_type": event.pricing_type,
+                "price_fixed": event.price_fixed,
+                "price_min": event.price_min,
+                "price_max": event.price_max,
+                "payment_link": event.payment_link,
+            }
+
+            if completed_days is not None:
+                event_data.update({
+                    "event_type": event.event_type,
+                    "partner_user_id": event.partner_user_id,
+                    "interest_tag": event.interest_tag,
+                })
+
+                if event.event_type == "trainer":
+                    owner_profile = trainer_profiles_by_user.get(event.partner_user_id)
+                    owner_name = (
+                        getattr(owner_profile, "nick", None)
+                        if owner_profile
+                        else None
+                    )
+                    owner_logo_url = (
+                        getattr(owner_profile, "avatar_url", None)
+                        if owner_profile
+                        else None
+                    )
+                    owner_city = (
+                        getattr(owner_profile, "miasto", None)
+                        if owner_profile
+                        else None
+                    )
+
+                    event_data.update({
+                        "partner_name": owner_name,
+                        "partner_logo_url": owner_logo_url,
+                        "partner_city": owner_city,
+                        "organizer_name": owner_name,
+                        "organizer_logo_url": owner_logo_url,
+                        "trainer_user_id": event.partner_user_id,
+                        "trainer_name": owner_name,
+                        "trainer_avatar_url": owner_logo_url,
+                        "trainer_city": owner_city,
+                        "trainer_specialization": event.interest_tag,
+                    })
+                else:
+                    owner_profile = partner_profiles_by_user.get(event.partner_user_id)
+                    owner_name = (
+                        getattr(owner_profile, "nazwa", None)
+                        if owner_profile
+                        else None
+                    )
+                    owner_logo_url = (
+                        getattr(owner_profile, "logo_url", None)
+                        if owner_profile
+                        else None
+                    )
+                    owner_city = (
+                        getattr(owner_profile, "miasto", None)
+                        if owner_profile
+                        else None
+                    )
+
+                    event_data.update({
+                        "partner_name": owner_name,
+                        "partner_logo_url": owner_logo_url,
+                        "partner_city": owner_city,
+                        "organizer_name": owner_name,
+                        "organizer_logo_url": owner_logo_url,
+                        "trainer_user_id": None,
+                        "trainer_name": None,
+                        "trainer_avatar_url": None,
+                        "trainer_city": None,
+                        "trainer_specialization": None,
+                    })
+
+                if event.event_type == "trainer":
+                    existing_rating = trainer_ratings_by_event.get(event.id)
+                else:
+                    existing_rating = organizer_ratings_by_event.get(event.id)
+
+                event_data["rated"] = existing_rating is not None
+                event_data["rating"] = (
+                    existing_rating.rating if existing_rating else None
+                )
+
+            items.append({
+                "signup": {
+                    "event_id": signup.event_id,
+                    "created_at": signup.created_at,
+                },
+                "event": event_data,
+            })
+
+        return ok({
+            "items": items,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "total": total,
+            },
+        })
+    finally:
+        db.close()
+# =========================
+# EVENTS — TRAINER: PARTICIPANTS
+# GET /trainer/events/{id}/participants?limit=10&offset=0
+# =========================
+@app.get("/trainer/events/{event_id}/participants")
+def trainer_event_participants(
+    event_id: int,
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        event = (
+            db.query(Event)
+            .filter(
+                Event.id == event_id,
+                Event.event_type == "trainer",
+            )
+            .first()
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        if event.partner_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        blocked_rows = (
+            db.query(UserBlock.blocker_user_id, UserBlock.blocked_user_id)
+            .filter(
+                (
+                    (UserBlock.blocker_user_id == current_user.id)
+                    & (UserBlock.blocked_user_id != current_user.id)
+                )
+                |
+                (
+                    (UserBlock.blocked_user_id == current_user.id)
+                    & (UserBlock.blocker_user_id != current_user.id)
+                )
+            )
+            .all()
+        )
+
+        blocked_user_ids = {
+            blocked_user_id
+            if blocker_user_id == current_user.id
+            else blocker_user_id
+            for blocker_user_id, blocked_user_id in blocked_rows
+        }
+
+        q = (
+            db.query(EventSignup, User)
+            .join(User, User.id == EventSignup.user_id)
+            .filter(EventSignup.event_id == event_id)
+        )
+
+        if blocked_user_ids:
+            q = q.filter(~User.id.in_(blocked_user_ids))
+
+        total = q.count()
+
+        rows = (
+            q.order_by(EventSignup.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        items = []
+
+        for signup, user in rows:
+            user_profile = (
+                db.query(UserProfile)
+                .filter(UserProfile.user_id == user.id)
+                .first()
+            )
+
             items.append(
                 {
-                    "signup": {
-                        "event_id": signup.event_id,
-                        "created_at": signup.created_at,
+                    "user": {
+                        "id": user.id,
+                        "nick": user_profile.nick if user_profile else None,
+                        "avatar_url": (
+                            getattr(user_profile, "avatar_url", None)
+                            if user_profile
+                            else None
+                        ),
                     },
-                    "event": {
-                        "id": event.id,
-                        "title": event.title,
-                        "city": event.city,
-                        "start_at": event.start_at,
-                        "end_at": event.end_at,
-                        "status": event.status,
-                        "capacity": event.capacity,
-                        "event_cover_url": event.event_cover_url,
-                        "pricing_type": event.pricing_type,
-                        "price_fixed": event.price_fixed,
-                        "price_min": event.price_min,
-                        "price_max": event.price_max,
-                        "payment_link": event.payment_link,
+                    "signup": {
+                        "created_at": signup.created_at,
                     },
                 }
             )
 
         return ok(
             {
+                "event_id": event_id,
                 "items": items,
                 "pagination": {
                     "limit": limit,
@@ -6456,6 +7295,8 @@ def my_event_signups(
         )
     finally:
         db.close()
+
+
 # =========================
 # EVENTS  PARTNER: PARTICIPANTS
 # GET /partners/events/{id}/participants?limit=10&offset=0
@@ -6470,7 +7311,12 @@ def partner_event_participants(
     db = SessionLocal()
     try:
         # 1) event musi istnie
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -6563,7 +7409,12 @@ def partner_event_observers(
 ):
     db = SessionLocal()
     try:
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -6639,6 +7490,7 @@ def partner_dashboard_stats(
         events = (
             db.query(Event)
             .filter(Event.partner_user_id == current_user.id)
+            .filter(Event.event_type == "organizer")
             .all()
         )
 
@@ -6714,7 +7566,12 @@ def partner_event_stats(
     db = SessionLocal()
     try:
         # 1) event musi istnie
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "organizer")
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
 
@@ -6756,14 +7613,1195 @@ def partner_event_stats(
         if capacity is not None:
             spots_left = max(capacity - signups_count, 0)
 
+        # Tempo zapisów — ostatnie 14 pełnych dni kalendarzowych + dziś.
+        # Grupujemy świadomie w UTC, żeby backend zwracał stabilne klucze dat
+        # i frontend nie przesuwał punktów wykresu przez konwersję strefy.
+        today_utc = datetime.now(timezone.utc).date()
+        trend_start_date = today_utc - timedelta(days=13)
+        trend_start_dt = datetime.combine(
+            trend_start_date,
+            datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+
+        trend_q = q.filter(EventSignup.created_at >= trend_start_dt)
+        trend_rows = trend_q.all()
+
+        daily_counts = {
+            trend_start_date + timedelta(days=offset): 0
+            for offset in range(14)
+        }
+
+        for signup in trend_rows:
+            created_at = _ensure_utc(signup.created_at)
+            if not created_at:
+                continue
+
+            signup_date = created_at.date()
+            if signup_date in daily_counts:
+                daily_counts[signup_date] += 1
+
+        signup_trend = [
+            {
+                "date": day.isoformat(),
+                "count": daily_counts[day],
+            }
+            for day in sorted(daily_counts)
+        ]
+
+        signups_last_7d = sum(
+            item["count"]
+            for item in signup_trend[-7:]
+        )
+
         return ok(
             {
                 "event_id": event_id,
                 "signups_count": signups_count,
                 "capacity": capacity,
                 "spots_left": spots_left,
+                "signups_last_7d": signups_last_7d,
+                "signup_trend": signup_trend,
             }
         )
+    finally:
+        db.close()
+
+
+# =========================
+# TRAINER EVENTS
+# Towarzysz z aktywną specjalizacją trenerską
+# =========================
+@app.post("/trainer/events")
+def trainer_create_event(
+    payload: TrainerEventCreate,
+    current_user: User = Depends(require_role("user")),
+):
+    def _to_utc_naive(dt):
+        if dt is None:
+            return None
+        if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+            return dt.replace(tzinfo=None)
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+    db = SessionLocal()
+    try:
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+        if not profile:
+            raise HTTPException(status_code=404, detail="USER_PROFILE_NOT_FOUND")
+
+        expiry_result = _expire_profile_plan_if_needed(
+            db,
+            current_user,
+            profile,
+        )
+        if expiry_result is not None:
+            db.commit()
+            db.refresh(profile)
+
+        active_trainer_interests = _get_active_trainer_interests(profile)
+        if not active_trainer_interests:
+            raise HTTPException(
+                status_code=403,
+                detail="TRAINER_INTERESTS_REQUIRED",
+            )
+
+        requested_tag = str(payload.interest_tag or "").strip()
+        if not requested_tag:
+            raise HTTPException(
+                status_code=422,
+                detail="TRAINER_INTEREST_REQUIRED",
+            )
+
+        active_by_lower = {
+            str(tag).strip().lower(): str(tag).strip()
+            for tag in active_trainer_interests
+            if str(tag).strip()
+        }
+        canonical_tag = active_by_lower.get(requested_tag.lower())
+
+        if canonical_tag is None:
+            raise HTTPException(
+                status_code=422,
+                detail="TRAINER_INTEREST_NOT_ALLOWED",
+            )
+
+        event = Event(
+            partner_user_id=current_user.id,
+            event_type="trainer",
+            title=payload.title,
+            description=payload.description,
+            city=payload.city,
+            where=payload.where,
+            address=payload.address,
+            location_lat=payload.location_lat,
+            location_lng=payload.location_lng,
+            interest_tag=canonical_tag,
+            interest_tags_json=json.dumps(
+                [canonical_tag],
+                ensure_ascii=False,
+            ),
+            start_at=_to_utc_naive(payload.start_at),
+            end_at=_to_utc_naive(payload.end_at),
+            draft_date=payload.draft_date,
+            draft_time=payload.draft_time,
+            capacity=payload.capacity,
+            event_cover_url=payload.event_cover_url,
+            pricing_type=payload.pricing_type,
+            price_fixed=payload.price_fixed,
+            price_min=None,
+            price_max=None,
+            payment_link=None,
+        )
+
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+
+        return ok(
+            EventOut(
+                id=event.id,
+                partner_user_id=event.partner_user_id,
+                event_type=event.event_type,
+                title=event.title,
+                description=event.description,
+                city=event.city,
+                where=event.where,
+                address=event.address,
+                location_lat=event.location_lat,
+                location_lng=event.location_lng,
+                interest_tag=event.interest_tag,
+                interest_tags=[canonical_tag],
+                start_at=event.start_at,
+                end_at=event.end_at,
+                draft_date=event.draft_date,
+                draft_time=event.draft_time,
+                capacity=event.capacity,
+                status=event.status,
+                created_at=event.created_at,
+                updated_at=event.updated_at,
+                event_cover_url=event.event_cover_url,
+                pricing_type=event.pricing_type,
+                price_fixed=event.price_fixed,
+                price_min=None,
+                price_max=None,
+                payment_link=None,
+            ).model_dump()
+        )
+    finally:
+        db.close()
+
+
+@app.patch("/trainer/events/{event_id}")
+def trainer_update_event(
+    event_id: int,
+    payload: TrainerEventUpdate,
+    current_user: User = Depends(require_role("user")),
+):
+    def _to_utc_naive(dt):
+        if dt is None:
+            return None
+        if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+            return dt.replace(tzinfo=None)
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+    db = SessionLocal()
+    try:
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "trainer")
+            .first()
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        if event.partner_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+        if not profile:
+            raise HTTPException(status_code=404, detail="USER_PROFILE_NOT_FOUND")
+
+        expiry_result = _expire_profile_plan_if_needed(
+            db,
+            current_user,
+            profile,
+        )
+        if expiry_result is not None:
+            db.commit()
+            db.refresh(profile)
+            db.refresh(event)
+
+        active_trainer_interests = _get_active_trainer_interests(profile)
+        if not active_trainer_interests:
+            raise HTTPException(
+                status_code=403,
+                detail="TRAINER_INTERESTS_REQUIRED",
+            )
+
+        active_by_lower = {
+            str(tag).strip().lower(): str(tag).strip()
+            for tag in active_trainer_interests
+            if str(tag).strip()
+        }
+
+        fields_set = payload.model_fields_set
+
+        # Specjalizacja wydarzenia zawsze musi pozostać aktywną
+        # specjalizacją trenerską właściciela.
+        if "interest_tag" in fields_set:
+            requested_tag = str(payload.interest_tag or "").strip()
+            if not requested_tag:
+                raise HTTPException(
+                    status_code=422,
+                    detail="TRAINER_INTEREST_REQUIRED",
+                )
+
+            canonical_tag = active_by_lower.get(requested_tag.lower())
+            if canonical_tag is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail="TRAINER_INTEREST_NOT_ALLOWED",
+                )
+        else:
+            current_tag = str(event.interest_tag or "").strip()
+            canonical_tag = active_by_lower.get(current_tag.lower())
+            if canonical_tag is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail="TRAINER_EVENT_SPECIALIZATION_INACTIVE",
+                )
+
+        current_start = _ensure_utc(event.start_at)
+        current_end = _ensure_utc(event.end_at)
+
+        new_start = (
+            _ensure_utc(payload.start_at)
+            if "start_at" in fields_set
+            else current_start
+        )
+        new_end = (
+            _ensure_utc(payload.end_at)
+            if "end_at" in fields_set
+            else current_end
+        )
+
+        if (
+            new_start is not None
+            and new_end is not None
+            and not (new_start < new_end)
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="INVALID_EVENT_DATES",
+            )
+
+        previous_where = event.where
+        previous_city = event.city
+        previous_address = event.address
+        previous_location_lat = event.location_lat
+        previous_location_lng = event.location_lng
+
+        if "title" in fields_set:
+            event.title = payload.title
+        if "description" in fields_set:
+            event.description = payload.description
+        if "city" in fields_set:
+            event.city = payload.city
+        if "where" in fields_set:
+            event.where = payload.where
+        if "address" in fields_set:
+            event.address = payload.address
+        if "location_lat" in fields_set:
+            event.location_lat = payload.location_lat
+        if "location_lng" in fields_set:
+            event.location_lng = payload.location_lng
+
+        if "interest_tag" in fields_set:
+            event.interest_tag = canonical_tag
+            event.interest_tags_json = json.dumps(
+                [canonical_tag],
+                ensure_ascii=False,
+            )
+
+        if "start_at" in fields_set:
+            event.start_at = _to_utc_naive(payload.start_at)
+        if "end_at" in fields_set:
+            event.end_at = _to_utc_naive(payload.end_at)
+        if "draft_date" in fields_set:
+            event.draft_date = payload.draft_date
+        if "draft_time" in fields_set:
+            event.draft_time = payload.draft_time
+        if "capacity" in fields_set:
+            event.capacity = payload.capacity
+        if "event_cover_url" in fields_set:
+            event.event_cover_url = payload.event_cover_url
+
+        # Trainer V1: wyłącznie free albo paid_fixed.
+        if "pricing_type" in fields_set:
+            if payload.pricing_type is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail="EVENT_PRICING_TYPE_REQUIRED",
+                )
+
+            event.pricing_type = payload.pricing_type
+
+            if payload.pricing_type == "free":
+                event.price_fixed = None
+            elif payload.pricing_type == "paid_fixed":
+                # Cena może przyjść w tym samym PATCH albo już istnieć.
+                pass
+
+        if "price_fixed" in fields_set:
+            event.price_fixed = payload.price_fixed
+
+        # Pola marketplace/range nigdy nie należą do wydarzenia Trenera.
+        event.price_min = None
+        event.price_max = None
+        event.payment_link = None
+
+        # Walidujemy wynikowy stan pricingu, nie tylko payload.
+        if event.pricing_type == "free":
+            event.price_fixed = None
+        elif event.pricing_type == "paid_fixed":
+            if event.price_fixed is None or event.price_fixed < 1:
+                raise HTTPException(
+                    status_code=422,
+                    detail="PAID_TRAINER_EVENT_REQUIRES_FIXED_PRICE",
+                )
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail="INVALID_TRAINER_EVENT_PRICING_TYPE",
+            )
+
+        # Opublikowany event po każdej zmianie nadal musi być kompletny.
+        if event.status == "published":
+            _validate_event_for_publish(event)
+
+        event_time_changed = (
+            current_start != _ensure_utc(event.start_at)
+            or current_end != _ensure_utc(event.end_at)
+        )
+        event_location_changed = (
+            previous_where != event.where
+            or previous_city != event.city
+            or previous_address != event.address
+            or previous_location_lat != event.location_lat
+            or previous_location_lng != event.location_lng
+        )
+
+        event.updated_at = datetime.utcnow()
+
+        if event_time_changed or event_location_changed:
+            signup_user_ids = {
+                user_id
+                for (user_id,) in (
+                    db.query(EventSignup.user_id)
+                    .filter(EventSignup.event_id == event.id)
+                    .all()
+                )
+            }
+            saved_user_ids = {
+                user_id
+                for (user_id,) in (
+                    db.query(EventSave.user_id)
+                    .filter(EventSave.event_id == event.id)
+                    .all()
+                )
+            }
+            target_user_ids = signup_user_ids | saved_user_ids
+
+            if event_time_changed and event_location_changed:
+                notification_type = "event_time_and_location_changed"
+                body_pl = "Zmieniły się czas i lokalizacja wydarzenia"
+                body_en = "The event time and location have changed"
+            elif event_time_changed:
+                notification_type = "event_time_changed"
+                body_pl = "Zmienił się czas wydarzenia"
+                body_en = "The event time has changed"
+            else:
+                notification_type = "event_location_changed"
+                body_pl = "Zmieniła się lokalizacja wydarzenia"
+                body_en = "The event location has changed"
+
+            for target_user_id in target_user_ids:
+                db.add(
+                    UserNotification(
+                        user_id=target_user_id,
+                        event_id=event.id,
+                        partner_user_id=current_user.id,
+                        type=notification_type,
+                    )
+                )
+
+                send_push_to_user(
+                    db,
+                    target_user_id,
+                    "USLY",
+                    body_pl,
+                    data={
+                        "type": notification_type,
+                        "event_id": event.id,
+                    },
+                    localized_bodies={
+                        "pl": body_pl,
+                        "en": body_en,
+                    },
+                )
+
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+
+        response_interest_tags = [event.interest_tag] if event.interest_tag else []
+
+        return ok(
+            EventOut(
+                id=event.id,
+                partner_user_id=event.partner_user_id,
+                event_type=event.event_type,
+                title=event.title,
+                description=event.description,
+                city=event.city,
+                where=event.where,
+                address=event.address,
+                location_lat=event.location_lat,
+                location_lng=event.location_lng,
+                interest_tag=event.interest_tag,
+                interest_tags=response_interest_tags,
+                start_at=event.start_at,
+                end_at=event.end_at,
+                draft_date=event.draft_date,
+                draft_time=event.draft_time,
+                capacity=event.capacity,
+                status=event.status,
+                created_at=event.created_at,
+                updated_at=event.updated_at,
+                event_cover_url=event.event_cover_url,
+                pricing_type=event.pricing_type,
+                price_fixed=event.price_fixed,
+                price_min=None,
+                price_max=None,
+                payment_link=None,
+            ).model_dump()
+        )
+    finally:
+        db.close()
+
+
+
+class TrainerRatingRequest(BaseModel):
+    rating: int = Field(ge=1, le=5)
+
+
+
+@app.get("/trainers/{trainer_user_id}/ratings")
+def get_trainer_ratings(
+    trainer_user_id: int,
+):
+    db = SessionLocal()
+    try:
+        trainer = (
+            db.query(User)
+            .filter(
+                User.id == trainer_user_id,
+                User.role == UserRole.USER,
+                User.status == UserStatus.ACTIVE,
+            )
+            .first()
+        )
+
+        if not trainer:
+            raise HTTPException(status_code=404, detail="TRAINER_NOT_FOUND")
+
+        rows = (
+            db.query(
+                TrainerRating.interest_tag,
+                func.avg(TrainerRating.rating).label("rating_average"),
+                func.count(TrainerRating.id).label("ratings_count"),
+            )
+            .filter(
+                TrainerRating.trainer_user_id == trainer_user_id,
+            )
+            .group_by(TrainerRating.interest_tag)
+            .order_by(TrainerRating.interest_tag.asc())
+            .all()
+        )
+
+        specializations = [
+            {
+                "interest_tag": row.interest_tag,
+                "rating_average": round(float(row.rating_average), 1),
+                "ratings_count": int(row.ratings_count),
+            }
+            for row in rows
+        ]
+
+        total_count = sum(item["ratings_count"] for item in specializations)
+
+        return ok({
+            "trainer_user_id": trainer_user_id,
+            "ratings_count": total_count,
+            "specializations": specializations,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/trainers/{trainer_user_id}/rating-events")
+def get_trainer_rating_events(
+    trainer_user_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        trainer = (
+            db.query(User)
+            .filter(
+                User.id == trainer_user_id,
+                User.role == UserRole.USER,
+                User.status == UserStatus.ACTIVE,
+            )
+            .first()
+        )
+
+        if not trainer:
+            raise HTTPException(status_code=404, detail="TRAINER_NOT_FOUND")
+
+        # Własnych wydarzeń trenerskich nie można oceniać.
+        if trainer.id == current_user.id:
+            raise HTTPException(status_code=403, detail="CANNOT_RATE_OWN_TRAINER_EVENTS")
+
+        now = datetime.now(timezone.utc)
+
+        rows = (
+            db.query(Event, TrainerRating)
+            .join(
+                EventSignup,
+                (EventSignup.event_id == Event.id)
+                & (EventSignup.user_id == current_user.id),
+            )
+            .outerjoin(
+                TrainerRating,
+                (TrainerRating.event_id == Event.id)
+                & (TrainerRating.user_id == current_user.id),
+            )
+            .filter(
+                Event.partner_user_id == trainer_user_id,
+                Event.event_type == "trainer",
+                Event.start_at.isnot(None),
+            )
+            .order_by(Event.start_at.desc())
+            .all()
+        )
+
+        events = []
+
+        for event, existing_rating in rows:
+            event_end = event.end_at or event.start_at
+
+            if event_end is None:
+                continue
+
+            if event_end.tzinfo is None:
+                event_end = event_end.replace(tzinfo=timezone.utc)
+
+            if event_end > now:
+                continue
+
+            interest_tag = (event.interest_tag or "").strip()
+            if not interest_tag:
+                continue
+
+            events.append({
+                "event_id": event.id,
+                "title": event.title,
+                "city": event.city,
+                "start_at": event.start_at.isoformat() if event.start_at else None,
+                "end_at": event.end_at.isoformat() if event.end_at else None,
+                "interest_tag": interest_tag,
+                "rated": existing_rating is not None,
+                "rating": existing_rating.rating if existing_rating else None,
+            })
+
+        return ok({
+            "trainer_user_id": trainer_user_id,
+            "events": events,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/trainers/{trainer_user_id}/rating-events/{event_id}")
+def rate_trainer_event(
+    trainer_user_id: int,
+    event_id: int,
+    payload: TrainerRatingRequest,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        if trainer_user_id == current_user.id:
+            raise HTTPException(status_code=403, detail="CANNOT_RATE_OWN_TRAINER_EVENTS")
+
+        trainer = (
+            db.query(User)
+            .filter(
+                User.id == trainer_user_id,
+                User.role == UserRole.USER,
+                User.status == UserStatus.ACTIVE,
+            )
+            .first()
+        )
+
+        if not trainer:
+            raise HTTPException(status_code=404, detail="TRAINER_NOT_FOUND")
+
+        event = (
+            db.query(Event)
+            .filter(
+                Event.id == event_id,
+                Event.partner_user_id == trainer_user_id,
+                Event.event_type == "trainer",
+            )
+            .first()
+        )
+
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        signup = (
+            db.query(EventSignup)
+            .filter(
+                EventSignup.event_id == event_id,
+                EventSignup.user_id == current_user.id,
+            )
+            .first()
+        )
+
+        if not signup:
+            raise HTTPException(status_code=403, detail="EVENT_NOT_ATTENDED")
+
+        event_end = event.end_at or event.start_at
+        if event_end is None:
+            raise HTTPException(status_code=422, detail="EVENT_NOT_FINISHED")
+
+        if event_end.tzinfo is None:
+            event_end = event_end.replace(tzinfo=timezone.utc)
+
+        if event_end > datetime.now(timezone.utc):
+            raise HTTPException(status_code=422, detail="EVENT_NOT_FINISHED")
+
+        existing = (
+            db.query(TrainerRating)
+            .filter(
+                TrainerRating.user_id == current_user.id,
+                TrainerRating.event_id == event_id,
+            )
+            .first()
+        )
+
+        if existing:
+            raise HTTPException(status_code=409, detail="EVENT_ALREADY_RATED")
+
+        # Specjalizacja pochodzi wyłącznie z wydarzenia.
+        # Klient nie może podmienić kategorii, której dotyczy ocena.
+        interest_tag = (event.interest_tag or "").strip()
+        if not interest_tag:
+            raise HTTPException(status_code=422, detail="TRAINER_EVENT_INTEREST_REQUIRED")
+
+        rating = TrainerRating(
+            user_id=current_user.id,
+            trainer_user_id=trainer_user_id,
+            event_id=event_id,
+            interest_tag=interest_tag,
+            rating=payload.rating,
+        )
+
+        db.add(rating)
+        db.commit()
+        db.refresh(rating)
+
+        return ok({
+            "event_id": event_id,
+            "trainer_user_id": trainer_user_id,
+            "interest_tag": rating.interest_tag,
+            "rating": rating.rating,
+            "rated": True,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/trainers/{trainer_user_id}/events")
+def trainer_public_events(
+    trainer_user_id: int,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    db = SessionLocal()
+    try:
+        trainer = (
+            db.query(User)
+            .filter(
+                User.id == trainer_user_id,
+                User.role == UserRole.USER,
+                User.status == UserStatus.ACTIVE,
+            )
+            .first()
+        )
+        if not trainer:
+            raise HTTPException(
+                status_code=404,
+                detail="TRAINER_NOT_FOUND",
+            )
+
+        now = datetime.now(timezone.utc)
+        event_end = func.coalesce(Event.end_at, Event.start_at)
+
+        q = (
+            db.query(Event)
+            .filter(Event.partner_user_id == trainer_user_id)
+            .filter(Event.event_type == "trainer")
+            .filter(Event.status == EventStatus.PUBLISHED.value)
+            .filter(event_end.isnot(None))
+            .filter(event_end >= now)
+        )
+
+        total = q.count()
+
+        events = (
+            q.order_by(Event.start_at.asc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        items = []
+
+        for event in events:
+            participants_count = (
+                db.query(EventSignup)
+                .filter(EventSignup.event_id == event.id)
+                .count()
+            )
+
+            event_tags = []
+
+            if getattr(event, "interest_tags_json", None):
+                try:
+                    event_tags = (
+                        json.loads(event.interest_tags_json) or []
+                    )
+                except Exception:
+                    event_tags = []
+
+            if not event_tags and event.interest_tag:
+                event_tags = [event.interest_tag]
+
+            items.append(
+                {
+                    "id": event.id,
+                    "partner_user_id": event.partner_user_id,
+                    "event_type": event.event_type,
+                    "title": event.title,
+                    "description": event.description,
+                    "city": event.city,
+                    "where": event.where,
+                    "address": event.address,
+                    "location_lat": event.location_lat,
+                    "location_lng": event.location_lng,
+                    "interest_tag": event.interest_tag,
+                    "interest_tags": event_tags,
+                    "start_at": event.start_at,
+                    "end_at": event.end_at,
+                    "capacity": event.capacity,
+                    "participants_count": participants_count,
+                    "status": event.status,
+                    "event_cover_url": event.event_cover_url,
+                    "pricing_type": event.pricing_type,
+                    "price_fixed": event.price_fixed,
+                    "price_min": None,
+                    "price_max": None,
+                    "payment_link": None,
+                }
+            )
+
+        return ok(
+            {
+                "items": items,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "total": total,
+                },
+            }
+        )
+    finally:
+        db.close()
+
+
+@app.get("/trainer/events")
+def trainer_list_events(
+    status: Optional[str] = None,
+    city: Optional[str] = None,
+    date: Optional[date] = None,
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        now_utc = datetime.now(timezone.utc)
+        trainer_archive_cutoff = now_utc - timedelta(days=30)
+
+        q = (
+            db.query(Event)
+            .filter(Event.partner_user_id == current_user.id)
+            .filter(Event.event_type == "trainer")
+            .filter(
+                (Event.status == EventStatus.DRAFT.value)
+                | (Event.end_at >= trainer_archive_cutoff)
+            )
+        )
+
+        if status is not None and status.strip() != "":
+            st = status.strip()
+            if st not in {"draft", "published", "archived"}:
+                raise HTTPException(
+                    status_code=422,
+                    detail="INVALID_STATUS_FILTER",
+                )
+            q = q.filter(Event.status == st)
+
+        if city is not None and city.strip() != "":
+            q = q.filter(Event.city == city.strip())
+
+        if date is not None:
+            start_dt = datetime(
+                date.year,
+                date.month,
+                date.day,
+                0,
+                0,
+                0,
+            )
+            end_dt = datetime(
+                date.year,
+                date.month,
+                date.day,
+                23,
+                59,
+                59,
+            )
+            q = q.filter(Event.start_at >= start_dt)
+            q = q.filter(Event.start_at <= end_dt)
+
+        total = q.count()
+
+        events = (
+            q.order_by(Event.start_at.asc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        items = []
+        for event in events:
+            participants_count = (
+                db.query(EventSignup)
+                .filter(EventSignup.event_id == event.id)
+                .count()
+            )
+
+            event_tags = []
+            if getattr(event, "interest_tags_json", None):
+                try:
+                    event_tags = (
+                        json.loads(event.interest_tags_json) or []
+                    )
+                except Exception:
+                    event_tags = []
+
+            if not event_tags and event.interest_tag:
+                event_tags = [event.interest_tag]
+
+            items.append(
+                {
+                    "id": event.id,
+                    "partner_user_id": event.partner_user_id,
+                    "event_type": event.event_type,
+                    "title": event.title,
+                    "description": event.description,
+                    "city": event.city,
+                    "where": event.where,
+                    "address": event.address,
+                    "location_lat": event.location_lat,
+                    "location_lng": event.location_lng,
+                    "interest_tag": event.interest_tag,
+                    "interest_tags": event_tags,
+                    "start_at": event.start_at,
+                    "end_at": event.end_at,
+                    "draft_date": event.draft_date,
+                    "draft_time": event.draft_time,
+                    "capacity": event.capacity,
+                    "participants_count": participants_count,
+                    "status": event.status,
+                    "created_at": event.created_at,
+                    "updated_at": event.updated_at,
+                    "event_cover_url": event.event_cover_url,
+                    "pricing_type": event.pricing_type,
+                    "price_fixed": event.price_fixed,
+                    "price_min": None,
+                    "price_max": None,
+                    "payment_link": None,
+                }
+            )
+
+        return ok(
+            {
+                "items": items,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "total": total,
+                },
+            }
+        )
+    finally:
+        db.close()
+
+
+@app.delete("/trainer/events/{event_id}")
+def trainer_delete_event(
+    event_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "trainer")
+            .first()
+        )
+        if not event:
+            raise HTTPException(
+                status_code=404,
+                detail="EVENT_NOT_FOUND",
+            )
+
+        if event.partner_user_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="FORBIDDEN_NOT_OWNER",
+            )
+
+        db.delete(event)
+        db.commit()
+
+        return ok(
+            {
+                "deleted": True,
+                "id": event_id,
+                "event_type": "trainer",
+            }
+        )
+    finally:
+        db.close()
+
+
+@app.post("/trainer/events/{event_id}/publish")
+def trainer_publish_event(
+    event_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "trainer")
+            .first()
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        if event.partner_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        if event.status not in {"draft", "archived"}:
+            raise HTTPException(
+                status_code=409,
+                detail="INVALID_STATUS_TRANSITION",
+            )
+
+        profile = (
+            db.query(UserProfile)
+            .filter(UserProfile.user_id == current_user.id)
+            .first()
+        )
+        if not profile:
+            raise HTTPException(
+                status_code=404,
+                detail="USER_PROFILE_NOT_FOUND",
+            )
+
+        expiry_result = _expire_profile_plan_if_needed(
+            db,
+            current_user,
+            profile,
+        )
+        if expiry_result is not None:
+            db.commit()
+            db.refresh(profile)
+            db.refresh(event)
+
+        active_trainer_interests = _get_active_trainer_interests(profile)
+        if not active_trainer_interests:
+            raise HTTPException(
+                status_code=403,
+                detail="TRAINER_INTERESTS_REQUIRED",
+            )
+
+        active_by_lower = {
+            str(tag).strip().lower(): str(tag).strip()
+            for tag in active_trainer_interests
+            if str(tag).strip()
+        }
+
+        current_tag = str(event.interest_tag or "").strip()
+        canonical_tag = active_by_lower.get(current_tag.lower())
+
+        if canonical_tag is None:
+            raise HTTPException(
+                status_code=422,
+                detail="TRAINER_EVENT_SPECIALIZATION_INACTIVE",
+            )
+
+        # Utrzymujemy dokładnie jedną specjalizację także dla
+        # starszego szkicu utworzonego przed publikacją.
+        event.interest_tag = canonical_tag
+        event.interest_tags_json = json.dumps(
+            [canonical_tag],
+            ensure_ascii=False,
+        )
+
+        # Trainer V1 nie może korzystać z zakresu cen ani linku płatności.
+        event.price_min = None
+        event.price_max = None
+        event.payment_link = None
+
+        if event.pricing_type == "free":
+            event.price_fixed = None
+        elif event.pricing_type == "paid_fixed":
+            if event.price_fixed is None or event.price_fixed < 1:
+                raise HTTPException(
+                    status_code=422,
+                    detail="PAID_TRAINER_EVENT_REQUIRES_FIXED_PRICE",
+                )
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail="INVALID_TRAINER_EVENT_PRICING_TYPE",
+            )
+
+        _validate_event_for_publish(event)
+
+        if event.status == "archived":
+            last_admin_status_log = (
+                db.query(AuditLog)
+                .filter(
+                    AuditLog.action == "admin_update_event_status",
+                    AuditLog.details.isnot(None),
+                    AuditLog.details.like(f"%event_id={event.id}%"),
+                )
+                .order_by(AuditLog.created_at.desc())
+                .first()
+            )
+            if (
+                last_admin_status_log
+                and "to=archived" in (last_admin_status_log.details or "")
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="EVENT_ARCHIVED_BY_ADMIN",
+                )
+
+        now_utc = datetime.now(timezone.utc)
+        if (
+            event.end_at is not None
+            and _ensure_utc(event.end_at) < now_utc
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="INVALID_STATUS_TRANSITION",
+            )
+
+        event.status = "published"
+        event.updated_at = datetime.utcnow()
+
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+
+        return ok({
+            "id": event.id,
+            "status": event.status,
+            "event_type": event.event_type,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/trainer/events/{event_id}/archive")
+def trainer_archive_event(
+    event_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        event = (
+            db.query(Event)
+            .filter(Event.id == event_id)
+            .filter(Event.event_type == "trainer")
+            .first()
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        if event.partner_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="FORBIDDEN_NOT_OWNER")
+
+        if event.status != "published":
+            raise HTTPException(
+                status_code=409,
+                detail="INVALID_STATUS_TRANSITION",
+            )
+
+        event.status = "archived"
+        event.updated_at = datetime.utcnow()
+
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+
+        return ok({
+            "id": event.id,
+            "status": event.status,
+            "event_type": event.event_type,
+        })
     finally:
         db.close()
 
@@ -6975,10 +9013,12 @@ def moderate_message_text_or_raise(content: str):
                 {
                     "role": "system",
                     "content": (
-                        "You moderate short Polish messages in a social/event app. "
+                        "You moderate short Polish or English messages in an 18+ social/event app. "
                         "Return only JSON with keys: allowed:boolean, reason:string. "
-                        "Block harassment, hate, sexual solicitation, threats, scams, spam, attempts to move users off-platform, and explicit content. "
-                        "Allow normal friendly conversation, event planning, logistics, and mild casual language."
+                        "Be permissive with normal adult conversation. Do not block a message merely because it contains profanity, vulgar language, dark humor, flirting, sexual topics between consenting adults, or strong emotions. "
+                        "Block clear targeted harassment or intimidation, hateful attacks against protected groups, credible threats of violence, scams, repetitive spam, and clearly unwanted or coercive sexual solicitation. "
+                        "Do not infer harmful intent from ambiguous wording alone. When context is ambiguous and there is no clear safety violation, allow the message. "
+                        "Allow normal friendly conversation, jokes, event planning, logistics, disagreements, casual language, and consensual adult conversation."
                     ),
                 },
                 {"role": "user", "content": text[:2000]},
@@ -7772,6 +9812,409 @@ def unmute_private_chat(
 
 
 # =========================
+# ORGANIZER FOLLOWS
+# =========================
+@app.get("/organizers/following")
+def get_followed_organizers(
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        follows = (
+            db.query(OrganizerFollow)
+            .filter(OrganizerFollow.follower_user_id == current_user.id)
+            .order_by(OrganizerFollow.created_at.desc())
+            .all()
+        )
+
+        items = []
+
+        for follow in follows:
+            organizer = (
+                db.query(User)
+                .filter(
+                    User.id == follow.organizer_user_id,
+                    User.role == "partner",
+                    User.status == UserStatus.ACTIVE,
+                )
+                .first()
+            )
+            if not organizer:
+                continue
+
+            profile = (
+                db.query(PartnerProfile)
+                .filter(PartnerProfile.user_id == organizer.id)
+                .first()
+            )
+
+            follower_count = (
+                db.query(OrganizerFollow)
+                .filter(OrganizerFollow.organizer_user_id == organizer.id)
+                .count()
+            )
+
+            ratings = (
+                db.query(OrganizerRating)
+                .filter(OrganizerRating.organizer_user_id == organizer.id)
+                .all()
+            )
+            rating_count = len(ratings)
+            rating_average = (
+                round(sum(item.rating for item in ratings) / rating_count, 1)
+                if rating_count
+                else None
+            )
+
+            items.append({
+                "id": organizer.id,
+                "name": profile.nazwa if profile else None,
+                "city": profile.miasto if profile else None,
+                "category": profile.kategoria if profile else None,
+                "bio": profile.bio if profile else None,
+                "logo_url": profile.logo_url if profile else None,
+                "follower_count": follower_count,
+                "following": True,
+                "rating_average": rating_average,
+                "rating_count": rating_count,
+                "followed_at": follow.created_at.isoformat() if follow.created_at else None,
+            })
+
+        return ok({"items": items})
+    finally:
+        db.close()
+
+
+@app.get("/organizers/{organizer_user_id}")
+def get_organizer_profile(
+    organizer_user_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        organizer = (
+            db.query(User)
+            .filter(
+                User.id == organizer_user_id,
+                User.role == "partner",
+                User.status == UserStatus.ACTIVE,
+            )
+            .first()
+        )
+        if not organizer:
+            raise HTTPException(status_code=404, detail="ORGANIZER_NOT_FOUND")
+
+        profile = (
+            db.query(PartnerProfile)
+            .filter(PartnerProfile.user_id == organizer_user_id)
+            .first()
+        )
+
+        follower_count = (
+            db.query(OrganizerFollow)
+            .filter(OrganizerFollow.organizer_user_id == organizer_user_id)
+            .count()
+        )
+
+        following = (
+            db.query(OrganizerFollow)
+            .filter(
+                OrganizerFollow.follower_user_id == current_user.id,
+                OrganizerFollow.organizer_user_id == organizer_user_id,
+            )
+            .first()
+            is not None
+        )
+
+        organizer_ratings = (
+            db.query(OrganizerRating)
+            .filter(OrganizerRating.organizer_user_id == organizer_user_id)
+            .all()
+        )
+
+        rating_count = len(organizer_ratings)
+        rating_average = (
+            round(
+                sum(item.rating for item in organizer_ratings) / rating_count,
+                1,
+            )
+            if rating_count
+            else None
+        )
+
+        return ok({
+            "id": organizer_user_id,
+            "name": profile.nazwa if profile else None,
+            "city": profile.miasto if profile else None,
+            "category": profile.kategoria if profile else None,
+            "bio": profile.bio if profile else None,
+            "logo_url": profile.logo_url if profile else None,
+            "follower_count": follower_count,
+            "following": following,
+            "rating_average": rating_average,
+            "rating_count": rating_count,
+        })
+    finally:
+        db.close()
+
+
+
+class OrganizerRatingRequest(BaseModel):
+    rating: int = Field(ge=1, le=5)
+
+
+@app.get("/organizers/{organizer_user_id}/rating-events")
+def get_organizer_rating_events(
+    organizer_user_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        organizer = (
+            db.query(User)
+            .filter(
+                User.id == organizer_user_id,
+                User.role == UserRole.PARTNER,
+                User.status == UserStatus.ACTIVE,
+            )
+            .first()
+        )
+        if not organizer:
+            raise HTTPException(status_code=404, detail="ORGANIZER_NOT_FOUND")
+
+        now = datetime.now(timezone.utc)
+
+        rows = (
+            db.query(Event, OrganizerRating)
+            .join(
+                EventSignup,
+                (EventSignup.event_id == Event.id)
+                & (EventSignup.user_id == current_user.id),
+            )
+            .outerjoin(
+                OrganizerRating,
+                (OrganizerRating.event_id == Event.id)
+                & (OrganizerRating.user_id == current_user.id),
+            )
+            .filter(
+                Event.partner_user_id == organizer_user_id,
+                Event.event_type == "organizer",
+                Event.start_at.isnot(None),
+            )
+            .order_by(Event.start_at.desc())
+            .all()
+        )
+
+        events = []
+
+        for event, existing_rating in rows:
+            event_end = event.end_at or event.start_at
+
+            if event_end is None:
+                continue
+
+            if event_end.tzinfo is None:
+                event_end = event_end.replace(tzinfo=timezone.utc)
+
+            if event_end > now:
+                continue
+
+            events.append({
+                "event_id": event.id,
+                "title": event.title,
+                "city": event.city,
+                "start_at": event.start_at.isoformat() if event.start_at else None,
+                "end_at": event.end_at.isoformat() if event.end_at else None,
+                "rated": existing_rating is not None,
+                "rating": existing_rating.rating if existing_rating else None,
+            })
+
+        return ok({
+            "organizer_user_id": organizer_user_id,
+            "events": events,
+        })
+    finally:
+        db.close()
+
+
+
+@app.post("/organizers/{organizer_user_id}/rating-events/{event_id}")
+def rate_organizer_event(
+    organizer_user_id: int,
+    event_id: int,
+    payload: OrganizerRatingRequest,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        event = (
+            db.query(Event)
+            .filter(
+                Event.id == event_id,
+                Event.partner_user_id == organizer_user_id,
+                Event.event_type == "organizer",
+            )
+            .first()
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="EVENT_NOT_FOUND")
+
+        signup = (
+            db.query(EventSignup)
+            .filter(
+                EventSignup.event_id == event_id,
+                EventSignup.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not signup:
+            raise HTTPException(status_code=403, detail="EVENT_NOT_ATTENDED")
+
+        event_end = event.end_at or event.start_at
+        if event_end is None:
+            raise HTTPException(status_code=422, detail="EVENT_NOT_FINISHED")
+
+        if event_end.tzinfo is None:
+            event_end = event_end.replace(tzinfo=timezone.utc)
+
+        if event_end > datetime.now(timezone.utc):
+            raise HTTPException(status_code=422, detail="EVENT_NOT_FINISHED")
+
+        existing = (
+            db.query(OrganizerRating)
+            .filter(
+                OrganizerRating.user_id == current_user.id,
+                OrganizerRating.event_id == event_id,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail="EVENT_ALREADY_RATED")
+
+        rating = OrganizerRating(
+            user_id=current_user.id,
+            organizer_user_id=organizer_user_id,
+            event_id=event_id,
+            rating=payload.rating,
+        )
+
+        db.add(rating)
+        db.commit()
+        db.refresh(rating)
+
+        return ok({
+            "event_id": event_id,
+            "organizer_user_id": organizer_user_id,
+            "rating": rating.rating,
+            "rated": True,
+        })
+    finally:
+        db.close()
+
+
+@app.post("/organizers/{organizer_user_id}/follow")
+def follow_organizer(
+    organizer_user_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        if organizer_user_id == current_user.id:
+            raise HTTPException(status_code=422, detail="CANNOT_FOLLOW_SELF")
+
+        organizer = (
+            db.query(User)
+            .filter(
+                User.id == organizer_user_id,
+                User.role == "partner",
+                User.status == UserStatus.ACTIVE,
+            )
+            .first()
+        )
+        if not organizer:
+            raise HTTPException(status_code=404, detail="ORGANIZER_NOT_FOUND")
+
+        existing = (
+            db.query(OrganizerFollow)
+            .filter(
+                OrganizerFollow.follower_user_id == current_user.id,
+                OrganizerFollow.organizer_user_id == organizer_user_id,
+            )
+            .first()
+        )
+
+        if existing:
+            follower_count = (
+                db.query(OrganizerFollow)
+                .filter(OrganizerFollow.organizer_user_id == organizer_user_id)
+                .count()
+            )
+            return ok({
+                "following": True,
+                "organizer_user_id": organizer_user_id,
+                "follower_count": follower_count,
+            })
+
+        follow = OrganizerFollow(
+            follower_user_id=current_user.id,
+            organizer_user_id=organizer_user_id,
+        )
+        db.add(follow)
+        db.commit()
+
+        follower_count = (
+            db.query(OrganizerFollow)
+            .filter(OrganizerFollow.organizer_user_id == organizer_user_id)
+            .count()
+        )
+
+        return ok({
+            "following": True,
+            "organizer_user_id": organizer_user_id,
+            "follower_count": follower_count,
+        })
+    finally:
+        db.close()
+
+
+
+@app.delete("/organizers/{organizer_user_id}/follow")
+def unfollow_organizer(
+    organizer_user_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        existing = (
+            db.query(OrganizerFollow)
+            .filter(
+                OrganizerFollow.follower_user_id == current_user.id,
+                OrganizerFollow.organizer_user_id == organizer_user_id,
+            )
+            .first()
+        )
+
+        if existing:
+            db.delete(existing)
+            db.commit()
+
+        follower_count = (
+            db.query(OrganizerFollow)
+            .filter(OrganizerFollow.organizer_user_id == organizer_user_id)
+            .count()
+        )
+
+        return ok({
+            "following": False,
+            "organizer_user_id": organizer_user_id,
+            "follower_count": follower_count,
+        })
+    finally:
+        db.close()
+
+
+
+# =========================
 # FRIENDSHIPS / FRIEND REQUESTS
 # =========================
 @app.post("/friends/requests")
@@ -8064,6 +10507,71 @@ def respond_group_invitation(
     finally:
         db.close()
 
+
+
+@app.delete("/friends/{friend_user_id}")
+def remove_friend(
+    friend_user_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        if friend_user_id == current_user.id:
+            raise HTTPException(status_code=422, detail="CANNOT_REMOVE_SELF")
+
+        friendship = db.query(Friendship).filter(
+            Friendship.status == "accepted",
+            (
+                (
+                    (Friendship.requester_user_id == current_user.id) &
+                    (Friendship.addressee_user_id == friend_user_id)
+                ) |
+                (
+                    (Friendship.requester_user_id == friend_user_id) &
+                    (Friendship.addressee_user_id == current_user.id)
+                )
+            ),
+        ).first()
+
+        if not friendship:
+            raise HTTPException(status_code=404, detail="FRIENDSHIP_NOT_FOUND")
+
+        db.delete(friendship)
+        db.commit()
+
+        return ok({
+            "friend_user_id": friend_user_id,
+            "status": "removed",
+        })
+    finally:
+        db.close()
+
+
+@app.delete("/friends/requests/{request_id}")
+def cancel_friend_request(
+    request_id: int,
+    current_user: User = Depends(require_role("user")),
+):
+    db = SessionLocal()
+    try:
+        fr = db.query(Friendship).filter(
+            Friendship.id == request_id,
+            Friendship.requester_user_id == current_user.id,
+            Friendship.status == "pending",
+        ).first()
+
+        if not fr:
+            raise HTTPException(status_code=404, detail="FRIEND_REQUEST_NOT_FOUND")
+
+        db.delete(fr)
+        db.commit()
+
+        return ok({
+            "id": request_id,
+            "status": "cancelled",
+        })
+    finally:
+        db.close()
 
 
 @app.post("/friends/requests/{request_id}/respond")
@@ -11053,6 +13561,45 @@ def admin_user_preview(
                         if str(row.get("status") or "new") not in {"resolved", "rejected", "archived"}:
                             reports_open += 1
 
+        organizer_admin_stats = None
+
+        if user.role == UserRole.PARTNER.value:
+            followers_count = (
+                db.query(OrganizerFollow)
+                .filter(OrganizerFollow.organizer_user_id == user.id)
+                .count()
+            )
+
+            rating_rows = (
+                db.query(OrganizerRating.rating)
+                .filter(OrganizerRating.organizer_user_id == user.id)
+                .all()
+            )
+            rating_values = [int(row[0]) for row in rating_rows]
+            ratings_count = len(rating_values)
+            rating_average = (
+                round(sum(rating_values) / ratings_count, 2)
+                if ratings_count
+                else None
+            )
+
+            organizer_events = (
+                db.query(Event.status)
+                .filter(Event.partner_user_id == user.id)
+                .all()
+            )
+            event_statuses = [str(row[0]) for row in organizer_events]
+
+            organizer_admin_stats = {
+                "followers_count": followers_count,
+                "rating_average": rating_average,
+                "ratings_count": ratings_count,
+                "events_total": len(event_statuses),
+                "events_draft": event_statuses.count(EventStatus.DRAFT.value),
+                "events_published": event_statuses.count(EventStatus.PUBLISHED.value),
+                "events_archived": event_statuses.count(EventStatus.ARCHIVED.value),
+            }
+
         plan_history_logs = (
             db.query(AuditLog)
             .filter(AuditLog.user_id == user.id)
@@ -11084,6 +13631,9 @@ def admin_user_preview(
             "city": getattr(partner_profile, "miasto", None) if user.role == UserRole.PARTNER.value else (getattr(profile, "city", None) if profile else None),
             "bio": getattr(partner_profile, "bio", None) if user.role == UserRole.PARTNER.value else (getattr(profile, "bio", None) if profile else None),
             "avatar_url": getattr(partner_profile, "logo_url", None) if user.role == UserRole.PARTNER.value else (getattr(profile, "avatar_url", None) if profile else None),
+            "category": getattr(partner_profile, "kategoria", None) if user.role == UserRole.PARTNER.value else None,
+            "revenuecat_app_user_id": getattr(user, "revenuecat_app_user_id", None),
+            "organizer_stats": organizer_admin_stats,
             "interests": interests,
             "plan": account_plan,
             "plan_source": account_plan_source,
@@ -11674,6 +14224,93 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
             for profile in db.query(PartnerProfile).all()
         }
 
+        # Admin V2: lekkie agregaty Organizatorów pobierane zbiorczo,
+        # aby lista /admin/users nie wykonywała osobnych zapytań
+        # followers/rating/events dla każdego partnera.
+        organizer_stats_by_user = {}
+
+        partner_user_ids = [
+            user.id
+            for user in users
+            if user.role == UserRole.PARTNER.value
+        ]
+
+        if partner_user_ids:
+            follower_rows = (
+                db.query(
+                    OrganizerFollow.organizer_user_id,
+                    func.count(OrganizerFollow.id),
+                )
+                .filter(OrganizerFollow.organizer_user_id.in_(partner_user_ids))
+                .group_by(OrganizerFollow.organizer_user_id)
+                .all()
+            )
+
+            rating_rows = (
+                db.query(
+                    OrganizerRating.organizer_user_id,
+                    func.avg(OrganizerRating.rating),
+                    func.count(OrganizerRating.id),
+                )
+                .filter(OrganizerRating.organizer_user_id.in_(partner_user_ids))
+                .group_by(OrganizerRating.organizer_user_id)
+                .all()
+            )
+
+            event_rows = (
+                db.query(
+                    Event.partner_user_id,
+                    Event.status,
+                    func.count(Event.id),
+                )
+                .filter(Event.partner_user_id.in_(partner_user_ids))
+                .group_by(Event.partner_user_id, Event.status)
+                .all()
+            )
+
+            for partner_user_id in partner_user_ids:
+                organizer_stats_by_user[partner_user_id] = {
+                    "followers_count": 0,
+                    "rating_average": None,
+                    "ratings_count": 0,
+                    "events_total": 0,
+                    "events_draft": 0,
+                    "events_published": 0,
+                    "events_archived": 0,
+                }
+
+            for organizer_user_id, followers_count in follower_rows:
+                stats = organizer_stats_by_user.get(organizer_user_id)
+                if stats is not None:
+                    stats["followers_count"] = int(followers_count or 0)
+
+            for organizer_user_id, rating_average, ratings_count in rating_rows:
+                stats = organizer_stats_by_user.get(organizer_user_id)
+                if stats is not None:
+                    stats["rating_average"] = (
+                        round(float(rating_average), 2)
+                        if rating_average is not None
+                        else None
+                    )
+                    stats["ratings_count"] = int(ratings_count or 0)
+
+            for organizer_user_id, event_status, events_count in event_rows:
+                stats = organizer_stats_by_user.get(organizer_user_id)
+                if stats is None:
+                    continue
+
+                count = int(events_count or 0)
+                status = str(event_status or "")
+
+                stats["events_total"] += count
+
+                if status == EventStatus.DRAFT.value:
+                    stats["events_draft"] += count
+                elif status == EventStatus.PUBLISHED.value:
+                    stats["events_published"] += count
+                elif status == EventStatus.ARCHIVED.value:
+                    stats["events_archived"] += count
+
         user_report_stats = {}
         reports_file = Path(__file__).resolve().parent / "data" / "user_reports.jsonl"
         if reports_file.exists():
@@ -11800,6 +14437,16 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "plan_expires_at": plan_expires_at,
                 "avatar_url": avatar_url,
                 "bio": bio,
+                "category": (
+                    getattr(partner_profile, "kategoria", None)
+                    if user.role == UserRole.PARTNER.value
+                    else None
+                ),
+                "organizer_stats": (
+                    organizer_stats_by_user.get(user.id)
+                    if user.role == UserRole.PARTNER.value
+                    else None
+                ),
                 "interests": interests,
                 "friends_count": friends_count,
                 "blocks_count": blocks_count,

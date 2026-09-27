@@ -283,9 +283,98 @@ class EventUpdate(BaseModel):
         return self
 
 
+class TrainerEventCreate(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=120)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    city: Optional[str] = Field(default=None, max_length=80)
+    where: Optional[str] = Field(default=None, max_length=120)
+    address: Optional[str] = Field(default=None, max_length=240)
+    location_lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    location_lng: Optional[float] = Field(default=None, ge=-180, le=180)
+
+    # Jedna specjalizacja. Backend sprawdza ją względem trainer_interests.
+    interest_tag: Optional[str] = Field(default=None, max_length=40)
+
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    draft_date: Optional[date] = None
+    draft_time: Optional[time] = None
+
+    capacity: Optional[int] = Field(default=None, ge=1, le=100000)
+    event_cover_url: Optional[str] = Field(default=None, max_length=500)
+
+    # Trainer V1: tylko bezpłatne albo jedna stała cena.
+    pricing_type: Literal["free", "paid_fixed"] = "free"
+    price_fixed: Optional[int] = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def _validate_all(self):
+        if self.start_at is not None:
+            self.start_at = _to_utc_naive(self.start_at)
+        if self.end_at is not None:
+            self.end_at = _to_utc_naive(self.end_at)
+
+        if self.start_at is not None and self.end_at is not None:
+            if not (self.start_at < self.end_at):
+                raise ValueError("INVALID_EVENT_DATES")
+
+        if self.pricing_type == "free":
+            if self.price_fixed is not None:
+                raise ValueError("FREE_TRAINER_EVENT_MUST_NOT_HAVE_PRICE")
+
+        elif self.pricing_type == "paid_fixed":
+            if self.price_fixed is None:
+                raise ValueError("PAID_TRAINER_EVENT_REQUIRES_FIXED_PRICE")
+
+        return self
+
+
+class TrainerEventUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=120)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    city: Optional[str] = Field(default=None, max_length=80)
+    where: Optional[str] = Field(default=None, max_length=120)
+    address: Optional[str] = Field(default=None, max_length=240)
+    location_lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    location_lng: Optional[float] = Field(default=None, ge=-180, le=180)
+
+    interest_tag: Optional[str] = Field(default=None, max_length=40)
+
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    draft_date: Optional[date] = None
+    draft_time: Optional[time] = None
+
+    capacity: Optional[int] = Field(default=None, ge=1, le=100000)
+    event_cover_url: Optional[str] = Field(default=None, max_length=500)
+
+    pricing_type: Optional[Literal["free", "paid_fixed"]] = None
+    price_fixed: Optional[int] = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def _validate_all(self):
+        if self.start_at is not None:
+            self.start_at = _to_utc_naive(self.start_at)
+        if self.end_at is not None:
+            self.end_at = _to_utc_naive(self.end_at)
+
+        if self.start_at is not None and self.end_at is not None:
+            if not (self.start_at < self.end_at):
+                raise ValueError("INVALID_EVENT_DATES")
+
+        if self.price_fixed is not None and self.pricing_type is None:
+            raise ValueError("PRICING_TYPE_REQUIRED_WHEN_UPDATING_PRICING")
+
+        if self.pricing_type == "free" and self.price_fixed is not None:
+            raise ValueError("FREE_TRAINER_EVENT_MUST_NOT_HAVE_PRICE")
+
+        return self
+
+
 class EventOut(BaseModel):
     id: int
     partner_user_id: int
+    event_type: str = "organizer"
 
     title: Optional[str]
     description: Optional[str]

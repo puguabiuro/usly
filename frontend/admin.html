@@ -111,6 +111,7 @@
       <button class="adminNav" type="button" data-admin-view="reports">Zgłoszenia</button>
       <button class="adminNav" type="button" data-admin-view="owner-approval">Do akceptacji</button>
       <button class="adminNav" type="button" data-admin-view="users">Użytkownicy</button>
+      <button class="adminNav" type="button" data-admin-view="organizers">Organizatorzy</button>
       <button class="adminNav" type="button" data-admin-view="staff">Admini</button>
       <button class="adminNav" type="button" data-admin-view="events">Wydarzenia</button>
       <button class="adminNav" type="button" data-admin-view="groups">Grupy</button>
@@ -351,6 +352,52 @@
               <span id="adminUsersCount">0</span>
             </div>
             <div id="adminUsersList" class="adminTableBox">Ładowanie...</div>
+          </article>
+        </section>
+      </section>
+
+      <section id="adminOrganizersView" hidden>
+        <section class="adminFilters">
+          <label>
+            Szukaj organizatora
+            <input id="adminOrganizerSearch" class="adminFieldInput" type="search" placeholder="Nazwa, e-mail, miasto, ID..." />
+          </label>
+
+          <label>
+            Status
+            <select id="adminOrganizerStatusFilter">
+              <option value="all">Wszystkie statusy</option>
+              <option value="active">Aktywne</option>
+              <option value="blocked">Zablokowane</option>
+              <option value="deleted">Usunięte</option>
+            </select>
+          </label>
+
+          <label>
+            Plan
+            <select id="adminOrganizerPlanFilter">
+              <option value="all">Wszystkie plany</option>
+              <option value="free">FREE</option>
+              <option value="pro">PRO</option>
+              <option value="premium">PREMIUM</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="adminGrid">
+          <article class="adminPanel adminPanelWide">
+            <div class="adminPanelHead">
+              <div>
+                <h2>Centrum Organizatorów</h2>
+                <div class="adminSystemHint">
+                  Profile Organizatorów, plany, aktywność, wydarzenia, obserwujący, oceny i moderacja.
+                </div>
+              </div>
+              <span id="adminOrganizersCount">0</span>
+            </div>
+
+            <div id="adminOrganizersMetrics" class="adminMetricGrid"></div>
+            <div id="adminOrganizersList" class="adminTableBox">Ładowanie organizatorów...</div>
           </article>
         </section>
       </section>

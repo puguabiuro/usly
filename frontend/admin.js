@@ -29,7 +29,7 @@ function adminCanView(view) {
   const level = adminLevel();
   if (level === "owner") return true;
   if (view === "owner-approval") return false;
-  if (level === "operations") return ["reports", "users", "staff", "events", "groups", "promo"].includes(view);
+  if (level === "operations") return ["reports", "users", "organizers", "staff", "events", "groups", "promo"].includes(view);
   if (level === "moderation" || level === "support") return view === "reports";
   return view === "reports";
 }
@@ -571,6 +571,287 @@ async function reloadAdminGroups() {
   }
 }
 
+function renderAdminOrganizersMetrics(items) {
+  const box = document.getElementById("adminOrganizersMetrics");
+  if (!box) return;
+
+  const active = items.filter(
+    (u) => String(u.status || "active").toLowerCase() === "active"
+  ).length;
+
+  const paid = items.filter((u) => {
+    const plan = String(u.plan || "free").toLowerCase();
+    return plan === "pro" || plan === "premium";
+  }).length;
+
+  const premium = items.filter(
+    (u) => String(u.plan || "free").toLowerCase() === "premium"
+  ).length;
+
+  const eventsTotal = items.reduce(
+    (sum, u) => sum + Number(u.organizer_stats?.events_total || 0),
+    0
+  );
+
+  box.innerHTML = `
+    <div class="adminMetricCard">
+      <span>Organizatorzy</span>
+      <strong>${items.length}</strong>
+    </div>
+
+    <div class="adminMetricCard">
+      <span>Aktywni</span>
+      <strong>${active}</strong>
+    </div>
+
+    <div class="adminMetricCard">
+      <span>PRO / PREMIUM</span>
+      <strong>${paid}</strong>
+      <small>Premium: ${premium}</small>
+    </div>
+
+    <div class="adminMetricCard">
+      <span>Wydarzenia</span>
+      <strong>${eventsTotal}</strong>
+    </div>
+  `;
+}
+
+function renderAdminOrganizers(items) {
+  const box = document.getElementById("adminOrganizersList");
+
+  setAdminCount("adminOrganizersCount", items.length);
+  renderAdminOrganizersMetrics(items);
+
+  if (!box) return;
+
+  if (!items.length) {
+    box.innerHTML = adminEmpty(
+      "Brak organizatorów spełniających wybrane kryteria."
+    );
+    return;
+  }
+
+  box.innerHTML = `
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Organizator</th>
+          <th>Kategoria</th>
+          <th>Status</th>
+          <th>Plan</th>
+          <th>Obserwujący</th>
+          <th>Ocena</th>
+          <th>Wydarzenia</th>
+          <th>Moderacja</th>
+          <th>Miasto</th>
+          <th>Utworzono</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        ${items.map((u) => {
+          const stats = u.organizer_stats || {};
+
+          const followers = Number(stats.followers_count || 0);
+          const ratingsCount = Number(stats.ratings_count || 0);
+          const ratingAverage =
+            stats.rating_average === null ||
+            stats.rating_average === undefined
+              ? null
+              : Number(stats.rating_average);
+
+          const eventsTotal = Number(stats.events_total || 0);
+          const eventsPublished = Number(stats.events_published || 0);
+          const eventsDraft = Number(stats.events_draft || 0);
+          const eventsArchived = Number(stats.events_archived || 0);
+
+          const ratingLabel =
+            ratingAverage === null || Number.isNaN(ratingAverage)
+              ? "Brak ocen"
+              : `${ratingAverage.toFixed(2)} / 5`;
+
+          return `
+            <tr
+              class="adminClickableRow"
+              tabindex="0"
+              role="button"
+              aria-label="Otwórz profil organizatora ${escapeAdmin(
+                u.display_name || u.email || u.id
+              )}"
+              onclick="openUserPreview('${escapeAdmin(u.id)}')"
+              onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); openUserPreview('${escapeAdmin(u.id)}'); }"
+            >
+              <td>
+                <strong>#${escapeAdmin(u.id)}</strong>
+              </td>
+
+              <td>
+                <strong>${escapeAdmin(
+                  u.display_name || u.email || "—"
+                )}</strong><br>
+                <span>${escapeAdmin(u.email || "—")}</span>
+              </td>
+
+              <td>
+                ${escapeAdmin(u.category || "—")}
+              </td>
+
+              <td>
+                ${adminStatusBadge(u.status || "active")}
+              </td>
+
+              <td>
+                <strong>${escapeAdmin(
+                  String(u.plan || "free").toUpperCase()
+                )}</strong><br>
+                <span>
+                  ${escapeAdmin(u.plan_source || "manual")}
+                  ·
+                  ${escapeAdmin(u.plan_status || "active")}
+                </span>
+                <br>
+                <span>
+                  Ważne do:
+                  ${escapeAdmin(
+                    String(u.plan_expires_at || "").slice(0, 10) || "—"
+                  )}
+                </span>
+              </td>
+
+              <td>
+                <strong>${escapeAdmin(followers)}</strong><br>
+                <span>obserwujących</span>
+              </td>
+
+              <td>
+                <strong>${escapeAdmin(ratingLabel)}</strong><br>
+                <span>
+                  ${escapeAdmin(ratingsCount)}
+                  ${ratingsCount === 1 ? "ocena" : "ocen"}
+                </span>
+              </td>
+
+              <td>
+                <strong>${escapeAdmin(eventsTotal)}</strong> łącznie<br>
+                <span>
+                  Opublikowane: ${escapeAdmin(eventsPublished)}
+                  · Szkice: ${escapeAdmin(eventsDraft)}
+                  · Archiwalne: ${escapeAdmin(eventsArchived)}
+                </span>
+              </td>
+
+              <td>
+                Zgłoszenia: ${escapeAdmin(u.reports_total ?? 0)}<br>
+                <span>
+                  Otwarte: ${escapeAdmin(u.reports_open ?? 0)}
+                  · Ostrz.: ${escapeAdmin(u.warnings_count ?? 0)}
+                </span>
+              </td>
+
+              <td>
+                ${escapeAdmin(u.city || "—")}
+              </td>
+
+              <td>
+                ${escapeAdmin(
+                  String(u.created_at || "").slice(0, 10) || "—"
+                )}
+              </td>
+
+              <td>
+                <button
+                  class="tableAction"
+                  type="button"
+                  onclick="event.stopPropagation(); openUserPreview('${escapeAdmin(
+                    u.id
+                  )}')"
+                >
+                  Podgląd
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function reloadAdminOrganizers() {
+  const box = document.getElementById("adminOrganizersList");
+
+  try {
+    if (box) box.innerHTML = "Ładowanie organizatorów...";
+
+    const res = await window.apiFetch("/admin/users");
+    const allItems = Array.isArray(res?.data?.items) ? res.data.items : [];
+
+    // Zachowujemy pełną listę użytkowników w centralnym stanie Admin.
+    Admin.users = allItems;
+
+    const organizers = allItems.filter(
+      (u) => String(u.role || "").toLowerCase() === "partner"
+    );
+
+    const query = String(
+      document.getElementById("adminOrganizerSearch")?.value || ""
+    ).trim().toLowerCase();
+
+    const statusFilter = String(
+      document.getElementById("adminOrganizerStatusFilter")?.value || "all"
+    ).toLowerCase();
+
+    const planFilter = String(
+      document.getElementById("adminOrganizerPlanFilter")?.value || "all"
+    ).toLowerCase();
+
+    const filtered = organizers.filter((u) => {
+      const haystack = [
+        u.id,
+        u.email,
+        u.display_name,
+        u.city,
+        u.category,
+        u.status,
+        u.plan,
+      ]
+        .map((v) => String(v || "").toLowerCase())
+        .join(" ");
+
+      if (query && !haystack.includes(query)) return false;
+
+      if (
+        statusFilter !== "all" &&
+        String(u.status || "active").toLowerCase() !== statusFilter
+      ) {
+        return false;
+      }
+
+      if (
+        planFilter !== "all" &&
+        String(u.plan || "free").toLowerCase() !== planFilter
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    renderAdminOrganizers(filtered);
+  } catch (e) {
+    console.error("reloadAdminOrganizers error", e);
+
+    if (box) {
+      box.innerHTML = adminEmpty("Nie udało się pobrać organizatorów.");
+    }
+
+    adminToast(e?.userMessage || "Nie udało się pobrać organizatorów.");
+  }
+}
+
 function renderAdminUsers(items) {
   const box = document.getElementById("adminUsersList");
   setAdminCount("adminUsersCount", items.length);
@@ -604,7 +885,14 @@ function renderAdminUsers(items) {
       </thead>
       <tbody>
         ${items.map((u) => `
-          <tr>
+          <tr
+            class="adminClickableRow"
+            tabindex="0"
+            role="button"
+            aria-label="Otwórz profil użytkownika ${escapeAdmin(u.display_name || u.email || u.id)}"
+            onclick="openUserPreview('${escapeAdmin(u.id)}')"
+            onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); openUserPreview('${escapeAdmin(u.id)}'); }"
+          >
             <td><strong>#${escapeAdmin(u.id)}</strong></td>
             <td>${
               String(u.role || "") === "admin"
@@ -650,7 +938,7 @@ function renderAdminUsers(items) {
             <td>${escapeAdmin(u.created_at || "—")}</td>
             <td>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="tableAction" type="button" onclick="openUserPreview('${escapeAdmin(u.id)}')">Podgląd</button>
+                <button class="tableAction" type="button" onclick="event.stopPropagation(); openUserPreview('${escapeAdmin(u.id)}')">Podgląd</button>
               </div>
             </td>
           </tr>
@@ -4573,6 +4861,7 @@ function showAdminView(view) {
   const reportsView = document.getElementById("adminReportsView");
   const ownerApprovalView = document.getElementById("adminOwnerApprovalView");
   const usersView = document.getElementById("adminUsersView");
+  const organizersView = document.getElementById("adminOrganizersView");
   const staffView = document.getElementById("adminStaffView");
   const eventsView = document.getElementById("adminEventsView");
   const groupsView = document.getElementById("adminGroupsView");
@@ -4587,6 +4876,7 @@ function showAdminView(view) {
   if (reportsView) reportsView.hidden = view !== "reports";
   if (ownerApprovalView) ownerApprovalView.hidden = view !== "owner-approval";
   if (usersView) usersView.hidden = view !== "users";
+  if (organizersView) organizersView.hidden = view !== "organizers";
   if (staffView) staffView.hidden = view !== "staff";
   if (eventsView) eventsView.hidden = view !== "events";
   if (groupsView) groupsView.hidden = view !== "groups";
@@ -4600,6 +4890,9 @@ function showAdminView(view) {
   if (createStaffBtn) createStaffBtn.hidden = adminLevel() !== "owner";
 
   if (view === "users") reloadAdminUsers().catch(() => {});
+  if (view === "organizers" && typeof reloadAdminOrganizers === "function") {
+    reloadAdminOrganizers().catch(() => {});
+  }
   if (view === "staff" && typeof reloadAdminStaff === "function") {
     reloadAdminStaff().catch(() => {});
     if (typeof reloadAdminStaffAuditLog === "function") reloadAdminStaffAuditLog().catch(() => {});
@@ -4628,6 +4921,9 @@ document.getElementById("adminUsersRoleFilter")?.addEventListener("change", relo
 document.getElementById("adminUsersStatusFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersPlanFilter")?.addEventListener("change", reloadAdminUsers);
 document.getElementById("adminUsersEmailFilter")?.addEventListener("change", reloadAdminUsers);
+document.getElementById("adminOrganizerSearch")?.addEventListener("input", reloadAdminOrganizers);
+document.getElementById("adminOrganizerStatusFilter")?.addEventListener("change", reloadAdminOrganizers);
+document.getElementById("adminOrganizerPlanFilter")?.addEventListener("change", reloadAdminOrganizers);
 document.getElementById("adminGroupSearch")?.addEventListener("input", reloadAdminGroups);
 
 

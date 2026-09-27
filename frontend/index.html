@@ -341,7 +341,7 @@
 
 .trainerInterestTitle{
   color:#fff7df;
-  font-size:15px;
+  font-size:14px;
   font-weight:950;
   letter-spacing:.01em;
 }
@@ -1924,13 +1924,6 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
   text-align:center !important;
 }
 
-#S5_PERSON_PROFILE #personFriendBtn:not(:disabled){
-  background:linear-gradient(90deg,rgba(255,75,212,.96),rgba(52,230,255,.96)) !important;
-  color:#07121e !important;
-  border:0 !important;
-  box-shadow:0 16px 34px rgba(0,0,0,.22),0 0 18px rgba(255,92,218,.16) !important;
-}
-
 #S5_PERSON_PROFILE #personFriendBtn:disabled{
   background:transparent !important;
   border:0 !important;
@@ -2285,6 +2278,390 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
   transform:translate(-50%, 0) scale(1);
 }
 
+
+/* === S5B ORGANIZER PROFILE 2.0 === */
+
+#S5B_ORGANIZER_PROFILE .organizerProfileV2{
+  padding-top:14px;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Hero{
+  position:relative;
+  padding:18px;
+  border-radius:28px;
+  overflow:hidden;
+  background:
+    radial-gradient(90% 80% at 0% 0%, rgba(78,215,232,.10), transparent 62%),
+    radial-gradient(90% 80% at 100% 0%, rgba(141,124,246,.10), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.022));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 18px 40px rgba(0,0,0,.18);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Identity{
+  display:grid;
+  grid-template-columns:100px minmax(0,1fr);
+  gap:18px;
+  min-height:112px;
+  align-items:center;
+}
+
+#S5B_ORGANIZER_PROFILE #organizerProfileLogo.avatar.big{
+  width:100px;
+  height:100px;
+  min-width:100px;
+  border-radius:26px;
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 10px 24px rgba(0,0,0,.20);
+  overflow:hidden;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2IdentityText{
+  min-width:0;
+  text-align:left;
+}
+
+#S5B_ORGANIZER_PROFILE #organizerProfileName{
+  margin:0 0 5px;
+  font-size:27px;
+  line-height:1.06;
+  letter-spacing:-.035em;
+  text-align:left;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Meta{
+  margin-top:2px;
+  color:rgba(242,244,248,.62);
+  font-size:14px;
+  line-height:1.45;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2City::before{
+  content:"";
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Stats{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2StatTile{
+  min-width:0;
+  height:92px;
+  padding:7px 5px;
+  border:1px solid rgba(255,255,255,.085);
+  border-radius:18px;
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.052), rgba(255,255,255,.025));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2RatingStat,
+#S5B_ORGANIZER_PROFILE .organizerV2FollowersStat,
+#S5B_ORGANIZER_PROFILE .organizerV2RateTile{
+  display:grid;
+  grid-template-rows:16px 44px 16px;
+  align-items:center;
+  justify-items:center;
+  align-content:center;
+  text-align:center;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2StatLabel{
+  width:100%;
+  color:rgba(242,244,248,.68);
+  font-size:9px;
+  font-weight:900;
+  line-height:1.15;
+  letter-spacing:.075em;
+  text-transform:uppercase;
+  text-align:center;
+  white-space:normal;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerRatingRing{
+  --rating:0;
+  width:43px;
+  height:43px;
+  min-width:43px;
+  margin-top:0;
+  border-radius:50%;
+  padding:4px;
+  background:conic-gradient(
+    #4ED7E8 calc(var(--rating) * 20%),
+    rgba(255,255,255,.10) 0
+  );
+  box-shadow:0 0 22px rgba(78,215,232,.07);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerRatingRingInner{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  border-radius:50%;
+  background:#121520;
+  border:1px solid rgba(255,255,255,.07);
+  overflow:hidden;
+}
+
+#S5B_ORGANIZER_PROFILE #organizerRatingValue{
+  display:block;
+  color:#F2F4F8;
+  font-size:12px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:-.04em;
+  transform:translateY(.25px);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerRatingStar{
+  display:block;
+  flex:0 0 auto;
+  color:#4ED7E8;
+  font-size:7px;
+  line-height:1;
+  transform:translateY(-2px);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2StatSub{
+  min-height:12px;
+  margin-top:5px;
+  color:rgba(242,244,248,.46);
+  font-size:9px;
+  line-height:1.15;
+  text-align:center;
+}
+
+
+
+#S5B_ORGANIZER_PROFILE .organizerFollowersIcon{
+  height:auto;
+  margin:0;
+  color:#4ED7E8;
+  font-size:17px;
+  line-height:1;
+  letter-spacing:-7px;
+  transform:translateX(-3px);
+  opacity:.9;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2FollowersValue{
+  margin:0;
+  color:#F2F4F8;
+  font-size:21px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:-.04em;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2FollowersStat .organizerV2StatLabel{
+  font-size:8px;
+  letter-spacing:.035em;
+  overflow-wrap:anywhere;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2RateTile{
+  appearance:none;
+  font:inherit;
+  color:inherit;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerRateStar{
+  color:#4ED7E8;
+  font-size:13px;
+  line-height:1;
+  text-shadow:none;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2RateLabel{
+  margin:0;
+  color:#F2F4F8;
+  font-size:9px;
+  font-weight:850;
+  line-height:1.22;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2RateArrow{
+  margin:0;
+  color:rgba(78,215,232,.78);
+  font-size:17px;
+  line-height:1;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2FollowBtn{
+  width:100%;
+  min-height:48px;
+  margin-top:12px;
+  border-radius:18px;
+  background:linear-gradient(135deg, #4ED7E8, #8D7CF6);
+  color:#080A13;
+  box-shadow:0 12px 26px rgba(78,215,232,.11);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Section{
+  padding:20px 2px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2SectionTitle{
+  margin-bottom:11px;
+  color:#F2F4F8;
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:-.015em;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2About{
+  color:rgba(242,244,248,.72);
+  font-size:14px;
+  line-height:1.6;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Actions{
+  padding:18px 0 6px;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Actions .btn{
+  width:100%;
+  min-height:52px;
+  border-radius:20px;
+}
+
+
+/* =========================================================
+   S5C — ORGANIZER RATING
+   ========================================================= */
+
+#S5C_ORGANIZER_RATING .organizerRatingV2{
+  padding-bottom:calc(110px + env(safe-area-inset-bottom));
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingV2Intro{
+  padding:8px 2px 26px;
+  border-bottom:1px solid rgba(242,244,248,.08);
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingV2Kicker{
+  margin-bottom:9px;
+  color:#4ED7E8;
+  font-size:10px;
+  font-weight:900;
+  line-height:1.2;
+  letter-spacing:.16em;
+}
+
+#S5C_ORGANIZER_RATING #organizerRatingOrganizerName{
+  margin:0;
+  color:#F2F4F8;
+  font-size:27px;
+  font-weight:950;
+  line-height:1.08;
+  letter-spacing:-.035em;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingV2Lead{
+  max-width:390px;
+  margin-top:12px;
+  color:rgba(242,244,248,.60);
+  font-size:13px;
+  font-weight:600;
+  line-height:1.5;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingV2Section{
+  padding-top:25px;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingV2SectionTitle{
+  margin-bottom:13px;
+  color:rgba(242,244,248,.72);
+  font-size:11px;
+  font-weight:900;
+  line-height:1.2;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingEvent{
+  padding:17px 2px 18px;
+  border-bottom:1px solid rgba(242,244,248,.08);
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingEvent:first-child{
+  border-top:1px solid rgba(242,244,248,.08);
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingEventTitle{
+  color:#F2F4F8;
+  font-size:15px;
+  font-weight:850;
+  line-height:1.25;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingEventMeta{
+  margin-top:5px;
+  color:rgba(242,244,248,.48);
+  font-size:11px;
+  font-weight:650;
+  line-height:1.35;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingStars{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:14px;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingStarBtn{
+  appearance:none;
+  border:0;
+  padding:0;
+  background:transparent;
+  color:rgba(242,244,248,.20);
+  font-family:inherit;
+  font-size:31px;
+  line-height:1;
+  cursor:pointer;
+  transition:transform .14s ease, color .14s ease;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingStarBtn:active{
+  transform:scale(.88);
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingStarBtn.isActive,
+#S5C_ORGANIZER_RATING .organizerRatingStarBtn.isRated{
+  color:#4ED7E8;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingStarBtn:disabled{
+  cursor:default;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingDone{
+  margin-top:10px;
+  color:rgba(242,244,248,.50);
+  font-size:11px;
+  font-weight:750;
+}
+
+#S5C_ORGANIZER_RATING .organizerRatingEmpty{
+  padding:30px 4px;
+  color:rgba(242,244,248,.50);
+  font-size:13px;
+  font-weight:650;
+  line-height:1.5;
+  text-align:center;
+}
+
 </style>
 
 </head>
@@ -2454,7 +2831,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
         <!-- =========================================================
         S0 REGISTER CHOICE
         ========================================================== -->
-        <section class="view" id="S0_REGISTER_CHOICE" aria-label="Wybór rejestracji">
+        <section class="view" id="S0_REGISTER_CHOICE" aria-label="Wybór rejestracji" data-i18n-aria-label="auth.registerChoiceAria">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2463,26 +2840,66 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <div class="ghostBtn" aria-hidden="true"></div>
           </header>
 
-          <div class="content">
-            <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle" data-i18n="auth.registerChoice.title">Jak chcesz korzystać z USLY?</div>
-              <div class="sectionSub" data-i18n="auth.registerChoice.subtitle">Wybierz rolę i metodę rejestracji.</div>
+          <div class="content authRegisterChoiceV3Content">
+            <div class="authRegisterChoiceV3">
 
-              <div class="card mt16">
-                <div class="sectionTitle" data-i18n="role.user">Towarzysz</div>
-                <div class="sectionSub" data-i18n="auth.role.userDesc">Dla osób, które chcą poznawać ludzi, dołączać do wydarzeń i budować lokalną społeczność.</div>
-                <button class="btn mt12" type="button" onclick="selectAuthChoice('register','user','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','user','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('register','user','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+              <div class="authRegisterChoiceV3Intro">
+                <div class="authRegisterChoiceV3Eyebrow" data-i18n="auth.registerChoice.eyebrow">Dołącz do USLY</div>
+                <div class="authRegisterChoiceV3Title" data-i18n="auth.registerChoice.title">Jak chcesz korzystać z USLY?</div>
+                <div class="authRegisterChoiceV3Sub" data-i18n="auth.choice.accountType">Wybierz typ swojego konta.</div>
               </div>
 
-              <div class="card mt16">
-                <div class="sectionTitle" data-i18n="role.partner">Organizator</div>
-                <div class="sectionSub" data-i18n="auth.role.partnerDesc">Dla miejsc, marek i osób, które tworzą wydarzenia, zajęcia lub lokalne inicjatywy.</div>
-                <button class="btn mt12" type="button" onclick="selectAuthChoice('register','partner','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('register','partner','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('register','partner','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+              <div class="authRegisterChoiceV3Roles">
+                <button
+                  id="roleUserBtn"
+                  class="authRegisterChoiceV3Role on"
+                  type="button"
+                  onclick="selectRole('user')"
+                >
+                  <span class="authRegisterChoiceV3RoleTitle" data-i18n="role.user">Towarzysz</span>
+                  <span class="authRegisterChoiceV3RoleDesc" data-i18n="auth.choice.userDesc">Poznajesz ludzi i dołączasz do wydarzeń.</span>
+                </button>
+
+                <button
+                  id="rolePartnerBtn"
+                  class="authRegisterChoiceV3Role"
+                  type="button"
+                  onclick="selectRole('partner')"
+                >
+                  <span class="authRegisterChoiceV3RoleTitle" data-i18n="role.partner">Organizator</span>
+                  <span class="authRegisterChoiceV3RoleDesc" data-i18n="auth.choice.partnerDesc">Tworzysz wydarzenia i zarządzasz nimi.</span>
+                </button>
               </div>
+
+              <div class="authRegisterChoiceV3Methods">
+                <div class="authRegisterChoiceV3MethodsLabel" data-i18n="auth.choice.registerVia">Zarejestruj się przez</div>
+
+                <button class="authRegisterChoiceV3Method authRegisterChoiceV3MethodPrimary" type="button"
+                  onclick="selectAuthChoice('register', App.role === 'partner' ? 'partner' : 'user', 'email')">
+                  <span class="sIco">✉</span>
+                  <span data-i18n="auth.method.email">Adres e-mail</span>
+                </button>
+
+                <div class="authRegisterChoiceV3Social">
+                  <button class="authRegisterChoiceV3Method" type="button"
+                    onclick="selectAuthChoice('register', App.role === 'partner' ? 'partner' : 'user', 'google')">
+                    <span class="sIco">G</span>
+                    <span data-i18n="auth.method.google">Google</span>
+                  </button>
+
+                  <button class="authRegisterChoiceV3Method" type="button" data-auth-provider="apple"
+                    onclick="selectAuthChoice('register', App.role === 'partner' ? 'partner' : 'user', 'apple')">
+                    <span class="sIco"></span>
+                    <span data-i18n="auth.method.apple">Apple</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="authRegisterChoiceV3Login">
+                <span data-i18n="auth.choice.haveAccount">Masz już konto?</span>
+                <button type="button" onclick="go('S0_LOGIN_CHOICE')" data-i18n="auth.choice.login">Zaloguj się</button>
+              </div>
+
             </div>
           </div>
         </section>
@@ -2490,7 +2907,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
         <!-- =========================================================
         S0 LOGIN CHOICE
         ========================================================== -->
-        <section class="view" id="S0_LOGIN_CHOICE" aria-label="Wybór logowania">
+        <section class="view" id="S0_LOGIN_CHOICE" aria-label="Wybór logowania" data-i18n-aria-label="auth.loginChoiceAria">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2499,30 +2916,66 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <div class="ghostBtn" aria-hidden="true"></div>
           </header>
 
-          <div class="content">
-            <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle" data-i18n="auth.loginChoice.title">Jak chcesz się zalogować?</div>
-              <div class="sectionSub" data-i18n="auth.loginChoice.subtitle">Wybierz rolę i metodę logowania.</div>
+          <div class="content authChoiceV3Content">
+            <div class="authChoiceV3">
 
-              <div class="card mt16">
-                <div class="sectionTitle" data-i18n="role.user">Towarzysz</div>
-                <div class="sectionSub" data-i18n="auth.role.userDesc">Dla osób, które chcą poznawać ludzi, dołączać do wydarzeń i budować lokalną społeczność.</div>
-                <button class="btn mt12" type="button" onclick="selectAuthChoice('login','user','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','user','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('login','user','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+              <div class="authChoiceV3Intro">
+                <div class="authChoiceV3Eyebrow" data-i18n="auth.choice.welcome">Witaj ponownie</div>
+                <div class="authChoiceV3Title" data-i18n="auth.choice.loginTitle">Zaloguj się do USLY</div>
+                <div class="authChoiceV3Sub" data-i18n="auth.choice.accountType">Wybierz typ swojego konta.</div>
               </div>
 
-              <div class="card mt16">
-                <div class="sectionTitle" data-i18n="role.partner">Organizator</div>
-                <div class="sectionSub" data-i18n="auth.role.partnerDesc">Dla miejsc, marek i osób, które tworzą wydarzenia, zajęcia lub lokalne inicjatywy.</div>
-                <button class="btn mt12" type="button" onclick="selectAuthChoice('login','partner','email')"><span class="sIco">✉</span> <span data-i18n="auth.method.email">Adres e-mail</span></button>
-                <button class="btn secondary mt10" type="button" onclick="selectAuthChoice('login','partner','google')"><span class="sIco">G</span> <span data-i18n="auth.method.google">Google</span></button>
-                <button class="btn secondary mt10" type="button" data-auth-provider="apple" onclick="selectAuthChoice('login','partner','apple')"><span class="sIco"></span> <span data-i18n="auth.method.apple">Apple</span></button>
+              <div class="authChoiceV3Roles">
+                <button
+                  id="roleUserBtnLogin"
+                  class="authChoiceV3Role on"
+                  type="button"
+                  onclick="selectRole('user')"
+                >
+                  <span class="authChoiceV3RoleTitle" data-i18n="role.user">Towarzysz</span>
+                  <span class="authChoiceV3RoleDesc" data-i18n="auth.choice.userDesc">Poznajesz ludzi i dołączasz do wydarzeń.</span>
+                </button>
+
+                <button
+                  id="rolePartnerBtnLogin"
+                  class="authChoiceV3Role"
+                  type="button"
+                  onclick="selectRole('partner')"
+                >
+                  <span class="authChoiceV3RoleTitle" data-i18n="role.partner">Organizator</span>
+                  <span class="authChoiceV3RoleDesc" data-i18n="auth.choice.partnerDesc">Tworzysz wydarzenia i zarządzasz nimi.</span>
+                </button>
               </div>
 
-              <div class="mt16 center">
-                <span class="link" onclick="go('S0_REGISTER_CHOICE')" data-i18n="login.no_account">Nie masz konta? Zarejestruj się</span>
+              <div class="authChoiceV3Methods">
+                <div class="authChoiceV3MethodsLabel" data-i18n="auth.choice.loginVia">Zaloguj się przez</div>
+
+                <button class="authChoiceV3Method authChoiceV3MethodPrimary" type="button"
+                  onclick="selectAuthChoice('login', App.role === 'partner' ? 'partner' : 'user', 'email')">
+                  <span class="sIco">✉</span>
+                  <span data-i18n="auth.method.email">Adres e-mail</span>
+                </button>
+
+                <div class="authChoiceV3Social">
+                  <button class="authChoiceV3Method" type="button"
+                    onclick="selectAuthChoice('login', App.role === 'partner' ? 'partner' : 'user', 'google')">
+                    <span class="sIco">G</span>
+                    <span>Google</span>
+                  </button>
+
+                  <button class="authChoiceV3Method" type="button" data-auth-provider="apple"
+                    onclick="selectAuthChoice('login', App.role === 'partner' ? 'partner' : 'user', 'apple')">
+                    <span class="sIco"></span>
+                    <span>Apple</span>
+                  </button>
+                </div>
               </div>
+
+              <div class="authChoiceV3Register">
+                <span data-i18n="auth.choice.noAccount">Nie masz jeszcze konta?</span>
+                <button type="button" onclick="go('S0_REGISTER_CHOICE')" data-i18n="auth.choice.register">Zarejestruj się</button>
+              </div>
+
             </div>
           </div>
         </section>
@@ -2538,39 +2991,70 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             </div>
             <div class="ghostBtn" aria-hidden="true"></div>
           </header>
-  
-          <div class="content">
-            <img class="loginHeroLogo" src="./USLY logo.png" alt="USLY logo" />
-            <div class="heroCard profileSummaryCard">
-              <div class="loginHeroTitle" id="authLoginRoleTitle">Towarzysz</div>
-              <div class="loginHeroDesc" id="authLoginRoleDesc">Poznawaj ludzi, odkrywaj wydarzenia i buduj swoją lokalną społeczność.</div>
-              <div class="loginHeroMethod" id="authLoginMethodTitle">Logowanie przez adres e-mail</div>
 
-  
-              <label class="mt12" data-i18n="login.email">Email / nick</label>
-              <input id="loginId" type="text" placeholder="np. ola_88 / ola@email.com" data-i18n-placeholder="login.email_placeholder" autocomplete="username" />
-  
-              <div id="loginPasswordBlock">
-                <label data-i18n="login.password">Hasło</label>
-                <div class="passwordField">
-                <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
-                <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('loginPass', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+          <div class="content authLoginV2Content">
+            <div class="authLoginV2">
+
+              <div class="authLoginV2Intro">
+                <div class="authLoginV2Eyebrow" data-i18n="auth.choice.welcome">Witaj ponownie</div>
+                <div class="authLoginV2Title" id="authLoginRoleTitle">Towarzysz</div>
+                <div class="authLoginV2Desc" id="authLoginRoleDesc">Poznawaj ludzi, odkrywaj wydarzenia i buduj swoją lokalną społeczność.</div>
+                <div class="authLoginV2Method" id="authLoginMethodTitle">Logowanie przez adres e-mail</div>
+              </div>
+
+              <div class="authLoginV2Form">
+                <label class="authLoginV2Label" for="loginId" data-i18n="login.email">Email / nick</label>
+                <input
+                  class="authLoginV2Input"
+                  id="loginId"
+                  type="text"
+                  placeholder="np. ola_88 / ola@email.com"
+                  data-i18n-placeholder="login.email_placeholder"
+                  autocomplete="username"
+                />
+
+                <div id="loginPasswordBlock" class="authLoginV2PasswordBlock">
+                  <label class="authLoginV2Label" for="loginPass" data-i18n="login.password">Hasło</label>
+                  <div class="passwordField authLoginV2PasswordField">
+                    <input
+                      class="authLoginV2Input"
+                      id="loginPass"
+                      type="password"
+                      placeholder="••••••••"
+                      autocomplete="current-password"
+                    />
+                    <button
+                      class="passwordToggleBtn"
+                      type="button"
+                      onclick="togglePasswordVisibility('loginPass', this)"
+                      aria-label="Pokaż hasło" data-i18n-aria-label="auth.password.show"
+                      data-show-label="Pokaż hasło"
+                      data-hide-label="Ukryj hasło"
+                    >
+                      <span aria-hidden="true" class="passwordEyeIcon">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path>
+                          <circle cx="12" cy="12" r="2.7"></circle>
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-  
-              <button class="btn mt12" type="button" onclick="loginPrimary()" data-i18n="login.submit">Zaloguj się</button>
 
-  
-              <div class="mt16 center">
-                <span class="link" onclick="go('S0_REGISTER_CHOICE')" data-i18n="login.no_account">Nie masz konta? Zarejestruj się</span>
-                <span class="dotSep"> · </span>
-                <span class="link" onclick="openForgot()" data-i18n="login.forgot_password">Nie pamiętasz hasła?</span>
+                <button class="authLoginV2Submit" type="button" onclick="loginPrimary()" data-i18n="login.submit">Zaloguj się</button>
+
+                <button class="authLoginV2Forgot" type="button" onclick="openForgot()" data-i18n="login.forgot_password">Nie pamiętasz hasła?</button>
               </div>
+
+              <div class="authLoginV2Register">
+                <span data-i18n="auth.choice.noAccount">Nie masz jeszcze konta?</span>
+                <button type="button" onclick="go('S0_REGISTER_CHOICE')" data-i18n="auth.choice.register">Zarejestruj się</button>
+              </div>
+
             </div>
-
           </div>
         </section>
-  
+
         <!-- =========================================================
         S3 RESET PASSWORD (PL ONLY)
         ========================================================== -->
@@ -2614,14 +3098,14 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <div class="ghostBtn" aria-hidden="true"></div>
           </header>
   
-          <div class="content">
-            <div class="heroCard profileSummaryCard">
+          <div class="content authRegisterV2Content">
+            <div class="authRegisterV2">
               <div class="sectionTitle" id="authRegisterRoleTitle">Towarzysz</div>
               <div class="sectionSub" id="authRegisterMethodTitle">Rejestracja przez adres e-mail</div>
 
 
-              <div class="card mt16">
-                <div class="sectionTitle" data-i18n="register.account.title">Konto</div>
+              <section class="authRegisterV2Section authRegisterV2Account">
+                <div class="authRegisterV2SectionTitle" data-i18n="register.account.title">Konto</div>
                 
 
                 <div id="registerEmailBlock">
@@ -2643,39 +3127,39 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   <label class="mt12" data-i18n="register.password">Hasło *</label>
                   <div class="passwordField">
                     <input id="regPass" type="password" placeholder="Minimum 8 znaków" data-i18n-placeholder="register.password_placeholder" autocomplete="new-password" />
-                    <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPass', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                    <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPass', this)" aria-label="Pokaż hasło" data-i18n-aria-label="auth.password.show" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
                   </div>
 
                   <label class="mt12" data-i18n="register.repeat_password">Powtórz hasło *</label>
                   <div class="passwordField">
                     <input id="regPassRepeat" type="password" placeholder="Powtórz hasło" data-i18n-placeholder="register.repeat_password_placeholder" autocomplete="new-password" />
-                    <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPassRepeat', this)" aria-label="Pokaż hasło" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
+                    <button class="passwordToggleBtn" type="button" onclick="togglePasswordVisibility('regPassRepeat', this)" aria-label="Pokaż hasło" data-i18n-aria-label="auth.password.show" data-show-label="Pokaż hasło" data-hide-label="Ukryj hasło"><span aria-hidden="true" class="passwordEyeIcon"><svg viewBox="0 0 24 24"><path d="M2.8 12s3.4-5.8 9.2-5.8 9.2 5.8 9.2 5.8-3.4 5.8-9.2 5.8S2.8 12 2.8 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></span></button>
                   </div>
                 </div>
-              </div>
+              </section>
 
               <div id="regUserBox">
   
-                <div class="card mt16">
-                  <div class="sectionTitle" data-i18n="register.user.location_title">Wiek i lokalizacja</div>
+                <section class="authRegisterV2Section authRegisterV2UserDetails">
+                  <div class="authRegisterV2SectionTitle" data-i18n="register.user.location_title">Wiek i lokalizacja</div>
                   
 
                   <label class="mt12" data-i18n="register.birthdate">Data urodzenia *</label>
                   <div class="birthDateSelectGrid" id="regBirthDateSelects">
-                    <select id="regBirthDay" aria-label="Dzień urodzenia" required>
-                      <option value="">Dzień</option>
+                    <select id="regBirthDay" aria-label="Dzień urodzenia" data-i18n-aria-label="register.birthDayAria" required>
+                      <option value="" data-i18n="register.birthDay">Dzień</option>
                     </select>
-                    <select id="regBirthMonth" aria-label="Miesiąc urodzenia" required>
-                      <option value="">Miesiąc</option>
+                    <select id="regBirthMonth" aria-label="Miesiąc urodzenia" data-i18n-aria-label="register.birthMonthAria" required>
+                      <option value="" data-i18n="register.birthMonth">Miesiąc</option>
                     </select>
-                    <select id="regBirthYear" aria-label="Rok urodzenia" required>
-                      <option value="">Rok</option>
+                    <select id="regBirthYear" aria-label="Rok urodzenia" data-i18n-aria-label="register.birthYearAria" required>
+                      <option value="" data-i18n="register.birthYear">Rok</option>
                     </select>
                   </div>
                   <input id="regBirthDate" type="hidden" value="" />
                   <div class="tMuted" style="text-align:left;font-size:12px;margin-top:6px;" data-i18n="register.birthdate_hint">Wybierz dzień, miesiąc i rok.</div>
                   <div id="ageError" style="display:none;color:#d32f2f;font-size:13px;margin-top:6px;">
-                   Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.
+                   <span data-i18n="register.toast.age_under_18">Nie możesz się zarejestrować – wymagane jest ukończone 18 lat.</span>
                   </div>
                   <div class="tMuted mt10" style="text-align:left;" data-i18n="register.age_required">Wymagane 18+.</div>
 
@@ -2686,7 +3170,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   <div class="locationConsentNote mt12" data-i18n="register.location_note">📍 Twoja okolica, lepsze dopasowania.</div>
 
                   
-                </div>
+                </section>
               </div>
 
               <div id="regPartnerBox" style="display:none;">
@@ -2731,8 +3215,8 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 </div>
 
 
-              <div class="card mt16">
-                <div class="sectionTitle" data-i18n="register.legal.title">Zgody</div>
+              <section class="authRegisterV2Section authRegisterV2Legal">
+                <div class="authRegisterV2SectionTitle" data-i18n="register.legal.title">Zgody</div>
                 
 
                 <div class="mt16 legalBox">
@@ -2746,13 +3230,13 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   </label>
                 </div>
 
-                <button class="btn mt16" type="button" onclick="registerPrimary()" data-i18n="register.submit">Zarejestruj</button>
-              </div>
+                <button class="authRegisterV2Submit" type="button" onclick="registerPrimary()" data-i18n="register.submit">Utwórz konto</button>
+              </section>
             </div>
           </div>
         </section>
   
-<section class="view" id="S10B_PROFILE_EDIT" aria-label="Edit profile">
+<section class="view profileEditPremiumScope" id="S10B_PROFILE_EDIT" aria-label="Edit profile">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
             <div class="brandCenter small">
@@ -2767,128 +3251,201 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <div class="ghostBtn" aria-hidden="true">•</div>
           </header>
 
-          <div class="content">
-            <div class="card mt16">
-              <label data-i18n="common.email">Email</label>
-              <input id="setEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
+          <div class="content profileEditPremiumContent">
 
-<div class="mt16" style="padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
-                <div style="font-weight:900;font-size:14px;" data-i18n="profileEdit.photoTitle">Zdjęcie profilowe</div>
-                <div class="tMuted" style="margin-top:4px;" data-i18n="profileEdit.photoSubtitle">Dodaj swoje zdjęcie albo wygeneruj awatar AI.</div>
-                <div class="mt12 avatarCardActions">
-                  <button class="btn small iosCardBtn" type="button" onclick="openAddPhoto()" data-i18n="profileEdit.photoBtn">Zdjęcie</button>
-                  <button class="btn small iosCardBtn ai" type="button" onclick="openAvatarAI()" data-i18n="profileEdit.aiAvatarBtn">Awatar AI</button>
-                  <button class="btn small iosCardBtn" type="button" onclick="removeUserAvatar()" data-i18n="common.remove">Usuń</button>
+            <section class="profileEditSection profileEditIdentitySection">
+              <div class="profileEditSectionHeading">
+                <div class="profileEditSectionIcon">◎</div>
+                <div>
+                  <div class="profileEditSectionTitle" data-i18n="profileEdit.photoSectionTitle">Zdjęcie i avatar</div>
+                  <div class="profileEditSectionSub" data-i18n="profileEdit.photoSectionSub">To pierwsza rzecz, którą zobaczą inni.</div>
                 </div>
               </div>
 
-              <label class="mt12" data-i18n="profileEdit.nick">Nick</label>
-              <input id="setNick" class="iosInput" type="text" placeholder="np. Ola_88" data-i18n-placeholder="profileEdit.nick_placeholder" />
-
-              <label class="mt12" data-i18n="profileEdit.bio">BIO</label>
-              <textarea id="setBio" class="iosInput" maxlength="250" placeholder="Krótko, lekko, z charakterem" data-i18n-placeholder="profileEdit.bio_placeholder"></textarea>
-              <div class="charHint"><span id="setBioCount">0</span>/250</div>
-
-
-
-              <label class="mt12" data-i18n="profileEdit.location">Aktualna lokalizacja</label>
-              <input id="setCity" type="text" placeholder="—" readonly />
-
-              <label class="mt12" data-i18n="profileEdit.radius">Zasięg okolicy</label>
-              <select id="setNearbyRadiusKm">
-                <option value="5" data-i18n="profileEdit.radius5">Do 5 km</option>
-                <option value="10" data-i18n="profileEdit.radius10">Do 10 km</option>
-                <option value="25" data-i18n="profileEdit.radius25">Do 25 km</option>
-                <option value="50" data-i18n="profileEdit.radius50">Do 50 km</option>
-                <option value="100" data-i18n="profileEdit.radius100">Do 100 km</option>
-              </select>
-
-              <div class="hintCard mt16">
-                <div class="hintTitle" data-i18n="profileEdit.ageRangeTitle">Preferowany zakres wieku</div>
-                <div class="hintText" data-i18n="profileEdit.ageRangeText">Dopasuj preferowany wiek osób, które chcesz widzieć.</div>
-
-                <div class="row mt12">
-                  <div style="flex:1;">
-                    <label class="tMuted" data-i18n="profileEdit.ageFrom">Od</label>
-                    <select id="setPrefAgeFrom">
-                      <option value="18">18</option><option value="19">19</option><option value="20">20</option>
-                      <option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                      <option value="24">24</option><option value="25">25</option><option value="26">26</option>
-                      <option value="27">27</option><option value="28">28</option><option value="29">29</option>
-                      <option value="30">30</option><option value="31">31</option><option value="32">32</option>
-                      <option value="33">33</option><option value="34">34</option><option value="35">35</option>
-                      <option value="36">36</option><option value="37">37</option><option value="38">38</option>
-                      <option value="39">39</option><option value="40">40</option><option value="45">45</option>
-                      <option value="50">50</option><option value="55">55</option><option value="60">60</option>
-                      <option value="65">65</option><option value="70">70</option><option value="75">75</option>
-                      <option value="80">80</option><option value="85">85</option><option value="90">90</option>
-                      <option value="95">95</option><option value="99">99</option>
-                    </select>
-                  </div>
-                  <div style="flex:1;">
-                    <label class="tMuted" data-i18n="profileEdit.ageTo">Do</label>
-                    <select id="setPrefAgeTo">
-                      <option value="18">18</option><option value="19">19</option><option value="20">20</option>
-                      <option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                      <option value="24">24</option><option value="25">25</option><option value="26">26</option>
-                      <option value="27">27</option><option value="28">28</option><option value="29">29</option>
-                      <option value="30">30</option><option value="31">31</option><option value="32">32</option>
-                      <option value="33">33</option><option value="34">34</option><option value="35">35</option>
-                      <option value="36">36</option><option value="37">37</option><option value="38">38</option>
-                      <option value="39">39</option><option value="40">40</option><option value="45">45</option>
-                      <option value="50">50</option><option value="55">55</option><option value="60">60</option>
-                      <option value="65">65</option><option value="70">70</option><option value="75">75</option>
-                      <option value="80">80</option><option value="85">85</option><option value="90">90</option>
-                      <option value="95">95</option><option value="99">99</option>
-                    </select>
-                  </div>
+              <div class="profileEditAvatarCurrent">
+                <div class="profileEditAvatarPreview" id="profileEditAvatarPreview"></div>
+                <div class="profileEditAvatarCurrentText">
+                  <div class="profileEditAvatarCurrentLabel" data-i18n="profileEdit.currentProfile">Twój aktualny profil</div>
+                  <div class="profileEditAvatarCurrentHint" data-i18n="profileEdit.currentProfileHint">Tak widzą Cię inni w USLY.</div>
                 </div>
-                <div class="partnerCapacityToggle mt12">
-                  <label class="partnerCapacityToggleRow" for="setAgeAny">
-                    <span class="tStrong" data-i18n="profileEdit.ageAny">Wiek bez znaczenia</span>
+              </div>
+
+              <div class="profileEditPhotoActions">
+                <button class="profileEditPhotoAction" type="button" onclick="openAddPhoto()">
+                  <span class="profileEditPhotoActionIcon">＋</span>
+                  <span data-i18n="profileEdit.photoBtn">Zdjęcie</span>
+                </button>
+
+                <button class="profileEditPhotoAction profileEditPhotoActionAI" type="button" onclick="openAvatarAI()">
+                  <span class="profileEditPhotoActionIcon">✦</span>
+                  <span data-i18n="profileEdit.generateAvatar">Generuj awatara</span>
+                </button>
+
+                <button class="profileEditPhotoAction profileEditPhotoActionRemove" type="button" onclick="removeUserAvatar()">
+                  <span class="profileEditPhotoActionIcon">−</span>
+                  <span data-i18n="common.remove">Usuń</span>
+                </button>
+              </div>
+            </section>
+
+            <section class="profileEditSection">
+              <div class="profileEditSectionHeading">
+                <div class="profileEditSectionIcon">Aa</div>
+                <div>
+                  <div class="profileEditSectionTitle" data-i18n="profileEdit.dataSectionTitle">Twoje dane</div>
+                  <div class="profileEditSectionSub" data-i18n="profileEdit.dataSectionSub">Podstawowe informacje widoczne w USLY.</div>
+                </div>
+              </div>
+
+              <div class="profileEditFields">
+                <div class="profileEditField">
+                  <label data-i18n="common.email">Email</label>
+                  <input id="setEmail" type="email" readonly disabled />
+                </div>
+
+                <div class="profileEditField">
+                  <label data-i18n="profileEdit.nick">Nick</label>
+                  <input id="setNick" class="iosInput" type="text" placeholder="np. Ola_88" data-i18n-placeholder="profileEdit.nick_placeholder" />
+                </div>
+              </div>
+            </section>
+
+            <section class="profileEditSection">
+              <div class="profileEditSectionHeading">
+                <div class="profileEditSectionIcon">♡</div>
+                <div>
+                  <div class="profileEditSectionTitle" data-i18n="profileEdit.aboutSectionTitle">O Tobie</div>
+                  <div class="profileEditSectionSub" data-i18n="profileEdit.aboutSectionSub">Kilka słów, które mówią o Tobie więcej niż formularz.</div>
+                </div>
+              </div>
+
+              <div class="profileEditField">
+                <label data-i18n="profileEdit.bio">BIO</label>
+                <textarea id="setBio" class="iosInput" maxlength="250" placeholder="Krótko, lekko, z charakterem" data-i18n-placeholder="profileEdit.bio_placeholder"></textarea>
+                <div class="charHint"><span id="setBioCount">0</span>/250</div>
+              </div>
+            </section>
+
+            <section class="profileEditSection">
+              <div class="profileEditSectionHeading">
+                <div class="profileEditSectionIcon">⌖</div>
+                <div>
+                  <div class="profileEditSectionTitle" data-i18n="profileEdit.matchingSectionTitle">Okolica i dopasowanie</div>
+                  <div class="profileEditSectionSub" data-i18n="profileEdit.matchingSectionSub">Ty decydujesz, jak szeroko USLY ma szukać ludzi.</div>
+                </div>
+              </div>
+
+              <div class="profileEditFields">
+                <div class="profileEditField">
+                  <label data-i18n="profileEdit.location">Aktualna lokalizacja</label>
+                  <input id="setCity" type="text" placeholder="—" readonly />
+                </div>
+
+                <div class="profileEditField">
+                  <label data-i18n="profileEdit.radius">Zasięg okolicy</label>
+                  <select id="setNearbyRadiusKm">
+                    <option value="5" data-i18n="profileEdit.radius5">Do 5 km</option>
+                    <option value="10" data-i18n="profileEdit.radius10">Do 10 km</option>
+                    <option value="25" data-i18n="profileEdit.radius25">Do 25 km</option>
+                    <option value="50" data-i18n="profileEdit.radius50">Do 50 km</option>
+                    <option value="100" data-i18n="profileEdit.radius100">Do 100 km</option>
+                  </select>
+                </div>
+
+                <div class="profileEditAgeBlock">
+                  <div class="profileEditAgeHeader">
+                    <div>
+                      <div class="profileEditAgeTitle" data-i18n="profileEdit.ageRangeTitle">Preferowany zakres wieku</div>
+                      <div class="profileEditSectionSub" data-i18n="profileEdit.ageRangeText">Dopasuj preferowany wiek osób, które chcesz widzieć.</div>
+                    </div>
+                  </div>
+
+                  <div class="profileEditAgeFields">
+                    <div class="profileEditField">
+                      <label data-i18n="profileEdit.ageFrom">Od</label>
+                      <select id="setPrefAgeFrom">
+                        <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                        <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                        <option value="24">24</option><option value="25">25</option><option value="26">26</option>
+                        <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+                        <option value="30">30</option><option value="31">31</option><option value="32">32</option>
+                        <option value="33">33</option><option value="34">34</option><option value="35">35</option>
+                        <option value="36">36</option><option value="37">37</option><option value="38">38</option>
+                        <option value="39">39</option><option value="40">40</option><option value="45">45</option>
+                        <option value="50">50</option><option value="55">55</option><option value="60">60</option>
+                        <option value="65">65</option><option value="70">70</option><option value="75">75</option>
+                        <option value="80">80</option><option value="85">85</option><option value="90">90</option>
+                        <option value="95">95</option><option value="99">99</option>
+                      </select>
+                    </div>
+
+                    <div class="profileEditField">
+                      <label data-i18n="profileEdit.ageTo">Do</label>
+                      <select id="setPrefAgeTo">
+                        <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                        <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                        <option value="24">24</option><option value="25">25</option><option value="26">26</option>
+                        <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+                        <option value="30">30</option><option value="31">31</option><option value="32">32</option>
+                        <option value="33">33</option><option value="34">34</option><option value="35">35</option>
+                        <option value="36">36</option><option value="37">37</option><option value="38">38</option>
+                        <option value="39">39</option><option value="40">40</option><option value="45">45</option>
+                        <option value="50">50</option><option value="55">55</option><option value="60">60</option>
+                        <option value="65">65</option><option value="70">70</option><option value="75">75</option>
+                        <option value="80">80</option><option value="85">85</option><option value="90">90</option>
+                        <option value="95">95</option><option value="99">99</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <label class="profileEditToggleRow" for="setAgeAny">
+                    <span data-i18n="profileEdit.ageAny">Wiek bez znaczenia</span>
                     <input id="setAgeAny" type="checkbox" />
                   </label>
                 </div>
               </div>
+            </section>
 
-
-              <button class="btn mt16" type="button" onclick="saveSettings()" data-i18n="profileEdit.save">Zapisz zmiany</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="view" id="S10C_PROFILE_INTERESTS" aria-label="Interests">
-          <header class="topbar">
-            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
-            <div class="brandCenter small">
-              <div class="brandRow">
-                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
-                <div class="brandText">
-                  <div class="brandName">USLY</div>
-                  <div class="brandTagline" data-i18n="profileInterests.title">Zainteresowania</div>
+            <section class="profileEditSection profileEditInterestsSection">
+              <div class="profileEditSectionHeading">
+                <div class="profileEditSectionIcon">#</div>
+                <div>
+                  <div class="profileEditSectionTitle" data-i18n="profileInterests.title">Zainteresowania</div>
+                  <div class="profileEditSectionSub" data-i18n="profileEdit.interestsSectionSub">To po nich USLY pomaga Wam się znaleźć.</div>
                 </div>
               </div>
-            </div>
-            <div class="ghostBtn" aria-hidden="true">•</div>
-          </header>
 
-          <div class="content">
-            <div class="heroCard">
-              <div class="sectionTitle" data-i18n="profileInterests.title">Zainteresowania</div>
-              <div class="sectionSub" id="interestLimitHint">—</div>
-              <div class="sectionSub" data-i18n="profileInterests.subtitle">Jedna wspólna baza tagów dla profilu, grup i wydarzeń.</div>
-            </div>
+              <div class="profileEditInterestMeta">
+                <span id="setInterestLimitHint">—</span>
+              </div>
 
-            <div class="card mt16">
-              <label data-i18n="profileInterests.tags">Twoje tagi</label>
-              <div class="hashRow">
+              <div class="profileEditInterestInput">
                 <span class="hashPrefix">#</span>
                 <input id="setInterestInput" type="text" placeholder="np. kawa, joga, koncerty..." data-i18n-placeholder="profileInterests.placeholder" list="interestsDatalist" />
               </div>
+
               <div class="typeahead" id="setInterestTypeahead"></div>
-              <div class="chips mt12" id="setInterestChips"></div>
-              <div class="trainerInterestBox mt12" id="setTrainerInterestBox"></div>
-            </div>
+              <div class="chips profileEditInterestChips" id="setInterestChips"></div>
+
+              <div class="profileEditTrainerArea">
+                <div class="trainerInterestBox" id="setTrainerInterestBox"></div>
+              </div>
+            </section>
+
+            <section class="profileEditSection profileEditPlanSection">
+              <div class="profileEditPlanRow">
+                <div>
+                  <div class="profileEditSectionTitle" data-i18n="profileEdit.planSectionTitle">Twój plan</div>
+                  <div class="profileEditSectionSub" data-i18n="profileEdit.planSectionSub">Plan określa m.in. liczbę zainteresowań i oznaczeń 🎓.</div>
+                </div>
+                <button class="profileEditPlanAction" type="button" onclick="goToPlansSettings()"><span data-i18n="profileEdit.viewPlan">Zobacz plan</span> <span>›</span></button>
+              </div>
+            </section>
+
+            <button class="profileEditSaveButton" type="button" onclick="saveSettings()" data-i18n="profileEdit.save">
+              Zapisz zmiany
+            </button>
+
           </div>
         </section>
 
@@ -2937,12 +3494,28 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <div class="ghostBtn" aria-hidden="true">•</div>
           </header>
 
-          <div class="content">
-            <div class="heroCard">
-              <div class="sectionTitle" data-i18n="profileInvites.title">Zaproszenia</div>
-              <div class="sectionSub" data-i18n="profileInvites.subtitle">Przychodzące i wysłane zaproszenia w czytelnym układzie.</div>
+          <div class="content profileInvitesV2">
+            <div id="profileFriendRequestsList"></div>
+          </div>
+        </section>
+
+        <section class="view" id="S10F_PROFILE_FOLLOWED_ORGANIZERS" aria-label="Followed organizers">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline" data-i18n="followedOrganizers.title">Obserwowani organizatorzy</div>
+                </div>
+              </div>
             </div>
-            <div class="col mt16" id="profileFriendRequestsList"></div>
+            <div class="ghostBtn" aria-hidden="true">•</div>
+          </header>
+
+          <div class="content">
+            <div class="col mt16" id="followedOrganizersList"></div>
           </div>
         </section>
 
@@ -2965,12 +3538,13 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <button class="topIconBtn" id="notifBtnSetup" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
-            <div class="content">
-              <div class="heroCard profileSummaryCard">
-                <div class="sectionTitle" data-i18n="profileSetup.title">Uzupełnij profil</div>
-                <div class="sectionSub" data-i18n="profileSetup.subtitle">To ostatni krok po rejestracji. Sprawdź dane startowe i dodaj brakujące informacje do dopasowań.</div>
+            <div class="content profileSetupV2Content">
+              <div class="profileSetupV2">
+                <div class="profileSetupV2Eyebrow" data-i18n="profileSetup.eyebrow">Jeszcze chwila</div>
+                <div class="profileSetupV2Title" data-i18n="profileSetup.title">Uzupełnij profil</div>
+                <div class="profileSetupV2Sub" data-i18n="profileSetup.subtitle">To ostatni krok po rejestracji. Sprawdź dane startowe i dodaj brakujące informacje do dopasowań.</div>
 
-                <div class="row mt16" style="align-items:center;gap:14px;">
+                <div class="profileSetupV2Identity">
                   <div class="avatar big" id="userAvatar"></div>
                   <div style="text-align:left;flex:1;">
                     <div style="font-weight:950;" data-i18n="profileSetup.startProfile">Twój profil startowy</div>
@@ -2979,10 +3553,10 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   <div class="planPill" id="planPillSetup">FREE</div>
                 </div>
 
-                <div class="row mt12">
-                  <button class="btn secondary small" type="button" onclick="openAddPhoto()" data-i18n="profileSetup.addPhoto">Dodaj zdjęcie</button>
-                  <button class="btn small" type="button" onclick="openAvatarAI()" data-i18n="profileSetup.createAvatar">Stwórz awatar</button>
-                  <button class="btn secondary small" type="button" onclick="removeUserAvatar()" data-i18n="profileSetup.removePhoto">Usuń zdjęcie</button>
+                <div class="profileSetupV2PhotoActions">
+                  <button class="profileSetupV2PhotoBtn" type="button" onclick="openAddPhoto()" data-i18n="profileSetup.addPhoto">Dodaj zdjęcie</button>
+                  <button class="profileSetupV2PhotoBtn profileSetupV2PhotoBtnPrimary" type="button" onclick="openAvatarAI()" data-i18n="profileSetup.createAvatar">Stwórz awatar</button>
+                  <button class="profileSetupV2PhotoBtn" type="button" onclick="removeUserAvatar()" data-i18n="profileSetup.removePhoto">Usuń zdjęcie</button>
                 </div>
 
                 <label class="mt16" data-i18n="profileEdit.nick">Nick</label>
@@ -3000,7 +3574,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   <option value="100" data-i18n="profileEdit.radius100">Do 100 km</option>
                 </select>
 
-                <div class="setupInterestCard mt16">
+                <section class="profileSetupV2Section profileSetupV2Interests">
                   <div class="setupInterestHeader">
                     <div class="setupInterestTitle" data-i18n="profileInterests.title">Zainteresowania</div>
                     <div class="sectionSub" id="setupInterestLimitHint">—</div>
@@ -3013,13 +3587,13 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   </div>
                   <div class="chips" id="interestChips"></div>
                   <div class="typeahead" id="interestTypeahead"></div>
-                </div>
+                </section>
 
                 <label class="mt12" data-i18n="profileSetup.bioLabel">BIO (max 250)</label>
                 <textarea id="setupBio" maxlength="250" placeholder="Krótko, lekko, z charakterem" data-i18n-placeholder="profileEdit.bio_placeholder"></textarea>
                 <div class="charHint"><span id="bioCount">0</span>/250</div>
 
-                <div class="hintCard mt16">
+                <section class="profileSetupV2Section profileSetupV2Age">
                   <div class="hintTitle" data-i18n="profileEdit.ageRangeTitle">Preferowany zakres wieku</div>
                   <div class="hintText" data-i18n="profileSetup.ageRangeText">Ustaw, w jakim wieku mają być osoby sugerowane przez aplikację. Możesz to później zmienić w ustawieniach.</div>
 
@@ -3065,9 +3639,9 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                       <input id="setupAgeAny" type="checkbox" />
                     </label>
                   </div>
-                </div>
+                </section>
 
-                <button class="btn mt16" type="button" onclick="finishProfileSetup()" data-i18n="profileSetup.finish">Zapisz i przejdź dalej</button>
+                <button class="profileSetupV2Submit" type="button" onclick="finishProfileSetup()" data-i18n="profileSetup.finish">Zapisz i przejdź dalej</button>
               </div>
             </div>
         </section>
@@ -3087,28 +3661,42 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <div class="ghostBtn">•</div>
           </header>
 
-          <div class="content">
-            <div class="heroCard profileHubCard setupOrgIdentityCard">
-              <div class="sectionTitle" id="setupPartnerCompanyName" style="margin:0;" data-i18n="partnerSetup.title">Uzupełnij profil</div>
-              <div class="sectionSub mt10" data-i18n="partnerSetup.subtitle">Logo, miasto i charakter miejsca.</div>
+          <div class="content partnerSetupV2">
 
-              <div class="row mt12" style="align-items:center;gap:14px;">
-                <div class="avatar big setupOrgLogoPreview" id="setupOrgLogoPreview"></div>
-                <div style="flex:1;text-align:left;">
-                  <button class="btn small mt10" type="button" onclick="document.getElementById('setupOrgLogo').click()" data-i18n="partnerSetup.addLogo">Dodaj logo</button>
+            <div class="partnerSetupV2Intro">
+              <div class="partnerSetupV2Eyebrow" data-i18n="partnerSetup.eyebrow">ORGANIZATOR</div>
+              <div class="partnerSetupV2Title" data-i18n="partnerSetup.title">Uzupełnij profil</div>
+              <div class="partnerSetupV2Subtitle" data-i18n="partnerSetup.intro">
+                Dodaj kilka informacji, które zobaczą uczestnicy.
+              </div>
+            </div>
+
+            <section class="partnerSetupV2Section partnerSetupV2LogoSection">
+              <div class="partnerSetupV2SectionTitle" data-i18n="partnerSetup.logoTitle">Logo</div>
+              <div class="partnerSetupV2SectionHint" data-i18n="partnerSetup.logoHint">Opcjonalnie. Możesz dodać je również później.</div>
+
+              <div class="partnerSetupV2LogoRow">
+                <div class="setupOrgLogoPreview partnerSetupV2LogoPreview" id="setupOrgLogoPreview"></div>
+
+                <div class="partnerSetupV2LogoActions">
+                  <button
+                    class="partnerSetupV2LogoButton"
+                    type="button"
+                    onclick="document.getElementById('setupOrgLogo').click()"
+                    data-i18n="partnerSetup.addLogo"
+                  >Dodaj logo</button>
                   <input id="setupOrgLogo" type="file" accept="image/*" style="display:none;" />
                 </div>
               </div>
+            </section>
 
-              <label class="mt16" data-i18n="partnerSetup.city">Miasto działania</label>
-              <input id="setupOrgCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerSetup.cityPlaceholder" list="citiesDatalist" />
-            </div>
+            <section class="partnerSetupV2Section">
+              <div class="partnerSetupV2SectionTitle" data-i18n="partnerSetup.vibeTitle">Klimat miejsca</div>
+              <div class="partnerSetupV2SectionHint" data-i18n="partnerSetup.vibeSubtitle">
+                Pokaż użytkownikom, czego mogą się spodziewać.
+              </div>
 
-            <div class="card mt16">
-              <div class="sectionTitle" data-i18n="partnerSetup.vibeTitle">Klimat miejsca</div>
-              <div class="sectionSub mt6" data-i18n="partnerSetup.vibeSubtitle">Pokaż użytkownikom, czego mogą się spodziewać.</div>
-
-              <label class="mt12" data-i18n="partnerSetup.category">Kategoria</label>
+              <label class="partnerSetupV2Label" for="setupOrgCategory" data-i18n="partnerSetup.category">Kategoria</label>
               <select id="setupOrgCategory">
                 <option value="gastro" data-i18n="partnerCategory.gastro">Gastro / restauracja / kawiarnia</option>
                 <option value="bar_nocne" data-i18n="partnerCategory.bar_nocne">Bar / klub / nightlife</option>
@@ -3123,19 +3711,28 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 <option value="plener" data-i18n="partnerCategory.plener">Plener / turystyka / rekreacja</option>
                 <option value="inne" data-i18n="partnerCategory.inne">Inne / trudno powiedzieć</option>
               </select>
-              
 
-              <label class="mt12" data-i18n="partnerSetup.about">Krótki opis</label>
-              <textarea id="setupOrgAbout" maxlength="500" placeholder="Co warto wiedzieć o tym miejscu?" data-i18n-placeholder="partnerSetup.aboutPlaceholder"></textarea>
-              <div class="charHint"><span id="setupOrgAboutCount">0</span>/500</div>
-            </div>
+              <label class="partnerSetupV2Label" for="setupOrgAbout" data-i18n="partnerSetup.about">Krótki opis</label>
+              <textarea
+                id="setupOrgAbout"
+                maxlength="500"
+                placeholder="Co warto wiedzieć o tym miejscu?"
+                data-i18n-placeholder="partnerSetup.aboutPlaceholder"
+              ></textarea>
+              <div class="charHint partnerSetupV2CharHint"><span id="setupOrgAboutCount">0</span>/500</div>
+            </section>
 
-            <button class="btn mt16" type="button" onclick="finishPartnerSetup()" data-i18n="profileSetup.finish">Zapisz i przejdź dalej</button>
+            <button
+              class="btn partnerSetupV2Finish"
+              type="button"
+              onclick="finishPartnerSetup()"
+              data-i18n="profileSetup.finish"
+            >Zapisz i przejdź dalej</button>
+
           </div>
         </section>
 
 
-  
         <!-- =========================================================
         S4 NEARBY (Towarzysz) — MAPA + LUDZIE + WYDARZENIA
         ========================================================== -->
@@ -3158,27 +3755,66 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
           <div class="content">
             <div class="mapCard">
               <!-- Mapa -->
-              <div class="mapReal" id="nearbyMap" aria-label="Nearby map"></div>
+              <div class="nearbyMapHero">
+                <div class="mapReal" id="nearbyMap" aria-label="Nearby map"></div>
 
-              <div class="mapMeta">
-                <div class="mapTitle" data-i18n="nearby.title">W okolicy</div>
-                <div class="mapSub" data-i18n="nearby.mapSub">Kliknij znacznik, aby podejrzeć osobę lub wydarzenie.</div>
+
               </div>
             </div>
   
-            <div class="card mt16">
-              <div class="sectionTitle" data-i18n="nearby.peopleTitle">Ludzie w okolicy</div>
-              <div class="sectionSub" data-i18n="nearby.peopleSub">Lista na podstawie lokalizacji.</div>
-              <div class="mt12">
-                <input id="nearbyPeopleSearch" type="text" placeholder="np. Alex / Maja" data-i18n-placeholder="nearby.peoplePlaceholder" />
+            <div class="nearbyDiscovery mt16">
+              <div class="nearbyViewTabs" role="tablist" aria-label="Widok okolicy">
+                <button
+                  class="nearbyViewTab active"
+                  id="nearbyPeopleTab"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="nearbyPeoplePanel"
+                >
+                  <span data-i18n="nearby.peopleTab">Ludzie</span>
+                </button>
+
+                <button
+                  class="nearbyViewTab"
+                  id="nearbyEventsTab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="nearbyEventsPanel"
+                >
+                  <span data-i18n="nearby.eventsTab">Wydarzenia</span>
+                </button>
               </div>
-              <div class="col mt16" id="nearbyPeopleList"></div>
-            </div>
-  
-            <div class="card mt16">
-              <div class="sectionTitle" data-i18n="nearby.eventsTitle">Wydarzenia w okolicy</div>
-              <div class="sectionSub" data-i18n="nearby.eventsSub">Kliknij kartę, aby wejść w szczegóły.</div>
-              <div class="col mt16" id="nearbyEventsList"></div>
+
+              <div
+                class="nearbyViewPanel active"
+                id="nearbyPeoplePanel"
+                role="tabpanel"
+                aria-labelledby="nearbyPeopleTab"
+              >
+                <div class="nearbyPanelIntro">
+                  <div class="nearbyPanelTitle" data-i18n="nearby.peopleDiscoveryTitle">Poznaj kogoś w pobliżu</div>
+                  <div class="sectionSub" data-i18n="nearby.peopleSub">Osoby dopasowane do Twojej okolicy i zainteresowań.</div>
+                </div>
+
+                <div class="nearbyPeopleSearchWrap">
+                  <span class="nearbySearchIcon" aria-hidden="true">⌕</span>
+                  <input id="nearbyPeopleSearch" type="text" placeholder="Szukaj osób po nazwie" data-i18n-placeholder="nearby.peoplePlaceholder" />
+                </div>
+
+                <div class="col nearbyResultsList" id="nearbyPeopleList"></div>
+              </div>
+
+              <div
+                class="nearbyViewPanel"
+                id="nearbyEventsPanel"
+                role="tabpanel"
+                aria-labelledby="nearbyEventsTab"
+                hidden
+              >
+                <div class="col nearbyResultsList" id="nearbyEventsList"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -3189,6 +3825,7 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
         <section class="view" id="S5_PERSON_PROFILE" aria-label="Person profile">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
@@ -3198,57 +3835,297 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 </div>
               </div>
             </div>
+
             <button class="topIconBtn" id="notifBtnPerson" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
-  
-            <div class="content">
-              <div class="heroCard profileSummaryCard personHeroCard">
-                <div class="row" style="justify-content:flex-end;">
-                  <button class="btn small secondary" type="button" onclick="openPersonMenu()">⋯</button>
+
+          <div class="content personProfileV2">
+
+            <!-- 01 / TOŻSAMOŚĆ -->
+            <section class="personV2Hero">
+              <button class="personV2Menu" type="button" onclick="openPersonMenu()" aria-label="Opcje" data-i18n-aria-label="personProfile.options">•••</button>
+
+              <div class="personV2Identity">
+                <div class="personV2PhotoWrap">
+                  <div class="avatar big" id="personAvatar"></div>
                 </div>
 
-                  <div class="personHeroInner personProfileLayout">
-                    <div class="personProfileHeader">
-                      <div class="avatar big" id="personAvatar"></div>
-                      <div class="personProfileHeaderText">
-                        <div class="sectionTitle" id="personNick">—</div>
-                        <div class="sectionSub" id="personMeta">—</div>
-                        <div id="personRelationBadge" class="personRelationBadge"></div>
-                        <div class="sectionSub" id="personDistanceMeta"></div>
-                      </div>
-                    </div>
+                <div class="personV2IdentityText">
+                  <div class="sectionTitle" id="personNick">—</div>
 
-                    <div id="personMatchScore" class="personMatchScore">—</div>
+                  <div class="personV2ProfileDetails">
+                    <div class="personV2Age" id="personAgeMeta"></div>
 
-                    <div class="personProfilePanel">
-                      <div class="sectionTitle" id="personInterestsTitle" data-i18n="profileInterests.title">Zainteresowania</div>
-                      <div class="chips" id="personInterests"></div>
-                    </div>
-
-                    <div class="personProfilePanel personTrainerPanel" id="personTrainerPanel" hidden>
-                      <div id="personTrainerContent"></div>
-                    </div>
-
-                    <div class="personProfilePanel">
-                      <div class="sectionTitle" id="personBioTitle" data-i18n="personProfile.bioTitle">O mnie</div>
-                      <div class="sectionSub" id="personBio" data-i18n="personProfile.emptyBio">Ta osoba nie dodała jeszcze bio.</div>
-                    </div>
-
-                    <div class="personProfilePanel" id="partnerEventsPanel" hidden>
-                      <div class="sectionTitle" data-i18n="personProfile.organizerEvents">Wydarzenia organizatora</div>
-                      <div id="personPartnerEventsList" class="mt12"></div>
+                    <div class="personV2LocationLine">
+                      <span class="personV2Meta" id="personMeta">—</span>
+                      <span class="personV2LocationDot" aria-hidden="true">·</span>
+                      <span class="personV2Distance" id="personDistanceMeta"></span>
                     </div>
                   </div>
 
-                <div class="row mt16 personProfileActions">
-                  <button class="btn" id="personChatBtn" type="button" onclick="startChatFromProfile()" data-i18n="personProfile.write">Napisz</button>
-                  <button class="btn secondary" id="personFriendBtn" type="button" onclick="addFriendFromProfile()" data-i18n="personProfile.addFriend">Dodaj do znajomych</button>
+                  <div id="personRelationBadge" class="personRelationBadge"></div>
+                </div>
+              </div>
+
+              <div class="personV2Stats">
+                <div class="personV2Stat personV2MatchStat">
+                  <div class="personMatchRing" id="personMatchRing" style="--match:0">
+                    <div class="personMatchRingInner">
+                      <span id="personMatchScore" class="personMatchScore">—</span>
+                    </div>
+                  </div>
+
+                  <div class="personV2MatchCopy">
+                    <div class="personV2StatLabel" data-i18n="personProfile.matchLabel">Dopasowanie</div>
+                    <div class="personV2StatDescription" data-i18n="personProfile.matchDescription">Na podstawie wspólnych zainteresowań</div>
+                  </div>
+                </div>
+
+                <div class="personV2Stat personV2SharedStat">
+                  <div id="personSharedCount" class="personV2StatValue">—</div>
+                  <div class="personV2SharedCopy" data-i18n="personProfile.sharedShort">WSPÓLNE</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 02 / CO WAS ŁĄCZY -->
+            <section class="personV2Section personV2CommonSection" id="personCommonSection">
+              <div class="personV2SectionKicker" data-i18n="personProfile.commonKicker">Macie wspólne</div>
+              <div class="personV2CommonList" id="personCommonInterests"></div>
+            </section>
+
+            <!-- 03 / O MNIE -->
+            <section class="personV2Section personV2BioSection">
+              <div class="personV2SectionTitle" id="personBioTitle" data-i18n="personProfile.bioTitle">O mnie</div>
+              <div class="personV2Bio" id="personBio" data-i18n="personProfile.emptyBio">Ta osoba nie dodała jeszcze bio.</div>
+            </section>
+
+            <!-- 04 / WSZYSTKIE ZAINTERESOWANIA -->
+            <section class="personV2Section personV2InterestsSection">
+              <div class="personV2SectionTitle" id="personInterestsTitle" data-i18n="profileInterests.title">Zainteresowania</div>
+              <div class="chips personV2InterestList" id="personInterests"></div>
+            </section>
+
+            <!-- 05 / TRENER -->
+            <section class="personV2Section personTrainerPanel" id="personTrainerPanel" hidden>
+              <div id="personTrainerContent"></div>
+            </section>
+
+            <!-- ORGANIZATOR — zachowujemy obsługę istniejącej logiki -->
+            <section class="personV2Section personV2EventsSection" id="partnerEventsPanel" hidden>
+              <div class="personV2SectionTitle" data-i18n="personProfile.organizerEvents">Wydarzenia organizatora</div>
+              <div id="personPartnerEventsList"></div>
+            </section>
+
+            <!-- 06 / AKCJA -->
+            <div class="personProfileActions personV2Actions">
+              <button class="btn" id="personChatBtn" type="button" onclick="startChatFromProfile()" data-i18n="personProfile.write">Napisz</button>
+              <button class="btn secondary" id="personFriendBtn" type="button" onclick="addFriendFromProfile()" data-i18n="personProfile.addFriend">Dodaj do znajomych</button>
+            </div>
+
+            <!-- 07 / WYDARZENIA TRENERA -->
+            <section
+              class="personV2Section personTrainerEventsSection"
+              id="personTrainerEventsSection"
+              hidden
+            >
+              <div
+                class="personV2SectionTitle"
+                data-i18n="trainerProfile.events"
+              >
+                Wydarzenia trenera
+              </div>
+              <div id="personTrainerEvents"></div>
+            </section>
+
+          </div>
+        </section>
+
+        <!-- =========================================================
+        S5B ORGANIZER PROFILE
+        ========================================================== -->
+        <section class="view" id="S5B_ORGANIZER_PROFILE" aria-label="Organizer profile">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline" id="organizerProfileTitle" data-i18n="organizerProfile.title">Organizator</div>
                 </div>
               </div>
             </div>
+
+            <button class="topIconBtn" id="notifBtnOrganizerProfile" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
+          </header>
+
+          <div class="content organizerProfileV2">
+
+            <section class="organizerV2Hero">
+              <div class="organizerV2Identity">
+                <div class="organizerV2LogoWrap">
+                  <div class="avatar big" id="organizerProfileLogo"></div>
+                </div>
+
+                <div class="organizerV2IdentityText">
+                  <div class="sectionTitle" id="organizerProfileName">—</div>
+                  <div class="organizerV2Meta" id="organizerProfileCategory">—</div>
+                  <div class="organizerV2Meta organizerV2City" id="organizerProfileCity"></div>
+                </div>
+              </div>
+
+              <div class="organizerV2Stats">
+                <div class="organizerV2StatTile organizerV2RatingStat">
+                  <div class="organizerV2StatLabel" data-i18n="organizerProfile.rating">Ocena</div>
+
+                  <div class="organizerRatingRing" id="organizerRatingRing" style="--rating:0">
+                    <div class="organizerRatingRingInner">
+                      <span id="organizerRatingValue">—</span>
+                      <span class="organizerRatingStar" aria-hidden="true">★</span>
+                    </div>
+                  </div>
+
+                  <div class="organizerV2StatSub" id="organizerRatingCount"></div>
+                </div>
+
+                <button class="organizerV2StatTile organizerV2FollowersStat organizerV2EventsTile" type="button" onclick="scrollToOrganizerEvents()">
+                  <div class="organizerV2StatLabel" data-i18n="organizerProfile.activeEvents">Aktywne wydarzenia</div>
+                  <div class="organizerV2FollowersValue" id="organizerActiveEventCount">0</div>
+                  <div class="organizerV2StatSub" data-i18n="organizerProfile.viewAll">Zobacz wszystkie ↓</div>
+                </button>
+
+                <button class="organizerV2StatTile organizerV2RateTile" id="organizerRateBtn" type="button" onclick="openOrganizerRating()">
+                  <span class="organizerRateStar" aria-hidden="true">★</span>
+                  <span class="organizerV2RateLabel" data-i18n="organizerProfile.rateOrganizer">Oceń organizatora</span>
+                  <span class="organizerV2RateArrow" aria-hidden="true">›</span>
+                </button>
+              </div>
+
+              <div class="organizerV2FollowerInfo">
+                <span id="organizerFollowerCount">0</span>
+                <span data-i18n="organizerProfile.followers">obserwujących</span>
+              </div>
+
+              <button class="btn organizerV2FollowBtn" id="organizerFollowBtn" type="button" onclick="toggleOrganizerFollow()" data-i18n="organizerProfile.follow">Obserwuj</button>
+            </section>
+
+            <section class="organizerV2Section organizerV2AboutSection">
+              <div class="organizerV2SectionTitle" data-i18n="organizerProfile.about">O organizatorze</div>
+              <div class="organizerV2About" id="organizerProfileAbout"></div>
+            </section>
+
+            <section class="organizerV2Section organizerV2EventsSection">
+              <div class="organizerV2SectionTitle" data-i18n="organizerProfile.events">Wydarzenia organizatora</div>
+              <div id="organizerProfileEvents"></div>
+            </section>
+
+            <div class="organizerV2Actions">
+              <button class="btn secondary" id="organizerProfileChatBtn" type="button" onclick="openChatWithProfileOrganizer()" data-i18n="organizerProfile.message">Napisz do organizatora</button>
+            </div>
+
           </div>
         </section>
-  
+
+        <!-- =========================================================
+        S5C ORGANIZER RATING
+        ========================================================== -->
+        <section class="view" id="S5C_ORGANIZER_RATING" aria-label="Organizer rating">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline" data-i18n="organizerRating.title">Oceń organizatora</div>
+                </div>
+              </div>
+            </div>
+
+            <button class="topIconBtn" id="notifBtnOrganizerRating" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
+          </header>
+
+          <div class="content organizerRatingV2">
+
+            <section class="organizerRatingV2Intro">
+              <div class="organizerRatingV2Kicker" data-i18n="organizerRating.kicker">
+                TWOJE DOŚWIADCZENIA
+              </div>
+
+              <div class="sectionTitle" id="organizerRatingOrganizerName">—</div>
+
+              <div class="organizerRatingV2Lead" data-i18n="organizerRating.lead">
+                Oceń wydarzenia, w których brałeś udział. Każde wydarzenie możesz ocenić tylko raz.
+              </div>
+            </section>
+
+            <section class="organizerRatingV2Section">
+              <div class="organizerRatingV2SectionTitle" data-i18n="organizerRating.events">
+                Twoje wydarzenia
+              </div>
+
+              <div id="organizerRatingEvents"></div>
+            </section>
+
+          </div>
+        </section>
+
+
+        <!-- =========================================================
+        S5D TRAINER RATING
+        ========================================================== -->
+        <section class="view" id="S5D_TRAINER_RATING" aria-label="Trainer rating">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline" data-i18n="trainerRating.title">Oceń trenera</div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="topIconBtn"
+              id="notifBtnTrainerRating"
+              type="button"
+              onclick="go('S12_NOTIFICATIONS')"
+              aria-label="Notifications"
+            ></button>
+          </header>
+
+          <div class="content trainerRatingV1">
+
+            <section class="trainerRatingIntro">
+              <div class="trainerRatingKicker" data-i18n="trainerRating.kicker">
+                TWOJE DOŚWIADCZENIA
+              </div>
+
+              <div class="sectionTitle" id="trainerRatingTrainerName">—</div>
+
+              <div class="trainerRatingLead" data-i18n="trainerRating.lead">
+                Oceń zakończone wydarzenia, w których brałeś udział. Każde wydarzenie możesz ocenić tylko raz.
+              </div>
+            </section>
+
+            <section class="trainerRatingSection">
+              <div class="trainerRatingSectionTitle" data-i18n="trainerRating.events">
+                Twoje wydarzenia
+              </div>
+
+              <div id="trainerRatingEvents"></div>
+            </section>
+
+          </div>
+        </section>
+
+
         <!-- =========================================================
         S6 CHATS LIST
         ========================================================== -->
@@ -3268,13 +4145,19 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
           </header>
   
           <div class="content">
-            <div class="heroCard profileSummaryCard">
-              <div class="sectionTitle" data-i18n="chats.searchTitle">Szukaj czatów</div>
-              <div class="sectionSub" data-i18n="chats.searchSub">Po nazwie rozmowy</div>
-              <input id="chatSearch" type="text" placeholder="np. Alex" data-i18n-placeholder="chats.searchPlaceholder" />
+            <div class="chatsDiscoveryV2">
+              <div class="nearbyPeopleSearchWrap chatsSearchV2">
+                <span class="nearbySearchIcon" aria-hidden="true">🔍</span>
+                <input
+                  id="chatSearch"
+                  type="text"
+                  placeholder="Szukaj po nazwie rozmowy"
+                  data-i18n-placeholder="chats.searchPlaceholder"
+                />
+              </div>
             </div>
-  
-            <div class="col mt16" id="chatList"></div>
+
+            <div class="col mt16 chatsListV2" id="chatList"></div>
   
           </div>
         </section>
@@ -3326,15 +4209,91 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
           </header>
   
           <div class="content">
-            <div class="heroCard profileSummaryCard">
-              <!-- jeśli w JS są taby: "Okolica" / "Obserwowane" -->
-              <div class="seg wide mt12" role="tablist" aria-label="Events filter">
-                <button class="segBtn on" id="eventsTabNearby" type="button" onclick="setEventsTab('for_you')" data-i18n="events.forYou">Dla Ciebie</button>
-                <button class="segBtn" id="eventsTabFollowed" type="button" onclick="setEventsTab('followed')" data-i18n="events.myEvents">Moje wydarzenia</button>
+            <div class="eventsDiscoveryV2">
+              <div class="nearbyViewTabs eventsViewTabs" role="tablist" aria-label="Events filter">
+                <button
+                  class="nearbyViewTab active"
+                  id="eventsTabNearby"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  onclick="setEventsTab('for_you')"
+                  data-i18n="events.forYou"
+                >Dla Ciebie</button>
+
+                <button
+                  class="nearbyViewTab"
+                  id="eventsTabFollowed"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  onclick="setEventsTab('followed')"
+                  data-i18n="events.myEvents"
+                >Moje wydarzenia</button>
+
+                <button
+                  class="nearbyViewTab"
+                  id="eventsTabCompleted"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  onclick="setEventsTab('completed')"
+                  data-i18n="events.completed"
+                >Zakończone</button>
               </div>
-  
-              <div class="mt12">
-                <input id="eventsSearch" type="text" placeholder="Szukaj po nazwie / # (np. muzyka)" data-i18n-placeholder="events.searchPlaceholder" />
+
+              <div class="nearbyPeopleSearchWrap eventsSearchV2">
+                <span class="nearbySearchIcon" aria-hidden="true">⌕</span>
+                <input
+                  id="eventsSearch"
+                  type="text"
+                  placeholder="Szukaj po nazwie / # (np. muzyka)"
+                  data-i18n-placeholder="events.searchPlaceholder"
+                />
+              </div>
+            </div>
+
+            <!--
+              DEVELOPMENT A — TRAINER EVENTS
+              Moduł jest widoczny wyłącznie dla Towarzysza,
+              który ma aktywne zainteresowanie trenerskie.
+            -->
+            <div
+              class="trainerEventsEntry"
+              id="trainerEventsEntry"
+              hidden
+            >
+              <div class="trainerEventsEntryText">
+                <div
+                  class="trainerEventsEntryEyebrow"
+                  data-i18n="trainerEvents.entryEyebrow"
+                >STREFA TRENERA</div>
+
+                <div
+                  class="trainerEventsEntryTitle"
+                  data-i18n="trainerEvents.entryTitle"
+                >Twórz własne wydarzenia</div>
+
+                <div
+                  class="trainerEventsEntrySub"
+                  data-i18n="trainerEvents.entrySub"
+                >Prowadzisz zajęcia w ramach swoich specjalizacji? Dodaj je do USLY.</div>
+              </div>
+
+              <div class="trainerEventsEntryActions">
+                <button
+                  class="trainerEventsEntryPrimary"
+                  type="button"
+                  onclick="openTrainerEventCreate()"
+                  data-i18n="trainerEvents.create"
+                >Utwórz wydarzenie</button>
+
+                <button
+                  class="trainerEventsEntrySecondary"
+                  type="button"
+                  onclick="openTrainerEventsManager()"
+                  data-i18n="trainerEvents.manage"
+                >Twoje wydarzenia</button>
               </div>
             </div>
   
@@ -3343,31 +4302,409 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
         </section>
   
         <!-- =========================================================
-        S7B EVENT DETAIL
+        S7C TRAINER EVENTS — własne wydarzenia Towarzysza-Trenera
         ========================================================== -->
-        <section class="view" id="S7B_EVENT_DETAIL" aria-label="Event details">
+        <section class="view" id="S7C_TRAINER_EVENTS" aria-label="Trainer events">
           <header class="topbar">
             <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
             <div class="brandCenter small">
               <div class="brandRow">
                 <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
                 <div class="brandText">
                   <div class="brandName">USLY</div>
-                  <div class="brandTagline" id="eventTitleTop">—</div>
+                  <div
+                    class="brandTagline"
+                    data-i18n="trainerEvents.managerTitle"
+                  >Twoje wydarzenia trenerskie</div>
                 </div>
               </div>
             </div>
+
+            <button
+              class="topIconBtn"
+              id="notifBtnTrainerEvents"
+              type="button"
+              onclick="go('S12_NOTIFICATIONS')"
+              aria-label="Notifications"
+            ></button>
+          </header>
+
+          <div class="content trainerEventsManager">
+            <div class="trainerEventsManagerIntro">
+              <div
+                class="trainerEventsManagerEyebrow"
+                data-i18n="trainerEvents.managerEyebrow"
+              >STREFA TRENERA</div>
+
+              <h1 data-i18n="trainerEvents.managerHeading">
+                Twoje wydarzenia
+              </h1>
+
+              <p data-i18n="trainerEvents.managerSub">
+                Twórz i zarządzaj wydarzeniami w ramach swoich specjalizacji.
+              </p>
+
+              <button
+                class="btn trainerEventsManagerCreate"
+                type="button"
+                onclick="openTrainerEventCreate()"
+              >
+                <span aria-hidden="true">＋</span>
+                <span data-i18n="trainerEvents.create">Utwórz wydarzenie</span>
+              </button>
+            </div>
+
+            <div
+              class="trainerEventsManagerLoading"
+              id="trainerEventsManagerLoading"
+              hidden
+              data-i18n="trainerEvents.loading"
+            >Ładowanie wydarzeń...</div>
+
+            <div
+              class="trainerEventsManagerEmpty"
+              id="trainerEventsManagerEmpty"
+              hidden
+            >
+              <div class="trainerEventsManagerEmptyMark" aria-hidden="true">#</div>
+
+              <div
+                class="trainerEventsManagerEmptyTitle"
+                data-i18n="trainerEvents.emptyTitle"
+              >Nie masz jeszcze wydarzeń trenerskich</div>
+
+              <div
+                class="trainerEventsManagerEmptySub"
+                data-i18n="trainerEvents.emptySub"
+              >Utwórz pierwsze wydarzenie w ramach jednej ze swoich specjalizacji.</div>
+            </div>
+
+            <div
+              class="trainerEventsManagerList"
+              id="trainerEventsManagerList"
+            ></div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+        S7E TRAINER PARTICIPANTS — uczestnicy wydarzenia trenerskiego
+        ========================================================== -->
+        <section class="view" id="S7E_TRAINER_PARTICIPANTS" aria-label="Trainer event participants">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline" id="trainerParticipantsTopTitle">Uczestnicy</div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="topIconBtn"
+              id="notifBtnTrainerParticipants"
+              type="button"
+              onclick="go('S12_NOTIFICATIONS')"
+              aria-label="Notifications"
+            ></button>
+          </header>
+
+          <div class="content trainerParticipants">
+            <div class="trainerParticipantsIntro">
+              <div class="trainerParticipantsEyebrow" data-i18n="trainerParticipants.eyebrow">STREFA TRENERA</div>
+              <h1 data-i18n="trainerParticipants.title">Uczestnicy</h1>
+              <p id="trainerParticipantsEventMeta"></p>
+            </div>
+
+            <div class="trainerParticipantsSummary">
+              <span id="trainerParticipantsCount">0 zapisanych</span>
+              <span id="trainerParticipantsCapacity"></span>
+            </div>
+
+            <div
+              class="trainerParticipantsLoading"
+              id="trainerParticipantsLoading"
+              hidden
+             data-i18n="trainerParticipants.loading">Ładowanie uczestników...</div>
+
+            <div
+              class="trainerParticipantsEmpty"
+              id="trainerParticipantsEmpty"
+              hidden
+            >
+              <span data-i18n="trainerParticipants.empty">Nikt jeszcze nie zapisał się na to wydarzenie.</span>
+            </div>
+
+            <div
+              class="trainerParticipantsList"
+              id="trainerParticipantsList"
+            ></div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+        S7D TRAINER EVENT FORM — tworzenie / edycja
+        ========================================================== -->
+        <section class="view" id="S7D_TRAINER_EVENT_FORM" aria-label="Trainer event editor">
+          <header class="topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                  <div class="brandTagline" id="teFormTopTitle">Nowe wydarzenie trenerskie</div>
+                </div>
+              </div>
+            </div>
+
+            <button class="topIconBtn" id="notifBtnTrainerEventForm" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
+          </header>
+
+          <div class="content trainerEventEditorV2">
+
+            <div class="trainerEventEditorIntro">
+              <div class="trainerEventEditorEyebrow" data-i18n="trainerForm.eyebrow">STREFA TRENERA</div>
+              <h1 id="teFormHeading" data-i18n="trainerForm.createTitle">Stwórz wydarzenie</h1>
+              <p data-i18n="trainerForm.intro">Dodaj zajęcia w ramach jednej ze swoich specjalizacji.</p>
+            </div>
+
+            <div class="trainerEventFormV3">
+
+              <!-- 01 · O wydarzeniu -->
+              <section class="trainerEventFormGroup">
+                <div class="trainerEventFormGroupHead">
+                  <span class="trainerEventFormGroupNo">01</span>
+                  <div>
+                    <h2 data-i18n="trainerForm.basicTitle">O wydarzeniu</h2>
+                    <p data-i18n="trainerForm.basicSub">Najważniejsze informacje o Twoich zajęciach.</p>
+                  </div>
+                </div>
+
+                <div class="trainerEventField">
+                  <label data-i18n="trainerForm.name">Nazwa *</label>
+                  <input id="teTitle" type="text" maxlength="200" placeholder="np. Joga dla początkujących" data-i18n-placeholder="trainerForm.namePlaceholder" />
+                </div>
+
+                <div class="trainerEventField">
+                  <label data-i18n="trainerForm.specialization">Specjalizacja *</label>
+                  <select id="teInterest"></select>
+                  <div class="trainerEventFieldHint">
+                    <span data-i18n="trainerForm.specializationHint">Oceny po wydarzeniu będą przypisane do tej specjalizacji.</span>
+                  </div>
+                </div>
+
+                <div class="trainerEventField">
+                  <label data-i18n="trainerForm.description">Opis</label>
+                  <textarea id="teDesc" maxlength="600" placeholder="Krótko opisz zajęcia i ich przebieg." data-i18n-placeholder="trainerForm.descriptionPlaceholder"></textarea>
+                </div>
+              </section>
+
+              <!-- 02 · Termin i miejsce -->
+              <section class="trainerEventFormGroup">
+                <div class="trainerEventFormGroupHead">
+                  <span class="trainerEventFormGroupNo">02</span>
+                  <div>
+                    <h2 data-i18n="trainerForm.scheduleTitle">Termin i miejsce</h2>
+                    <p data-i18n="trainerForm.scheduleSub">Kiedy i gdzie spotkacie się na zajęciach.</p>
+                  </div>
+                </div>
+
+                <div class="trainerEventField">
+                  <label data-i18n="trainerForm.start">Rozpoczęcie *</label>
+                  <div class="eventDateTimeGrid trainerEventDateTimeGrid">
+                    <input id="teDate" class="mobileDateTimeInput" type="date" />
+                    <input id="teTime" class="mobileDateTimeInput" type="time" />
+                  </div>
+                </div>
+
+                <div class="trainerEventField">
+                  <label data-i18n="trainerForm.end">Zakończenie *</label>
+                  <div class="eventDateTimeGrid trainerEventDateTimeGrid">
+                    <input id="teEndDate" class="mobileDateTimeInput" type="date" />
+                    <input id="teEndTime" class="mobileDateTimeInput" type="time" />
+                  </div>
+                </div>
+
+                <div class="trainerEventLocationGrid">
+                  <div class="trainerEventField">
+                    <label data-i18n="trainerForm.city">Miasto *</label>
+                    <input id="teCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="trainerForm.cityPlaceholder" />
+                  </div>
+
+                  <div class="trainerEventField trainerEventPlaceField">
+                    <label data-i18n="trainerForm.where">Miejsce *</label>
+
+                    <div id="teLocationInputWrap">
+                      <input id="teAddress" type="text" placeholder="Studio Balance albo ul. Słoneczna 12" data-i18n-placeholder="trainerForm.wherePlaceholder" />
+                    </div>
+
+                    <div class="trainerEventPlaceConfirmed" id="teSelectedPlaceHint" hidden></div>
+
+                    <button class="trainerEventInlineAction" id="teFindPlaceBtn" type="button" data-i18n="trainerForm.findPlace">
+                      Potwierdź lokalizację
+                    </button>
+                  </div>
+                </div>
+
+                <input id="teWhere" type="hidden" />
+                <input id="teResolvedAddress" type="hidden" />
+                <input id="teLocationLat" type="hidden" />
+                <input id="teLocationLng" type="hidden" />
+
+                <div id="tePlaceResults"></div>
+              </section>
+
+              <!-- 03 · Uczestnicy i cena -->
+              <section class="trainerEventFormGroup">
+                <div class="trainerEventFormGroupHead">
+                  <span class="trainerEventFormGroupNo">03</span>
+                  <div>
+                    <h2 data-i18n="trainerForm.participantsTitle">Uczestnicy i cena</h2>
+                    <p data-i18n="trainerForm.participantsSub">Ustal liczbę miejsc i sposób udziału.</p>
+                  </div>
+                </div>
+
+                <label class="trainerEventSettingRow" for="teUnlimitedCapacity">
+                  <span>
+                    <strong data-i18n="trainerForm.unlimited">Bez limitu miejsc</strong>
+                    <small data-i18n="trainerForm.unlimitedHint">Wyłącz, jeśli chcesz ustawić konkretną liczbę uczestników.</small>
+                  </span>
+                  <span class="trainerEventSwitch">
+                    <input id="teUnlimitedCapacity" type="checkbox" checked />
+                    <span aria-hidden="true"></span>
+                  </span>
+                </label>
+
+                <div id="teCapacityBox" class="trainerEventField trainerEventConditionalField">
+                  <label data-i18n="trainerForm.maxCapacity">Maksymalna liczba miejsc</label>
+                  <input id="teCapacity" type="number" min="1" inputmode="numeric" placeholder="np. 12" />
+                </div>
+
+                <div class="trainerEventField">
+                  <label data-i18n="trainerForm.priceType">Cena</label>
+                  <select id="tePaidMode">
+                    <option value="free" data-i18n="trainerForm.free">Bezpłatne</option>
+                    <option value="paid_fixed" data-i18n="trainerForm.paid">Płatne — cena stała</option>
+                  </select>
+                </div>
+
+                <div class="trainerEventField trainerEventConditionalField" id="tePriceBox" hidden>
+                  <label data-i18n="trainerForm.price">Cena (zł) *</label>
+                  <input id="tePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="np. 49" />
+                </div>
+
+                <div class="trainerEventPaymentNote" data-i18n="trainerForm.paymentNote">
+                  Płatność ustalasz bezpośrednio z uczestnikiem. USLY nie pośredniczy w płatności.
+                </div>
+              </section>
+
+              <!-- 04 · Zdjęcie -->
+              <section class="trainerEventFormGroup trainerEventCoverGroup">
+                <div class="trainerEventFormGroupHead">
+                  <span class="trainerEventFormGroupNo">04</span>
+                  <div>
+                    <h2 data-i18n="trainerForm.coverTitle">Zdjęcie</h2>
+                    <p data-i18n="trainerForm.coverSub">Opcjonalnie dodaj zdjęcie, które pokaże charakter zajęć.</p>
+                  </div>
+                </div>
+
+                <div class="trainerEventCoverField">
+                  <input id="teCoverFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+                  <input id="teCoverUrl" type="hidden" />
+
+                  <button class="trainerEventCoverPicker" id="teCoverPicker" type="button">
+                    <div class="trainerEventCoverEmpty" id="teCoverEmpty">
+                      <div class="trainerEventCoverIcon" aria-hidden="true">＋</div>
+                      <div>
+                        <div class="trainerEventCoverEmptyTitle" data-i18n="trainerForm.coverAdd">Dodaj zdjęcie wydarzenia</div>
+                        <div class="trainerEventCoverEmptyText">JPG, PNG lub WebP · maks. 5 MB</div>
+                      </div>
+                    </div>
+                    <img class="trainerEventCoverPreview" id="teCoverPreview" alt="" hidden />
+                  </button>
+
+                  <div class="trainerEventCoverActions" id="teCoverActions" hidden>
+                    <button class="trainerEventInlineAction" id="teCoverChangeBtn" type="button" data-i18n="trainerForm.coverChange">Zmień zdjęcie</button>
+                    <button class="trainerEventTextAction danger" id="teCoverRemoveBtn" type="button" data-i18n="trainerForm.coverRemove">Usuń</button>
+                  </div>
+
+                  <div class="trainerEventCoverStatus" id="teCoverStatus" hidden></div>
+                </div>
+              </section>
+
+              <div class="trainerEventFormActions">
+                <button class="trainerEventDraftButton" id="teSaveDraftBtn" type="button" onclick="saveTrainerEventDraft()" data-i18n="trainerForm.saveDraft">
+                  Zapisz szkic
+                </button>
+                <button class="trainerEventPublishButton" id="tePublishBtn" type="button" onclick="publishTrainerEvent()" data-i18n="trainerForm.publish">
+                  Opublikuj wydarzenie
+                </button>
+              </div>
+
+            </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+        S7B EVENT DETAIL
+        ========================================================== -->
+        <section class="view eventDetailV2" id="S7B_EVENT_DETAIL" aria-label="Event details">
+          <header class="topbar eventDetailV2Topbar">
+            <button class="backBtn" type="button" onclick="back()" aria-label="Back"></button>
+
+            <div class="brandCenter small">
+              <div class="brandRow">
+                <img class="brandLogo sm" src="./USLY logo.png" alt="USLY logo" />
+                <div class="brandText">
+                  <div class="brandName">USLY</div>
+                </div>
+              </div>
+            </div>
+
             <button class="topIconBtn" type="button" onclick="openEventMenu()" aria-label="Menu"></button>
           </header>
-  
-          <div class="content">
-            <div class="heroCard profileSummaryCard eventDetailCard eventSocialCard">
-              <div class="eventSocialHeader">
-                <div class="eventSocialKicker" data-i18n="eventDetail.kicker">Wydarzenie</div>
-                <div class="sectionTitle" id="evTitle">—</div>
-                <div class="sectionSub" id="evMeta">—</div>
-                <div class="eventDetailChips" id="evInterestChips"></div>
+
+          <div class="eventDetailV2Hero">
+            <div class="eventDetailV2Intro">
+              <h1 class="eventDetailV2Title" id="evTitle">—</h1>
+
+              <div class="eventDetailChips eventDetailV2Tags" id="evInterestChips"></div>
+
+              <div class="eventDetailV2When">
+                <div class="eventPanelLabel" data-i18n="eventDetail.when">Kiedy</div>
+
+                <div class="eventDetailV2DateLine">
+                  <div class="eventDetailV2DateStamp" aria-hidden="true">
+                    <span class="eventDetailV2DateDay" id="evDateDay">—</span>
+                    <span class="eventDetailV2DateMonth" id="evDateMonth">—</span>
+                  </div>
+
+                  <div class="eventDetailV2DateInfo">
+                    <div class="eventDetailV2DatePrimary" id="evDatePrimary">—</div>
+                    <div class="eventDetailV2DateSecondary" id="evDateSecondary"></div>
+                  </div>
+
+                  <span class="eventDetailV2MultiDayBadge" id="evMultiDayBadge" hidden data-i18n="eventDetail.multiDay">KILKA DNI</span>
+                </div>
+
+                <div class="eventDetailV2Meta" id="evMeta" hidden>—</div>
               </div>
+            </div>
+
+            <div class="eventDetailV2Cover" id="evCover" hidden>
+              <img id="evCoverImage" class="eventDetailV2CoverImage" alt="" hidden />
+            </div>
+          </div>
+
+          <div class="content eventDetailV2Content">
+            <div class="eventDetailV2Body">
 
               <div class="eventSocialSection">
                 <div class="eventPanelLabel" data-i18n="eventDetail.description">Opis wydarzenia</div>
@@ -3385,19 +4722,20 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 </div>
               </div>
 
-              <div class="eventSocialSection eventOrganizerPanel" id="evOrganizerBox" onclick="openEventOrganizerProfile()">
-                <div class="eventPanelLabel" data-i18n="eventDetail.organizer">Organizator</div>
+              <div class="eventSocialSection eventOrganizerPanel" id="evOrganizerBox" onclick="openEventOwnerProfile()">
+                <div class="eventPanelLabel" id="evOwnerLabel" data-i18n="eventDetail.organizer">Organizator</div>
                 <div class="eventOrganizerRow">
                   <div id="evOrganizerLogo" class="eventOrganizerLogo"></div>
                   <div class="eventOrganizerText">
                     <div class="tStrong" id="evOrganizerName">—</div>
                     <div class="sectionSub" id="evOrganizerMeta">—</div>
                   </div>
+                  <span class="eventOrganizerChevron" aria-hidden="true">›</span>
                 </div>
               </div>
 
               <div class="eventSocialSection" id="evTicketBox">
-                <div class="eventPanelLabel" data-i18n="eventDetail.tickets">Bilety</div>
+                <div class="eventPanelLabel" id="evTicketLabel" data-i18n="eventDetail.tickets">Bilety</div>
                 <div class="eventTicketRow">
                   <div class="tStrong" id="evTicketType" data-i18n="eventDetail.ticketFree">Bezpłatne</div>
                   <div class="planPill" id="evTicketPricePill">0 zł</div>
@@ -3407,27 +4745,77 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   <span data-i18n="eventDetail.ticketLink">Przejdź do zakupu / rezerwacji</span>
                 </a>
                 <div class="legalBox mt16" id="evTicketLegalBox" style="display:none;">
-                  <div class="sectionSub" data-i18n="eventDetail.ticketLegal">
+                  <div class="sectionSub" id="evTicketLegalText" data-i18n="eventDetail.ticketLegal">
                     USLY nie sprzedaje biletów i nie jest organizatorem tego wydarzenia. Link przenosi do zewnętrznej strony,
                     na której organizator prowadzi sprzedaż lub rezerwacje.
                   </div>
                 </div>
               </div>
 
-              <div class="eventActionsGrid">
-                <button class="btn" type="button" onclick="toggleSaveEvent()" data-i18n="eventDetail.observe">Obserwuj</button>
-                <button class="btn secondary" type="button" onclick="toggleInterestedEvent()" data-i18n="eventDetail.interested">Wezmę udział</button>
+              <div class="eventDetailV2Actions">
+
+                <div class="eventDetailV2MainActions" id="eventDetailMainActions">
+                  <button
+                    class="eventDetailV2AttendBtn"
+                    type="button"
+                    onclick="toggleInterestedEvent()"
+                    data-i18n="eventDetail.interested"
+                  >Wezmę udział</button>
+
+                  <button
+                    class="eventDetailV2ObserveBtn"
+                    type="button"
+                    onclick="toggleSaveEvent()"
+                    data-i18n="eventDetail.observeEvent"
+                  >Obserwuj wydarzenie</button>
+                </div>
+
+                <div
+                  class="eventDetailCompletedState"
+                  id="eventDetailCompletedState"
+                  hidden
+                >
+                  <span class="eventDetailCompletedIcon" aria-hidden="true">✓</span>
+                  <span class="eventDetailCompletedCopy">
+                    <strong id="eventDetailCompletedTitle" data-i18n="eventDetail.completedTitle">Wydarzenie zakończone</strong>
+                    <span id="eventDetailCompletedSub" data-i18n="eventDetail.completedSub">To wydarzenie już się odbyło.</span>
+                  </span>
+                </div>
+
+                <div class="eventDetailV2QuickActions">
+                  <button
+                    class="eventDetailV2QuickBtn"
+                    type="button"
+                    onclick="addSelectedEventToCalendar()"
+                  >
+                    <span class="eventDetailV2QuickIcon" aria-hidden="true">＋</span>
+                    <span data-i18n="eventDetail.calendarShort">Kalendarz</span>
+                  </button>
+
+                  <button
+                    class="eventDetailV2QuickBtn"
+                    type="button"
+                    onclick="openShare()"
+                  >
+                    <span class="eventDetailV2QuickIcon" aria-hidden="true">↗</span>
+                    <span data-i18n="eventDetail.share">Udostępnij</span>
+                  </button>
+                </div>
+
+                <div class="eventDetailNote eventDetailV2AttendNote" id="interestedNote">
+                  <span data-i18n="eventDetail.interestedNote">Jeśli zaznaczysz „Wezmę udział”, organizator zobaczy Cię na liście zainteresowanych.</span>
+                </div>
+
+                <button
+                  class="eventDetailV2ContactBtn"
+                  type="button"
+                  onclick="openChatWithOrganizer()"
+                >
+                  <span id="eventDetailOwnerMessageLabel">Napisz do organizatora</span>
+                  <span aria-hidden="true">→</span>
+                </button>
+
               </div>
-
-              <button class="btn secondary eventWideBtn" type="button" onclick="addSelectedEventToCalendar()" data-i18n="eventDetail.addCalendar">Dodaj do kalendarza</button>
-
-              <button class="btn secondary eventWideBtn" type="button" onclick="openShare()" data-i18n="eventDetail.share">Udostępnij</button>
-
-              <div class="eventDetailNote" id="interestedNote">
-                <span data-i18n="eventDetail.interestedNote">Jeśli zaznaczysz „Wezmę udział”, organizator zobaczy Cię na liście zainteresowanych.</span>
-              </div>
-
-              <button class="btn secondary eventWideBtn" type="button" onclick="openChatWithOrganizer()" data-i18n="eventDetail.writeOrganizer">Napisz do organizatora</button>
             </div>
           </div>
         </section>
@@ -3451,27 +4839,54 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
           </header>
   
           <div class="content">
-            <div class="heroCard profileSummaryCard">
-              
-              <div class="mt12">
-                <input id="groupSearch" type="text" placeholder="Szukaj grupy (np. #kino)" data-i18n-placeholder="groups.searchPlaceholder" />
+            <div class="groupsDiscoveryV2">
+
+              <div class="nearbyPeopleSearchWrap groupsSearchV2">
+                <span class="nearbySearchIcon" aria-hidden="true">🔍</span>
+                <input
+                  id="groupSearch"
+                  type="text"
+                  placeholder="Szukaj po nazwie lub #zainteresowaniu"
+                  data-i18n-placeholder="groups.searchPlaceholder"
+                />
               </div>
+
+              <div class="nearbyViewTabs groupsViewTabs" role="tablist" aria-label="Groups filter">
+                <button
+                  class="nearbyViewTab active"
+                  id="groupsTabMine"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  onclick="setGroupsTab('mine')"
+                  data-i18n="groups.yourGroups"
+                >Twoje grupy</button>
+
+                <button
+                  class="nearbyViewTab"
+                  id="groupsTabSuggested"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  onclick="setGroupsTab('suggested')"
+                  data-i18n="groups.suggestedGroups"
+                >Proponowane</button>
+              </div>
+
+              <div class="groupsCreateV2" id="groupsCreateV2">
+                <span class="groupsCreateHint" id="groupCreateHint">—</span>
+                <button
+                  class="btn small groupsCreateBtn"
+                  id="btnCreateGroup"
+                  type="button"
+                  onclick="openCreateGroupModal()"
+                  data-i18n="groups.create"
+                >Utwórz grupę</button>
+              </div>
+
+              <div id="groupList" data-scope="byInterests"></div>
+
             </div>
-
-              <div class="card mt16">
-                <div class="row" style="align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                  <div style="text-align:left;flex:1;min-width:220px;">
-                    <div class="sectionTitle" style="margin:0;" data-i18n="groups.yourGroups">Twoje grupy</div>
-                    <div class="sectionSub" id="groupCreateHint">—</div>
-                  </div>
-                  <button class="btn" id="btnCreateGroup" type="button" onclick="openCreateGroupModal()" data-i18n="groups.create">Utwórz grupę</button>
-                </div>
-              </div>
-
-  
-            <!-- Grupy na bazie zainteresowań -->
-            <div class="col mt16" id="groupList" data-scope="byInterests"></div>
-  
           </div>
         </section>
   
@@ -3541,78 +4956,117 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 </div>
               </div>
             </div>
-            <!-- dzwonek -->
             <button class="topIconBtn" id="notifBtnPartner" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
-  
-          <div class="content">
-            <div class="heroCard profileHubCard">
-              <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
-                <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
-                  <div class="avatar big" id="partnerHubLogoPreview"></div>
-                  <div style="text-align:left;min-width:0;flex:1;">
-                    <div class="sectionTitle" id="partnerHubName" style="margin:0;" data-i18n="partnerDash.yourPlace">Twoje miejsce</div>
-                    <div class="sectionSub" id="partnerHubMeta" data-i18n="partnerDash.meta">Uzupełnij profil organizatora, aby pokazać markę i ofertę w lepszy sposób.</div>
+
+          <div class="content partnerDashboardV2">
+
+            <section class="partnerDashIdentity">
+              <div class="partnerDashIdentityMain">
+                <div class="partnerDashLogo" id="partnerHubLogoPreview"></div>
+                <div class="partnerDashIdentityText">
+                  <div class="partnerDashEyebrow" data-i18n="partnerDash.eyebrow">ORGANIZATOR</div>
+                  <div class="partnerDashName" id="partnerHubName" data-i18n="partnerDash.yourPlace">Twoje miejsce</div>
+                  <div class="partnerDashMeta" id="partnerHubMeta"></div>
+                </div>
+              </div>
+              <div class="planPill" id="partnerPlanPill">FREE</div>
+            </section>
+
+            <section class="partnerDashOverview">
+              <div class="partnerDashSectionHead">
+                <div>
+                  <div class="partnerDashSectionTitle" data-i18n="partnerDash.overview">Podsumowanie</div>
+                  <div class="partnerDashSectionSub" data-i18n="partnerDash.overviewSub">Najważniejsze dane Twojego konta.</div>
+                </div>
+              </div>
+
+              <div class="partnerDashOverviewGrid">
+                <div class="partnerDashOverviewItem">
+                  <div class="partnerDashOverviewValue" id="m_events_val">—</div>
+                  <div class="partnerDashOverviewLabel" data-i18n="partnerDash.metricActive">Aktywne</div>
+                  <div class="partnerDashOverviewHint" id="partnerActiveLimitHint"></div>
+                </div>
+
+                <div class="partnerDashOverviewItem">
+                  <div class="partnerDashOverviewValue" id="m_views_val">—</div>
+                  <div class="partnerDashOverviewLabel" data-i18n="partnerDash.metricDrafts">Szkice</div>
+                  <div class="partnerDashOverviewHint" data-i18n="partnerDash.working">Robocze</div>
+                </div>
+
+                <div class="partnerDashOverviewItem partnerDashRatingItem">
+                  <div class="partnerDashRatingValue">
+                    <span class="partnerDashStar">★</span>
+                    <span id="partnerDashRatingAverage">—</span>
+                  </div>
+                  <div class="partnerDashOverviewLabel" data-i18n="partnerDash.yourRating">Twoja ocena</div>
+                  <div class="partnerDashOverviewHint" id="partnerDashRatingCount" data-i18n="partnerDash.noRatings">Brak ocen</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="partnerEventAnalytics">
+              <div class="partnerDashSectionHead">
+                <div>
+                  <div class="partnerDashSectionTitle" data-i18n="partnerDash.eventStats">Statystyki wydarzenia</div>
+                  <div class="partnerDashSectionSub" data-i18n="partnerDash.eventStatsSub">Sprawdź, jak radzi sobie konkretne wydarzenie.</div>
+                </div>
+              </div>
+
+              <label class="partnerEventSelectLabel" for="partnerAnalyticsEventSelect" data-i18n="partnerDash.event">Wydarzenie</label>
+              <select id="partnerAnalyticsEventSelect" class="partnerEventSelect">
+                <option value="" data-i18n="partnerDash.selectActiveEvent">Wybierz aktywne wydarzenie</option>
+              </select>
+
+              <div id="partnerEventAnalyticsContent" class="partnerEventAnalyticsContent">
+                <div class="partnerEventNumbers">
+                  <div class="partnerEventNumber">
+                    <div class="partnerEventNumberValue" id="partnerEventSignups">—</div>
+                    <div class="partnerEventNumberLabel" data-i18n="partnerDash.signups">Zapisy</div>
+                  </div>
+                  <div class="partnerEventNumber">
+                    <div class="partnerEventNumberValue" id="partnerEventFreeSpots">—</div>
+                    <div class="partnerEventNumberLabel" data-i18n="partnerDash.freeSpots">Wolne miejsca</div>
+                  </div>
+                  <div class="partnerEventNumber">
+                    <div class="partnerEventNumberValue" id="partnerEventCountdown">—</div>
+                    <div class="partnerEventNumberLabel" data-i18n="partnerDash.untilEvent">Do wydarzenia</div>
                   </div>
                 </div>
-                <div class="planPill" id="partnerPlanPill">FREE</div>
+
+                <div class="partnerFillSection">
+                  <div class="partnerFillRing" id="partnerFillRing" style="--fill:0;">
+                    <div class="partnerFillRingInner">
+                      <div class="partnerFillValue" id="partnerFillValue">—</div>
+                      <div class="partnerFillUnit" data-i18n="partnerDash.fillUnit">wypełnienia</div>
+                    </div>
+                  </div>
+
+                  <div class="partnerFillCopy">
+                    <div class="partnerFillTitle" data-i18n="partnerDash.fillTitle">Wypełnienie miejsc</div>
+                    <div class="partnerFillText" id="partnerFillText" data-i18n="partnerDash.selectEventData">Wybierz wydarzenie, aby zobaczyć dane.</div>
+                  </div>
+                </div>
+
+                <div class="partnerSignupTrend" id="partnerSignupTrend">
+                  <div class="partnerSignupTrendHead">
+                    <div>
+                      <div class="partnerSignupTrendTitle" data-i18n="partnerDash.signupPace">Tempo zapisów</div>
+                      <div class="partnerSignupTrendSub" id="partnerSignupTrendSummary" data-i18n="partnerDash.signupData">Dane z zapisów uczestników</div>
+                    </div>
+                  </div>
+                  <div class="partnerSignupChart" id="partnerSignupChart" aria-label="Wykres tempa zapisów" data-i18n-aria-label="partnerDash.signupPaceAria"></div>
+                </div>
               </div>
 
-              <div class="row mt16 profileActionRow">
-                <button class="btn small profileHeroBtnPrimary" type="button" onclick="go('S10_SETTINGS')" data-i18n="profileEdit.title">Edytuj profil</button>
-                <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="goToPlansSettings()" data-i18n="partnerDash.yourPlan">Twój plan</button>
+              <div class="partnerEventAnalyticsEmpty" id="partnerEventAnalyticsEmpty" hidden>
+                <span data-i18n="partnerDash.noPublishedStats">Opublikuj pierwsze wydarzenie, aby zobaczyć jego statystyki.</span>
               </div>
+            </section>
 
-              <div class="tMuted mt10" style="text-align:left;">
-                <span data-i18n="partnerDash.upgradeHint">Zwiększ zasięg swoich wydarzeń i odblokuj dodatkowe możliwości z wyższym planem.</span>
-              </div>
-            </div>
-  
-            <div class="analyticsGrid mt16" id="partnerStatsGrid" data-plan-scope="partner">
-              <div class="metricCard" data-min-plan="free">
-                <div class="metricTop">
-                  <div class="metricLabel" data-i18n="partnerDash.metricEvents">Wydarzenia</div><div class="metricDot"></div>
-                </div>
-                <div class="metricVal" id="m_events_val">2</div>
-                <div class="metricSub" data-i18n="partnerDash.metricTotal">Łącznie</div>
-              </div>
-  
-              <div class="metricCard" data-min-plan="pro">
-                <div class="metricTop">
-                  <div class="metricLabel" data-i18n="partnerDash.metricViews">Wyświetlenia profilu</div><div class="metricDot"></div>
-                </div>
-                <div class="metricVal" id="m_views_val">—</div>
-                <div class="metricSub">Pro+</div>
-              </div>
-  
-              <div class="metricCard" data-min-plan="pro">
-                <div class="metricTop">
-                  <div class="metricLabel" data-i18n="partnerDash.metricClicks">Kliknięcia</div><div class="metricDot"></div>
-                </div>
-                <div class="metricVal" id="m_clicks_val">—</div>
-                <div class="metricSub">Pro+</div>
-              </div>
-  
-              <div class="metricCard" data-min-plan="premium">
-                <div class="metricTop">
-                  <div class="metricLabel" data-i18n="partnerDash.metricConversions">Konwersje</div><div class="metricDot"></div>
-                </div>
-                <div class="metricVal" id="m_conv_val">—</div>
-                <div class="metricSub">Premium+</div>
-              </div>
-            </div>
-  
-            <div class="card mt16">
-              <div class="sectionTitle" data-i18n="partnerDash.shortcuts">Skróty</div>
-              <div class="sectionSub" data-i18n="partnerDash.shortcutsSub">Najczęściej używane akcje.</div>
-              <div class="row mt16">
-                <button class="btn" type="button" onclick="go('S9_PARTNER_CREATE')" data-i18n="partnerDash.addEvent">Dodaj wydarzenie</button>
-                <button class="btn secondary" type="button" onclick="go('S9_PARTNER_EVENTS')" data-i18n="partnerDash.myEvents">Moje wydarzenia</button>
-              </div>
-            </div>
           </div>
         </section>
-  
+
         <!-- =========================================================
         S9_PARTNER_CREATE — tworzenie wydarzenia (organizator)
         ========================================================== -->
@@ -3631,109 +5085,213 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <button class="topIconBtn" id="notifBtnPartnerCreate" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
-          <div class="content">
-            <div class="heroCard profileSummaryCard">
-              <label data-i18n="partnerCreate.name">Nazwa *</label>
-              <input id="peTitle" type="text" placeholder="np. Kameralny wieczór muzyczny" data-i18n-placeholder="partnerCreate.namePlaceholder" />
-  
-              <label class="mt12" data-i18n="partnerCreate.city">Miasto *</label>
-              <input id="peCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" />
-  
-              <label class="mt12" data-i18n="partnerCreate.when">Kiedy *</label>
-              <input id="peWhen" type="hidden" />
-              <div class="eventDateTimeGrid">
-                <input id="peDate" class="mobileDateTimeInput" type="date" aria-label="Data wydarzenia" />
-                <input id="peTime" class="mobileDateTimeInput" type="time" aria-label="Godzina wydarzenia" />
-              </div>
-              <div class="eventDateTimeGrid tMuted" style="text-align:left;font-size:12px;margin-top:6px;">
-                <div data-i18n="partnerCreate.dateHint">DD.MM.RRRR</div>
-                <div data-i18n="partnerCreate.timeHint">GG:MM</div>
-              </div>
-  
-              <label class="mt12" data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>
-              <div id="peLocationInputWrap">
-                <input id="peAddress" type="text" placeholder="np. Studio Aurora albo ul. Słoneczna 12" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
-                <div class="hintText mt6" data-i18n="partnerCreate.locationHint">Wpisz miejsce, potwierdź lokalizację i wybierz właściwy wynik z listy.</div>
-              </div>
+          <div class="content partnerEventEditorV2">
+            <div class="partnerEventEditorIntro">
+              <div class="partnerEventEditorEyebrow" data-i18n="partnerCreate.eyebrow">WYDARZENIE</div>
+              <h1 data-i18n="partnerCreate.editorTitle">Stwórz wydarzenie</h1>
+              <p data-i18n="partnerCreate.editorIntro">Dodaj najważniejsze informacje. Zdjęcie i część dodatkowych danych możesz pominąć.</p>
+            </div>
 
-              <input id="peWhere" type="hidden" />
-              <input id="peResolvedAddress" type="hidden" />
+            <div class="partnerEventFormV2">
 
-              <div class="row mt10" style="gap:10px;align-items:center;flex-wrap:wrap;">
-                <button class="btn secondary small" id="peFindPlaceBtn" type="button" data-i18n="partnerCreate.findPlace">Potwierdź lokalizację</button>
-                <span class="hintText" id="peSelectedPlaceHint" hidden></span>
-              </div>
-
-              <div id="pePlaceResults" class="mt10"></div>
-
-              <input id="peLocationLat" type="hidden" />
-              <input id="peLocationLng" type="hidden" />
-  
-              <label class="mt12" data-i18n="partnerCreate.interest">Zainteresowanie / hashtag *</label>
-              <div class="hashRow" id="peInterestInputWrap">
-                <span class="hashPrefix">#</span>
-                <input id="peInterest" type="text" placeholder="np. muzyka" data-i18n-placeholder="partnerCreate.interestPlaceholder" list="interestsDatalist" />
-              </div>
-
-              <div id="peInterestSelected" hidden>
-                <span id="peInterestSelectedText"></span>
-                <button type="button" id="peInterestRemoveBtn" aria-label="Remove hashtag" hidden>×</button>
-              </div>
-  
-              <label class="mt12" data-i18n="partnerCreate.description">Opis</label>
-              <textarea id="peDesc" maxlength="600" placeholder="Krótki opis wydarzenia (max 600)" data-i18n-placeholder="partnerCreate.descriptionPlaceholder"></textarea>
-
-              <div class="hintCard mt16">
-                <div class="hintTitle" data-i18n="partnerCreate.capacityTitle">Liczba miejsc</div>
-                <div class="hintText" data-i18n="partnerCreate.capacityText">Możesz zostawić wydarzenie bez limitu albo podać maksymalną liczbę uczestników.</div>
-
-                <div class="partnerCapacityToggle mt12">
-                  <label class="partnerCapacityToggleRow" for="peUnlimitedCapacity">
-                    <span class="tStrong" data-i18n="partnerCreate.unlimitedCapacity">Bez limitu miejsc</span>
-                    <input id="peUnlimitedCapacity" type="checkbox" checked />
-                  </label>
+              <section class="partnerEventFormSection">
+                <div class="partnerEventSectionHead">
+                  <span>01</span>
+                  <div>
+                    <h2 data-i18n="partnerCreate.basicTitle">Podstawowe informacje</h2>
+                    <p data-i18n="partnerCreate.basicSub">Powiedz krótko, co organizujesz.</p>
+                  </div>
                 </div>
 
-                <div id="peCapacityBox" class="mt12 partnerCapacityBox">
+                <label data-i18n="partnerCreate.name">Nazwa *</label>
+                <input id="peTitle" type="text" placeholder="np. Kameralny wieczór muzyczny" data-i18n-placeholder="partnerCreate.namePlaceholder" />
+
+                <label class="mt16" data-i18n="partnerCreate.city">Miasto *</label>
+                <input id="peCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" />
+              </section>
+
+              <section class="partnerEventFormSection">
+                <div class="partnerEventSectionHead">
+                  <span>02</span>
+                  <div>
+                    <h2 data-i18n="partnerCreate.coverTitle">Zdjęcie wydarzenia</h2>
+                    <p data-i18n="partnerCreate.coverSub">Opcjonalne, ale pomoże pokazać klimat wydarzenia.</p>
+                  </div>
+                </div>
+
+                <div class="partnerEventCoverField">
+                  <input id="peCoverFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+                  <input id="peCoverUrl" type="hidden" />
+
+                  <button class="partnerEventCoverPicker" id="peCoverPicker" type="button">
+                    <div class="partnerEventCoverEmpty" id="peCoverEmpty">
+                      <div class="partnerEventCoverIcon" aria-hidden="true">＋</div>
+                      <div class="partnerEventCoverEmptyTitle" data-i18n="partnerCreate.coverAdd">Dodaj zdjęcie wydarzenia</div>
+                      <div class="partnerEventCoverEmptyText" data-i18n="partnerCreate.coverRequirements">JPG, PNG lub WebP · maks. 5 MB</div>
+                    </div>
+                    <img class="partnerEventCoverPreview" id="peCoverPreview" alt="Podgląd zdjęcia wydarzenia" hidden />
+                  </button>
+
+                  <div class="partnerEventCoverActions" id="peCoverActions" hidden>
+                    <button class="btn secondary small" id="peCoverChangeBtn" type="button" data-i18n="partnerCreate.coverChange">Zmień zdjęcie</button>
+                    <button class="partnerEventCoverRemoveBtn" id="peCoverRemoveBtn" type="button" data-i18n="partnerCreate.coverRemove">Usuń</button>
+                  </div>
+
+                  <div class="partnerEventCoverStatus" id="peCoverStatus" hidden></div>
+                </div>
+              </section>
+
+              <section class="partnerEventFormSection">
+                <div class="partnerEventSectionHead">
+                  <span>03</span>
+                  <div>
+                    <h2 data-i18n="partnerCreate.scheduleTitle">Termin</h2>
+                    <p data-i18n="partnerCreate.scheduleSub">Ustal rozpoczęcie i opcjonalne zakończenie.</p>
+                  </div>
+                </div>
+
+                <input id="peWhen" type="hidden" />
+
+                <label data-i18n="partnerCreate.when">Rozpoczęcie *</label>
+                <div class="eventDateTimeGrid">
+                  <input id="peDate" class="mobileDateTimeInput" type="date" aria-label="Data rozpoczęcia" data-i18n-aria-label="partnerCreate.startDateAria" />
+                  <input id="peTime" class="mobileDateTimeInput" type="time" aria-label="Godzina rozpoczęcia" data-i18n-aria-label="partnerCreate.startTimeAria" />
+                </div>
+                <div class="eventDateTimeGrid partnerEventFieldHints">
+                  <div data-i18n="partnerCreate.date">Data</div>
+                  <div data-i18n="partnerCreate.time">Godzina</div>
+                </div>
+
+                <label class="mt16"><span data-i18n="partnerCreate.end">Zakończenie</span> <span class="tMuted" data-i18n="partnerCreate.optional">(opcjonalnie)</span></label>
+                <div class="eventDateTimeGrid">
+                  <input id="peEndDate" class="mobileDateTimeInput" type="date" aria-label="Data zakończenia" data-i18n-aria-label="partnerCreate.endDateAria" />
+                  <input id="peEndTime" class="mobileDateTimeInput" type="time" aria-label="Godzina zakończenia" data-i18n-aria-label="partnerCreate.endTimeAria" />
+                </div>
+                <div class="eventDateTimeGrid partnerEventFieldHints">
+                  <div data-i18n="partnerCreate.date">Data</div>
+                  <div data-i18n="partnerCreate.time">Godzina</div>
+                </div>
+              </section>
+
+              <section class="partnerEventFormSection">
+                <div class="partnerEventSectionHead">
+                  <span>04</span>
+                  <div>
+                    <h2 data-i18n="partnerCreate.locationTitle">Lokalizacja</h2>
+                    <p data-i18n="partnerCreate.locationSub">Wskaż miejsce, w którym spotkają się uczestnicy.</p>
+                  </div>
+                </div>
+
+                <label data-i18n="partnerCreate.where">Gdzie odbywa się wydarzenie? *</label>
+                <div id="peLocationInputWrap">
+                  <input id="peAddress" type="text" placeholder="np. Studio Aurora albo ul. Słoneczna 12" data-i18n-placeholder="partnerCreate.addressPlaceholder" />
+                  <div class="hintText mt6" data-i18n="partnerCreate.locationHint">Wpisz miejsce, potwierdź lokalizację i wybierz właściwy wynik z listy.</div>
+                </div>
+
+                <input id="peWhere" type="hidden" />
+                <input id="peResolvedAddress" type="hidden" />
+
+                <div class="partnerEventLocationAction">
+                  <button class="btn secondary small" id="peFindPlaceBtn" type="button" data-i18n="partnerCreate.findPlace">Potwierdź lokalizację</button>
+                  <span class="hintText" id="peSelectedPlaceHint" hidden></span>
+                </div>
+
+                <div id="pePlaceResults" class="mt10"></div>
+                <input id="peLocationLat" type="hidden" />
+                <input id="peLocationLng" type="hidden" />
+              </section>
+
+              <section class="partnerEventFormSection">
+                <div class="partnerEventSectionHead">
+                  <span>05</span>
+                  <div>
+                    <h2 data-i18n="partnerCreate.aboutTitle">O wydarzeniu</h2>
+                    <p data-i18n="partnerCreate.aboutSub">Dodaj zainteresowanie i krótki opis.</p>
+                  </div>
+                </div>
+
+                <label data-i18n="partnerCreate.interest">Zainteresowanie / hashtag *</label>
+                <div class="hashRow" id="peInterestInputWrap">
+                  <span class="hashPrefix">#</span>
+                  <input id="peInterest" type="text" placeholder="muzyka" list="interestsDatalist" />
+                </div>
+
+                <div id="peInterestSelected" hidden>
+                  <span id="peInterestSelectedText"></span>
+                  <button type="button" id="peInterestRemoveBtn" aria-label="Remove hashtag" hidden>×</button>
+                </div>
+
+                <label class="mt16" data-i18n="partnerCreate.description">Opis</label>
+                <textarea id="peDesc" maxlength="600" placeholder="Krótki opis wydarzenia (max 600)" data-i18n-placeholder="partnerCreate.descriptionPlaceholder"></textarea>
+              </section>
+
+              <section class="partnerEventFormSection">
+                <div class="partnerEventSectionHead">
+                  <span>06</span>
+                  <div>
+                    <h2 data-i18n="partnerCreate.capacitySectionTitle">Miejsca</h2>
+                    <p data-i18n="partnerCreate.capacitySectionSub">Określ maksymalną liczbę uczestników lub wybierz opcję bez limitu miejsc.</p>
+                  </div>
+                </div>
+
+                <label class="partnerCapacityToggleRow partnerEventToggleV2" for="peUnlimitedCapacity">
+                  <span>
+                    <strong data-i18n="partnerCreate.unlimitedCapacity">Bez limitu miejsc</strong>
+                    <small data-i18n="partnerCreate.unlimitedSub">Każdy może dołączyć bez ograniczenia liczby uczestników.</small>
+                  </span>
+                  <input id="peUnlimitedCapacity" type="checkbox" checked />
+                </label>
+
+                <div id="peCapacityBox" class="partnerCapacityBox mt16">
                   <label data-i18n="partnerCreate.maxCapacity">Maksymalna liczba miejsc</label>
                   <input id="peCapacity" type="number" min="1" inputmode="numeric" placeholder="np. 20" />
                 </div>
-              </div>
-  
-              <!-- ticketing -->
-              <div class="hintCard mt16">
-                <div class="hintTitle" data-i18n="partnerCreate.ticketsTitle">Bilety (opcjonalnie)</div>
-                <div class="hintText" data-i18n="partnerCreate.ticketsText">USLY nie sprzedaje biletów — podajesz link do zewnętrznej sprzedaży / rezerwacji.</div>
-  
-                <label class="mt12" data-i18n="partnerCreate.ticketType">Rodzaj</label>
+              </section>
+
+              <section class="partnerEventFormSection">
+                <div class="partnerEventSectionHead">
+                  <span>07</span>
+                  <div>
+                    <h2 data-i18n="partnerCreate.ticketsSectionTitle">Bilety</h2>
+                    <p data-i18n="partnerCreate.ticketsSectionSub">Opcjonalnie dodaj cenę i zewnętrzny link do sprzedaży lub rezerwacji.</p>
+                  </div>
+                </div>
+
+                <label data-i18n="partnerCreate.ticketType">Rodzaj</label>
                 <select id="pePaidMode">
                   <option value="free" data-i18n="partnerCreate.ticketFree">Bezpłatne</option>
                   <option value="paid_fixed" data-i18n="partnerCreate.ticketFixed">Płatne — cena stała</option>
                   <option value="paid_range" data-i18n="partnerCreate.ticketRange">Płatne — przedział</option>
                 </select>
-  
-                <div class="row mt12">
-                  <div style="flex:1;">
-                    <label class="tMuted" data-i18n="partnerCreate.price">Cena (zł)</label>
-                    <input id="pePrice" type="number" min="0" placeholder="np. 49" />
-                  </div>
-                  <div style="flex:1;">
-                    <label class="tMuted" data-i18n="partnerCreate.priceFrom">Od (zł)</label>
+
+                <div class="partnerEventPriceFixed">
+                  <label data-i18n="partnerCreate.price">Cena (zł)</label>
+                  <input id="pePrice" type="number" min="0" placeholder="np. 49" />
+                </div>
+
+                <div class="partnerEventPriceRange">
+                  <div>
+                    <label data-i18n="partnerCreate.priceFrom">Od (zł)</label>
                     <input id="pePriceFrom" type="number" min="0" placeholder="np. 29" />
                   </div>
+
+                  <div class="partnerEventPriceDash" aria-hidden="true">—</div>
+
+                  <div>
+                    <label data-i18n="partnerCreate.priceTo">Do (zł)</label>
+                    <input id="pePriceTo" type="number" min="0" placeholder="np. 79" />
+                  </div>
                 </div>
-  
-                <label class="mt12" data-i18n="partnerCreate.priceTo">Do (zł)</label>
-                <input id="pePriceTo" type="number" min="0" placeholder="np. 79" />
-  
-                <label class="mt12" data-i18n="partnerCreate.ticketLink">Link do biletów / rezerwacji</label>
+
+                <label class="mt16" data-i18n="partnerCreate.ticketLink">Link do biletów / rezerwacji</label>
                 <input id="peTicketLink" type="url" placeholder="https://..." />
-              </div>
-  
-              <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
+              </section>
+
+              <div class="partnerEventFormActions">
                 <button class="btn secondary" type="button" onclick="savePartnerEventDraft()" data-i18n="partnerCreate.saveDraft">Zapisz szkic</button>
                 <button class="btn" id="pePublishBtn" type="button" onclick="publishPartnerEvent()" data-i18n="partnerCreate.publish" hidden>Opublikuj wydarzenie</button>
               </div>
+
             </div>
           </div>
         </section>
@@ -3781,20 +5339,41 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <button class="topIconBtn" id="notifBtnPartnerParticipants" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
 
-          <div class="content">
-            <div class="heroCard profileSummaryCard" id="partnerEventParticipantsCard">
-              <div id="partnerEventBroadcastBox" class="hintCard" style="display:none;">
-                <div class="hintTitle" data-i18n="partnerParticipants.notifyAll">Powiadom wszystkich uczestników</div>
-                <div class="hintText" data-i18n="partnerParticipants.notifyText">Wyślij jedną wiadomość do wszystkich zapisanych osób. Idealne na przypomnienia i ważne informacje.</div>
-                <textarea id="partnerEventBroadcastInput" class="mt12" maxlength="1000" placeholder="Napisz wiadomość do uczestników..." data-i18n-placeholder="partnerParticipants.messagePlaceholder"></textarea>
-                <div class="row mt16">
-                  <button class="btn" type="button" id="partnerEventBroadcastSendBtn" data-i18n="partnerParticipants.send">Wyślij do uczestników</button>
-                </div>
+          <div class="content partnerParticipantsV2">
+            <div id="partnerEventParticipantsCard">
+
+              <div class="partnerParticipantsIntro">
+                <div class="partnerParticipantsEyebrow" data-i18n="partnerParticipants.eyebrow">UCZESTNICY</div>
+                <h1 data-i18n="partnerParticipants.manageTitle">Zarządzaj uczestnikami</h1>
+                <p data-i18n="partnerParticipants.intro">Sprawdź zapisane osoby i przekaż im najważniejsze informacje dotyczące wydarzenia.</p>
               </div>
 
-              <div class="sectionTitle mt16" data-i18n="partnerParticipants.savedUsers">Zapisani uczestnicy</div>
-              <div class="sectionSub" data-i18n="partnerParticipants.savedUsersSub">Osoby, które kliknęły „wezmę udział” dla tego wydarzenia.</div>
-              <div class="col mt16" id="partnerEventParticipantsList"></div>
+              <section id="partnerEventBroadcastBox" class="partnerParticipantsBroadcast" style="display:none;">
+                <div class="partnerParticipantsSectionHead">
+                  <div>
+                    <h2 data-i18n="partnerParticipants.notifyAll">Powiadom wszystkich uczestników</h2>
+                    <p data-i18n="partnerParticipants.notifyText">Wyślij jedną wiadomość do wszystkich zapisanych osób. Idealne na przypomnienia i ważne informacje.</p>
+                  </div>
+                </div>
+
+                <textarea id="partnerEventBroadcastInput" maxlength="1000" placeholder="Napisz wiadomość do uczestników..." data-i18n-placeholder="partnerParticipants.messagePlaceholder"></textarea>
+
+                <div class="partnerParticipantsBroadcastAction">
+                  <button class="btn" type="button" id="partnerEventBroadcastSendBtn" data-i18n="partnerParticipants.send">Wyślij do uczestników</button>
+                </div>
+              </section>
+
+              <section class="partnerParticipantsListSection">
+                <div class="partnerParticipantsSectionHead">
+                  <div>
+                    <h2 data-i18n="partnerParticipants.savedUsers">Zapisani uczestnicy</h2>
+                    <p data-i18n="partnerParticipants.savedUsersSub">Osoby, które kliknęły „wezmę udział” dla tego wydarzenia.</p>
+                  </div>
+                </div>
+
+                <div id="partnerEventParticipantsList"></div>
+              </section>
+
             </div>
           </div>
         </section>
@@ -3818,13 +5397,18 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
             <button class="topIconBtn" id="notifBtnPartnerMsgs" type="button" onclick="go('S12_NOTIFICATIONS')" aria-label="Notifications"></button>
           </header>
   
-          <div class="content">
-            <div class="heroCard profileSummaryCard">
-              
-              <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." data-i18n-placeholder="partnerMessages.searchPlaceholder" class="mt12" />
+          <div class="content partnerMessagesV2">
+            <div class="partnerMessagesIntro">
+              <div class="partnerMessagesEyebrow" data-i18n="partnerMessages.eyebrow">WIADOMOŚCI</div>
+              <h1 data-i18n="partnerMessages.conversations">Rozmowy</h1>
+              <p data-i18n="partnerMessages.intro">Kontakt z uczestnikami i innymi użytkownikami USLY.</p>
             </div>
-  
-            <div class="col mt16" id="partnerMsgList"></div>
+
+            <div class="partnerMessagesSearch">
+              <input id="partnerMsgSearch" type="text" placeholder="Szukaj rozmowy..." data-i18n-placeholder="partnerMessages.searchPlaceholder" />
+            </div>
+
+            <div id="partnerMsgList"></div>
           </div>
         </section>
   
@@ -3848,158 +5432,325 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
   
           <div class="content">
             <!-- ===================== SETTINGS: Towarzysz ===================== -->
-            <div class="card premiumProfileScope" id="settingsUserBox">
-              <div class="heroCard profileHubCard">
-                <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
-                  <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
-                    <div class="avatar big" id="settingsUserAvatarPreview"></div>
-                    <div style="text-align:left;min-width:0;flex:1;">
-                      <div class="sectionTitle" id="settingsProfileHeroNick" style="margin:0;" data-i18n="settings.profile">Twój profil</div>
-                      <div class="sectionSub" id="settingsProfileHeroMeta" data-i18n="settings.profileSub">Uzupełnij profil, aby poprawić dopasowania.</div>
+            <div class="settingsUserPremium" id="settingsUserBox">
+
+              <!-- Profil -->
+              <div class="settingsUserHero">
+                <div class="settingsUserHeroTop">
+                  <div class="avatar big settingsUserAvatar" id="settingsUserAvatarPreview"></div>
+
+                  <div class="settingsUserHeroIdentity">
+                    <div class="settingsUserEyebrow" data-i18n="settings.profileEyebrow">TWÓJ PROFIL</div>
+                    <div class="settingsUserName" id="settingsProfileHeroNick">Twój profil</div>
+                    <div class="settingsUserMeta" id="settingsProfileHeroMeta">
+                      Uzupełnij profil, aby poprawić dopasowania.
                     </div>
                   </div>
-                  <div class="planPill" id="settingsProfilePlanPill">FREE</div>
+
+                  <div class="planPill settingsUserPlanPill" id="settingsProfilePlanPill">FREE</div>
                 </div>
 
-                <div class="row mt16 profileActionRow">
-                  <button class="btn small profileHeroBtnPrimary" type="button" onclick="openProfileEdit()" data-i18n="profileEdit.title">Edytuj profil</button>
-                  <button class="btn secondary small profileHeroBtnSecondary" type="button" onclick="openProfileInterests()" data-i18n="settings.interests">Zainteresowania</button>
-                  <button class="btn secondary small profileHeroBtnPlan" type="button" onclick="goToPlansSettings()" data-i18n="partnerDash.yourPlan">Twój plan</button>
-                </div>
+                <button class="settingsUserPrimaryAction" type="button" onclick="openProfileEdit()">
+                  <span data-i18n="settings.editProfile">Edytuj profil</span>
+                  <span class="settingsUserActionArrow" aria-hidden="true">›</span>
+                </button>
               </div>
 
-              <div class="card mt16 profileSummaryCard friendsCard" onclick="go('S10D_PROFILE_FRIENDS')">
-                <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
-                  <div style="text-align:left;flex:1;min-width:0;">
-                    <div class="sectionTitle" data-i18n="profileFriends.title">Znajomi</div>
-                    <div class="sectionSub" data-i18n="settings.friendsSub">Lista kontaktów</div>
-                  </div>
-                  <div class="pill" data-i18n="settings.open">Otwórz</div>
-                </div>
-              </div>
+              <!-- Twoja społeczność -->
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">♡</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.communityTitle">Twoja społeczność</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.communitySub">Znajomi, zaproszenia i obserwowani</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
 
-              <div class="card mt16 profileSummaryCard invitesCard" onclick="go('S10E_PROFILE_INVITES')">
-                <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
-                  <div style="text-align:left;flex:1;min-width:0;">
-                    <div class="sectionTitle" data-i18n="profileInvites.title">Zaproszenia</div>
-                    <div class="sectionSub" data-i18n="settings.invitesSub">Zaproszenia</div>
-                  </div>
-                  <div class="pill" data-i18n="settings.open">Otwórz</div>
-                </div>
-              </div>
+                <div class="settingsUserSectionBody">
+                  <button class="settingsUserMenuRow" type="button" onclick="go('S10D_PROFILE_FRIENDS')">
+                    <span>
+                      <span class="settingsUserMenuTitle" data-i18n="settings.friends">Znajomi</span>
+                      <span class="settingsUserMenuSub" data-i18n="settings.friendsList">Lista Twoich kontaktów</span>
+                    </span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
 
-              <div class="card mt16 profileSummaryCard">
-                <div class="sectionTitle" data-i18n="settings.accountHelp">Konto i pomoc</div>
+                  <button class="settingsUserMenuRow" type="button" onclick="go('S10E_PROFILE_INVITES')">
+                    <span>
+                      <span class="settingsUserMenuTitle" data-i18n="settings.invites">Zaproszenia</span>
+                      <span class="settingsUserMenuSub" data-i18n="settings.pendingInvites">Oczekujące zaproszenia</span>
+                    </span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
 
-                <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
-                  <button class="btn secondary" type="button" onclick="openBugReport()" data-i18n="settings.reportBug">Zgłoś błąd</button>
-                  <button class="btn secondary" type="button" onclick="openChangePassword()" data-i18n="settings.changePassword">Zmień hasło</button>
-                  <button class="btn danger" type="button" onclick="openDeleteAccount()" data-i18n="settings.deleteAccount">Usuń konto</button>
+                  <button class="settingsUserMenuRow" type="button" onclick="openFollowedOrganizers()">
+                    <span>
+                      <span class="settingsUserMenuTitle" data-i18n="settings.followedOrganizers">Obserwowani organizatorzy</span>
+                      <span class="settingsUserMenuSub" data-i18n="settings.followedOrganizersSub">Organizatorzy, których obserwujesz</span>
+                    </span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
                 </div>
-              </div>
+              </section>
+
+              <!-- USLY dla Ciebie -->
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">✦</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.forYouTitle">USLY dla Ciebie</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.forYouSub">Plan i wygląd aplikacji</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="settingsUserSectionBody">
+                  <button class="settingsUserMenuRow" type="button" onclick="goToPlansSettings()">
+                    <span>
+                      <span class="settingsUserMenuTitle" data-i18n="settings.yourPlan">Twój plan</span>
+                      <span class="settingsUserMenuSub" data-i18n="settings.yourPlanSub">Zobacz plan i dostępne możliwości</span>
+                    </span>
+                    <span class="planPill settingsUserInlinePlan" id="settingsProfilePlanPillSecondary">FREE</span>
+                  </button>
+
+                  <button class="settingsUserMenuRow" type="button" onclick="openAppearanceSettings()">
+                    <span>
+                      <span class="settingsUserMenuTitle" data-i18n="settings.appearance">Wygląd aplikacji</span>
+                      <span class="settingsUserMenuSub" data-i18n="settings.appearanceSub">Jasny, ciemny lub systemowy</span>
+                    </span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
+
+                </div>
+              </section>
+
+              <!-- Konto i bezpieczeństwo -->
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">⌾</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.securityTitle">Konto i bezpieczeństwo</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.securitySub">Hasło i ustawienia konta</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="settingsUserSectionBody">
+                  <button class="settingsUserMenuRow" type="button" onclick="openChangePassword()">
+                    <span class="settingsUserMenuTitle" data-i18n="settings.changePassword">Zmień hasło</span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
+
+                  <button class="settingsUserMenuRow settingsUserDangerRow" type="button" onclick="openDeleteAccount()">
+                    <span class="settingsUserMenuTitle" data-i18n="settings.deleteAccount">Usuń konto</span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
+                </div>
+              </section>
+
+              <!-- Pomoc i informacje -->
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">?</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.helpTitle">Pomoc i informacje</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.helpSub">Pomoc, zgłoszenia i informacje o USLY</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="settingsUserSectionBody">
+                  <button class="settingsUserMenuRow" type="button" onclick="openBugReport()">
+                    <span class="settingsUserMenuTitle" data-i18n="settings.reportBug">Zgłoś błąd</span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
+                </div>
+              </section>
+
             </div>
             <!-- ===================== SETTINGS: Organizator ===================== -->
-            <div class="card premiumProfileScope" id="settingsPartnerBox" style="display:none;">
-              <div class="heroCard profileHubCard">
-                <div class="row" style="align-items:center;justify-content:space-between;gap:14px;">
-                  <div class="row" style="align-items:center;gap:14px;flex:1;min-width:0;">
-                    <div class="avatar big" id="setOrgLogoPreview"></div>
-                    <div style="text-align:left;min-width:0;flex:1;">
-                      <div class="sectionTitle" id="settingsPartnerHubName" style="margin:0;" data-i18n="partnerDash.yourPlace">Twoje miejsce</div>
-                      <div class="sectionSub" id="settingsPartnerHubMeta" data-i18n="settings.partnerProfileSub">Uzupełnij profil organizatora.</div>
+            <div class="settingsUserPremium settingsPartnerV2" id="settingsPartnerBox" style="display:none;">
+
+              <div class="settingsUserHero">
+                <div class="settingsUserHeroTop">
+                  <div class="avatar big settingsUserAvatar" id="setOrgLogoPreview"></div>
+
+                  <div class="settingsUserHeroIdentity">
+                    <div class="settingsUserEyebrow" data-i18n="settings.partnerProfileEyebrow">TWÓJ PROFIL</div>
+                    <div class="settingsUserName" id="settingsPartnerHubName" data-i18n="partnerDash.yourPlace">Twoje miejsce</div>
+                    <div class="settingsUserMeta" id="settingsPartnerHubMeta" data-i18n="settings.partnerProfileSub">Uzupełnij profil organizatora.</div>
+                  </div>
+
+                  <div class="planPill settingsUserPlanPill" id="partnerPlanPill">FREE</div>
+                </div>
+              </div>
+
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">◎</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.partnerProfileTitle">Profil organizatora</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.partnerProfileDescription">Logo i dane Twojego miejsca</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="settingsUserSectionBody settingsPartnerProfileBody">
+                  <input id="setOrgLogo" type="file" accept="image/*" style="display:none;" />
+
+                  <div class="settingsPartnerLogoRow">
+                    <div>
+                      <div class="settingsUserMenuTitle" data-i18n="settings.logoTitle">Logo miejsca</div>
+                      <div class="settingsUserMenuSub" data-i18n="settings.logoSub">Dodaj, podmień albo usuń logo organizatora.</div>
+                    </div>
+                    <div class="settingsPartnerLogoActions">
+                      <button class="settingsPartnerMiniAction" type="button" onclick="document.getElementById('setOrgLogo').click()" data-i18n="partnerSetup.addLogo">Dodaj logo</button>
+                      <button class="settingsPartnerMiniAction danger" type="button" onclick="removePartnerLogo()" data-i18n="settings.removeLogo">Usuń</button>
                     </div>
                   </div>
-                  <div class="planPill" id="partnerPlanPill">FREE</div>
-                </div>
 
-                <div class="card mt16 orgLogoManageCard">
-                  <input id="setOrgLogo" type="file" accept="image/*" style="display:none;" />
-                  <div style="text-align:left;">
-                    <div style="font-size:15px;font-weight:1000;line-height:1.15;color:#f4f8ff;" data-i18n="settings.logoTitle">Logo miejsca</div>
-                    <div class="tMuted" style="margin-top:4px;text-align:left;" data-i18n="settings.logoSub">Dodaj, podmień albo usuń logo organizatora.</div>
+                  <div class="settingsPartnerFields">
+                    <label data-i18n="common.email">Email</label>
+                    <input id="setOrgEmail" type="email" readonly disabled />
+
+                    <label data-i18n="register.company">Oficjalna nazwa miejsca / firmy</label>
+                    <input id="setOrgCompany" type="text" placeholder="np. Studio Miejsce" data-i18n-placeholder="register.company_placeholder" />
+
+                    <label data-i18n="partnerCreate.city">Miasto *</label>
+                    <input id="setOrgCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" list="citiesDatalist" />
+
+                    <label data-i18n="settings.industry">Branża</label>
+                    <select id="setOrgCategory">
+                      <option value="gastro" data-i18n="partnerCategory.gastro">Gastro / restauracja / kawiarnia</option>
+                      <option value="bar_nocne" data-i18n="partnerCategory.bar_nocne">Bar / klub / nightlife</option>
+                      <option value="kultura" data-i18n="partnerCategory.kultura">Kultura / koncerty / sztuka</option>
+                      <option value="fitness" data-i18n="partnerCategory.fitness">Fitness / sport / wellness</option>
+                      <option value="beauty" data-i18n="partnerCategory.beauty">Beauty / uroda</option>
+                      <option value="hotel_event" data-i18n="partnerCategory.hotel_event">Hotel / event / konferencje</option>
+                      <option value="rozrywka" data-i18n="partnerCategory.rozrywka">Rozrywka / atrakcje / gaming</option>
+                      <option value="zakupy" data-i18n="partnerCategory.zakupy">Sklep / showroom / zakupy</option>
+                      <option value="edukacja" data-i18n="partnerCategory.edukacja">Edukacja / warsztaty</option>
+                      <option value="cowork" data-i18n="partnerCategory.cowork">Cowork / biznes / networking</option>
+                      <option value="plener" data-i18n="partnerCategory.plener">Plener / turystyka / rekreacja</option>
+                      <option value="inne" data-i18n="partnerCategory.inne">Inne / trudno powiedzieć</option>
+                    </select>
+
+                    <label data-i18n="partnerCreate.description">Opis</label>
+                    <textarea id="setOrgAbout" maxlength="500" placeholder="Krótko opisz miejsce, klimat i ofertę." data-i18n-placeholder="settings.orgAboutPlaceholder"></textarea>
+                    <div class="charHint"><span id="setOrgAboutCount">0</span>/500</div>
+
+                    <button class="settingsUserPrimaryAction settingsPartnerSave" type="button" onclick="savePartnerSettings()">
+                      <span data-i18n="profileEdit.save">Zapisz zmiany</span>
+                    </button>
                   </div>
-                  <div class="orgLogoManageActions">
-                    <button class="btn secondary small" type="button" onclick="document.getElementById('setOrgLogo').click()" data-i18n="partnerSetup.addLogo">Dodaj logo</button>
-                    <button class="btn secondary small" type="button" onclick="removePartnerLogo()" data-i18n="settings.removeLogo">Usuń logo</button>
-                  </div>
                 </div>
+              </section>
 
-                <div class="row mt16 profileActionRow">
-                  <button class="btn secondary small" type="button" onclick="goToPlansSettings()" data-i18n="partnerDash.yourPlan">Twój plan</button>
-                  <button class="btn secondary small" type="button" onclick="go('S9_PARTNER')" data-i18n="settings.dashboard">Panel</button>
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">✦</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.forYouTitle">USLY dla Ciebie</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.forYouSub">Plan i wygląd aplikacji</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="settingsUserSectionBody">
+                  <button class="settingsUserMenuRow" type="button" onclick="goToPlansSettings()">
+                    <span>
+                      <span class="settingsUserMenuTitle" data-i18n="settings.yourPlan">Twój plan</span>
+                      <span class="settingsUserMenuSub" data-i18n="settings.yourPlanSub">Zobacz plan i dostępne możliwości</span>
+                    </span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
+
+                  <button class="settingsUserMenuRow" type="button" onclick="openAppearanceSettings()">
+                    <span>
+                      <span class="settingsUserMenuTitle" data-i18n="settings.appearance">Wygląd aplikacji</span>
+                      <span class="settingsUserMenuSub" data-i18n="settings.appearanceSub">Jasny, ciemny lub systemowy</span>
+                    </span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
                 </div>
-              </div>
+              </section>
 
-              <div class="card mt16">
-                <div class="sectionTitle" data-i18n="settings.placeData">Dane miejsca</div>
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">⌾</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.securityTitle">Konto i bezpieczeństwo</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.securitySub">Hasło i ustawienia konta</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
 
-                <label class="mt12" data-i18n="common.email">Email</label>
-                <input id="setOrgEmail" type="email" readonly disabled style="opacity:.6; background:rgba(255,255,255,.06); color:rgba(255,255,255,.7); cursor:not-allowed;" />
+                <div class="settingsUserSectionBody">
+                  <button class="settingsUserMenuRow" type="button" onclick="openChangePassword()">
+                    <span class="settingsUserMenuTitle" data-i18n="settings.changePassword">Zmień hasło</span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
 
-                <label class="mt12" data-i18n="register.company">Oficjalna nazwa miejsca / firmy</label>
-                <input id="setOrgCompany" type="text" placeholder="np. Studio Miejsce" data-i18n-placeholder="register.company_placeholder" />
-
-                <label class="mt12" data-i18n="partnerCreate.city">Miasto *</label>
-                <input id="setOrgCity" type="text" placeholder="np. Warszawa" data-i18n-placeholder="partnerCreate.cityPlaceholder" list="citiesDatalist" />
-
-                <label class="mt12" data-i18n="settings.industry">Branża</label>
-                <select id="setOrgCategory">
-                  <option value="gastro" data-i18n="partnerCategory.gastro">Gastro / restauracja / kawiarnia</option>
-                  <option value="bar_nocne" data-i18n="partnerCategory.bar_nocne">Bar / klub / nightlife</option>
-                  <option value="kultura" data-i18n="partnerCategory.kultura">Kultura / koncerty / sztuka</option>
-                  <option value="fitness" data-i18n="partnerCategory.fitness">Fitness / sport / wellness</option>
-                  <option value="beauty" data-i18n="partnerCategory.beauty">Beauty / uroda</option>
-                  <option value="hotel_event" data-i18n="partnerCategory.hotel_event">Hotel / event / konferencje</option>
-                  <option value="rozrywka" data-i18n="partnerCategory.rozrywka">Rozrywka / atrakcje / gaming</option>
-                  <option value="zakupy" data-i18n="partnerCategory.zakupy">Sklep / showroom / zakupy</option>
-                  <option value="edukacja" data-i18n="partnerCategory.edukacja">Edukacja / warsztaty</option>
-                  <option value="cowork" data-i18n="partnerCategory.cowork">Cowork / biznes / networking</option>
-                  <option value="plener" data-i18n="partnerCategory.plener">Plener / turystyka / rekreacja</option>
-                  <option value="inne" data-i18n="partnerCategory.inne">Inne / trudno powiedzieć</option>
-                </select>
-
-                <label class="mt12" data-i18n="partnerCreate.description">Opis</label>
-                <textarea id="setOrgAbout" maxlength="500" placeholder="Krótko opisz miejsce, klimat i ofertę." data-i18n-placeholder="settings.orgAboutPlaceholder"></textarea>
-                <div class="charHint"><span id="setOrgAboutCount">0</span>/500</div>
-              </div>
-
-              <button class="btn mt16" type="button" onclick="savePartnerSettings()" data-i18n="profileEdit.save">Zapisz zmiany</button>
-
-              <div class="card mt16 profileSummaryCard">
-                <div class="sectionTitle" data-i18n="settings.accountHelp">Konto i pomoc</div>
-                <div class="sectionSub" data-i18n="settings.partnerAccountSub">Najważniejsze akcje konta Organizatora.</div>
-
-                <div class="row mt16" style="gap:10px;flex-wrap:wrap;">
-                  <button class="btn secondary" type="button" onclick="openBugReport()" data-i18n="settings.reportBug">Zgłoś błąd</button>
-                  <button class="btn secondary" type="button" onclick="openChangePassword()" data-i18n="settings.changePassword">Zmień hasło</button>
-                  <button class="btn danger" type="button" onclick="openDeleteAccount()" data-i18n="settings.deleteAccount">Usuń konto</button>
+                  <button class="settingsUserMenuRow settingsUserDangerRow" type="button" onclick="openDeleteAccount()">
+                    <span class="settingsUserMenuTitle" data-i18n="settings.deleteAccount">Usuń konto</span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
                 </div>
-              </div>
+              </section>
+
+              <section class="settingsUserSection">
+                <button class="settingsUserSectionHeader" type="button">
+                  <span class="settingsUserSectionIcon" aria-hidden="true">?</span>
+                  <span class="settingsUserSectionHeading">
+                    <span class="settingsUserSectionTitle" data-i18n="settings.helpTitle">Pomoc i informacje</span>
+                    <span class="settingsUserSectionSub" data-i18n="settings.helpSub">Pomoc, zgłoszenia i informacje o USLY</span>
+                  </span>
+                  <span class="settingsUserChevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="settingsUserSectionBody">
+                  <button class="settingsUserMenuRow" type="button" onclick="openBugReport()">
+                    <span class="settingsUserMenuTitle" data-i18n="settings.reportBug">Zgłoś błąd</span>
+                    <span class="settingsUserRowArrow" aria-hidden="true">›</span>
+                  </button>
+                </div>
+              </section>
+
             </div>
 
-            <div class="card mt16 profileSummaryCard">
+            <div class="card mt16 profileSummaryCard settingsLanguageCard">
               <div class="row" style="align-items:center;justify-content:space-between;gap:12px;">
                 <div style="text-align:left;flex:1;min-width:0;">
                   <div class="sectionTitle" data-i18n="settings.languageTitle">Język aplikacji</div>
                   <div class="sectionSub" data-i18n="settings.languageSub">Zmienisz język od razu, bez wylogowywania.</div>
                 </div>
                 <div class="langSwitchSettings" aria-label="Wybór języka" data-i18n-aria-label="welcome.langAria">
+                  <span class="langSwitchThumb" aria-hidden="true"></span>
                   <button class="langBtn" data-lang-choice="pl" type="button" onclick="setLanguage('pl')">PL</button>
                   <button class="langBtn" data-lang-choice="en" type="button" onclick="setLanguage('en')">EN</button>
                 </div>
               </div>
             </div>
 
-            <div class="card mt16">
+            <div class="card mt16 settingsDocumentsCard">
               <div class="sectionTitle" data-i18n="settings.documents">Dokumenty</div>
               <div class="sectionSub" data-i18n="settings.documentsSub">Regulamin i Polityka prywatności.</div>
-              <div class="row mt16">
-                <button class="btn secondary" type="button" onclick="openTerms()" data-i18n="register.terms_link">Regulamin</button>
-                <button class="btn secondary" type="button" onclick="openRodo()" data-i18n="register.privacy_link">Polityka prywatności</button>
+
+              <div class="settingsDocumentsRows">
+                <button class="settingsDocumentRow" type="button" onclick="openTerms()">
+                  <span data-i18n="settings.terms">Regulamin</span>
+                  <span class="settingsDocumentArrow" aria-hidden="true">›</span>
+                </button>
+
+                <button class="settingsDocumentRow" type="button" onclick="openRodo()">
+                  <span data-i18n="settings.privacy">Polityka prywatności</span>
+                  <span class="settingsDocumentArrow" aria-hidden="true">›</span>
+                </button>
               </div>
             </div>
 
-            <button class="btn danger mt16 logoutBtn" type="button" onclick="logout()" data-i18n="settings.logout">Wyloguj</button>
+            <button class="btn danger mt16 logoutBtn settingsLogoutAction" type="button" onclick="logout()" data-i18n="settings.logout">Wyloguj</button>
           </div>
         </section>
           <section class="view premiumPlansScope" id="S11_PLANS" aria-label="Plany">
@@ -4368,3 +6119,109 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
 </body>
     </html>
     
+
+<style>
+/* S5B — hero hierarchy refinement */
+#S5B_ORGANIZER_PROFILE .organizerV2Identity{
+  position:relative;
+  padding-bottom:16px;
+  margin-bottom:14px;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Identity::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:1px;
+  background:linear-gradient(
+    90deg,
+    rgba(78,215,232,.30),
+    rgba(141,124,246,.16) 48%,
+    rgba(255,255,255,.015)
+  );
+}
+
+#S5B_ORGANIZER_PROFILE #organizerProfileLogo.avatar.big{
+  box-shadow:
+    0 12px 26px rgba(0,0,0,.24),
+    0 0 24px rgba(78,215,232,.08),
+    0 0 36px rgba(141,124,246,.055);
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2Stats{
+  margin-top:0;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2StatTile{
+  border-color:rgba(255,255,255,.05);
+  background:
+    linear-gradient(
+      155deg,
+      rgba(255,255,255,.028),
+      rgba(255,255,255,.010)
+    );
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.012);
+}
+</style>
+
+<style>
+/* S5B — followers micro-info */
+</style>
+
+
+<style>
+/* S5B — active events affordance + followers microcopy */
+#S5B_ORGANIZER_PROFILE .organizerV2EventsTile{
+  border-color:rgba(78,215,232,.16);
+  background:
+    linear-gradient(155deg, rgba(78,215,232,.045), rgba(255,255,255,.012));
+  cursor:pointer;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2EventsTile .organizerV2StatSub{
+  color:rgba(78,215,232,.82);
+  font-size:9px;
+  font-weight:800;
+}
+
+</style>
+
+<style>
+/* S5B — followers readability correction */
+
+/* S5B — followers info / final */
+#S5B_ORGANIZER_PROFILE .organizerV2FollowerInfo{
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:5px;
+  width:100%;
+  margin:18px 0 12px;
+  color:rgba(242,244,248,.68);
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.2;
+  letter-spacing:0;
+  text-align:center;
+}
+
+#S5B_ORGANIZER_PROFILE .organizerV2FollowerInfo #organizerFollowerCount{
+  color:#F2F4F8;
+  font-size:15px;
+  font-weight:900;
+}
+
+</style>
+
+<style>
+/* DEVELOPMENT A — ORGANIZER FOLLOWING STATE */
+#S5B_ORGANIZER_PROFILE .organizerV2FollowBtn.isFollowing {
+  background: rgba(27, 32, 48, .92) !important;
+  border: 1px solid rgba(141, 124, 246, .42) !important;
+  color: #F2F4F8 !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .20) !important;
+}
+</style>

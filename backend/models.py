@@ -434,6 +434,53 @@ class PartnerProfile(Base):
 
 
 # =====================
+# ORGANIZER FOLLOW
+# Towarzysz -> obserwowany organizator (Partner)
+# =====================
+
+class OrganizerFollow(Base):
+    __tablename__ = "organizer_follows"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    follower_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    organizer_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "follower_user_id <> organizer_user_id",
+            name="ck_organizer_follows_no_self",
+        ),
+        UniqueConstraint(
+            "follower_user_id",
+            "organizer_user_id",
+            name="uq_organizer_follows_follower_organizer",
+        ),
+        Index(
+            "ix_organizer_follows_organizer_created",
+            "organizer_user_id",
+            "created_at",
+        ),
+    )
+
+
+# =====================
 # AUDIT LOG
 # =====================
 
@@ -492,6 +539,17 @@ class Event(Base):
     partner_user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+    )
+
+    # Typ wydarzenia:
+    # organizer = wydarzenie utworzone przez Organizatora
+    # trainer   = wydarzenie trenerskie utworzone przez Towarzysza-Trenera
+    event_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="organizer",
+        server_default="organizer",
         index=True,
     )
 
@@ -679,6 +737,128 @@ class EventSignup(Base):
     # nie pozwala zapisać się 2x na ten sam event
     # (event_id,user_id) musi być unikalne
     UniqueConstraint("event_id", "user_id", name="uq_event_signups_event_user"),
+    )
+
+
+# =====================
+# ORGANIZER RATINGS
+# 1 użytkownik może ocenić 1 wydarzenie tylko 1 raz
+# =====================
+
+class OrganizerRating(Base):
+    __tablename__ = "organizer_ratings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    organizer_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    rating: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "rating >= 1 AND rating <= 5",
+            name="ck_organizer_ratings_rating_1_5",
+        ),
+        UniqueConstraint(
+            "user_id",
+            "event_id",
+            name="uq_organizer_ratings_user_event",
+        ),
+        Index(
+            "ix_organizer_ratings_organizer_created",
+            "organizer_user_id",
+            "created_at",
+        ),
+    )
+
+
+# =====================
+# TRAINER RATINGS
+# 1 użytkownik może ocenić 1 wydarzenie trenerskie tylko 1 raz
+# Ocena zachowuje specjalizację z konkretnego wydarzenia
+# =====================
+
+class TrainerRating(Base):
+    __tablename__ = "trainer_ratings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    trainer_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    interest_tag: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+        index=True,
+    )
+
+    rating: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "rating >= 1 AND rating <= 5",
+            name="ck_trainer_ratings_rating_1_5",
+        ),
+        UniqueConstraint(
+            "user_id",
+            "event_id",
+            name="uq_trainer_ratings_user_event",
+        ),
+        Index(
+            "ix_trainer_ratings_trainer_interest_created",
+            "trainer_user_id",
+            "interest_tag",
+            "created_at",
+        ),
     )
 
 
