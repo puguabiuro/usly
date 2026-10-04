@@ -11263,6 +11263,9 @@ def list_suggested_groups(
                 if group_tag in user_interest_set
             )
 
+            if score <= 0:
+                continue
+
             scored.append(
                 {
                     "id": g.id,

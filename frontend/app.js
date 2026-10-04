@@ -3577,6 +3577,23 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
     refreshProfileRelations().catch(() => {});
   }
 
+  if (viewId === "S8_GROUPS" && App.role === "user") {
+    // Show currently available group data immediately, then refresh
+    // memberships and suggestions from the backend.
+    renderGroups();
+
+    Promise.allSettled([
+      loadMyGroups(),
+      loadGroups(),
+    ]).then(() => {
+      if (App.currentView === "S8_GROUPS") {
+        renderGroups();
+      }
+    }).catch((error) => {
+      console.error("groups screen refresh failed", error);
+    });
+  }
+
   // Render after navigation
   renderAll();
 }
@@ -5798,7 +5815,9 @@ function refreshCreateGroupUi() {
   const hint = $("groupCreateHint");
   const rules = getUserGroupCreateRules();
 
-  const createdCount = Array.isArray(App.myGroups) ? App.myGroups.length : 0;
+  const createdCount = Array.isArray(App.myGroups)
+    ? App.myGroups.filter(group => group?.isCreator === true).length
+    : 0;
   const limitReached =
     rules.canCreate &&
     rules.createLimit != null &&
@@ -13970,18 +13989,6 @@ async function renderGroups() {
   let suggestedGroups = Array.isArray(App.groups) ? [...App.groups] : [];
   const unreadSummary = await getGroupUnreadSummary().catch(() => ({ totalGroupsWithUnread: 0, byGroupId: {} }));
   const unreadByGroupId = unreadSummary?.byGroupId || {};
-
-  const myInterestTags = (Array.isArray(App.user?.interests) ? App.user.interests : [])
-    .map(x => normalizeTag(String(x)))
-    .filter(Boolean);
-
-  if (myInterestTags.length) {
-    suggestedGroups = suggestedGroups.filter(g =>
-      getGroupInterestTags(g).some(tag => myInterestTags.includes(tag))
-    );
-  } else {
-    suggestedGroups = [];
-  }
 
   if (q) {
     myGroups = myGroups.filter(g =>
