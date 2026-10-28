@@ -273,6 +273,105 @@
       .contactShell { grid-template-columns: 1fr; }
       .contactGrid { grid-template-columns: 1fr; }
     }
+
+/* USLY UNIFIED PUBLIC DESIGN 2026 */
+:root {
+  --bg: #090e15;
+  --card: #111b25;
+  --text: #edf3f7;
+  --muted: #b5c3cf;
+  --pink: #5bd4dc;
+  --pink2: #8ce3e8;
+  --violet: #358f9d;
+  --blue: #5bd4dc;
+  --line: rgba(125,165,180,.20);
+  --shadow: 0 20px 55px rgba(0,0,0,.22);
+  --radius: 20px;
+}
+
+html { background: #090e15; }
+
+body {
+  color: var(--text);
+  background: linear-gradient(180deg,#090e15,#0c131c 55%,#090e15);
+}
+
+header {
+  background: rgba(9,14,21,.94);
+  border-bottom: 1px solid var(--line);
+}
+
+.btn {
+  background: #131e28;
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.btn.primary {
+  background: #163039;
+  border: 1px solid rgba(91,212,220,.36);
+  color: #edf9fa;
+  box-shadow: none;
+}
+
+.btn:hover,
+.btn.primary:hover {
+  background: #1b3943;
+  border-color: rgba(91,212,220,.55);
+}
+
+.eyebrow {
+  background: #14252e;
+  border-color: rgba(91,212,220,.24);
+  color: #9ddce0;
+}
+
+.contactCard {
+  background: #111b25;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.contactField input,
+.contactField select,
+.contactField textarea {
+  background: #0d1721;
+  color: var(--text);
+  border: 1px solid rgba(125,165,180,.32);
+  box-shadow: none;
+}
+
+.contactField input:focus,
+.contactField select:focus,
+.contactField textarea:focus {
+  border-color: #5bd4dc;
+  box-shadow: 0 0 0 3px rgba(91,212,220,.12);
+}
+
+.contactIcon {
+  background: #17313a;
+  color: #9ddce0;
+}
+
+.contactNote,
+.contactTopic span,
+.sectionLead {
+  color: #b7c6d0;
+}
+
+@media (max-width: 600px) {
+  html, body { background: #090e15; }
+  .hero { padding-top: 32px; }
+  .contactCard { padding: 22px 18px; }
+  .contactShell, .contactGrid { grid-template-columns: minmax(0,1fr); }
+  .contactField { min-width: 0; }
+  .contactActions .btn { width: 100%; }
+  h1 { line-height: 1.1; overflow-wrap: anywhere; }
+}
+
 </style>
 </head>
 <body>
@@ -283,7 +382,7 @@
         <span>USLY</span>
       </a>
       <nav class="navLinks">
-        <a href="/">Strona główna</a>
+        <a href="/">Home</a>
         <a class="btn primary" href="/app">Sign in on the web</a>
       </nav>
     </div>
@@ -319,7 +418,7 @@
                     <option value="cooperation">Cooperation / media</option>
                     <option value="privacy">Legal or privacy matter</option>
                     <option value="support">Technical support</option>
-                    <option value="other">Inne</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
 
@@ -389,7 +488,7 @@
     contactForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      contactStatus.textContent = "Wysyłamy wiadomość...";
+      contactStatus.textContent = "Sending your message...";
 
       const formData = new FormData(contactForm);
       const payload = {
@@ -413,15 +512,15 @@
         contactForm.innerHTML = `
           <div style="text-align:center; padding: 34px 20px;">
             <div style="font-size: 44px; margin-bottom: 14px;">✅</div>
-            <h3 style="margin-bottom: 10px;">Message została wysłana</h3>
+            <h3 style="margin-bottom: 10px;">Message sent successfully</h3>
             <p class="contactNote" style="max-width: 520px; margin: 0 auto 18px;">
               Thank you for contacting USLY. We have also sent a confirmation to the email address provided.
             </p>
-            <a class="btn primary" href="/">Wróć do strony głównej</a>
+            <a class="btn primary" href="/">Back to home</a>
           </div>
         `;
       } catch (error) {
-        contactStatus.textContent = "Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę.";
+        contactStatus.textContent = "We could not send your message. Please try again shortly.";
       }
     });
   </script>

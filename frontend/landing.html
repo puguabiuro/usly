@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>USLY — spotkania, wydarzenia i ludzie w Twojej okolicy</title>
+  <title>USLY - spotkania, wydarzenia i ludzie w Twojej okolicy</title>
   <meta name="description" content="USLY to aplikacja społecznościowo-eventowa, która pomaga poznawać ludzi przez zainteresowania i wydarzenia w okolicy. To nie dating app." />
   <style>
     :root {
@@ -563,6 +563,220 @@
       transform: translateY(-1px);
     }
 
+
+    /* USLY mobile landing: readability and responsive layout */
+    @media (max-width: 600px) {
+      html {
+        overflow-x: clip;
+        background: #05060c;
+      }
+
+      body {
+        overflow-x: clip;
+        color: #eaf0ff;
+        background:
+          radial-gradient(circle at 50% 0%, rgba(52,230,255,.10), transparent 38%),
+          linear-gradient(180deg, #05060c 0%, #080b17 55%, #05060c 100%);
+      }
+
+      .wrap {
+        width: calc(100% - 32px);
+        max-width: 100%;
+      }
+
+      header {
+        padding: 12px 0;
+        background: rgba(5,6,12,.94);
+        border-bottom-color: rgba(174,184,207,.18);
+      }
+
+      .nav {
+        gap: 10px;
+      }
+
+      .brand {
+        font-size: 21px;
+        color: #f5f7ff;
+      }
+
+      .brand img {
+        width: 36px;
+        height: 36px;
+      }
+
+      .navLinks {
+        gap: 8px;
+      }
+
+      .langSwitch {
+        min-height: 35px;
+        padding: 0 11px;
+      }
+
+      .hero {
+        padding: 42px 0 36px;
+      }
+
+      .heroGrid {
+        gap: 30px;
+      }
+
+      h1 {
+        font-size: clamp(38px, 10vw, 54px);
+        line-height: 1.04;
+        letter-spacing: -.055em;
+        color: #f5f7ff;
+      }
+
+      .grad {
+        background: none;
+        -webkit-background-clip: initial;
+        background-clip: initial;
+        color: #f49ce9;
+        -webkit-text-fill-color: #f49ce9;
+      }
+
+      .eyebrow {
+        color: #d6def0;
+        background: rgba(13,17,32,.92);
+        border-color: rgba(174,184,207,.24);
+        font-size: 12px;
+      }
+
+      .lead {
+        margin-top: 20px;
+        font-size: 17px;
+        line-height: 1.6;
+        color: #dce3f2;
+        font-weight: 500;
+      }
+
+      .note,
+      .sectionLead {
+        color: #c4cde1;
+        line-height: 1.6;
+      }
+
+      .sectionTitle,
+      h2 {
+        color: #f2f5ff;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 25px;
+      }
+
+      .actions .btn {
+        width: 100%;
+        min-height: 48px;
+        text-align: center;
+      }
+
+      .phoneCard {
+        max-width: 100%;
+        transform: none;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .cta {
+        align-items: stretch;
+      }
+
+      .cta .btn {
+        min-height: 46px;
+      }
+
+      section::before,
+      .hero::after {
+        max-width: 100vw;
+      }
+    }
+
+
+    /* USLY LANDING RESTRAINED DESIGN 2026 */
+    :root {
+      --bg:#090e15; --card:#111b25; --text:#edf3f7;
+      --muted:#b5c3cf; --pink:#5bd4dc; --pink2:#8ce3e8;
+      --violet:#358f9d; --blue:#5bd4dc;
+      --line:rgba(125,165,180,.20); --shadow:0 20px 55px rgba(0,0,0,.22);
+      --radius:20px;
+    }
+    html { background:#090e15; }
+    body {
+      color:var(--text);
+      background:linear-gradient(180deg,#090e15,#0c131c 55%,#090e15);
+    }
+    body::before, .hero::after, section::before, .phoneCard::before { display:none; }
+    header { background:rgba(9,14,21,.94); border-bottom:1px solid var(--line); box-shadow:none; }
+    .btn,.langSwitch { background:#131e28; color:var(--text); border:1px solid var(--line); box-shadow:none; font-weight:700; }
+    .btn.primary,.actions .btn.primary {
+      background:#163039; border:1px solid rgba(91,212,220,.36);
+      color:#edf9fa; box-shadow:none;
+    }
+    .btn:hover,.btn.primary:hover {
+      background:#1b3943; border-color:rgba(91,212,220,.55); box-shadow:none;
+    }
+    .grad {
+      background:none; background-clip:initial; -webkit-background-clip:initial;
+      color:#80dce1; -webkit-text-fill-color:#80dce1; filter:none;
+    }
+    .eyebrow {
+      background:#121e27; border-color:var(--line); color:#9ad9dd;
+      box-shadow:none; font-size:11px; letter-spacing:.045em; line-height:1.5;
+    }
+    h1 { text-shadow:none; }
+    .lead { color:#c7d3dc; font-weight:500; }
+    .note { color:#aabcc8; }
+    .phoneCard {
+      transform:none; border:1px solid rgba(91,212,220,.25);
+      background:#101a24; border-radius:28px;
+      box-shadow:0 24px 65px rgba(0,0,0,.25);
+    }
+    .phone { min-height:490px; background:#0c141e; border:1px solid var(--line); border-radius:21px; }
+    .screenTop { gap:10px; }
+    .screenTop strong { font-size:15px; line-height:1.4; }
+    .pill { background:#14252e; border-color:rgba(91,212,220,.24); color:#9ddce0; font-weight:650; }
+    .bubble {
+      background:#15313a; border:1px solid rgba(91,212,220,.25);
+      color:#e6f6f7; border-radius:17px; box-shadow:none;
+      font-size:18px; font-weight:700; line-height:1.4; letter-spacing:-.025em;
+    }
+    .event { background:#121d28; border:1px solid var(--line); border-radius:17px; box-shadow:none; }
+    .event strong { font-size:16px; font-weight:700; }
+    .event span { color:#afc1cd; font-weight:500; }
+    .sectionTitle { color:var(--text); }
+    .sectionLead { color:#bac9d3; font-weight:500; }
+    .card,.card:nth-child(1),.card:nth-child(2),.card:nth-child(3) {
+      background:#111b25; border:1px solid var(--line);
+      border-radius:20px; box-shadow:none;
+    }
+    .card:hover { transform:translateY(-2px); border-color:rgba(91,212,220,.38); box-shadow:none; }
+    .icon { background:#17313a; border:1px solid rgba(91,212,220,.18); box-shadow:none; border-radius:14px; }
+    .card p { color:#b7c6d0; font-weight:500; }
+    .cta { background:#111d27; border:1px solid rgba(91,212,220,.22); border-radius:24px; box-shadow:none; }
+    .cta p { color:#b7c6d0; font-weight:500; }
+    footer { color:#aabcc8; }
+    @media(max-width:600px) {
+      html { background:#090e15; }
+      body { background:linear-gradient(180deg,#090e15,#0c131c 55%,#090e15); color:var(--text); }
+      .hero { padding-top:38px; padding-bottom:32px; }
+      .eyebrow { font-size:10px; }
+      .phoneCard { border-radius:22px; }
+      .phone { min-height:auto; padding:18px; }
+      .screenTop strong { font-size:13px; }
+      .bubble { font-size:17px; }
+      .event { padding:15px; }
+      .cta { padding:24px 18px; }
+      .actions .btn { min-height:48px; }
+    }
+
   </style>
 </head>
 <body>
@@ -584,39 +798,26 @@
     <section class="hero">
       <div class="wrap heroGrid">
         <div>
-          <div class="eyebrow">✨ Social/event app · nie dating app</div>
+          <div class="eyebrow">POZNAWAJ LUDZI. ODKRYWAJ WYDARZENIA. WYCHODŹ Z DOMU.</div>
           <h1>Wyloguj się do <span class="grad">życia</span>.</h1>
-          <p class="lead">
-            USLY pomaga poznawać ludzi przez wspólne zainteresowania, lokalne wydarzenia i grupy.
-            Bez presji randkowania. Bez swipe’owania. Po prostu więcej okazji, żeby wyjść z domu.
-          </p>
+          <p class="lead">Masz ochotę gdzieś wyjść, ale nie masz z kim? A może chcesz poznać nowych ludzi i odkryć coś ciekawego w okolicy? W USLY znajdziesz ludzi, wydarzenia i grupy dopasowane do Twoich zainteresowań. Mniej scrollowania, więcej prawdziwych spotkań.</p>
           <div class="actions">
             <a class="btn primary" href="https://apps.apple.com/pl/app/usly/id6795206444" target="_blank" rel="noopener noreferrer"><span class="storeIcon apple" aria-hidden="true"></span>Pobierz w App Store</a>
             <a class="btn primary" href="https://play.google.com/store/apps/details?id=com.usly.app" target="_blank" rel="noopener noreferrer"><span class="storeIcon google" aria-hidden="true">▶</span>Pobierz z Google Play</a>
             <a class="btn" href="/app">Zaloguj się w przeglądarce</a>
           </div>
-          <div class="note">USLY jest już dostępne w App Store i Google Play.</div>
+          <div class="note">To nie aplikacja randkowa. To więcej okazji do prawdziwych spotkań.</div>
         </div>
 
         <div class="phoneCard" aria-label="Podgląd aplikacji USLY">
           <div class="phone">
-            <div class="screenTop">
-              <strong>W okolicy</strong>
+            <div class="screenTop"><strong>Przykłady aktywności w USLY</strong>
               <span class="pill">#spacer</span>
             </div>
-            <div class="bubble">Znajdź ludzi i wydarzenia blisko siebie.</div>
-            <div class="event">
-              <strong>Spacer po Warszawie</strong>
-              <span>Dzisiaj · ludzie z podobnymi zainteresowaniami</span>
-            </div>
-            <div class="event">
-              <strong>Joga w plenerze</strong>
-              <span>Weekend · wydarzenie lokalne</span>
-            </div>
-            <div class="event">
-              <strong>Koncert i plener</strong>
-              <span>#muzyka · #festiwal · #plener</span>
-            </div>
+            <div class="bubble">Twoje zainteresowania. Twoi ludzie. Twoje plany.</div>
+            <div class="event"><strong>Spacer po Warszawie</strong><span>Przykładowa aktywność · #spacer</span></div>
+            <div class="event"><strong>Joga w plenerze</strong><span>Przykładowa aktywność · #joga</span></div>
+            <div class="event"><strong>Koncert i plener</strong><span>Przykładowa aktywność · #muzyka</span></div>
           </div>
         </div>
       </div>
@@ -624,26 +825,23 @@
 
     <section id="jak-dziala">
       <div class="wrap">
-        <h2 class="sectionTitle">Jak działa USLY?</h2>
-        <p class="sectionLead">
-          Łączymy ludzi, miejsca i wydarzenia przez zainteresowania. Aplikacja pomaga znaleźć coś do zrobienia i osoby,
-          które chcą spędzać czas podobnie.
-        </p>
+        <h2 class="sectionTitle">Od wspólnych zainteresowań do wspólnych planów.</h2>
+        <p class="sectionLead">Nie musisz mieć gotowego planu na weekend. W USLY odkrywasz wydarzenia, poznajesz osoby o podobnych pasjach i dołączasz do grup, w których naprawdę coś się dzieje.</p>
         <div class="cards">
           <article class="card">
             <div class="icon">📍</div>
-            <h3>Wydarzenia w okolicy</h3>
-            <p>Odkrywaj lokalne wydarzenia, zapisuj je i dostawaj przypomnienia przed startem.</p>
+            <h3>Odkryj, co dzieje się wokół Ciebie</h3>
+            <p>Koncert, spacer, warsztaty, a może coś zupełnie nowego? Znajduj wydarzenia w okolicy, zapisuj ulubione i nie przegap tego, co Cię interesuje.</p>
           </article>
           <article class="card">
             <div class="icon">#</div>
-            <h3>Dopasowanie po zainteresowaniach</h3>
-            <p>Hashtagi pomagają znaleźć ludzi i aktywności, które naprawdę do Ciebie pasują.</p>
+            <h3>Poznaj ludzi, z którymi masz coś wspólnego</h3>
+            <p>Muzyka, podróże, sport czy zwykłe wyjście na kawę. Twoje zainteresowania mogą być początkiem nowych znajomości.</p>
           </article>
           <article class="card">
             <div class="icon">💬</div>
-            <h3>Bezpieczna społeczność</h3>
-            <p>Wiadomości, grupy, zgłoszenia i blokady są projektowane z myślą o komforcie użytkowników.</p>
+            <h3>Znajdź swoją społeczność</h3>
+            <p>Dołączaj do grup, rozmawiaj i organizuj wspólne plany. Bez presji randkowania i bez niekończącego się przesuwania profili.</p>
           </article>
         </div>
       </div>
@@ -651,26 +849,23 @@
 
     <section id="dla-kogo">
       <div class="wrap">
-        <h2 class="sectionTitle">Dla ludzi, Trenerów i Organizatorów.</h2>
-        <p class="sectionLead">
-          Towarzysze poznają ludzi i wydarzenia, Trenerzy dzielą się wiedzą i wspierają innych w rozwoju,
-          a Organizatorzy budują społeczność wokół swoich miejsc, zajęć i aktywności.
-        </p>
+        <h2 class="sectionTitle">USLY jest dla Ciebie. I dla Twoich pomysłów.</h2>
+        <p class="sectionLead">Poznawaj ludzi jako Towarzysz, rozwijaj swoje treningi lub docieraj do uczestników jako Organizator. Wybierz sposób, w jaki chcesz korzystać z USLY.</p>
         <div class="cards">
           <article class="card">
             <div class="icon">🫶</div>
             <h3>Towarzysz</h3>
-            <p>Profil, zainteresowania, wydarzenia, grupy, znajomi, wiadomości i powiadomienia.</p>
+            <p>Nie czekaj, aż ktoś zaproponuje Ci wyjście. Poznawaj ludzi, odkrywaj wydarzenia i dołączaj do grup. Jako Towarzysz możesz również działać jako trener.</p>
           </article>
           <article class="card">
             <div class="icon">🎟️</div>
             <h3>Organizator</h3>
-            <p>Profil miejsca, wydarzenia, publikacja, zainteresowani użytkownicy, wiadomości i statystyki.</p>
+            <p>Organizujesz wydarzenia, warsztaty lub zajęcia? Pokaż je osobom, które mogą być zainteresowane. Buduj społeczność i docieraj do nowych uczestników.</p>
           </article>
           <article class="card">
             <div class="icon">🏅</div>
             <h3>Trener</h3>
-            <p>Dziel się swoją wiedzą i doświadczeniem, wspieraj innych i buduj swoją rozpoznawalność w społeczności USLY.</p>
+            <p>Publikuj treningi, dziel się doświadczeniem i docieraj do osób, które chcą rozwijać swoje umiejętności. Funkcja trenera jest dostępna w profilu Towarzysza.</p>
           </article>
         </div>
       </div>
@@ -679,8 +874,8 @@
     <div class="wrap">
       <section class="cta">
         <div>
-          <h2>Pobierz USLY i wyloguj się do życia.</h2>
-          <p>USLY jest dostępne na iPhone i Android. Pobierz aplikację ze swojego sklepu albo otwórz wersję webową.</p>
+          <h2>Twój następny plan zaczyna się tutaj.</h2>
+          <p>Nowi ludzie, ciekawe wydarzenia i więcej powodów, żeby wyjść z domu. Pobierz USLY na iPhone'a lub Androida i sprawdź, co dzieje się w Twojej okolicy.</p>
         </div>
         <div class="actions">
           <a class="btn primary" href="https://apps.apple.com/pl/app/usly/id6795206444" target="_blank" rel="noopener noreferrer"><span class="storeIcon apple" aria-hidden="true"></span>App Store</a>

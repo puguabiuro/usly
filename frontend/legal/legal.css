@@ -222,3 +222,68 @@ h1 {
   padding-left: 18px;
   border-left: 2px solid rgba(52,230,255,.26);
 }
+
+
+/* USLY UNIFIED PUBLIC DESIGN 2026 */
+:root {
+  --bg: #090e15;
+  --card: #111b25;
+  --text: #edf3f7;
+  --muted: #b5c3cf;
+  --pink: #5bd4dc;
+  --violet: #358f9d;
+  --blue: #5bd4dc;
+  --line: rgba(125,165,180,.20);
+  --shadow: 0 20px 55px rgba(0,0,0,.22);
+  --radius: 20px;
+}
+
+html { background: #090e15; }
+
+body {
+  color: var(--text);
+  background: linear-gradient(180deg,#090e15,#0c131c 55%,#090e15);
+}
+
+.legalHeader {
+  background: rgba(9,14,21,.94);
+  border-bottom: 1px solid var(--line);
+}
+
+.pill {
+  background: #163039;
+  border: 1px solid rgba(91,212,220,.36);
+  color: #edf9fa;
+  box-shadow: none;
+}
+
+.tocCard,
+.legalCard {
+  background: #111b25;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+.toc a:hover {
+  background: #19343d;
+  color: #e6f6f7;
+}
+
+.eyebrow {
+  background: #14252e;
+  color: #9ddce0;
+  border-color: rgba(91,212,220,.24);
+}
+
+a:focus-visible {
+  outline: 2px solid #80dce1;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  html, body { background: #090e15; }
+  .legalLayout { padding-top: 28px; }
+  .legalCard { padding: 22px 18px; }
+  h1 { line-height: 1.12; overflow-wrap: anywhere; }
+}
