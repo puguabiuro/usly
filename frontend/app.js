@@ -3905,6 +3905,40 @@ function selectAuthChoice(mode, role, method) {
   if ((mode !== "login" && mode !== "register") || (role !== "user" && role !== "partner")) return;
 
   const platform = window.Capacitor?.getPlatform?.() || "web";
+  const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
+
+  if ((method === "google" || method === "apple") && !isNativeApp) {
+    const isEnglish = App.lang === "en";
+    const title = isEnglish
+      ? "Google and Apple sign-in"
+      : "Logowanie przez Google i Apple";
+    const message = isEnglish
+      ? "Already have USLY? Open the mobile app and sign in there. If you don't have it yet, download it below."
+      : "Masz już USLY? Otwórz aplikację na telefonie i zaloguj się w niej. Jeśli jeszcze jej nie masz, pobierz ją poniżej.";
+    const emailLabel = isEnglish ? "Sign in with email" : "Zaloguj się e-mailem";
+
+    openModal(title, `
+      <div class="uslyWebSocialAuthModal">
+        <div data-hide-modal-footer="1" hidden></div>
+        <p class="uslyWebSocialAuthMessage">${message}</p>
+        <div class="uslyWebSocialAuthActions">
+          <a class="uslyWebSocialAuthStore" href="https://apps.apple.com/pl/app/usly/id6795206444"
+             target="_blank" rel="noopener noreferrer">App Store</a>
+          <a class="uslyWebSocialAuthStore" href="https://play.google.com/store/apps/details?id=com.usly.app"
+             target="_blank" rel="noopener noreferrer">Google Play</a>
+          <button class="uslyWebSocialAuthEmail" type="button" id="webSocialAuthEmailButton">
+            ${emailLabel}
+          </button>
+        </div>
+      </div>
+    `);
+
+    document.getElementById("webSocialAuthEmailButton")?.addEventListener("click", () => {
+      closeModal();
+      selectAuthChoice(mode, role, "email");
+    });
+    return;
+  }
 
   if (method === "apple" && platform === "android") {
     return;
