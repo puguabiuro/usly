@@ -273,6 +273,105 @@
       .contactShell { grid-template-columns: 1fr; }
       .contactGrid { grid-template-columns: 1fr; }
     }
+
+/* USLY UNIFIED PUBLIC DESIGN 2026 */
+:root {
+  --bg: #090e15;
+  --card: #111b25;
+  --text: #edf3f7;
+  --muted: #b5c3cf;
+  --pink: #5bd4dc;
+  --pink2: #8ce3e8;
+  --violet: #358f9d;
+  --blue: #5bd4dc;
+  --line: rgba(125,165,180,.20);
+  --shadow: 0 20px 55px rgba(0,0,0,.22);
+  --radius: 20px;
+}
+
+html { background: #090e15; }
+
+body {
+  color: var(--text);
+  background: linear-gradient(180deg,#090e15,#0c131c 55%,#090e15);
+}
+
+header {
+  background: rgba(9,14,21,.94);
+  border-bottom: 1px solid var(--line);
+}
+
+.btn {
+  background: #131e28;
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.btn.primary {
+  background: #163039;
+  border: 1px solid rgba(91,212,220,.36);
+  color: #edf9fa;
+  box-shadow: none;
+}
+
+.btn:hover,
+.btn.primary:hover {
+  background: #1b3943;
+  border-color: rgba(91,212,220,.55);
+}
+
+.eyebrow {
+  background: #14252e;
+  border-color: rgba(91,212,220,.24);
+  color: #9ddce0;
+}
+
+.contactCard {
+  background: #111b25;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.contactField input,
+.contactField select,
+.contactField textarea {
+  background: #0d1721;
+  color: var(--text);
+  border: 1px solid rgba(125,165,180,.32);
+  box-shadow: none;
+}
+
+.contactField input:focus,
+.contactField select:focus,
+.contactField textarea:focus {
+  border-color: #5bd4dc;
+  box-shadow: 0 0 0 3px rgba(91,212,220,.12);
+}
+
+.contactIcon {
+  background: #17313a;
+  color: #9ddce0;
+}
+
+.contactNote,
+.contactTopic span,
+.sectionLead {
+  color: #b7c6d0;
+}
+
+@media (max-width: 600px) {
+  html, body { background: #090e15; }
+  .hero { padding-top: 32px; }
+  .contactCard { padding: 22px 18px; }
+  .contactShell, .contactGrid { grid-template-columns: minmax(0,1fr); }
+  .contactField { min-width: 0; }
+  .contactActions .btn { width: 100%; }
+  h1 { line-height: 1.1; overflow-wrap: anywhere; }
+}
+
 </style>
 </head>
 <body>
