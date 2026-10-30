@@ -57,7 +57,7 @@
   <!-- Logo lokalnie (masz plik w folderze projektu): -->
   <!-- ./USLY logo.png -->
 
-  <link rel="stylesheet" href="./style.css?v=20261028-web-auth-e082d08">
+  <link rel="stylesheet" href="./style.css?v=20261030-account-switch-integration">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -5456,6 +5456,22 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                 </button>
               </div>
 
+              <!-- Przełącznik kont: Towarzysz -->
+              <section class="uslyAccountSwitcher" id="uslyAccountSwitcherUser" hidden
+                       aria-label="Przełączanie kont">
+                <button class="uslyAccountSwitcherTrigger" type="button"
+                        id="uslyAccountSwitcherUserTrigger"
+                        aria-expanded="false" aria-controls="uslyAccountSwitcherUserMenu">
+                  <span class="uslyAccountSwitcherTriggerText">
+                    <span class="uslyAccountSwitcherEyebrow">PRZEŁĄCZ PROFIL</span>
+                    <span class="uslyAccountSwitcherCurrent">Towarzysz</span>
+                  </span>
+                  <span class="uslyAccountSwitcherStatus" aria-label="Profil aktywny">Aktywny</span>
+                  <span class="uslyAccountSwitcherChevron" aria-hidden="true">⌄</span>
+                </button>
+                <div class="uslyAccountSwitcherMenu" id="uslyAccountSwitcherUserMenu" hidden></div>
+              </section>
+
               <!-- Twoja społeczność -->
               <section class="settingsUserSection">
                 <button class="settingsUserSectionHeader" type="button">
@@ -5585,6 +5601,22 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
                   <div class="planPill settingsUserPlanPill" id="partnerPlanPill">FREE</div>
                 </div>
               </div>
+
+              <!-- Przełącznik kont: Organizator -->
+              <section class="uslyAccountSwitcher" id="uslyAccountSwitcherPartner" hidden
+                       aria-label="Przełączanie kont">
+                <button class="uslyAccountSwitcherTrigger" type="button"
+                        id="uslyAccountSwitcherPartnerTrigger"
+                        aria-expanded="false" aria-controls="uslyAccountSwitcherPartnerMenu">
+                  <span class="uslyAccountSwitcherTriggerText">
+                    <span class="uslyAccountSwitcherEyebrow">PRZEŁĄCZ PROFIL</span>
+                    <span class="uslyAccountSwitcherCurrent">Organizator</span>
+                  </span>
+                  <span class="uslyAccountSwitcherStatus" aria-label="Profil aktywny">Aktywny</span>
+                  <span class="uslyAccountSwitcherChevron" aria-hidden="true">⌄</span>
+                </button>
+                <div class="uslyAccountSwitcherMenu" id="uslyAccountSwitcherPartnerMenu" hidden></div>
+              </section>
 
               <section class="settingsUserSection">
                 <button class="settingsUserSectionHeader" type="button">
@@ -6063,10 +6095,10 @@ section#S11_PLANS .is-recommended-partner-plan .btn.secondary{
 
 
 
-  <script src="api.js?v=20260609-2025"></script>
+  <script src="api.js?v=20261030-account-switch-integration"></script>
   <script src="config.js?v=20260712-1"></script>
-  <script src="billing.js?v=20260712-1"></script>
-  <script src="app.js?v=20261028-web-auth-e082d08"></script>
+  <script src="billing.js?v=20261030-account-switch-integration"></script>
+  <script src="app.js?v=20261030-account-switch-integration"></script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 

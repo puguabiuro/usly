@@ -710,6 +710,18 @@ const I18N = {
     "notifications.admin.warningProfile": "Ostrzeżenie dotyczące profilu",
     "notifications.admin.warningContent": "Ostrzeżenie dotyczące treści",
     "notifications.admin.warningBehavior": "Ostrzeżenie dotyczące zachowania",
+    "notifications.admin.warningCommunityRules": "Naruszenie zasad społeczności",
+    "notifications.admin.warningAbusiveContent": "Obraźliwe lub agresywne treści",
+    "notifications.admin.warningSpam": "Spam lub reklama",
+    "notifications.admin.warningMisleadingActivity": "Podejrzana aktywność",
+    "notifications.admin.warningEventRules": "Naruszenie zasad wydarzeń",
+    "notifications.admin.warningCommunityRulesBody": "Otrzymujesz ostrzeżenie za naruszenie zasad społeczności USLY. Prosimy o zapoznanie się z zasadami i przestrzeganie ich podczas dalszego korzystania z aplikacji.",
+    "notifications.admin.warningAbusiveContentBody": "Otrzymujesz ostrzeżenie dotyczące obraźliwych lub agresywnych treści. Prosimy o zachowanie szacunku wobec innych osób korzystających z USLY.",
+    "notifications.admin.warningBehaviorBody": "Otrzymujesz ostrzeżenie dotyczące niewłaściwego zachowania wobec innych osób w USLY. Kolejne naruszenia mogą skutkować ograniczeniem dostępu do konta.",
+    "notifications.admin.warningProfileBody": "Otrzymujesz ostrzeżenie dotyczące treści w Twoim profilu. Sprawdź profil i usuń lub popraw elementy, które mogą naruszać zasady USLY.",
+    "notifications.admin.warningSpamBody": "Otrzymujesz ostrzeżenie dotyczące spamu lub niedozwolonych treści reklamowych. Prosimy o zaprzestanie takiej aktywności.",
+    "notifications.admin.warningMisleadingActivityBody": "Otrzymujesz ostrzeżenie dotyczące aktywności, która może wprowadzać innych użytkowników w błąd. Sprawdź informacje i treści publikowane na swoim koncie.",
+    "notifications.admin.warningEventRulesBody": "Otrzymujesz ostrzeżenie dotyczące zasad wydarzeń w USLY. Sprawdź swoje wydarzenia lub aktywność z nimi związaną i dostosuj je do zasad platformy.",
     "notifications.admin.bugAccepted": "Przyjęliśmy Twoje zgłoszenie błędu",
     "notifications.admin.bugInProgress": "Pracujemy nad Twoim zgłoszeniem",
     "notifications.admin.bugFixed": "Zgłoszony błąd został poprawiony",
@@ -1973,6 +1985,18 @@ const I18N = {
     "notifications.admin.warningProfile": "Profile warning",
     "notifications.admin.warningContent": "Content warning",
     "notifications.admin.warningBehavior": "Behavior warning",
+    "notifications.admin.warningCommunityRules": "Community guidelines violation",
+    "notifications.admin.warningAbusiveContent": "Abusive or aggressive content",
+    "notifications.admin.warningSpam": "Spam or advertising",
+    "notifications.admin.warningMisleadingActivity": "Suspicious activity",
+    "notifications.admin.warningEventRules": "Event rules violation",
+    "notifications.admin.warningCommunityRulesBody": "You are receiving a warning for violating the USLY community guidelines. Please review the rules and follow them when using the app.",
+    "notifications.admin.warningAbusiveContentBody": "You are receiving a warning regarding abusive or aggressive content. Please treat other people using USLY with respect.",
+    "notifications.admin.warningBehaviorBody": "You are receiving a warning regarding inappropriate behavior towards other people on USLY. Further violations may result in restrictions on your account.",
+    "notifications.admin.warningProfileBody": "You are receiving a warning regarding content in your profile. Please review your profile and remove or update anything that may violate USLY rules.",
+    "notifications.admin.warningSpamBody": "You are receiving a warning regarding spam or prohibited advertising content. Please stop this activity.",
+    "notifications.admin.warningMisleadingActivityBody": "You are receiving a warning regarding activity that may mislead other users. Please review the information and content published on your account.",
+    "notifications.admin.warningEventRulesBody": "You are receiving a warning regarding USLY event rules. Please review your events or related activity and make sure they comply with the platform rules.",
     "notifications.admin.bugAccepted": "We accepted your bug report",
     "notifications.admin.bugInProgress": "We are working on your report",
     "notifications.admin.bugFixed": "The reported issue has been fixed",
@@ -3197,9 +3221,16 @@ function safeSetText(id, text) {
 function show(el) { if (el) el.style.display = ""; }
 function hide(el) { if (el) el.style.display = "none"; }
 
+function getSavedEventsStorageKey() {
+  if (!App.isLoggedIn || !App.currentUserId) return null;
+  return `${USLY_STORAGE_KEYS.savedEvents}_${App.role}_${App.currentUserId}`;
+}
+
 function getSavedEventIds() {
   try {
-    const raw = localStorage.getItem(USLY_STORAGE_KEYS.savedEvents);
+    const key = getSavedEventsStorageKey();
+    if (!key) return new Set();
+    const raw = localStorage.getItem(key);
     const arr = raw ? JSON.parse(raw) : [];
     return new Set(Array.isArray(arr) ? arr.map(String) : []);
   } catch (_) {
@@ -3209,8 +3240,10 @@ function getSavedEventIds() {
 
 function persistSavedEventIds() {
   try {
+    const key = getSavedEventsStorageKey();
+    if (!key) return;
     const ids = App.events.filter(e => e.saved).map(e => String(e.id));
-    localStorage.setItem(USLY_STORAGE_KEYS.savedEvents, JSON.stringify(ids));
+    localStorage.setItem(key, JSON.stringify(ids));
   } catch (_) {}
 }
 
@@ -3221,7 +3254,10 @@ function syncEventDetailButtons() {
       ? App.completedEvents.find(e => String(e.id) === String(App.selectedEventId))
       : null);
 
-  if (!ev) return;
+  const partnerPreview = App.role === "partner" &&
+    App.partnerEventPreviewActive === true;
+
+  if (!ev && !partnerPreview) return;
 
   const saveBtn = document.querySelector('#S7B_EVENT_DETAIL button[onclick="toggleSaveEvent()"]');
   const interestedBtn = document.querySelector('#S7B_EVENT_DETAIL button[onclick="toggleInterestedEvent()"]');
@@ -3232,11 +3268,25 @@ function syncEventDetailButtons() {
     '#S7B_EVENT_DETAIL button[onclick="addSelectedEventToCalendar()"]'
   );
 
-  const isCompleted = ev.completed === true;
+  const isCompleted = ev?.completed === true;
+  const hideParticipantActions = partnerPreview || isCompleted;
+
+  const contactBtn = document.querySelector(
+    '#S7B_EVENT_DETAIL button[onclick="openChatWithOrganizer()"]'
+  );
+  const ownerPanel = $("evOrganizerBox");
+
+  if (contactBtn) {
+    contactBtn.hidden = partnerPreview;
+    contactBtn.style.display = partnerPreview ? "none" : "";
+  }
+  if (ownerPanel) {
+    ownerPanel.style.pointerEvents = partnerPreview ? "none" : "";
+  }
 
   if (mainActions) {
-    mainActions.hidden = isCompleted;
-    mainActions.style.display = isCompleted ? "none" : "";
+    mainActions.hidden = hideParticipantActions;
+    mainActions.style.display = hideParticipantActions ? "none" : "";
   }
 
   if (completedState) {
@@ -3256,8 +3306,8 @@ function syncEventDetailButtons() {
   }
 
   if (interestedNote) {
-    interestedNote.hidden = isCompleted;
-    interestedNote.style.display = isCompleted ? "none" : "";
+    interestedNote.hidden = hideParticipantActions;
+    interestedNote.style.display = hideParticipantActions ? "none" : "";
   }
 
   if (calendarBtn) {
@@ -3265,7 +3315,7 @@ function syncEventDetailButtons() {
     calendarBtn.style.display = isCompleted ? "none" : "";
   }
 
-  if (isCompleted) return;
+  if (hideParticipantActions) return;
 
   if (saveBtn) {
     const isTrainerEvent = Boolean(ev.isTrainerEvent);
@@ -3388,6 +3438,838 @@ function goToPlansSettings() {
   go("S11_PLANS");
 }
 
+async function setupPushNotificationsAfterFailedSwitch(expectedToken) {
+  if (!expectedToken || localStorage.getItem("usly_token") !== expectedToken) {
+    return false;
+  }
+
+  const tokenValue = window.uslyCurrentPushToken ||
+    localStorage.getItem("usly_device_push_token");
+
+  const platform = window.Capacitor?.getPlatform?.();
+  if (!tokenValue || !["ios", "android"].includes(platform)) return;
+
+  try {
+    if (localStorage.getItem("usly_token") !== expectedToken) return false;
+
+    const restored = await enqueuePushTokenOperation(async () => {
+      if (localStorage.getItem("usly_token") !== expectedToken) {
+        return false;
+      }
+
+      await apiFetch("/push/register-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: tokenValue,
+          platform,
+          language: App.lang === "en" ? "en" : "pl",
+        }),
+      });
+
+      return true;
+    });
+
+    return restored === true;
+  } catch (error) {
+    console.error("USLY push restoration failed", error);
+    return false;
+  }
+}
+
+async function requestPendingPushPasswordSession(email, password, role) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+
+  if (
+    !localStorage.getItem("usly_pending_push_transfer_v1") ||
+    !normalizedEmail ||
+    typeof password !== "string" ||
+    !password ||
+    (role !== "user" && role !== "partner")
+  ) {
+    return null;
+  }
+
+  const response = await apiFetch("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: normalizedEmail,
+      password,
+      expected_role: role,
+    }),
+  });
+
+  const data = response?.data || response || {};
+  const candidateToken = data.access_token;
+
+  if (
+    data.mfa_required ||
+    typeof candidateToken !== "string" ||
+    !candidateToken.trim()
+  ) {
+    return null;
+  }
+
+  return candidateToken;
+}
+
+async function requestPendingPushGoogleSession(role) {
+  if (
+    !localStorage.getItem("usly_pending_push_transfer_v1") ||
+    (role !== "user" && role !== "partner")
+  ) {
+    return null;
+  }
+
+  const initialized = await setupGoogleSocialLogin();
+  if (!initialized) {
+    throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+  }
+
+  const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+  if (!SocialLogin?.login) {
+    throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+  }
+
+  const googleResult = await SocialLogin.login({
+    provider: "google",
+    options: {},
+  });
+
+  const googleData = googleResult?.result || googleResult || {};
+  const idToken = String(googleData.idToken || "").trim();
+
+  if (!idToken) {
+    throw new Error("GOOGLE_ID_TOKEN_MISSING");
+  }
+
+  if (!localStorage.getItem("usly_pending_push_transfer_v1")) {
+    return null;
+  }
+
+  const response = await apiFetch("/auth/google", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id_token: idToken,
+      mode: "login",
+      expected_role: role,
+    }),
+  });
+
+  const data = response?.data || response || {};
+  const candidateToken = data.access_token;
+
+  return typeof candidateToken === "string" && candidateToken.trim()
+    ? candidateToken
+    : null;
+}
+
+async function requestPendingPushAppleSession(role) {
+  if (
+    !localStorage.getItem("usly_pending_push_transfer_v1") ||
+    (role !== "user" && role !== "partner")
+  ) {
+    return null;
+  }
+
+  const credentials = await requestAppleAuthCredentials();
+
+  if (!localStorage.getItem("usly_pending_push_transfer_v1")) {
+    return null;
+  }
+
+  const response = await apiFetch("/auth/apple", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id_token: credentials.idToken,
+      authorization_code: credentials.authorizationCode,
+      nonce: credentials.nonce,
+      mode: "login",
+      expected_role: role,
+    }),
+  });
+
+  const data = response?.data || response || {};
+  const candidateToken = data.access_token;
+
+  return typeof candidateToken === "string" && candidateToken.trim()
+    ? candidateToken
+    : null;
+}
+
+async function verifyPendingPushRecoverySession(candidateToken) {
+  const raw = localStorage.getItem("usly_pending_push_transfer_v1");
+
+  if (
+    !raw ||
+    typeof candidateToken !== "string" ||
+    !candidateToken.trim()
+  ) {
+    return null;
+  }
+
+  let pending;
+  try {
+    pending = JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+
+  const sourceId = Number(pending?.sourceUserId);
+  const targetId = Number(pending?.targetUserId);
+
+  if (
+    !Number.isSafeInteger(sourceId) ||
+    sourceId <= 0 ||
+    !Number.isSafeInteger(targetId) ||
+    targetId <= 0 ||
+    sourceId === targetId
+  ) {
+    return null;
+  }
+
+  // Starsze transfery nie zawierają ról. Zachowujemy ich
+  // obsługę, ale nie dopuszczamy częściowego lub sprzecznego
+  // zapisu ról w nowych transferach.
+  const hasSourceRole = Object.prototype.hasOwnProperty.call(
+    pending, "sourceRole"
+  );
+  const hasTargetRole = Object.prototype.hasOwnProperty.call(
+    pending, "targetRole"
+  );
+
+  if (hasSourceRole !== hasTargetRole) {
+    return null;
+  }
+
+  const hasStoredRoles = hasSourceRole && hasTargetRole;
+
+  if (
+    hasStoredRoles &&
+    !(
+      (pending.sourceRole === "user" &&
+        pending.targetRole === "partner") ||
+      (pending.sourceRole === "partner" &&
+        pending.targetRole === "user")
+    )
+  ) {
+    return null;
+  }
+
+  try {
+    const response = await apiFetch("/auth/me", {
+      headers: {
+        Authorization: `Bearer ${candidateToken}`,
+      },
+    });
+
+    const user = response?.data || response || {};
+    const userId = Number(user.id);
+
+    if (
+      !Number.isSafeInteger(userId) ||
+      (userId !== sourceId && userId !== targetId) ||
+      (user.role !== "user" && user.role !== "partner")
+    ) {
+      return null;
+    }
+
+    if (
+      hasStoredRoles &&
+      (
+        (userId === sourceId && user.role !== pending.sourceRole) ||
+        (userId === targetId && user.role !== pending.targetRole)
+      )
+    ) {
+      return null;
+    }
+
+    // Ponownie sprawdzamy, czy transfer nie zmienił się
+    // podczas asynchronicznego zapytania.
+    if (
+      localStorage.getItem("usly_pending_push_transfer_v1") !== raw
+    ) {
+      return null;
+    }
+
+    return {
+      userId,
+      role: user.role,
+      isSource: userId === sourceId,
+      isTarget: userId === targetId,
+    };
+  } catch (error) {
+    console.error(
+      "USLY recovery session verification failed",
+      error
+    );
+    return null;
+  }
+}
+
+async function activatePendingPushRecoverySession(candidateToken) {
+  const pendingRaw = localStorage.getItem("usly_pending_push_transfer_v1");
+  const originalToken = localStorage.getItem("usly_token");
+
+  if (!pendingRaw || !originalToken) {
+    return false;
+  }
+
+  const verified = await verifyPendingPushRecoverySession(candidateToken);
+
+  if (
+    !verified ||
+    localStorage.getItem("usly_pending_push_transfer_v1") !== pendingRaw ||
+    localStorage.getItem("usly_token") !== originalToken
+  ) {
+    return false;
+  }
+
+  if (verified.isTarget) {
+    let pending;
+    try {
+      pending = JSON.parse(pendingRaw);
+    } catch (_) {
+      return false;
+    }
+
+    if (
+      typeof pending.token !== "string" ||
+      typeof pending.nextProof !== "string" ||
+      !/^[a-f0-9]{64}$/.test(pending.nextProof) ||
+      getStoredPushOwnershipProof(pending.token) !== pending.nextProof
+    ) {
+      return false;
+    }
+  } else if (!verified.isSource) {
+    return false;
+  }
+
+  if (
+    localStorage.getItem("usly_pending_push_transfer_v1") !== pendingRaw ||
+    localStorage.getItem("usly_token") !== originalToken
+  ) {
+    return false;
+  }
+
+  localStorage.setItem("usly_token", candidateToken);
+  window.location.reload();
+  return true;
+}
+
+async function recoverPendingPushAccountSwitch(sourceToken) {
+  const raw = localStorage.getItem("usly_pending_push_transfer_v1");
+  if (!raw) return false;
+
+  let pending;
+  try {
+    pending = JSON.parse(raw);
+  } catch (_) {
+    return false;
+  }
+
+  if (
+    !sourceToken ||
+    !pending ||
+    !Number.isSafeInteger(Number(pending.sourceUserId)) ||
+    Number(pending.sourceUserId) <= 0 ||
+    !Number.isSafeInteger(Number(pending.targetUserId)) ||
+    Number(pending.targetUserId) <= 0 ||
+    String(pending.sourceUserId) === String(pending.targetUserId) ||
+    typeof pending.token !== "string" ||
+    pending.token.length < 20 ||
+    typeof pending.currentProof !== "string" ||
+    !pending.currentProof ||
+    typeof pending.nextProof !== "string" ||
+    !/^[a-f0-9]{64}$/.test(pending.nextProof) ||
+    !(
+      (pending.sourceRole === "user" &&
+        pending.targetRole === "partner") ||
+      (pending.sourceRole === "partner" &&
+        pending.targetRole === "user")
+    )
+  ) {
+    return false;
+  }
+
+  const sessionUnchanged = () =>
+    localStorage.getItem("usly_token") === sourceToken &&
+    localStorage.getItem("usly_pending_push_transfer_v1") === raw;
+
+  if (!sessionUnchanged()) return false;
+
+  try {
+    const me = await apiFetch("/auth/me", {
+      headers: { Authorization: `Bearer ${sourceToken}` },
+    });
+    const meData = me?.data || me || {};
+
+    if (!sessionUnchanged()) return false;
+
+    const isSource =
+      String(meData.id) === String(pending.sourceUserId) &&
+      meData.role === pending.sourceRole;
+
+    const isTarget =
+      String(meData.id) === String(pending.targetUserId) &&
+      meData.role === pending.targetRole;
+
+    if (isTarget) {
+      if (
+        getStoredPushOwnershipProof(pending.token) !== pending.nextProof
+      ) {
+        return false;
+      }
+
+      if (!sessionUnchanged()) return false;
+
+      for (const cacheKey of [
+        USLY_STORAGE_KEYS.userPlan,
+        USLY_STORAGE_KEYS.partnerPlan,
+        USLY_STORAGE_KEYS.userProfileCache,
+        "usly_user_interests",
+      ]) {
+        try { localStorage.removeItem(cacheKey); } catch (_) {}
+      }
+
+      if (!sessionUnchanged()) return false;
+
+      localStorage.removeItem("usly_pending_push_transfer_v1");
+      window.location.reload();
+      return true;
+    }
+
+    if (!isSource) return false;
+
+    const response = await apiFetch("/auth/account-links/switch", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sourceToken}`,
+      },
+      body: JSON.stringify({
+        target_user_id: Number(pending.targetUserId),
+        push_token: pending.token,
+        push_ownership_proof: pending.currentProof,
+        push_next_ownership_proof: pending.nextProof,
+      }),
+    });
+
+    if (!sessionUnchanged()) return false;
+
+    const data = response?.data;
+
+    if (
+      !data?.access_token ||
+      String(data?.user?.id) !== String(pending.targetUserId) ||
+      data?.user?.role !== pending.targetRole ||
+      data?.push_ownership_proof !== pending.nextProof
+    ) {
+      return false;
+    }
+
+    // Backend może potwierdzić także wcześniej wykonany transfer.
+    // Nie zapisujemy nowej sesji bez zgodnego dowodu własności.
+    if (!storePushOwnershipProof(pending.token, pending.nextProof)) {
+      return false;
+    }
+
+    if (!sessionUnchanged()) return false;
+
+    localStorage.setItem("usly_token", data.access_token);
+
+    // Po zapisaniu JWT transfer pozostaje oczekujący do czasu
+    // bezpiecznego zakończenia operacji. W razie przerwania
+    // kolejny start rozpozna sesję docelową i zgodny dowód.
+    for (const cacheKey of [
+      USLY_STORAGE_KEYS.userPlan,
+      USLY_STORAGE_KEYS.partnerPlan,
+      USLY_STORAGE_KEYS.userProfileCache,
+      "usly_user_interests",
+    ]) {
+      try { localStorage.removeItem(cacheKey); } catch (_) {}
+    }
+
+    if (
+      localStorage.getItem("usly_token") !== data.access_token ||
+      localStorage.getItem("usly_pending_push_transfer_v1") !== raw
+    ) {
+      return false;
+    }
+
+    localStorage.removeItem("usly_pending_push_transfer_v1");
+    window.location.reload();
+    return true;
+  } catch (error) {
+    console.error("USLY pending account switch recovery failed", error);
+    return false;
+  }
+}
+
+async function switchToLinkedProfile(targetUserId, button) {
+  const sourceUserId = String(App.currentUserId ?? "");
+  const sourceRole = App.role;
+  const sourceToken = localStorage.getItem("usly_token");
+
+  if (!App.isLoggedIn || !sourceToken || !sourceUserId) return;
+  if (button.disabled) return;
+  if (window.USLYBilling?.isTransactionInProgress?.()) {
+    toast("Poczekaj na zakończenie płatności lub przywracania zakupów.");
+    return;
+  }
+
+  if (
+    pushAccountSwitchInProgress ||
+    localStorage.getItem("usly_pending_push_transfer_v1")
+  ) {
+    toast("Najpierw trzeba zakończyć poprzednie przełączenie.");
+    return;
+  }
+  pushAccountSwitchInProgress = true;
+  button.disabled = true;
+  const originalText = button.textContent;
+  button.textContent = "Przełączanie...";
+
+  const sessionUnchanged = () =>
+    App.isLoggedIn &&
+    String(App.currentUserId ?? "") === sourceUserId &&
+    App.role === sourceRole &&
+    localStorage.getItem("usly_token") === sourceToken;
+
+  let pushTransferRequestStarted = false;
+  let pendingPushTransfer = null;
+  let switchOutcomeUncertain = false;
+
+  try {
+    const platform = window.Capacitor?.getPlatform?.();
+    const isNative = platform === "android" || platform === "ios";
+    const pushCredentials = isNative
+      ? await getPushTransferCredentials(sourceToken)
+      : null;
+
+    if (!sessionUnchanged()) return;
+
+    if (isNative && !pushCredentials) {
+      const devicePushToken = window.uslyCurrentPushToken ||
+        localStorage.getItem("usly_device_push_token") || "";
+
+      if (devicePushToken) {
+        toast("Nie można bezpiecznie przełączyć powiadomień. Spróbuj ponownie.");
+        return;
+      }
+
+      // Brak tokenu push nie powinien blokować zmiany profilu.
+      // Nie wykonujemy transferu, ponieważ urządzenie nie ma tokenu.
+    }
+
+    pushTransferRequestStarted = Boolean(pushCredentials);
+
+    const switchPayload = { target_user_id: targetUserId };
+
+    if (pushCredentials) {
+      if (!globalThis.crypto?.getRandomValues) {
+        throw new Error("SECURE_RANDOM_UNAVAILABLE");
+      }
+
+      const randomBytes = new Uint8Array(32);
+      globalThis.crypto.getRandomValues(randomBytes);
+
+      const nextProof = Array.from(
+        randomBytes,
+        byte => byte.toString(16).padStart(2, "0")
+      ).join("");
+
+      pendingPushTransfer = {
+        sourceUserId,
+        targetUserId,
+        sourceRole,
+        targetRole: sourceRole === "user" ? "partner" : "user",
+        token: pushCredentials.token,
+        currentProof: pushCredentials.proof,
+        nextProof,
+      };
+
+      localStorage.setItem(
+        "usly_pending_push_transfer_v1",
+        JSON.stringify(pendingPushTransfer)
+      );
+
+      Object.assign(switchPayload, {
+        push_token: pushCredentials.token,
+        push_ownership_proof: pushCredentials.proof,
+        push_next_ownership_proof: nextProof,
+      });
+    }
+
+    const sendSwitchRequest = () => apiFetch("/auth/account-links/switch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(switchPayload),
+    });
+
+    let response;
+    try {
+      response = await sendSwitchRequest();
+    } catch (firstError) {
+      if (!pendingPushTransfer || !sessionUnchanged()) {
+        throw firstError;
+      }
+
+      // Odrzucenie 4xx (poza 401) jest jednoznaczne.
+      // Nie ponawiamy takiego żądania.
+      if (
+        Number.isInteger(firstError?.status) &&
+        firstError.status >= 400 &&
+        firstError.status < 500 &&
+        firstError.status !== 401
+      ) {
+        throw firstError;
+      }
+
+      // Po niepewnym wyniku pierwszej próby późniejszy błąd HTTP
+      // nie dowodzi, że transfer nie został wcześniej wykonany.
+      switchOutcomeUncertain = true;
+      response = await sendSwitchRequest();
+    }
+
+    if (!sessionUnchanged()) return;
+
+    const data = response?.data;
+    const targetRole = sourceRole === "user" ? "partner" : "user";
+
+    if (
+      !data?.access_token ||
+      String(data?.user?.id) !== String(targetUserId) ||
+      data?.user?.role !== targetRole
+    ) {
+      throw new Error("INVALID_ACCOUNT_SWITCH_RESPONSE");
+    }
+
+    if (pushCredentials) {
+      const rotatedProof = data?.push_ownership_proof;
+
+      if (
+        typeof rotatedProof !== "string" ||
+        rotatedProof !== pendingPushTransfer?.nextProof ||
+        !storePushOwnershipProof(pushCredentials.token, rotatedProof)
+      ) {
+        // Transfer mógł już zostać zatwierdzony przez backend.
+        // Nie wolno kontynuować na starej sesji z nieaktualnym dowodem.
+        // Zachowujemy JWT i oczekujący transfer do odzyskania.
+        // Nie uruchamiamy zwykłej rejestracji push.
+        window.location.reload();
+        return;
+      }
+    }
+
+    if (!sessionUnchanged()) {
+      // Backend mógł już przekazać token docelowemu profilowi.
+      // Nie próbujemy ponownie rejestrować go na starym profilu.
+      return;
+    }
+
+    try {
+      localStorage.setItem("usly_token", data.access_token);
+      if (pendingPushTransfer) {
+        localStorage.removeItem("usly_pending_push_transfer_v1");
+      }
+    } catch (storageError) {
+      console.error("USLY account switch token save failed", storageError);
+      // Nie usuwamy JWT: zapis mógł częściowo się powieść.
+      // Przy restarcie odzyskiwanie sprawdzi faktyczną tożsamość.
+      window.location.reload();
+      return;
+    }
+
+    // Clear account-specific cached data before restoring the target profile.
+    for (const key of [
+      USLY_STORAGE_KEYS.userPlan,
+      USLY_STORAGE_KEYS.partnerPlan,
+      USLY_STORAGE_KEYS.userProfileCache,
+      "usly_user_interests",
+    ]) {
+      try {
+        localStorage.removeItem(key);
+      } catch (error) {
+        console.warn("USLY account switch cache cleanup failed", key, error);
+      }
+    }
+
+    window.location.reload();
+  } catch (error) {
+    console.error("USLY account switch failed", error);
+
+    const definitiveRejection =
+      Number.isInteger(error?.status) &&
+      error.status >= 400 &&
+      error.status < 500 &&
+      error.status !== 401;
+
+    if (
+      definitiveRejection &&
+      !switchOutcomeUncertain &&
+      sessionUnchanged()
+    ) {
+      if (pendingPushTransfer) {
+        try {
+          localStorage.removeItem("usly_pending_push_transfer_v1");
+        } catch (cleanupError) {
+          console.error("USLY rejected switch cleanup failed", cleanupError);
+          toast("Nie udało się zakończyć operacji. Uruchom aplikację ponownie.");
+          return;
+        }
+      }
+      toast(error?.userMessage || "Nie udało się przełączyć profilu.");
+      return;
+    }
+
+    if (pushTransferRequestStarted && sessionUnchanged()) {
+      // Wynik transferu jest niepewny. Zachowujemy sesję źródłową
+      // wyłącznie do bezpiecznego ponowienia tego samego żądania.
+      // Zapisany transfer blokuje zwykłą rejestrację i wyrejestrowanie push.
+      toast("Nie udało się potwierdzić przełączenia. Spróbujemy odzyskać sesję.");
+      window.location.reload();
+      return;
+    }
+
+    if (sessionUnchanged()) {
+      toast("Nie udało się przełączyć profilu. Spróbuj ponownie.");
+    }
+  } finally {
+    pushAccountSwitchInProgress = false;
+    if (sessionUnchanged()) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
+
+/* Powiązane profile: wyświetlanie bez zmiany aktywnej sesji. */
+let accountSwitcherRequestId = 0;
+
+async function refreshAccountSwitcher() {
+  const requestId = ++accountSwitcherRequestId;
+  const userId = String(App.currentUserId ?? "");
+  const token = localStorage.getItem("usly_token");
+  const role = App.role;
+  const container = document.getElementById(
+    role === "partner" ? "uslyAccountSwitcherPartner" : "uslyAccountSwitcherUser"
+  );
+
+  document.querySelectorAll(".uslyAccountSwitcher").forEach((element) => {
+    element.hidden = true;
+  });
+
+  if (!App.isLoggedIn || !userId || !token || !container) return;
+
+  const response = await apiFetch("/auth/account-links/profiles");
+
+  if (
+    requestId !== accountSwitcherRequestId ||
+    String(App.currentUserId ?? "") !== userId ||
+    localStorage.getItem("usly_token") !== token ||
+    App.role !== role ||
+    App.currentView !== "S10_SETTINGS"
+  ) return;
+
+  const data = response?.data;
+  if (!data || !Array.isArray(data.profiles)) return;
+
+  const activeProfile = data.profiles.find(
+    (profile) => String(profile.id) === userId && profile.role === role
+  );
+  if (!activeProfile) return;
+
+  const otherRole = role === "user" ? "partner" : "user";
+  const otherProfile = data.profiles.find(
+    (profile) => profile.role === otherRole && String(profile.id) !== userId
+  );
+
+  const trigger = container.querySelector(".uslyAccountSwitcherTrigger");
+  const menu = container.querySelector(".uslyAccountSwitcherMenu");
+  const current = container.querySelector(".uslyAccountSwitcherCurrent");
+  if (!trigger || !menu || !current) return;
+
+  current.textContent = role === "user" ? "Towarzysz" : "Organizator";
+  menu.replaceChildren();
+
+  const row = document.createElement("div");
+  row.className = "uslyAccountSwitcherInfo";
+  row.textContent = otherProfile
+    ? (otherRole === "user" ? "Połączony profil: Towarzysz" : "Połączony profil: Organizator")
+    : data.linked
+      ? "Drugi profil jest obecnie niedostępny."
+      : (otherRole === "user" ? "Możesz dodać profil Towarzysza" : "Możesz dodać profil Organizatora");
+
+  menu.appendChild(row);
+
+  if (otherProfile) {
+    const switchButton = document.createElement("button");
+    switchButton.type = "button";
+    switchButton.className = "uslyAccountSwitcherAction";
+    switchButton.textContent = otherRole === "partner"
+      ? "Przełącz na Organizatora"
+      : "Przełącz na Towarzysza";
+    switchButton.addEventListener("click", () => {
+      switchToLinkedProfile(otherProfile.id, switchButton);
+    });
+    menu.appendChild(switchButton);
+  }
+
+  if (data.linked && otherProfile) {
+    const unlinkButton = document.createElement("button");
+    unlinkButton.type = "button";
+    unlinkButton.className = "uslyAccountSwitcherAction";
+    unlinkButton.textContent = otherRole === "user"
+      ? "Odłącz konto Towarzysza"
+      : "Odłącz konto Organizatora";
+    unlinkButton.addEventListener("click", () => {
+      menu.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      openAccountUnlink();
+    });
+    menu.appendChild(unlinkButton);
+  }
+
+  if (!data.linked && !otherProfile) {
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "uslyAccountSwitcherAction";
+    addButton.textContent = "Dodaj istniejące konto";
+    addButton.addEventListener("click", () => {
+      menu.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      openExistingAccountLink();
+    });
+    menu.appendChild(addButton);
+
+    const createButton = document.createElement("button");
+    createButton.type = "button";
+    createButton.className = "uslyAccountSwitcherAction";
+    createButton.textContent = "Utwórz nowy profil";
+    createButton.addEventListener("click", () => {
+      menu.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      openCreateLinkedProfile();
+    });
+    menu.appendChild(createButton);
+  }
+
+  trigger.setAttribute("aria-expanded", "false");
+  menu.hidden = true;
+
+  trigger.onclick = () => {
+    const expanded = trigger.getAttribute("aria-expanded") === "true";
+    trigger.setAttribute("aria-expanded", String(!expanded));
+    menu.hidden = expanded;
+  };
+
+  container.hidden = false;
+}
+
 function go(viewId) {
   if (!viewId) return;
   const current = App.currentView;
@@ -3450,7 +4332,7 @@ function go(viewId) {
   }
 
 
-  
+
   if (viewId === "S3_PROFILE_SETUP" && App.role === "user") {
     const setupCity = $("setupCity");
     if (setupCity) setupCity.value = "Pobieranie lokalizacji...";
@@ -3558,6 +4440,9 @@ if (viewId === "S4_NEARBY" && App.role === "user") {
   }
 
   if (viewId === "S10_SETTINGS") {
+    refreshAccountSwitcher().catch((error) => {
+      console.warn("account switcher refresh failed", error);
+    });
     if ($("setNick")) $("setNick").value = App.user.nick || "";
     if ($("setBio")) $("setBio").value = App.user.bio || "";
     if ($("setCity")) $("setCity").value = App.user.city || "";
@@ -3695,6 +4580,8 @@ function openModal(title, html) {
   const ttl = $("modalTitle");
   if (!overlay || !body || !ttl) return;
 
+  const box = $("modalBox");
+  if (box) box.classList.remove("uslyShareModal");
   ttl.textContent = title || "USLY";
   body.innerHTML = html || "";
 
@@ -3712,6 +4599,901 @@ function closeModal() {
   if (!overlay) return;
   overlay.classList.remove("show");
   overlay.setAttribute("aria-hidden", "true");
+  const box = $("modalBox");
+  if (box) box.classList.remove("uslyShareModal");
+  activeEventShare = null;
+}
+
+
+/* -------------------- Account Linking -------------------- */
+
+let accountUnlinkInProgress = false;
+
+async function submitAccountUnlink(method, button) {
+  if (accountUnlinkInProgress || accountLinkOperationInProgress ||
+      createLinkedProfileInProgress || pushAccountSwitchInProgress ||
+      localStorage.getItem("usly_pending_push_transfer_v1")) {
+    toast("Poczekaj na zakończenie poprzedniej operacji.");
+    return;
+  }
+
+  const initiatingUserId = String(App.currentUserId ?? "");
+  const initiatingRole = App.role;
+  const initiatingToken = localStorage.getItem("usly_token");
+  const overlay = $("modalOverlay");
+  const panel = $("accountUnlinkMethodPanel");
+
+  const sessionIsCurrent = () =>
+    App.isLoggedIn &&
+    String(App.currentUserId ?? "") === initiatingUserId &&
+    App.role === initiatingRole &&
+    localStorage.getItem("usly_token") === initiatingToken;
+
+  const formIsCurrent = () =>
+    overlay?.classList.contains("show") &&
+    panel?.isConnected &&
+    $("accountUnlinkMethodPanel") === panel &&
+    button?.isConnected;
+
+  if (!initiatingUserId || !initiatingToken ||
+      !sessionIsCurrent() || !formIsCurrent()) return;
+
+  if (!$("accountUnlinkAcknowledged")?.checked) {
+    toast("Najpierw potwierdź, że rozumiesz skutki odłączenia.");
+    return;
+  }
+
+  const body = { method };
+
+  if (method === "password") {
+    body.current_password = $("accountUnlinkPassword")?.value || "";
+    if (!body.current_password) {
+      toast(`Wpisz hasło konta ${initiatingRole === "partner" ? "Organizatora" : "Towarzysza"}, na którym jesteś zalogowana.`);
+      return;
+    }
+  }
+
+  accountUnlinkInProgress = true;
+  button.disabled = true;
+  const originalText = button.textContent;
+  button.textContent = "Potwierdzanie tożsamości...";
+
+  try {
+    if (method === "google") {
+      const initialized = await setupGoogleSocialLogin();
+      if (!initialized) throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+
+      const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+      if (!SocialLogin?.login) throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+
+      const result = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+      const data = result?.result || result || {};
+      body.id_token = String(data.idToken || "").trim();
+      if (!body.id_token) throw new Error("GOOGLE_ID_TOKEN_MISSING");
+    } else if (method === "apple") {
+      const credentials = await requestAppleAuthCredentials();
+      body.id_token = credentials.idToken;
+      body.nonce = credentials.nonce;
+      body.authorization_code = credentials.authorizationCode;
+    }
+
+    if (!sessionIsCurrent() || !formIsCurrent()) return;
+
+    if (pushAccountSwitchInProgress ||
+        localStorage.getItem("usly_pending_push_transfer_v1")) {
+      toast("Poczekaj na zakończenie przełączania profilu.");
+      return;
+    }
+
+    button.textContent = "Odłączanie kont...";
+
+    const response = await apiFetch("/auth/account-links/unlink", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!sessionIsCurrent()) return;
+
+    if (!response?.success || !response?.data?.unlinked) {
+      throw new Error("ACCOUNT_UNLINK_FAILED");
+    }
+
+    if (formIsCurrent()) closeModal();
+    toast("Konta zostały odłączone. Oba profile pozostają aktywne.");
+
+    if (App.currentView === "S10_SETTINGS") {
+      await refreshAccountSwitcher();
+    }
+  } catch (error) {
+    if (sessionIsCurrent()) {
+      const code = error?.data?.error_code ||
+        error?.data?.code ||
+        error?.data?.error?.code ||
+        error?.message;
+
+      const message = code === "INVALID_CREDENTIALS" ||
+        code === "PASSWORD_INVALID"
+        ? `Nieprawidłowe hasło konta ${initiatingRole === "partner" ? "Organizatora" : "Towarzysza"}.`
+        : code === "GOOGLE_AUTH_NOT_AVAILABLE" ||
+          code === "GOOGLE_ID_TOKEN_MISSING"
+          ? "Logowanie Google jest niedostępne."
+          : code === "APPLE_AUTH_NOT_AVAILABLE" ||
+            code === "APPLE_AUTH_UNAVAILABLE_ON_ANDROID"
+            ? "Logowanie Apple jest niedostępne."
+            : error?.userMessage ||
+              "Nie udało się odłączyć kont. Spróbuj ponownie.";
+
+      toast(message);
+      console.error("USLY ACCOUNT UNLINK:", method, error);
+    }
+  } finally {
+    accountUnlinkInProgress = false;
+
+    const passwordInput = $("accountUnlinkPassword");
+    if (passwordInput) passwordInput.value = "";
+
+    if (button?.isConnected) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
+
+function openAccountUnlink() {
+  if (!App.isLoggedIn || !App.currentUserId) return;
+  if (pushAccountSwitchInProgress ||
+      localStorage.getItem("usly_pending_push_transfer_v1")) {
+    toast("Poczekaj na zakończenie przełączania profilu.");
+    return;
+  }
+
+  const methods = [];
+  if (App.hasPassword) methods.push("password");
+  if (App.hasGoogleAuth) methods.push("google");
+  if (App.hasAppleAuth &&
+      (window.Capacitor?.getPlatform?.() || "web") !== "android") {
+    methods.push("apple");
+  }
+
+  if (!methods.length) {
+    toast("Brak dostępnej metody potwierdzenia tożsamości.");
+    return;
+  }
+
+  const methodLabels = {
+    password: "Potwierdź hasłem",
+    google: "Potwierdź przez Google",
+    apple: "Potwierdź przez Apple",
+  };
+
+  const linkedRoleName = App.role === "partner"
+    ? "Towarzysza"
+    : "Organizatora";
+  const currentRoleName = App.role === "partner"
+    ? "Organizatora"
+    : "Towarzysza";
+
+  openModal(`Odłącz konto ${linkedRoleName}`, `
+    <div data-hide-modal-footer="1" hidden></div>
+    <div class="settingsFormV2">
+      <div class="settingsFormV2Intro">
+        <div class="settingsFormV2Title">Odłącz konto ${linkedRoleName}</div>
+        <div class="settingsFormV2Sub">
+          Odłączysz konto ${linkedRoleName} od aktualnego profilu.
+          Oba konta pozostaną aktywne. Nie usuniemy żadnych danych,
+          wydarzeń, wiadomości ani subskrypcji. Po odłączeniu
+          każde konto będzie wymagało osobnego logowania.
+          Aby ponownie przełączać profile, trzeba będzie
+          połączyć konta jeszcze raz.
+        </div>
+      </div>
+      <label class="settingsFormV2Label" style="display:flex;gap:10px;align-items:flex-start;margin:16px 0">
+        <input type="checkbox" id="accountUnlinkAcknowledged"
+          style="width:18px;height:18px;flex-shrink:0;margin-top:2px" />
+        <span>Rozumiem, że odłączam konta, a nie usuwam profilu.</span>
+      </label>
+      <div class="settingsFormV2Sub" style="margin-bottom:12px">
+        Aby odłączyć konto ${linkedRoleName}, potwierdź tożsamość
+        konta ${currentRoleName}, na którym jesteś teraz zalogowana.
+        Użyj danych konta ${currentRoleName}, nie ${linkedRoleName}.
+      </div>
+      <div class="settingsFormV2Fields" id="accountUnlinkMethods"></div>
+      <div id="accountUnlinkMethodPanel" class="settingsFormV2Fields"
+        style="margin-top:12px"></div>
+    </div>
+  `);
+
+  const methodsContainer = $("accountUnlinkMethods");
+  if (!methodsContainer) return;
+
+  for (const method of methods) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "settingsFormV2Primary";
+    button.textContent = methodLabels[method];
+    button.addEventListener("click", () => {
+      const panel = $("accountUnlinkMethodPanel");
+      if (!panel) return;
+      panel.replaceChildren();
+
+      if (method === "password") {
+        const label = document.createElement("label");
+        label.className = "settingsFormV2Label";
+        label.htmlFor = "accountUnlinkPassword";
+        label.textContent = `Hasło konta ${currentRoleName} (aktualnie zalogowanego)`;
+
+        const input = document.createElement("input");
+        input.id = "accountUnlinkPassword";
+        input.type = "password";
+        input.autocomplete = "off";
+        input.className = "settingsFormV2Input";
+
+        const passwordField = document.createElement("div");
+        passwordField.className = "passwordField";
+        passwordField.appendChild(input);
+
+        const toggleButton = document.createElement("button");
+        toggleButton.className = "passwordToggleBtn";
+        toggleButton.type = "button";
+        toggleButton.setAttribute("aria-label", "Pokaż hasło");
+        toggleButton.dataset.showLabel = "Pokaż hasło";
+        toggleButton.dataset.hideLabel = "Ukryj hasło";
+        toggleButton.innerHTML = passwordEyeIconHtml(false);
+        toggleButton.addEventListener("click", () => {
+          togglePasswordVisibility("accountUnlinkPassword", toggleButton);
+        });
+        passwordField.appendChild(toggleButton);
+
+        panel.append(label, passwordField);
+      }
+
+      const confirmButton = document.createElement("button");
+      confirmButton.type = "button";
+      confirmButton.className = "settingsFormV2Primary";
+      confirmButton.textContent = "Potwierdź odłączenie";
+      confirmButton.addEventListener("click", () => {
+        if (!$("accountUnlinkAcknowledged")?.checked) {
+          toast("Najpierw potwierdź, że rozumiesz skutki odłączenia.");
+          return;
+        }
+        if (method === "password" &&
+            !$("accountUnlinkPassword")?.value) {
+          toast(`Wpisz hasło konta ${currentRoleName}, na którym jesteś zalogowana.`);
+          return;
+        }
+        submitAccountUnlink(method, confirmButton);
+      });
+      panel.appendChild(confirmButton);
+    });
+    methodsContainer.appendChild(button);
+  }
+}
+
+function openExistingAccountLink() {
+  if (!App.isLoggedIn || !App.currentUserId) return;
+
+  const targetRole = App.role === "user" ? "Organizatora" : "Towarzysza";
+
+  openModal("Dodaj istniejące konto", `
+    <div data-hide-modal-footer="1" hidden></div>
+    <form class="settingsFormV2" id="existingAccountLinkForm">
+      <div class="settingsFormV2Intro">
+        <div class="settingsFormV2Title">Połącz konto ${targetRole}</div>
+        <div class="settingsFormV2Sub">
+          Zaloguj się na drugie konto, aby połączyć oba profile.
+          Możesz użyć innego adresu e-mail.
+          Dane i subskrypcje obu kont pozostaną oddzielne.
+        </div>
+      </div>
+      <div class="settingsFormV2Fields">
+        <label class="settingsFormV2Label" for="existingAccountLinkEmail">
+          E-mail drugiego konta
+        </label>
+        <input class="settingsFormV2Input" id="existingAccountLinkEmail"
+          type="email" autocomplete="off" required />
+
+        <label class="settingsFormV2Label" for="existingAccountLinkPassword">
+          Hasło drugiego konta
+        </label>
+        <div class="passwordField">
+          <input class="settingsFormV2Input" id="existingAccountLinkPassword"
+            type="password" autocomplete="off" required />
+          <button class="passwordToggleBtn" type="button"
+            onclick="togglePasswordVisibility('existingAccountLinkPassword', this)"
+            aria-label="Pokaż hasło"
+            data-show-label="Pokaż hasło"
+            data-hide-label="Ukryj hasło">
+            ${passwordEyeIconHtml(false)}
+          </button>
+        </div>
+      </div>
+
+      <button class="settingsFormV2Primary" id="existingAccountLinkSubmit"
+        type="submit">Połącz konta</button>
+
+      <div class="settingsFormV2Sub" style="text-align:center;margin-top:16px">
+        lub potwierdź drugie konto przez
+      </div>
+
+      <div class="settingsFormV2Fields" style="margin-top:12px">
+        <button class="settingsFormV2Primary"
+          id="existingAccountLinkGoogle"
+          type="button">
+          Kontynuuj przez Google
+        </button>
+
+        <button class="settingsFormV2Primary"
+          id="existingAccountLinkApple"
+          type="button">
+          Kontynuuj przez Apple
+        </button>
+      </div>
+    </form>
+  `);
+
+  const form = $("existingAccountLinkForm");
+  if (form) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      submitExistingAccountLink();
+    });
+  }
+
+  const googleButton = $("existingAccountLinkGoogle");
+  const appleButton = $("existingAccountLinkApple");
+
+  if (googleButton) {
+    googleButton.addEventListener("click", () => {
+      submitSocialAccountLink("google");
+    });
+  }
+
+  if (appleButton) {
+    const platform = window.Capacitor?.getPlatform?.() || "web";
+    if (platform === "android") {
+      appleButton.hidden = true;
+      appleButton.style.display = "none";
+    } else {
+      appleButton.addEventListener("click", () => {
+        submitSocialAccountLink("apple");
+      });
+    }
+  }
+}
+
+let accountLinkOperationInProgress = false;
+
+async function submitSocialAccountLink(provider) {
+  if (provider !== "google" && provider !== "apple") return;
+  if (accountLinkOperationInProgress) return;
+  if (!App.isLoggedIn || !App.currentUserId) return;
+
+  const button = $(
+    provider === "google"
+      ? "existingAccountLinkGoogle"
+      : "existingAccountLinkApple"
+  );
+  const otherButton = $(
+    provider === "google"
+      ? "existingAccountLinkApple"
+      : "existingAccountLinkGoogle"
+  );
+  const passwordButton = $("existingAccountLinkSubmit");
+
+  if (!button || button.disabled) return;
+
+  const initiatingUserId = String(App.currentUserId);
+  const initiatingRole = App.role;
+  const initiatingToken = localStorage.getItem("usly_token");
+
+  if (!initiatingToken) return;
+
+  const sessionIsCurrent = () =>
+    App.isLoggedIn &&
+    String(App.currentUserId ?? "") === initiatingUserId &&
+    App.role === initiatingRole &&
+    localStorage.getItem("usly_token") === initiatingToken;
+
+  accountLinkOperationInProgress = true;
+  button.disabled = true;
+  if (otherButton) otherButton.disabled = true;
+  if (passwordButton) passwordButton.disabled = true;
+
+  const originalText = button.textContent;
+  button.textContent = "Potwierdzanie konta...";
+
+  try {
+    let endpoint;
+    let body;
+
+    if (provider === "google") {
+      const initialized = await setupGoogleSocialLogin();
+      if (!initialized) throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+
+      const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+      if (!SocialLogin?.login) {
+        throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+      }
+
+      const result = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+
+      const data = result?.result || result || {};
+      const idToken = String(data.idToken || "").trim();
+
+      if (!idToken) throw new Error("GOOGLE_ID_TOKEN_MISSING");
+
+      endpoint = "/auth/account-links/google-proof";
+      body = { id_token: idToken };
+    } else {
+      const credentials = await requestAppleAuthCredentials();
+
+      endpoint = "/auth/account-links/apple-proof";
+      body = {
+        id_token: credentials.idToken,
+        nonce: credentials.nonce,
+        authorization_code: credentials.authorizationCode,
+      };
+    }
+
+    if (!sessionIsCurrent()) return;
+
+    const proofResponse = await apiFetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!sessionIsCurrent()) return;
+
+    const proof = proofResponse?.data?.proof;
+    if (!proof) {
+      throw new Error("ACCOUNT_LINK_PROOF_MISSING");
+    }
+
+    const linkResponse = await apiFetch("/auth/account-links", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proof }),
+    });
+
+    if (!sessionIsCurrent()) return;
+
+    if (!linkResponse?.success || !linkResponse?.data?.linked) {
+      throw new Error("ACCOUNT_LINK_FAILED");
+    }
+
+    closeModal();
+    toast("Konta zostały połączone.");
+    await refreshAccountSwitcher();
+  } catch (error) {
+    if (sessionIsCurrent()) {
+      const code =
+        error?.data?.error_code ||
+        error?.data?.code ||
+        error?.data?.error?.code ||
+        error?.message;
+
+      const message = code === "INVALID_CREDENTIALS"
+        ? "Nie udało się potwierdzić drugiego konta."
+        : error?.userMessage ||
+          "Nie udało się połączyć kont. Spróbuj ponownie.";
+
+      toast(message);
+      console.error("USLY ACCOUNT LINK:", provider, error);
+    }
+  } finally {
+    accountLinkOperationInProgress = false;
+
+    if (button?.isConnected) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+    if (otherButton?.isConnected) otherButton.disabled = false;
+    if (passwordButton?.isConnected) passwordButton.disabled = false;
+  }
+}
+
+async function submitExistingAccountLink() {
+  if (accountLinkOperationInProgress) return;
+
+  const emailInput = $("existingAccountLinkEmail");
+  const passwordInput = $("existingAccountLinkPassword");
+  const submitButton = $("existingAccountLinkSubmit");
+
+  const email = emailInput?.value?.trim() || "";
+  const password = passwordInput?.value || "";
+
+  if (!email || !password || !submitButton || submitButton.disabled) return;
+
+  const initiatingUserId = String(App.currentUserId ?? "");
+  const initiatingRole = App.role;
+  const initiatingToken = localStorage.getItem("usly_token");
+
+  const sessionIsCurrent = () =>
+    App.isLoggedIn &&
+    String(App.currentUserId ?? "") === initiatingUserId &&
+    App.role === initiatingRole &&
+    localStorage.getItem("usly_token") === initiatingToken;
+
+  accountLinkOperationInProgress = true;
+  submitButton.disabled = true;
+  submitButton.textContent = "Łączenie kont...";
+
+  const googleButton = $("existingAccountLinkGoogle");
+  const appleButton = $("existingAccountLinkApple");
+
+  if (googleButton) googleButton.disabled = true;
+  if (appleButton) appleButton.disabled = true;
+
+  try {
+    const proofResponse = await apiFetch("/auth/account-links/password-proof", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!sessionIsCurrent()) return;
+
+    const proof = proofResponse?.data?.proof;
+    if (!proof) throw new Error("Nie udało się potwierdzić drugiego konta.");
+
+    const linkResponse = await apiFetch("/auth/account-links", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proof }),
+    });
+
+    if (!sessionIsCurrent()) return;
+
+    if (!linkResponse?.success || !linkResponse?.data?.linked) {
+      throw new Error("Nie udało się połączyć kont.");
+    }
+
+    if (passwordInput) passwordInput.value = "";
+    closeModal();
+    toast("Konta zostały połączone.");
+    await refreshAccountSwitcher();
+
+  } catch (error) {
+    if (sessionIsCurrent()) {
+      const errorCode =
+        error?.data?.error_code ||
+        error?.data?.code ||
+        error?.data?.error?.code;
+
+      const message = errorCode === "INVALID_CREDENTIALS"
+        ? "Nieprawidłowy e-mail lub hasło drugiego konta."
+        : error?.userMessage || "Nie udało się połączyć kont.";
+
+      toast(message);
+    }
+  } finally {
+    accountLinkOperationInProgress = false;
+
+    if (passwordInput) passwordInput.value = "";
+
+    if (submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Połącz konta";
+    }
+
+    if (googleButton?.isConnected) googleButton.disabled = false;
+    if (appleButton?.isConnected) appleButton.disabled = false;
+  }
+}
+
+let createLinkedProfileInProgress = false;
+
+function openCreateLinkedProfile() {
+  if (!App.isLoggedIn || !App.currentUserId) return;
+  if (createLinkedProfileInProgress || pushAccountSwitchInProgress) return;
+
+  const creatingCompanion = App.role === "partner";
+  const roleLabel = creatingCompanion ? "Towarzysza" : "Organizatora";
+  const currentEmail = App.role === "partner"
+    ? (App.partner?.email || App.user?.email || "")
+    : (App.user?.email || App.partner?.email || "");
+
+  openModal("Utwórz nowy profil", `
+    <div data-hide-modal-footer="1" hidden></div>
+    <form class="settingsFormV2" id="createLinkedProfileForm">
+      <div class="settingsFormV2Intro">
+        <div class="settingsFormV2Title">Nowy profil ${roleLabel}</div>
+        <div class="settingsFormV2Sub">
+          Utwórz drugi profil i przełączaj się między nimi w ustawieniach.
+          Każdy profil ma oddzielne dane i subskrypcję.
+          Możesz użyć tego samego lub innego adresu e-mail.
+        </div>
+      </div>
+      <div class="settingsFormV2Fields">
+        <label class="settingsFormV2Label" for="createLinkedProfileEmail">
+          E-mail nowego profilu
+        </label>
+        <input class="settingsFormV2Input" id="createLinkedProfileEmail"
+          type="email" autocomplete="email" required />
+
+        <label class="settingsFormV2Label" for="createLinkedProfileNewPassword">
+          Hasło nowego profilu (minimum 8 znaków)
+        </label>
+        <input class="settingsFormV2Input" id="createLinkedProfileNewPassword"
+          type="password" autocomplete="new-password"
+          minlength="8" maxlength="128" required />
+
+        ${creatingCompanion ? `
+          <label class="settingsFormV2Label" for="createLinkedProfileDob">
+            Data urodzenia
+          </label>
+          <input class="settingsFormV2Input" id="createLinkedProfileDob"
+            type="date" required />
+        ` : ""}
+
+        <div class="legalBox">
+          <label class="checkRow">
+            <input type="checkbox" id="createLinkedProfileTerms" required />
+            <span>Akceptuję <span class="link" role="button" tabindex="0"
+              id="createLinkedProfileTermsLink">Regulamin*</span></span>
+          </label>
+          <label class="checkRow mt10">
+            <input type="checkbox" id="createLinkedProfilePrivacy" required />
+            <span>Akceptuję <span class="link" role="button" tabindex="0"
+              id="createLinkedProfilePrivacyLink">Politykę prywatności*</span></span>
+          </label>
+        </div>
+
+        <label class="settingsFormV2Label" for="createLinkedProfileCurrentPassword">
+          Potwierdź tożsamość hasłem aktualnego konta
+        </label>
+        <input class="settingsFormV2Input" id="createLinkedProfileCurrentPassword"
+          type="password" autocomplete="current-password" />
+
+      </div>
+      <button class="settingsFormV2Primary" id="createLinkedProfileSubmit"
+        type="submit">Utwórz profil</button>
+      <button class="settingsFormV2Primary" id="createLinkedProfileGoogle"
+        type="button">Potwierdź przez Google i utwórz profil</button>
+      <button class="settingsFormV2Primary" id="createLinkedProfileApple"
+        type="button">Potwierdź przez Apple i utwórz profil</button>
+    </form>
+  `);
+
+  const emailInput = $("createLinkedProfileEmail");
+  if (emailInput) emailInput.value = currentEmail;
+
+  const googleButton = $("createLinkedProfileGoogle");
+  const appleButton = $("createLinkedProfileApple");
+  const platform = window.Capacitor?.getPlatform?.() || "web";
+  const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
+
+  if (googleButton) {
+    googleButton.hidden = !isNativeApp;
+    googleButton.style.display = isNativeApp ? "" : "none";
+  }
+
+  if (appleButton) {
+    const showApple = isNativeApp && platform !== "android";
+    appleButton.hidden = !showApple;
+    appleButton.style.display = showApple ? "" : "none";
+  }
+
+  const bindLegalLink = (id, action) => {
+    const link = $(id);
+    if (!link) return;
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      action();
+    });
+    link.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        action();
+      }
+    });
+  };
+
+  bindLegalLink("createLinkedProfileTermsLink", openTerms);
+  bindLegalLink("createLinkedProfilePrivacyLink", openRodo);
+
+  $("createLinkedProfileForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitCreateLinkedProfile("password");
+  });
+
+  $("createLinkedProfileGoogle")?.addEventListener("click", () => {
+    submitCreateLinkedProfile("google");
+  });
+
+  appleButton?.addEventListener("click", () => {
+    submitCreateLinkedProfile("apple");
+  });
+}
+
+async function submitCreateLinkedProfile(method = "password") {
+  if (!["password", "google", "apple"].includes(method)) return;
+
+  if (method !== "password") {
+    const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
+    const platform = window.Capacitor?.getPlatform?.() || "web";
+
+    if (!isNativeApp || (method === "apple" && platform !== "ios")) {
+      toast("Ta metoda potwierdzania tożsamości jest niedostępna na tym urządzeniu.");
+      return;
+    }
+  }
+
+  if (createLinkedProfileInProgress || pushAccountSwitchInProgress) return;
+  if (localStorage.getItem("usly_pending_push_transfer_v1")) {
+    toast("Najpierw zakończ poprzednie przełączenie profilu.");
+    return;
+  }
+
+  const form = $("createLinkedProfileForm");
+  const emailInput = $("createLinkedProfileEmail");
+  const currentPasswordInput = $("createLinkedProfileCurrentPassword");
+  const newPasswordInput = $("createLinkedProfileNewPassword");
+  const dobInput = $("createLinkedProfileDob");
+  const termsInput = $("createLinkedProfileTerms");
+  const privacyInput = $("createLinkedProfilePrivacy");
+  const submitButton = $("createLinkedProfileSubmit");
+  const googleButton = $("createLinkedProfileGoogle");
+  const appleButton = $("createLinkedProfileApple");
+
+  if (!form || !submitButton || submitButton.disabled) return;
+
+  const overlay = $("modalOverlay");
+  const formIsCurrent = () =>
+    form.isConnected &&
+    $("createLinkedProfileForm") === form &&
+    overlay?.classList.contains("show");
+
+  if (!formIsCurrent()) return;
+
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  const email = emailInput?.value?.trim() || "";
+  const currentPassword = currentPasswordInput?.value || "";
+  const newPassword = newPasswordInput?.value || "";
+  const creatingCompanion = App.role === "partner";
+  const dob = creatingCompanion ? (dobInput?.value || null) : null;
+
+  if (!email || newPassword.length < 8 || newPassword.length > 128 ||
+      (method === "password" && !currentPassword) ||
+      (creatingCompanion && !dob) ||
+      !termsInput?.checked || !privacyInput?.checked) {
+    toast("Uzupełnij wszystkie wymagane pola.");
+    return;
+  }
+
+  const initiatingUserId = String(App.currentUserId ?? "");
+  const initiatingRole = App.role;
+  const initiatingToken = localStorage.getItem("usly_token");
+
+  const sessionIsCurrent = () =>
+    App.isLoggedIn &&
+    String(App.currentUserId ?? "") === initiatingUserId &&
+    App.role === initiatingRole &&
+    localStorage.getItem("usly_token") === initiatingToken;
+
+  const operationIsCurrent = () =>
+    sessionIsCurrent() &&
+    formIsCurrent() &&
+    !pushAccountSwitchInProgress &&
+    !localStorage.getItem("usly_pending_push_transfer_v1");
+
+  if (!initiatingToken || !initiatingUserId) return;
+
+  createLinkedProfileInProgress = true;
+  const buttons = [submitButton, googleButton, appleButton].filter(Boolean);
+  buttons.forEach((button) => { button.disabled = true; });
+
+  const activeButton = method === "google"
+    ? googleButton
+    : method === "apple"
+      ? appleButton
+      : submitButton;
+
+  const originalText = activeButton?.textContent;
+  if (activeButton) activeButton.textContent = "Potwierdzanie tożsamości...";
+
+  try {
+    const body = {
+      email,
+      method,
+      new_password: newPassword,
+      dob,
+      accept_terms: true,
+      accept_privacy: true,
+    };
+
+    if (method === "password") {
+      body.current_password = currentPassword;
+    } else if (method === "google") {
+      const initialized = await setupGoogleSocialLogin();
+      if (!initialized) throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+
+      const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+      if (!SocialLogin?.login) throw new Error("GOOGLE_AUTH_NOT_AVAILABLE");
+
+      const result = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+      const data = result?.result || result || {};
+      const idToken = String(data.idToken || "").trim();
+      if (!idToken) throw new Error("GOOGLE_ID_TOKEN_MISSING");
+
+      body.id_token = idToken;
+    } else {
+      const credentials = await requestAppleAuthCredentials();
+      body.id_token = credentials.idToken;
+      body.nonce = credentials.nonce;
+      body.authorization_code = credentials.authorizationCode;
+    }
+
+    if (!operationIsCurrent()) return;
+
+    const response = await apiFetch("/auth/account-links/create-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!sessionIsCurrent()) return;
+
+    if (!response?.success || !response?.data?.linked) {
+      throw new Error("Nie udało się utworzyć profilu.");
+    }
+
+    if (formIsCurrent()) closeModal();
+    toast(
+      response.data.verification_required
+        ? "Profil został utworzony. Sprawdź e-mail i potwierdź adres."
+        : "Nowy profil został utworzony i połączony."
+    );
+    await refreshAccountSwitcher();
+  } catch (error) {
+    if (operationIsCurrent()) {
+      const code = error?.data?.error_code ||
+        error?.data?.code ||
+        error?.data?.error?.code ||
+        error?.message;
+
+      const message = code === "INVALID_CREDENTIALS"
+        ? "Nie udało się potwierdzić tożsamości aktualnego konta."
+        : code === "EMAIL_ALREADY_EXISTS"
+          ? "Konto z tym adresem już istnieje. Wybierz dodanie istniejącego konta."
+          : code === "AGE_TOO_LOW"
+            ? "Profil Towarzysza jest dostępny od 18 lat."
+            : code === "GOOGLE_AUTH_NOT_AVAILABLE"
+              ? "Logowanie Google jest niedostępne na tym urządzeniu."
+              : code === "APPLE_AUTH_NOT_AVAILABLE" ||
+                code === "APPLE_AUTH_UNAVAILABLE_ON_ANDROID"
+                ? "Logowanie Apple jest niedostępne na tym urządzeniu."
+                : error?.userMessage || "Nie udało się utworzyć profilu.";
+
+      toast(message);
+      console.error("USLY CREATE LINKED PROFILE:", method, error);
+    }
+  } finally {
+    if (currentPasswordInput) currentPasswordInput.value = "";
+    if (newPasswordInput) newPasswordInput.value = "";
+    if (activeButton?.isConnected) {
+      activeButton.textContent = originalText;
+    }
+    buttons.forEach((button) => {
+      if (button.isConnected) button.disabled = false;
+    });
+    createLinkedProfileInProgress = false;
+  }
 }
 
 /* ------------------------- Bug Report -------------------------- */
@@ -4475,10 +6257,12 @@ function signupSocial(provider) {
   toast(t("social.signupSoon"));
 }
 
-function logout() {
+function clearLocalAccountSession() {
   App.isLoggedIn = false;
   try { localStorage.removeItem("usly_token"); } catch (_) {}
   try { localStorage.removeItem(USLY_STORAGE_KEYS.userPlan); } catch (_) {}
+  try { localStorage.removeItem(USLY_STORAGE_KEYS.partnerPlan); } catch (_) {}
+  try { localStorage.removeItem(USLY_STORAGE_KEYS.userProfileCache); } catch (_) {}
   try { localStorage.removeItem("usly_user_interests"); } catch (_) {}
 
   App.currentUserId = null;
@@ -4500,18 +6284,82 @@ function logout() {
   App.user.prefAgeTo = 35;
   App.user.avatarUrl = "";
 
+  App.user.email = "";
+  App.user.trainerInterests = [];
+  App.user.geo = { lat: "", lng: "" };
+  App.user.avatarEmoji = "";
+
+  App.partner.plan = "free";
+  App.partner.email = "";
+  App.partner.company = "";
+  App.partner.category = "";
+  App.partner.city = "";
+  App.partner.about = "";
+  App.partner.logoEmoji = "";
+  App.partner.logoUrl = "";
+  App.partner.ratingAverage = null;
+  App.partner.ratingCount = 0;
+
   App.people = [];
   App.chats = [];
   App.myGroups = [];
+  App.partnerEvents = [];
 
   $("appRoot")?.classList.remove("isLoggedIn");
 
   hide($("tabbarUser"));
   hide($("tabbarPartner"));
+}
+
+let logoutInProgress = false;
+
+async function logout() {
+  if (logoutInProgress || pushAccountSwitchInProgress) return;
+  if (window.USLYBilling?.isTransactionInProgress?.()) {
+    toast("Poczekaj na zakończenie płatności lub przywracania zakupów.");
+    return;
+  }
+
+  logoutInProgress = true;
+  const logoutToken = localStorage.getItem("usly_token");
+
+  // Blokujemy nowe rejestracje push podczas wylogowania.
+  pushAccountSwitchInProgress = true;
+
+  try {
+    if (logoutToken) {
+      const pushUnregistered = await Promise.race([
+        unregisterCurrentDevicePushToken(),
+        new Promise((resolve) =>
+          setTimeout(() => resolve(false), 3000)
+        ),
+      ]);
+
+      if (!pushUnregistered) {
+        console.warn(
+          "USLY logout: push unregister failed or timed out"
+        );
+      }
+    }
+  } catch (error) {
+    console.error("USLY logout push cleanup failed", error);
+  } finally {
+    // Nie usuwamy sesji, która mogła zostać zmieniona w międzyczasie.
+    if (localStorage.getItem("usly_token") !== logoutToken) {
+      pushAccountSwitchInProgress = false;
+      logoutInProgress = false;
+      return;
+    }
+  }
+
+  clearLocalAccountSession();
 
   toast(t("logout.toast.success"));
   App.history = ["S0_WELCOME"];
   go("S0_WELCOME");
+
+  pushAccountSwitchInProgress = false;
+  logoutInProgress = false;
 }
 function openForgot() {
   openModal(t("forgot.modal.title"), `
@@ -4535,7 +6383,10 @@ async function submitForgotPassword() {
     await apiFetch("/auth/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({
+        email,
+        expected_role: App.role === "partner" ? "partner" : "user",
+      }),
     });
 
     closeModal();
@@ -9524,18 +11375,34 @@ function setEventsTab(tab) {
   renderEventsList();
 }
 
-function openEvent(eventId) {
-  const ev =
+function openEvent(eventId, options = {}) {
+  const partnerPreview = options.partnerPreview === true &&
+    App.role === "partner";
+
+  const partnerEvent = partnerPreview && Array.isArray(App.partnerEvents)
+    ? App.partnerEvents.find(e =>
+        String(e.id) === String(eventId) &&
+        String(e.status || "").toLowerCase() === "published"
+      )
+    : null;
+
+  if (partnerPreview && !partnerEvent) return;
+
+  const ev = partnerPreview
+    ? mapApiEventToViewModel(partnerEvent)
+    : (
     App.events.find(e => String(e.id) === String(eventId)) ||
     (Array.isArray(App.completedEvents)
       ? App.completedEvents.find(e => String(e.id) === String(eventId))
       : null) ||
     (Array.isArray(App.personTrainerEvents)
       ? App.personTrainerEvents.find(e => String(e.id) === String(eventId))
-      : null);
+      : null) ||
+    null);
 
   if (!ev) return;
   App.selectedEventId = eventId;
+  App.partnerEventPreviewActive = partnerPreview;
 
   safeSetText("eventTitleTop", ev.title);
   safeSetText("evTitle", ev.title);
@@ -9958,7 +11825,14 @@ function openEvent(eventId) {
   }
 
   // Badge (plan)
-  safeSetText("evBadge", App.user.plan.toUpperCase());
+  safeSetText(
+    "evBadge",
+    String(
+      App.role === "partner"
+        ? (App.partner?.plan || "free")
+        : (App.user?.plan || "free")
+    ).toUpperCase()
+  );
 
   go("S7B_EVENT_DETAIL");
   safeSetText(
@@ -10167,12 +12041,149 @@ async function copySelectedEventLink() {
   }
 }
 
+let activeEventShare = null;
+
+function getEventShareDetails(eventId) {
+  const id = String(eventId || "");
+  const partnerEvent = App.role === "partner" && Array.isArray(App.partnerEvents)
+    ? App.partnerEvents.find(e =>
+        String(e.id) === id &&
+        String(e.status || "").toLowerCase() === "published"
+      )
+    : null;
+
+  const event = partnerEvent ||
+    (Array.isArray(App.events)
+      ? App.events.find(e => String(e.id) === id)
+      : null) ||
+    (Array.isArray(App.completedEvents)
+      ? App.completedEvents.find(e => String(e.id) === id)
+      : null) ||
+    (Array.isArray(App.personTrainerEvents)
+      ? App.personTrainerEvents.find(e => String(e.id) === id)
+      : null);
+
+  if (!event) return null;
+
+  const url = `https://uslyapp.pl/app?event=${encodeURIComponent(id)}`;
+  const title = String(event.title || "USLY");
+  const city = String(event.city || "");
+  const date = event.start_at
+    ? parseEventWallClockDate(event.start_at)
+    : null;
+  const dateText = date instanceof Date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString(App.lang === "en" ? "en-GB" : "pl-PL")
+    : "";
+
+  return {
+    id,
+    title,
+    url,
+    subtitle: [dateText, city].filter(Boolean).join(" • ")
+  };
+}
+
 function openShare() {
-  openModal(t("eventDetail.shareTitle"), `
-    <div class="tStrong">${t("eventDetail.shareHeading")}</div>
-    <div class="sectionSub mt10">${t("eventDetail.shareSub")}</div>
-    <button class="btn mt16" type="button" onclick="copySelectedEventLink()">${t("eventDetail.copyLink")}</button>
+  const details = getEventShareDetails(App.selectedEventId);
+  if (!details) {
+    toast(App.lang === "en" ? "Event unavailable" : "Wydarzenie jest niedostępne");
+    return;
+  }
+
+  activeEventShare = details;
+
+  const escapeShareHtml = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  const title = App.lang === "en"
+    ? "Share event"
+    : "Udostępnij wydarzenie";
+
+  const shareLabel = App.lang === "en" ? "Share" : "Udostępnij";
+  const copyLabel = t("eventDetail.copyLink");
+
+  const canShare = typeof navigator.share === "function";
+
+  openModal(title, `
+    <div data-hide-modal-footer="1" hidden></div>
+    <div class="uslyShareModalContent">
+      <div class="uslyShareModalEventTitle">${escapeShareHtml(details.title)}</div>
+      <div class="uslyShareModalEventMeta">${escapeShareHtml(details.subtitle)}</div>
+
+      <div class="uslyShareModalActions">
+        ${canShare ? `
+          <button class="uslyShareModalAction" type="button"
+            onclick="shareSelectedEventNative()">
+            <span class="uslyShareModalIcon" aria-hidden="true">↗</span>
+            <span>${escapeShareHtml(shareLabel)}</span>
+            <span class="uslyShareModalChevron" aria-hidden="true">›</span>
+          </button>
+        ` : ""}
+
+        <button class="uslyShareModalAction" type="button"
+          onclick="copySelectedEventLinkV2()">
+          <span class="uslyShareModalIcon" aria-hidden="true">⧉</span>
+          <span>${escapeShareHtml(copyLabel)}</span>
+          <span class="uslyShareModalChevron" aria-hidden="true">›</span>
+        </button>
+      </div>
+    </div>
   `);
+
+  const box = $("modalBox");
+  if (box) box.classList.add("uslyShareModal");
+}
+
+function closeEventShare() {
+  activeEventShare = null;
+  closeModal();
+}
+
+async function shareSelectedEventNative() {
+  const details = activeEventShare;
+  if (!details || typeof navigator.share !== "function") return;
+
+  try {
+    await navigator.share({
+      title: details.title,
+      text: details.title,
+      url: details.url
+    });
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      toast(App.lang === "en"
+        ? "Sharing unavailable. Try copying the link."
+        : "Nie udało się udostępnić. Spróbuj skopiować link.");
+    }
+  }
+}
+
+async function copySelectedEventLinkV2() {
+  const details = activeEventShare;
+  if (!details) return;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(details.url);
+    } else {
+      const input = document.createElement("input");
+      input.value = details.url;
+      document.body.appendChild(input);
+      input.select();
+      const copied = document.execCommand("copy");
+      input.remove();
+      if (!copied) throw new Error("Copy failed");
+    }
+
+    toast(t("eventDetail.copyToast"));
+    closeEventShare();
+  } catch (_) {
+    toast(t("eventDetail.copyFailed"));
+  }
 }
 
 
@@ -10252,6 +12263,29 @@ async function submitEventReport() {
 }
 
 function openEventMenu() {
+  if (App.role === "partner" && App.partnerEventPreviewActive === true) {
+    const eventId = String(App.selectedEventId || "");
+    const ownPublishedEvent = Array.isArray(App.partnerEvents) &&
+      App.partnerEvents.some(e =>
+        String(e.id) === eventId &&
+        String(e.status || "").toLowerCase() === "published"
+      );
+
+    if (!ownPublishedEvent) return;
+
+    openModal(t("eventMenu.title"), `
+      <span data-hide-modal-footer="1" hidden></span>
+      <div class="actionMenuV2">
+        <button class="actionMenuV2Row" type="button"
+          onclick="closeModal(); openPartnerEventEditor('${eventId}')">
+          <span>${App.lang === "en" ? "Edit event" : "Edytuj wydarzenie"}</span>
+          <span class="actionMenuV2Chevron">›</span>
+        </button>
+      </div>
+    `);
+    return;
+  }
+
   openModal(t("eventMenu.title"), `
     <span data-hide-modal-footer="1" hidden></span>
     <div class="actionMenuV2">
@@ -12962,6 +14996,11 @@ async function renderNotifications() {
           admin_user_warning_warning_profile: t("notifications.admin.warningProfile"),
           admin_user_warning_warning_content: t("notifications.admin.warningContent"),
           admin_user_warning_warning_behavior: t("notifications.admin.warningBehavior"),
+          admin_user_warning_warning_community_rules: t("notifications.admin.warningCommunityRules"),
+          admin_user_warning_warning_abusive_content: t("notifications.admin.warningAbusiveContent"),
+          admin_user_warning_warning_spam: t("notifications.admin.warningSpam"),
+          admin_user_warning_warning_misleading_activity: t("notifications.admin.warningMisleadingActivity"),
+          admin_user_warning_warning_event_rules: t("notifications.admin.warningEventRules"),
           admin_bug_report_accepted: t("notifications.admin.bugAccepted"),
           admin_bug_report_in_progress: t("notifications.admin.bugInProgress"),
           admin_bug_report_fixed: t("notifications.admin.bugFixed"),
@@ -12976,7 +15015,15 @@ async function renderNotifications() {
           items.push({
             title: userReportTitles[notification.type],
             body: isWarning
-              ? t("notifications.admin.warningBody")
+              ? ({
+                  admin_user_warning_warning_community_rules: t("notifications.admin.warningCommunityRulesBody"),
+                  admin_user_warning_warning_abusive_content: t("notifications.admin.warningAbusiveContentBody"),
+                  admin_user_warning_warning_behavior: t("notifications.admin.warningBehaviorBody"),
+                  admin_user_warning_warning_profile: t("notifications.admin.warningProfileBody"),
+                  admin_user_warning_warning_spam: t("notifications.admin.warningSpamBody"),
+                  admin_user_warning_warning_misleading_activity: t("notifications.admin.warningMisleadingActivityBody"),
+                  admin_user_warning_warning_event_rules: t("notifications.admin.warningEventRulesBody"),
+                }[notification.type] || t("notifications.admin.warningBody"))
               : isBugReport
                 ? t("notifications.admin.bugBody")
                 : isEventReport
@@ -13075,7 +15122,7 @@ async function renderNotifications() {
   }
 
   const seenAtRaw = localStorage.getItem(
-    App.role === "partner" ? "usly_partner_notifications_seen_at" : "usly_user_notifications_seen_at"
+    getNotificationsSeenStorageKey()
   );
   const seenAt = parseUslyTimestamp(seenAtRaw);
 
@@ -13131,10 +15178,12 @@ async function renderNotifications() {
   );
 
   if (App.role === "partner") {
-    localStorage.setItem("usly_partner_notifications_seen_at", new Date().toISOString());
+    const seenKey = getNotificationsSeenStorageKey("partner");
+    if (seenKey) localStorage.setItem(seenKey, new Date().toISOString());
     updateNotifBadges(0);
   } else {
-    localStorage.setItem("usly_user_notifications_seen_at", new Date().toISOString());
+    const seenKey = getNotificationsSeenStorageKey("user");
+    if (seenKey) localStorage.setItem(seenKey, new Date().toISOString());
     updateNotifBadges(0);
   }
 
@@ -13185,7 +15234,7 @@ async function refreshNotifBadgeCount() {
   notifBadgeLastRefreshAt = now;
 
   try {
-    const seenAtRaw = localStorage.getItem("usly_user_notifications_seen_at");
+    const seenAtRaw = localStorage.getItem(getNotificationsSeenStorageKey("user") || "");
     const seenAt = parseUslyTimestamp(seenAtRaw);
 
     const [reqReq, groupInvReq, eventNotifReq] = await Promise.allSettled([
@@ -13264,6 +15313,12 @@ async function refreshPartnerMsgBadgeCount() {
   } finally {
     partnerMsgBadgeRefreshInFlight = false;
   }
+}
+
+function getNotificationsSeenStorageKey(role = App.role) {
+  if (!App.isLoggedIn || !App.currentUserId) return null;
+  const normalizedRole = role === "partner" ? "partner" : "user";
+  return `usly_${normalizedRole}_notifications_seen_at_${App.currentUserId}`;
 }
 
 function getGroupSeenMapStorageKey() {
@@ -13548,7 +15603,7 @@ async function refreshPartnerNotifBadgeCount() {
   partnerNotifBadgeLastRefreshAt = now;
 
   try {
-    const seenAtRaw = localStorage.getItem("usly_partner_notifications_seen_at");
+    const seenAtRaw = localStorage.getItem(getNotificationsSeenStorageKey("partner") || "");
     const seenAt = seenAtRaw ? new Date(seenAtRaw).getTime() : 0;
 
     const evRes = await apiFetch("/partners/events?limit=100");
@@ -14484,6 +16539,16 @@ function renderPartnerEvents() {
           </div>
 
           <div class="partnerEventManageActions">
+            ${status === "published" ? `
+              <button class="partnerEventManageAction" type="button"
+                onclick="event.stopPropagation(); openEvent('${ev.id}', { partnerPreview: true })">
+                ${App.lang === "en" ? "Preview" : "Podgląd"}
+              </button>
+              <button class="partnerEventManageAction" type="button"
+                onclick="event.stopPropagation(); App.selectedEventId = '${ev.id}'; openShare()">
+                ${t("eventDetail.share")}
+              </button>
+            ` : ""}
             ${status === "draft" ? `
               <button class="partnerEventManagePrimaryAction" type="button"
                 onclick="event.stopPropagation(); quickPublishPartnerEvent('${ev.id}')">
@@ -19773,6 +21838,294 @@ async function init() {
 
   const token = localStorage.getItem("usly_token");
 
+  if (localStorage.getItem("usly_pending_push_transfer_v1")) {
+    const recovered = await recoverPendingPushAccountSwitch(token);
+    if (recovered) return;
+
+    // Nie pokazujemy starego profilu, dopóki wynik transferu
+    // i własność tokenu push pozostają nierozstrzygnięte.
+    // Nie usuwamy JWT ani dowodów własności.
+    go("S0_WELCOME");
+
+    let recoveryScreen = document.getElementById(
+      "usly-push-transfer-recovery"
+    );
+
+    if (!recoveryScreen) {
+      recoveryScreen = document.createElement("div");
+      recoveryScreen.id = "usly-push-transfer-recovery";
+      recoveryScreen.setAttribute("role", "alertdialog");
+      recoveryScreen.setAttribute("aria-modal", "true");
+      recoveryScreen.setAttribute(
+        "aria-label",
+        "Odzyskiwanie przełączenia profilu"
+      );
+
+      recoveryScreen.style.cssText = [
+        "position:fixed",
+        "inset:0",
+        "z-index:2147483647",
+        "display:flex",
+        "align-items:center",
+        "justify-content:center",
+        "padding:24px",
+        "background:#10131b",
+        "color:#ffffff",
+        "text-align:center"
+      ].join(";");
+
+      const content = document.createElement("div");
+      content.style.cssText = [
+        "width:100%",
+        "max-width:340px",
+        "display:flex",
+        "flex-direction:column",
+        "align-items:center",
+        "gap:18px"
+      ].join(";");
+
+      const title = document.createElement("h2");
+      title.textContent = "Dokończmy przełączanie profilu";
+      title.style.cssText = "margin:0;font-size:23px;line-height:1.25";
+
+      const description = document.createElement("p");
+      description.textContent =
+        "Nie udało się potwierdzić zmiany profilu. " +
+        "Sprawdź połączenie z internetem i spróbuj ponownie.";
+      description.style.cssText =
+        "margin:0;color:#b8c0cf;font-size:14px;line-height:1.6";
+
+      const retryButton = document.createElement("button");
+      retryButton.type = "button";
+      retryButton.textContent = "Spróbuj ponownie";
+      retryButton.style.cssText = [
+        "border:0",
+        "border-radius:14px",
+        "padding:14px 24px",
+        "background:#ffffff",
+        "color:#10131b",
+        "font-size:15px",
+        "font-weight:700",
+        "cursor:pointer"
+      ].join(";");
+
+      retryButton.addEventListener("click", () => {
+        retryButton.disabled = true;
+        retryButton.textContent = "Sprawdzanie...";
+        window.location.reload();
+      });
+
+      const recoveryForm = document.createElement("form");
+      recoveryForm.id = "usly-push-recovery-form";
+      recoveryForm.style.cssText = [
+        "display:flex",
+        "flex-direction:column",
+        "gap:12px",
+        "width:100%",
+        "text-align:left"
+      ].join(";");
+
+      const roleLabel = document.createElement("label");
+      roleLabel.textContent = "Profil, na który chcesz się zalogować";
+      roleLabel.setAttribute("for", "usly-recovery-role");
+
+      const roleSelect = document.createElement("select");
+      roleSelect.id = "usly-recovery-role";
+      roleSelect.required = true;
+
+      for (const [value, label] of [
+        ["user", "Towarzysz"],
+        ["partner", "Organizator"]
+      ]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        roleSelect.appendChild(option);
+      }
+
+      const emailInput = document.createElement("input");
+      emailInput.id = "usly-recovery-email";
+      emailInput.type = "email";
+      emailInput.autocomplete = "username";
+      emailInput.placeholder = "Adres e-mail";
+      emailInput.required = true;
+
+      const passwordInput = document.createElement("input");
+      passwordInput.id = "usly-recovery-password";
+      passwordInput.type = "password";
+      passwordInput.autocomplete = "current-password";
+      passwordInput.placeholder = "Hasło";
+      passwordInput.required = true;
+
+      const status = document.createElement("p");
+      status.id = "usly-recovery-status";
+      status.setAttribute("role", "status");
+      status.style.cssText =
+        "margin:0;color:#b8c0cf;font-size:13px;line-height:1.5";
+
+      const inputStyle = [
+        "width:100%",
+        "box-sizing:border-box",
+        "border:1px solid #414958",
+        "border-radius:12px",
+        "padding:13px",
+        "background:#202633",
+        "color:#ffffff",
+        "font-size:15px"
+      ].join(";");
+
+      roleSelect.style.cssText = inputStyle;
+      emailInput.style.cssText = inputStyle;
+      passwordInput.style.cssText = inputStyle;
+
+      const submitButton = document.createElement("button");
+      submitButton.type = "submit";
+      submitButton.textContent = "Potwierdź konto";
+      submitButton.style.cssText = [
+        "border:0",
+        "border-radius:14px",
+        "padding:14px",
+        "background:#ffffff",
+        "color:#10131b",
+        "font-size:15px",
+        "font-weight:700",
+        "cursor:pointer"
+      ].join(";");
+
+      const socialRow = document.createElement("div");
+      socialRow.style.cssText =
+        "display:flex;gap:10px;width:100%";
+
+      const socialButtons = [];
+
+      for (const provider of ["google", "apple"]) {
+        if (
+          provider === "apple" &&
+          window.Capacitor?.getPlatform?.() === "android"
+        ) continue;
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = provider === "google" ? "Google" : "Apple";
+        button.style.cssText = [
+          "flex:1",
+          "border:1px solid #414958",
+          "border-radius:12px",
+          "padding:12px",
+          "background:#202633",
+          "color:#ffffff",
+          "font-size:14px",
+          "cursor:pointer"
+        ].join(";");
+
+        button.dataset.provider = provider;
+        socialButtons.push(button);
+        socialRow.appendChild(button);
+      }
+
+      const allButtons = [submitButton, ...socialButtons];
+      let busy = false;
+
+      const authenticate = async (provider) => {
+        if (busy) return;
+
+        const role = roleSelect.value;
+        if (role !== "user" && role !== "partner") return;
+
+        if (!localStorage.getItem("usly_pending_push_transfer_v1")) {
+          status.textContent =
+            "Transfer nie jest już oczekujący. Uruchom aplikację ponownie.";
+          return;
+        }
+
+        busy = true;
+        allButtons.forEach(button => { button.disabled = true; });
+        status.textContent = "Sprawdzanie tożsamości...";
+
+        try {
+          let candidateToken;
+
+          if (provider === "password") {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+              status.textContent = "Wpisz adres e-mail i hasło.";
+              return;
+            }
+
+            candidateToken =
+              await requestPendingPushPasswordSession(
+                email, password, role
+              );
+          } else if (provider === "google") {
+            candidateToken =
+              await requestPendingPushGoogleSession(role);
+          } else {
+            candidateToken =
+              await requestPendingPushAppleSession(role);
+          }
+
+          if (!candidateToken) {
+            status.textContent =
+              "Nie udało się potwierdzić konta. Spróbuj ponownie.";
+            return;
+          }
+
+          const activated =
+            await activatePendingPushRecoverySession(candidateToken);
+
+          if (!activated) {
+            status.textContent =
+              "To konto nie odpowiada oczekującemu przełączeniu " +
+              "lub wymaga dalszej weryfikacji. " +
+              "Spróbuj zalogować się na drugi z połączonych profili.";
+          }
+        } catch (error) {
+          console.error("USLY recovery authentication failed", error);
+          status.textContent =
+            "Logowanie nie powiodło się. Sprawdź dane i spróbuj ponownie.";
+        } finally {
+          busy = false;
+          allButtons.forEach(button => { button.disabled = false; });
+        }
+      };
+
+      recoveryForm.addEventListener("submit", event => {
+        event.preventDefault();
+        void authenticate("password");
+      });
+
+      socialButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          void authenticate(button.dataset.provider);
+        });
+      });
+
+      recoveryForm.append(
+        roleLabel,
+        roleSelect,
+        emailInput,
+        passwordInput,
+        submitButton,
+        socialRow,
+        status
+      );
+
+      content.append(
+        title,
+        description,
+        retryButton,
+        recoveryForm
+      );
+      recoveryScreen.appendChild(content);
+      document.body.appendChild(recoveryScreen);
+    }
+
+    finishSessionStartup();
+    return;
+  }
+
   if (token) {
     try {
       const me = await apiFetch("/auth/me");
@@ -19788,6 +22141,74 @@ async function init() {
       $("appRoot")?.classList.add("isLoggedIn");
       updateTabbars();
 
+      // Ustaw tożsamość RevenueCat i zsynchronizuj plan aktualnego konta.
+      const revenueCatSessionUserId = String(App.currentUserId ?? "");
+      const revenueCatSessionToken = localStorage.getItem("usly_token");
+      const revenueCatSessionRole = App.role;
+      const revenueCatSessionAppUserId = App.currentRevenueCatAppUserId;
+      let revenueCatStartupPlanRefreshStarted = false;
+      const revenueCatSessionUnchanged = () =>
+        App.isLoggedIn &&
+        String(App.currentUserId ?? "") === revenueCatSessionUserId &&
+        localStorage.getItem("usly_token") === revenueCatSessionToken &&
+        App.role === revenueCatSessionRole &&
+        App.currentRevenueCatAppUserId === revenueCatSessionAppUserId;
+
+      if (
+        revenueCatSessionAppUserId &&
+        window.USLYBilling?.logIn &&
+        window.USLYBilling?.syncCurrentRevenueCatPlan &&
+        ["ios", "android"].includes(window.USLYBilling.getPlatform?.())
+      ) {
+        Promise.resolve()
+          .then(async () => {
+            if (!revenueCatSessionUnchanged()) return;
+
+            await window.USLYBilling.logIn(revenueCatSessionRole);
+
+            if (!revenueCatSessionUnchanged()) return;
+
+            await window.USLYBilling.syncCurrentRevenueCatPlan();
+
+            if (!revenueCatSessionUnchanged()) return;
+
+            revenueCatStartupPlanRefreshStarted = true;
+            const profile = await apiFetch(
+              revenueCatSessionRole === "partner" ? "/partners/me" : "/users/me"
+            );
+
+            if (!revenueCatSessionUnchanged()) return;
+            if (!profile?.success || !profile?.data?.plan) return;
+
+            const refreshedPlan = String(profile.data.plan).toLowerCase();
+
+            if (revenueCatSessionRole === "partner") {
+              if (!["free", "pro", "premium", "enterprise"].includes(refreshedPlan)) return;
+
+              App.partner.plan = refreshedPlan;
+              try {
+                localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, refreshedPlan);
+              } catch (_) {}
+              refreshPlanPromoPrices("partner");
+            } else {
+              if (!["free", "plus", "premium", "vip"].includes(refreshedPlan)) return;
+
+              App.user.plan = refreshedPlan;
+              try {
+                localStorage.setItem(USLY_STORAGE_KEYS.userPlan, refreshedPlan);
+              } catch (_) {}
+              saveUserProfileCache();
+              refreshUserPlanCardsUi();
+            }
+
+            renderAll();
+          })
+          .catch((error) => {
+            console.error("USLY RevenueCat startup sync failed", error);
+          });
+      }
+
+
       syncMessageMutesFromBackend()
         .catch((error) => {
           console.error("startup background mute sync failed", error);
@@ -19796,6 +22217,14 @@ async function init() {
       setupPushNotifications();
 
       if (App.role === "user") {
+        const profileSessionToken = localStorage.getItem("usly_token");
+        const profileSessionUserId = String(App.currentUserId ?? "");
+        const profileSessionUnchanged = () =>
+          App.isLoggedIn &&
+          App.role === "user" &&
+          String(App.currentUserId ?? "") === profileSessionUserId &&
+          localStorage.getItem("usly_token") === profileSessionToken;
+
         const restoredProfileFromCache = restoreUserProfileCache();
 
         if (restoredProfileFromCache) {
@@ -19806,6 +22235,7 @@ async function init() {
 
           apiFetch("/users/me")
             .then((profile) => {
+              if (!profileSessionUnchanged()) return;
 
               if (profile?.success && profile?.data) {
                 App.user.nick = profile.data.nick || App.user.nick;
@@ -19829,7 +22259,9 @@ async function init() {
                   Object.prototype.hasOwnProperty.call(profile.data, "nearby_radius_km")
                     ? profile.data.nearby_radius_km
                     : App.user.nearbyRadiusKm;
-                App.user.plan = profile.data.plan || App.user.plan;
+                if (!revenueCatStartupPlanRefreshStarted) {
+                  App.user.plan = profile.data.plan || App.user.plan;
+                }
                 App.user.avatarUrl =
                   profile.data.avatar_url || App.user.avatarUrl || "";
 
@@ -19870,6 +22302,7 @@ async function init() {
           return;
         }
         const profile = await apiFetch("/users/me");
+        if (!profileSessionUnchanged()) return;
 
         if (profile?.success && profile?.data) {
           App.user.nick = profile.data.nick || App.user.nick;
@@ -19893,7 +22326,9 @@ async function init() {
             Object.prototype.hasOwnProperty.call(profile.data, "nearby_radius_km")
               ? profile.data.nearby_radius_km
               : App.user.nearbyRadiusKm;
-          App.user.plan = profile.data.plan || App.user.plan;
+          if (!revenueCatStartupPlanRefreshStarted) {
+            App.user.plan = profile.data.plan || App.user.plan;
+          }
           App.user.avatarUrl =
             profile.data.avatar_url || App.user.avatarUrl || "";
 
@@ -19930,8 +22365,36 @@ async function init() {
 
         return;
       } else {
-        await loadPartnerProfile();
-        try { localStorage.setItem(USLY_STORAGE_KEYS.partnerPlan, App.partner.plan || "free"); } catch (_) {}
+        const partnerStartupProfile = await apiFetch("/partners/me");
+
+        if (!revenueCatSessionUnchanged()) return;
+
+        if (partnerStartupProfile?.success && partnerStartupProfile?.data) {
+          const partnerData = partnerStartupProfile.data;
+
+          App.partner.company = partnerData.nazwa || App.partner.company;
+          App.partner.city = partnerData.miasto || App.partner.city;
+          App.partner.category = partnerData.kategoria || App.partner.category || "inne";
+          App.partner.about = partnerData.bio || "";
+          App.partner.ratingAverage =
+            partnerData.rating_average == null
+              ? null
+              : Number(partnerData.rating_average);
+          App.partner.ratingCount = Number(partnerData.rating_count || 0);
+          App.partner.logoUrl = partnerData.logo_url || "";
+
+          if (!revenueCatStartupPlanRefreshStarted) {
+            App.partner.plan = partnerData.plan || App.partner.plan || "free";
+          }
+        }
+
+        try {
+          localStorage.setItem(
+            USLY_STORAGE_KEYS.partnerPlan,
+            App.partner.plan || "free"
+          );
+        } catch (_) {}
+
         renderAll();
         bindMessageInputs();
         go("S9_PARTNER");
@@ -20385,7 +22848,41 @@ function selectDeleteAccountMethod(method) {
   `;
 }
 
+let deleteAccountInProgress = false;
+
 async function submitDeleteAccount(method = "password") {
+  if (window.USLYBilling?.isTransactionInProgress?.()) {
+    toast("Poczekaj na zakończenie płatności lub przywracania zakupów.");
+    return;
+  }
+  if (
+    deleteAccountInProgress ||
+    logoutInProgress ||
+    pushAccountSwitchInProgress ||
+    accountLinkOperationInProgress ||
+    createLinkedProfileInProgress ||
+    accountUnlinkInProgress ||
+    localStorage.getItem("usly_pending_push_transfer_v1")
+  ) {
+    toast("Poczekaj na zakończenie bieżącej operacji.");
+    return;
+  }
+
+  const initiatingUserId = String(App.currentUserId ?? "");
+  const initiatingRole = App.role;
+  const initiatingToken = localStorage.getItem("usly_token");
+
+  const sessionIsCurrent = () =>
+    App.isLoggedIn &&
+    String(App.currentUserId ?? "") === initiatingUserId &&
+    App.role === initiatingRole &&
+    localStorage.getItem("usly_token") === initiatingToken;
+
+  if (!initiatingUserId || !initiatingToken || !sessionIsCurrent()) {
+    return;
+  }
+
+  deleteAccountInProgress = true;
   const methodValue =
     method === "google" || method === "apple"
       ? method
@@ -20460,6 +22957,8 @@ async function submitDeleteAccount(method = "password") {
         credentials.nonce;
     }
 
+    if (!sessionIsCurrent()) return;
+
     const res = await apiFetch("/auth/delete-account", {
       method: "POST",
       headers: {
@@ -20468,19 +22967,13 @@ async function submitDeleteAccount(method = "password") {
       body: JSON.stringify(requestBody),
     });
 
+    if (!sessionIsCurrent()) return;
+
     if (res?.success) {
-      try {
-        localStorage.removeItem("usly_token");
-      } catch (_) {}
-
-      App.isLoggedIn = false;
-      App.currentUserId = null;
-      App.currentRevenueCatAppUserId = null;
-
-      resetAuthProviderState();
-
+      clearLocalAccountSession();
       closeModal();
       toast(t("delete.toastSuccess"));
+      App.history = ["S0_WELCOME"];
       go("S0_WELCOME");
       renderAll();
       return;
@@ -20507,6 +23000,8 @@ async function submitDeleteAccount(method = "password") {
     );
 
   } catch (err) {
+    if (!sessionIsCurrent()) return;
+
     const code = String(
       err?.code ||
       err?.data?.error?.code ||
@@ -20548,6 +23043,8 @@ async function submitDeleteAccount(method = "password") {
       err?.userMessage ||
       t("delete.toastFailed")
     );
+  } finally {
+    deleteAccountInProgress = false;
   }
 }
 
@@ -20774,15 +23271,308 @@ function setupCapacitorAuthLinkListener() {
 }
 
 
+
+const USLY_PUSH_OWNERSHIP_STORAGE_KEY = "usly_push_ownership_v1";
+
+function getStoredPushOwnershipProof(tokenValue) {
+  if (!tokenValue) return null;
+
+  try {
+    const raw = localStorage.getItem(USLY_PUSH_OWNERSHIP_STORAGE_KEY);
+    if (!raw) return null;
+
+    const stored = JSON.parse(raw);
+
+    if (
+      !stored ||
+      stored.token !== tokenValue ||
+      typeof stored.proof !== "string" ||
+      !stored.proof
+    ) {
+      return null;
+    }
+
+    return stored.proof;
+  } catch (_) {
+    return null;
+  }
+}
+
+function storePushOwnershipProof(tokenValue, proof) {
+  if (!tokenValue || typeof proof !== "string" || !proof) {
+    return false;
+  }
+
+  try {
+    localStorage.setItem(
+      USLY_PUSH_OWNERSHIP_STORAGE_KEY,
+      JSON.stringify({ token: tokenValue, proof })
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function clearStoredPushOwnershipProof(tokenValue) {
+  try {
+    const raw = localStorage.getItem(USLY_PUSH_OWNERSHIP_STORAGE_KEY);
+    if (!raw) return;
+
+    const stored = JSON.parse(raw);
+    if (!tokenValue || stored?.token === tokenValue) {
+      localStorage.removeItem(USLY_PUSH_OWNERSHIP_STORAGE_KEY);
+    }
+  } catch (_) {
+    try {
+      localStorage.removeItem(USLY_PUSH_OWNERSHIP_STORAGE_KEY);
+    } catch (_) {}
+  }
+}
+
+function clearStalePushOwnershipProof(currentTokenValue) {
+  try {
+    const raw = localStorage.getItem(USLY_PUSH_OWNERSHIP_STORAGE_KEY);
+    if (!raw) return;
+
+    const stored = JSON.parse(raw);
+    if (!currentTokenValue || stored?.token !== currentTokenValue) {
+      localStorage.removeItem(USLY_PUSH_OWNERSHIP_STORAGE_KEY);
+    }
+  } catch (_) {
+    clearStoredPushOwnershipProof();
+  }
+}
+
+let pushTokenOperationQueue = Promise.resolve();
+let pushAccountSwitchInProgress = false;
+
+async function pushApiFetchWithTimeout(path, options, timeoutMs = 3000) {
+  const controller = new AbortController();
+  let timeoutId;
+
+  try {
+    return await Promise.race([
+      window.apiFetch(path, {
+        ...options,
+        signal: controller.signal,
+      }),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          controller.abort();
+          reject(new Error("USLY push request timeout"));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function enqueuePushTokenOperation(operation) {
+  const queued = pushTokenOperationQueue
+    .catch(() => {})
+    .then(operation);
+
+  pushTokenOperationQueue = queued.catch(() => {});
+  return queued;
+}
+
+async function getPushTransferCredentials(expectedSessionToken) {
+  if (
+    !expectedSessionToken ||
+    localStorage.getItem("usly_token") !== expectedSessionToken
+  ) {
+    return null;
+  }
+
+  const platform = window.Capacitor?.getPlatform?.();
+  if (platform !== "ios" && platform !== "android") {
+    return null;
+  }
+
+  // Wcześniejsze operacje rejestracji muszą zakończyć się przed transferem.
+  await pushTokenOperationQueue.catch(() => {});
+
+  if (localStorage.getItem("usly_token") !== expectedSessionToken) {
+    return null;
+  }
+
+  let tokenValue = window.uslyCurrentPushToken ||
+    localStorage.getItem("usly_device_push_token") || "";
+
+  if (platform === "ios") {
+    try {
+      const messaging = window.Capacitor?.Plugins?.FirebaseMessaging;
+      if (messaging?.getToken) {
+        tokenValue = (await messaging.getToken())?.token || tokenValue;
+      }
+    } catch (error) {
+      console.error("USLY push transfer token retrieval failed", error);
+      return null;
+    }
+  }
+
+  if (localStorage.getItem("usly_token") !== expectedSessionToken) {
+    return null;
+  }
+
+  if (!tokenValue) return null;
+
+  const proof = getStoredPushOwnershipProof(tokenValue);
+  if (!proof) return null;
+
+  return { token: tokenValue, proof };
+}
+
+async function unregisterCurrentDevicePushToken() {
+  if (localStorage.getItem("usly_pending_push_transfer_v1")) return false;
+
+  const platform = window.Capacitor?.getPlatform?.();
+
+  if (platform !== "ios" && platform !== "android") {
+    return true;
+  }
+
+  // Operacja należy wyłącznie do sesji aktywnej w chwili jej rozpoczęcia.
+  const unregisterSessionToken = localStorage.getItem("usly_token");
+  if (!unregisterSessionToken) return false;
+
+  let tokenValue = "";
+
+  try {
+    if (platform === "ios") {
+      const messaging = window.Capacitor?.Plugins?.FirebaseMessaging;
+      if (!messaging?.getToken) return false;
+      tokenValue = (await messaging.getToken())?.token || "";
+    } else {
+      // Android: token rejestracji zapisujemy przy jego otrzymaniu.
+      tokenValue = window.uslyCurrentPushToken ||
+        localStorage.getItem("usly_device_push_token") || "";
+    }
+
+    if (!tokenValue) return false;
+
+    // Firebase mógł zakończyć pobieranie tokenu po zmianie konta.
+    if (localStorage.getItem("usly_token") !== unregisterSessionToken) {
+      return false;
+    }
+
+    const unregistered = await enqueuePushTokenOperation(() => {
+      // Ponowna kontrola po oczekiwaniu w kolejce.
+      if (localStorage.getItem("usly_token") !== unregisterSessionToken) {
+        return false;
+      }
+
+      const proof = getStoredPushOwnershipProof(tokenValue);
+
+      return pushApiFetchWithTimeout("/push/unregister-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: tokenValue,
+          ...(proof ? { push_ownership_proof: proof } : {}),
+        }),
+      }).then(() => {
+        if (localStorage.getItem("usly_token") !== unregisterSessionToken) {
+          return false;
+        }
+
+        clearStoredPushOwnershipProof(tokenValue);
+        return true;
+      });
+    });
+
+    return unregistered === true;
+  } catch (error) {
+    console.error("USLY push token unregister failed", error);
+    return false;
+  }
+}
+
 let pushNotificationsSetupStarted = false;
+let pushNotificationsRegisteredSession = null;
+
+async function registerPushForCurrentSession() {
+  const sessionToken = localStorage.getItem("usly_token");
+  if (
+    !sessionToken ||
+    pushAccountSwitchInProgress ||
+    localStorage.getItem("usly_pending_push_transfer_v1")
+  ) return false;
+
+  const platform = window.Capacitor?.getPlatform?.();
+  if (platform !== "ios" && platform !== "android") return false;
+
+  let tokenValue = window.uslyCurrentPushToken ||
+    localStorage.getItem("usly_device_push_token") || "";
+
+  if (platform === "ios") {
+    try {
+      const messaging = window.Capacitor?.Plugins?.FirebaseMessaging;
+      if (messaging?.getToken) {
+        tokenValue = (await messaging.getToken())?.token || tokenValue;
+      }
+    } catch (error) {
+      console.error("USLY push token refresh failed", error);
+    }
+  }
+
+  if (!tokenValue) return false;
+
+  try {
+    await enqueuePushTokenOperation(async () => {
+      if (
+        pushAccountSwitchInProgress ||
+        localStorage.getItem("usly_pending_push_transfer_v1") ||
+        localStorage.getItem("usly_token") !== sessionToken
+      ) return;
+
+      clearStalePushOwnershipProof(tokenValue);
+      const proof = getStoredPushOwnershipProof(tokenValue);
+
+      const response = await window.apiFetch("/push/register-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: tokenValue,
+          platform,
+          language: App.lang === "en" ? "en" : "pl",
+          ...(proof ? { push_ownership_proof: proof } : {}),
+        }),
+      });
+
+      if (localStorage.getItem("usly_token") !== sessionToken) return;
+
+      const issuedProof = response?.data?.push_ownership_proof;
+      if (issuedProof && !storePushOwnershipProof(tokenValue, issuedProof)) {
+        throw new Error("PUSH_OWNERSHIP_PROOF_STORAGE_FAILED");
+      }
+
+      pushNotificationsRegisteredSession = sessionToken;
+    });
+
+    return pushNotificationsRegisteredSession === sessionToken;
+  } catch (error) {
+    console.error("USLY push session registration failed", error);
+    return false;
+  }
+}
 
 async function setupPushNotifications() {
+  const sessionToken = localStorage.getItem("usly_token");
+  if (!sessionToken) return;
+
+  // Nie rejestrujemy tokenu, zanim rozstrzygniemy transfer konta.
+  if (localStorage.getItem("usly_pending_push_transfer_v1")) return;
+
   if (pushNotificationsSetupStarted) {
+    if (pushNotificationsRegisteredSession !== sessionToken) {
+      await registerPushForCurrentSession();
+    }
     return;
   }
-  if (!localStorage.getItem("usly_token")) {
-    return;
-  }
+
   pushNotificationsSetupStarted = true;
 
   try {
@@ -20792,18 +23582,55 @@ async function setupPushNotifications() {
     const registerPushToken = async (tokenValue, tokenSource) => {
 
       if (!tokenValue || typeof window.apiFetch !== "function") return;
+      if (
+        pushAccountSwitchInProgress ||
+        localStorage.getItem("usly_pending_push_transfer_v1")
+      ) return;
+
+      const registrationSessionToken = localStorage.getItem("usly_token");
+      if (!registrationSessionToken) return;
+
+      window.uslyCurrentPushToken = tokenValue;
+      localStorage.setItem("usly_device_push_token", tokenValue);
 
       try {
-        await window.apiFetch("/push/register-token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token: tokenValue,
-            platform,
-            language: App.lang === "en" ? "en" : "pl",
-          }),
+        await enqueuePushTokenOperation(() => {
+          if (
+            pushAccountSwitchInProgress ||
+            localStorage.getItem("usly_pending_push_transfer_v1") ||
+            localStorage.getItem("usly_token") !== registrationSessionToken
+          ) return;
+
+          clearStalePushOwnershipProof(tokenValue);
+          const proof = getStoredPushOwnershipProof(tokenValue);
+
+          return window.apiFetch("/push/register-token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              token: tokenValue,
+              platform,
+              language: App.lang === "en" ? "en" : "pl",
+              ...(proof ? { push_ownership_proof: proof } : {}),
+            }),
+          }).then((result) => {
+            if (
+              localStorage.getItem("usly_token") === registrationSessionToken
+            ) {
+              const issuedProof = result?.data?.push_ownership_proof;
+              if (
+                issuedProof &&
+                !storePushOwnershipProof(tokenValue, issuedProof)
+              ) {
+                throw new Error("PUSH_OWNERSHIP_PROOF_STORAGE_FAILED");
+              }
+
+              pushNotificationsRegisteredSession = registrationSessionToken;
+            }
+            return result;
+          });
         });
       } catch (error) {
         console.error("USLY push token register failed", error);

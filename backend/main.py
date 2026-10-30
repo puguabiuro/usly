@@ -2333,13 +2333,15 @@ def register(request: Request, payload: RegisterRequest):
         if not payload.accept_terms or not payload.accept_privacy:
             raise ApiException(status_code=422, code=ErrorCode.TERMS_REQUIRED)
 
-        existing = db.query(User).filter(User.email == str(payload.email)).first()
+        normalized_email = str(payload.email).strip().lower()
+        existing = db.query(User).filter(User.email == normalized_email).first()
         if existing:
             raise ApiException(status_code=409, code=ErrorCode.EMAIL_ALREADY_EXISTS)
 
-        # UWAGA: UserRole i UserStatus muszą istnieć w Twoim projekcie.
+        # Nowy profil przeciwnej roli tworzymy wyłącznie przez
+        # uwierzytelniony mechanizm powiązanych kont.
         user = User(
-            email=str(payload.email),
+            email=normalized_email,
             password_hash=hash_password(payload.password),
             dob=payload.dob,
             terms_accepted_at=datetime.utcnow(),
@@ -2790,6 +2792,7 @@ def _resolve_apple_auth_user(
     *,
     apple_sub: str,
     email: str | None,
+    expected_role: str,
     request: Request,
 ):
     user_by_sub = (
@@ -2802,7 +2805,10 @@ def _resolve_apple_auth_user(
     if email:
         user_by_email = (
             db.query(User)
-            .filter(User.email == email)
+            .filter(
+                User.email == email,
+                User.role == expected_role,
+            )
             .first()
         )
 
@@ -3134,6 +3140,8 @@ def _complete_apple_login(
     if email and not user.email_verified_at:
         user.email_verified_at = datetime.now(timezone.utc)
 
+    user.last_login_at = datetime.now(timezone.utc)
+
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -3183,6 +3191,12 @@ def _complete_apple_register(
             code=ErrorCode.EMAIL_ALREADY_EXISTS,
         )
 
+    if email and db.query(User.id).filter(User.email == email).first():
+        raise ApiException(
+            status_code=409,
+            code=ErrorCode.EMAIL_ALREADY_EXISTS,
+        )
+
     if not email or not email_verified:
         _audit(
             db,
@@ -3212,7 +3226,7 @@ def _complete_apple_register(
         if not payload.dob:
             raise ApiException(
                 status_code=422,
-                code=ErrorCode.INVALID_INPUT,
+                code=ErrorCode.VALIDATION_ERROR,
                 message="Data urodzenia jest wymagana.",
             )
 
@@ -3326,6 +3340,7 @@ def apple_login(payload: AppleLoginRequest, request: Request):
             db,
             apple_sub=apple_sub,
             email=email,
+            expected_role=payload.expected_role,
             request=request,
         )
 
@@ -3450,7 +3465,10 @@ def google_login(payload: GoogleLoginRequest, request: Request):
 
         user_by_email = (
             db.query(User)
-            .filter(User.email == email)
+            .filter(
+                User.email == email,
+                User.role == payload.expected_role,
+            )
             .first()
         )
 
@@ -3525,6 +3543,8 @@ def google_login(payload: GoogleLoginRequest, request: Request):
             if not user.email_verified_at:
                 user.email_verified_at = datetime.now(timezone.utc)
 
+            user.last_login_at = datetime.now(timezone.utc)
+
             db.add(user)
             db.commit()
             db.refresh(user)
@@ -3560,9 +3580,9 @@ def google_login(payload: GoogleLoginRequest, request: Request):
         # -------------------------------------------------
         # REGISTER
         # -------------------------------------------------
-        if user:
-            # Registration must not silently create or merge a duplicate
-            # account. Existing users should use Google login instead.
+        if user or db.query(User.id).filter(User.email == email).first():
+            # New profiles must be created through the controlled
+            # account-link flow, never ordinary social registration.
             raise ApiException(
                 status_code=409,
                 code=ErrorCode.EMAIL_ALREADY_EXISTS,
@@ -3584,7 +3604,7 @@ def google_login(payload: GoogleLoginRequest, request: Request):
             if not payload.dob:
                 raise ApiException(
                     status_code=422,
-                    code=ErrorCode.INVALID_INPUT,
+                    code=ErrorCode.VALIDATION_ERROR,
                     message="Data urodzenia jest wymagana.",
                 )
 
@@ -3651,13 +3671,21 @@ def login(payload: LoginRequest, request: Request):
     db = SessionLocal()
     try:
         email = str(payload.email).strip().lower()
-        user = db.query(User).filter(User.email == email).first()
+        user_query = db.query(User).filter(User.email == email)
+        if payload.expected_role:
+            user_query = user_query.filter(User.role == payload.expected_role)
+            user = user_query.first()
+        else:
+            # Starszy klient bez roli: logowanie tylko wtedy,
+            # gdy adres e-mail jednoznacznie wskazuje jedno konto.
+            matches = user_query.limit(2).all()
+            user = matches[0] if len(matches) == 1 else None
 
         if not user:
             _audit(db, action="LOGIN_FAIL", request=request, user_id=None, details=f"email={email}")
             raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
 
-         
+
         if user.status != UserStatus.ACTIVE.value:
             raise ApiException(status_code=403, code=ErrorCode.ACCOUNT_INACTIVE)
 
@@ -3693,6 +3721,10 @@ def login(payload: LoginRequest, request: Request):
 
         access_token = create_access_token(user.id)
 
+        user.last_login_at = datetime.now(timezone.utc)
+        db.add(user)
+        db.commit()
+
         _audit(db, action="LOGIN_SUCCESS", request=request, user_id=user.id, details=f"email={email}")
 
         return ok(
@@ -3709,6 +3741,974 @@ def login(payload: LoginRequest, request: Request):
                 },
             }
         )
+    finally:
+        db.close()
+
+
+class AccountLinkPasswordProofRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1)
+
+
+@app.post("/auth/account-links/password-proof")
+@limiter.limit("5/minute")
+def account_link_password_proof(
+    request: Request,
+    payload: AccountLinkPasswordProofRequest,
+    current_user: User = Depends(get_current_user),
+):
+    from backend.account_link_password import (
+        authenticate_second_account_with_password,
+    )
+
+    db = SessionLocal()
+    try:
+        proof = authenticate_second_account_with_password(
+            db,
+            initiating_user=current_user,
+            email=str(payload.email),
+            password=payload.password,
+        )
+
+        _audit(
+            db,
+            action="ACCOUNT_LINK_PASSWORD_PROOF_SUCCESS",
+            request=request,
+            user_id=current_user.id,
+            details="Second account authenticated for linking",
+        )
+
+        return ok({
+            "proof": proof,
+            "expires_in": 120,
+        })
+    except ApiException:
+        _audit(
+            db,
+            action="ACCOUNT_LINK_PASSWORD_PROOF_REJECTED",
+            request=request,
+            user_id=current_user.id,
+            details="Second account authentication rejected",
+        )
+        raise
+    finally:
+        db.close()
+
+
+class AccountLinkGoogleProofRequest(BaseModel):
+    id_token: str = Field(min_length=1)
+
+
+@app.post("/auth/account-links/google-proof")
+@limiter.limit("5/minute")
+def account_link_google_proof(
+    request: Request,
+    payload: AccountLinkGoogleProofRequest,
+    current_user: User = Depends(get_current_user),
+):
+    from backend.account_link_social import (
+        authenticate_second_account_with_google,
+    )
+
+    client_id = os.getenv("GOOGLE_WEB_CLIENT_ID", "").strip()
+    if not client_id:
+        raise HTTPException(
+            status_code=503,
+            detail="GOOGLE_AUTH_NOT_CONFIGURED",
+        )
+
+    try:
+        claims = google_id_token.verify_oauth2_token(
+            payload.id_token,
+            google_auth_requests.Request(),
+            client_id,
+        )
+    except Exception:
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        ) from None
+
+    subject = str(claims.get("sub") or "").strip()
+    if not subject:
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+    db = SessionLocal()
+    try:
+        proof = authenticate_second_account_with_google(
+            db,
+            initiating_user=current_user,
+            google_sub=subject,
+        )
+
+        _audit(
+            db,
+            action="ACCOUNT_LINK_GOOGLE_PROOF_SUCCESS",
+            request=request,
+            user_id=current_user.id,
+            details="Second account authenticated with Google for linking",
+        )
+
+        return ok({
+            "proof": proof,
+            "expires_in": 120,
+        })
+    finally:
+        db.close()
+
+
+class AccountLinkAppleProofRequest(BaseModel):
+    id_token: str = Field(min_length=20)
+    nonce: str = Field(min_length=16, max_length=255)
+    authorization_code: str = Field(min_length=1)
+
+
+@app.post("/auth/account-links/apple-proof")
+@limiter.limit("5/minute")
+def account_link_apple_proof(
+    request: Request,
+    payload: AccountLinkAppleProofRequest,
+    current_user: User = Depends(get_current_user),
+):
+    from backend.account_link_social import (
+        authenticate_second_account_with_apple,
+    )
+
+    db = SessionLocal()
+    try:
+        identity = _verify_apple_auth_identity(
+            db,
+            payload,
+        )
+
+        # Kod autoryzacyjny musi zostać poprawnie wymieniony z Apple.
+        # Nie zapisujemy otrzymanego refresh tokenu do drugiego konta.
+        _client_id, _token_response = _exchange_apple_code_for_identity(
+            authorization_code=payload.authorization_code,
+            audience=identity["audience"],
+        )
+
+        exchanged_id_token = str(
+            _token_response.get("id_token") or ""
+        ).strip()
+
+        if not exchanged_id_token:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        try:
+            exchanged_claims = verify_apple_identity_token(
+                exchanged_id_token,
+                allowed_audiences={_client_id},
+                expected_nonce=payload.nonce,
+            )
+        except AppleAuthError:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            ) from None
+
+        exchanged_sub = str(
+            exchanged_claims.get("sub") or ""
+        ).strip()
+
+        if (
+            not exchanged_sub
+            or exchanged_sub != identity["apple_sub"]
+        ):
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        proof = authenticate_second_account_with_apple(
+            db,
+            initiating_user=current_user,
+            apple_sub=identity["apple_sub"],
+        )
+
+        _audit(
+            db,
+            action="ACCOUNT_LINK_APPLE_PROOF_SUCCESS",
+            request=request,
+            user_id=current_user.id,
+            details="Second account authenticated with Apple for linking",
+        )
+
+        return ok({
+            "proof": proof,
+            "expires_in": 120,
+        })
+    finally:
+        db.close()
+
+
+@app.get("/auth/account-links/profiles")
+def get_account_link_profiles(
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import or_
+    from backend.models import AccountLink
+
+    db = SessionLocal()
+    try:
+        active_user = db.get(User, current_user.id)
+
+        if (
+            active_user is None
+            or active_user.status != UserStatus.ACTIVE.value
+        ):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.ACCOUNT_INACTIVE,
+            )
+
+        link = db.query(AccountLink).filter(
+            or_(
+                AccountLink.user_id == active_user.id,
+                AccountLink.partner_id == active_user.id,
+            )
+        ).first()
+
+        profiles = [active_user]
+
+        if link is not None:
+            other_id = (
+                link.partner_id
+                if link.user_id == active_user.id
+                else link.user_id
+            )
+            other = db.get(User, other_id)
+
+            if (
+                other is not None
+                and other.status == UserStatus.ACTIVE.value
+                and other.role in (
+                    UserRole.USER.value,
+                    UserRole.PARTNER.value,
+                )
+            ):
+                profiles.append(other)
+
+        return ok({
+            "linked": link is not None,
+            "active_user_id": active_user.id,
+            "profiles": [
+                {
+                    "id": profile.id,
+                    "role": profile.role,
+                    "email": profile.email,
+                    "is_active_profile": (
+                        profile.id == active_user.id
+                    ),
+                }
+                for profile in profiles
+            ],
+        })
+    finally:
+        db.close()
+
+
+class AccountLinkSwitchRequest(BaseModel):
+    target_user_id: int = Field(gt=0)
+    push_token: str | None = Field(default=None, min_length=20, max_length=512)
+    push_ownership_proof: str | None = Field(default=None, min_length=1, max_length=256)
+    push_next_ownership_proof: str | None = Field(default=None, min_length=43, max_length=128)
+
+
+@app.post("/auth/account-links/switch")
+@limiter.limit("10/minute")
+def switch_linked_account(
+    request: Request,
+    payload: AccountLinkSwitchRequest,
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import or_
+    from backend.models import AccountLink
+    from backend.push_ownership_service import (
+        transfer_push_token,
+        PushOwnershipTransferError,
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(User, current_user.id)
+        target = db.get(User, payload.target_user_id)
+
+        if (
+            source is None
+            or source.status != UserStatus.ACTIVE.value
+            or source.role not in (
+                UserRole.USER.value,
+                UserRole.PARTNER.value,
+            )
+        ):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.ACCOUNT_INACTIVE,
+            )
+
+        if (
+            target is None
+            or target.id == source.id
+            or target.status != UserStatus.ACTIVE.value
+            or target.role not in (
+                UserRole.USER.value,
+                UserRole.PARTNER.value,
+            )
+            or target.role == source.role
+        ):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.INSUFFICIENT_ROLE,
+            )
+
+        link = db.query(AccountLink).filter(
+            or_(
+                AccountLink.user_id == source.id,
+                AccountLink.partner_id == source.id,
+            )
+        ).first()
+
+        if (
+            link is None
+            or not (
+                (
+                    link.user_id == source.id
+                    and link.partner_id == target.id
+                )
+                or (
+                    link.partner_id == source.id
+                    and link.user_id == target.id
+                )
+            )
+        ):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.INSUFFICIENT_ROLE,
+            )
+
+        push_proof = None
+        if bool(payload.push_token) != bool(payload.push_ownership_proof):
+            raise HTTPException(
+                status_code=400,
+                detail="PUSH_TRANSFER_FIELDS_REQUIRED",
+            )
+
+        if payload.push_next_ownership_proof and not (
+            payload.push_token and payload.push_ownership_proof
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="PUSH_TRANSFER_FIELDS_REQUIRED",
+            )
+
+        if payload.push_token and payload.push_ownership_proof:
+            try:
+                push_proof = transfer_push_token(
+                    db,
+                    token=payload.push_token.strip(),
+                    source_user_id=source.id,
+                    target_user_id=target.id,
+                    current_proof=payload.push_ownership_proof,
+                    transfer_authorized=True,
+                    next_proof=payload.push_next_ownership_proof,
+                )
+            except PushOwnershipTransferError as exc:
+                db.rollback()
+                raise HTTPException(
+                    status_code=409,
+                    detail=str(exc),
+                ) from exc
+
+        access_token = create_access_token(target.id)
+
+        db.add(AuditLog(
+            user_id=source.id,
+            action="ACCOUNT_LINK_SWITCH",
+            ip=_get_ip(request),
+            user_agent=_get_user_agent(request),
+            details=f"target_user_id={target.id}",
+        ))
+        db.commit()
+
+        return ok({
+            "access_token": access_token,
+            "token_type": "bearer",
+            "push_ownership_proof": push_proof,
+            "user": {
+                "id": target.id,
+                "email": target.email,
+                "role": target.role,
+                "status": target.status,
+                "email_verified": bool(
+                    getattr(target, "email_verified_at", None)
+                ),
+                "email_verified_at": (
+                    str(target.email_verified_at)
+                    if getattr(target, "email_verified_at", None)
+                    else None
+                ),
+            },
+        })
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+
+class AccountLinkCreateProfileRequest(BaseModel):
+    email: EmailStr
+    current_password: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=128,
+    )
+    method: str = Field(
+        default="password",
+        pattern="^(password|google|apple)$",
+    )
+    id_token: str | None = Field(default=None, min_length=20)
+    nonce: str | None = Field(
+        default=None,
+        min_length=16,
+        max_length=255,
+    )
+    authorization_code: str | None = Field(
+        default=None,
+        min_length=1,
+    )
+    new_password: str = Field(min_length=8, max_length=128)
+    dob: date | None = None
+    accept_terms: bool = False
+    accept_privacy: bool = False
+
+
+def _verify_account_link_current_identity(db, *, initiator, payload):
+    if payload.method == "password":
+        if (
+            not initiator.password_hash
+            or not payload.current_password
+            or not verify_password(
+                payload.current_password,
+                initiator.password_hash,
+            )
+        ):
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+    elif payload.method == "google":
+        if not initiator.google_sub:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        id_token_value = str(payload.id_token or "").strip()
+
+        if not id_token_value:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        google_client_id = os.getenv(
+            "GOOGLE_WEB_CLIENT_ID",
+            "",
+        ).strip()
+
+        if not google_client_id:
+            raise HTTPException(
+                status_code=503,
+                detail="GOOGLE_AUTH_NOT_CONFIGURED",
+            )
+
+        try:
+            google_claims = google_id_token.verify_oauth2_token(
+                id_token_value,
+                google_auth_requests.Request(),
+                google_client_id,
+            )
+        except Exception:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        google_subject = str(
+            google_claims.get("sub") or ""
+        ).strip()
+
+        if (
+            not google_subject
+            or google_subject != initiator.google_sub
+        ):
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+    elif payload.method == "apple":
+        if not initiator.apple_sub:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        if (
+            not payload.id_token
+            or not payload.nonce
+            or not payload.authorization_code
+        ):
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        try:
+            apple_identity = _verify_apple_auth_identity(
+                db,
+                payload,
+            )
+        except AppleAuthError:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            ) from None
+
+        apple_subject = str(
+            apple_identity.get("apple_sub") or ""
+        ).strip()
+
+        if (
+            not apple_subject
+            or apple_subject != initiator.apple_sub
+        ):
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        apple_client_id, apple_token_response = (
+            _exchange_apple_code_for_identity(
+                authorization_code=payload.authorization_code,
+                audience=apple_identity["audience"],
+            )
+        )
+
+        exchanged_id_token = str(
+            apple_token_response.get("id_token") or ""
+        ).strip()
+
+        if not exchanged_id_token:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+        try:
+            exchanged_claims = verify_apple_identity_token(
+                exchanged_id_token,
+                allowed_audiences={apple_client_id},
+                expected_nonce=payload.nonce,
+            )
+        except AppleAuthError:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            ) from None
+
+        exchanged_subject = str(
+            exchanged_claims.get("sub") or ""
+        ).strip()
+
+        if (
+            not exchanged_subject
+            or exchanged_subject != apple_subject
+            or exchanged_subject != initiator.apple_sub
+        ):
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
+
+    else:
+        raise ApiException(
+            status_code=401,
+            code=ErrorCode.INVALID_CREDENTIALS,
+        )
+
+
+@app.post("/auth/account-links/create-profile")
+@limiter.limit("3/minute")
+def create_linked_profile(
+    request: Request,
+    payload: AccountLinkCreateProfileRequest,
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import or_
+    from sqlalchemy.exc import IntegrityError
+    from backend.account_link_service import create_account_link
+    from backend.models import AccountLink
+
+    db = SessionLocal()
+
+    try:
+        initiator = db.get(User, current_user.id)
+
+        if (
+            initiator is None
+            or initiator.status != UserStatus.ACTIVE.value
+            or initiator.role not in ("user", "partner")
+        ):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.INSUFFICIENT_ROLE,
+            )
+
+        _verify_account_link_current_identity(
+            db,
+            initiator=initiator,
+            payload=payload,
+        )
+
+        existing_link = db.query(AccountLink).filter(
+            or_(
+                AccountLink.user_id == initiator.id,
+                AccountLink.partner_id == initiator.id,
+            )
+        ).first()
+
+        if existing_link is not None:
+            raise ApiException(
+                status_code=409,
+                code=ErrorCode.VALIDATION_ERROR,
+                message="To konto ma już powiązany profil.",
+            )
+
+        if not payload.accept_terms or not payload.accept_privacy:
+            raise ApiException(
+                status_code=422,
+                code=ErrorCode.TERMS_REQUIRED,
+            )
+
+        new_role = "partner" if initiator.role == "user" else "user"
+
+        if new_role == "user":
+            if not payload.dob:
+                raise ApiException(
+                    status_code=422,
+                    code=ErrorCode.VALIDATION_ERROR,
+                    message="Data urodzenia jest wymagana.",
+                )
+            if not _is_at_least_18(payload.dob):
+                raise ApiException(
+                    status_code=403,
+                    code=ErrorCode.AGE_TOO_LOW,
+                )
+
+        normalized_email = str(payload.email).strip().lower()
+
+        existing_account = db.query(User).filter(
+            User.email == normalized_email,
+            User.role == new_role,
+        ).first()
+
+        if existing_account is not None:
+            raise ApiException(
+                status_code=409,
+                code=ErrorCode.EMAIL_ALREADY_EXISTS,
+            )
+
+        now = datetime.now(timezone.utc)
+
+        # Wspólny zweryfikowany e-mail może odziedziczyć
+        # potwierdzenie. Inny adres wymaga osobnej weryfikacji.
+        verified_at = (
+            now
+            if normalized_email == initiator.email
+            and initiator.email_verified_at is not None
+            else None
+        )
+
+        new_user = User(
+            email=normalized_email,
+            password_hash=hash_password(payload.new_password),
+            dob=payload.dob if new_role == "user" else None,
+            role=new_role,
+            status=UserStatus.ACTIVE.value,
+            terms_accepted_at=now,
+            terms_version="v1",
+            privacy_version="v1",
+            email_verified_at=verified_at,
+        )
+
+        db.add(new_user)
+        db.flush()
+
+        companion_id = (
+            initiator.id if initiator.role == "user"
+            else new_user.id
+        )
+        organizer_id = (
+            initiator.id if initiator.role == "partner"
+            else new_user.id
+        )
+
+        link = create_account_link(
+            db,
+            companion_user_id=companion_id,
+            organizer_user_id=organizer_id,
+        )
+
+        # Dla innego adresu zapisujemy token w tej samej
+        # transakcji co nowe konto i jego powiązanie.
+        verification_required = verified_at is None
+
+        if verification_required:
+            verify_token = str(uuid4())
+            verify_row = EmailVerificationToken(
+                user_id=new_user.id,
+                token=verify_token,
+                expires_at=datetime.utcnow().replace(
+                    microsecond=0
+                ) + timedelta(hours=24),
+                used_at=None,
+            )
+            db.add(verify_row)
+
+        db.commit()
+
+        # Wysyłka następuje dopiero po zatwierdzeniu
+        # konta, powiązania i tokenu weryfikacyjnego.
+        if verification_required:
+            verify_link = _build_email_verify_link(verify_token)
+            verify_subject = "USLY: potwierdź adres e-mail"
+            verify_body = (
+                "Utworzono dodatkowy profil w USLY.\\n\\n"
+                "Potwierdź adres e-mail, otwierając link:\\n"
+                f"{verify_link}\\n\\n"
+                "Link jest jednorazowy i ważny przez 24 godziny.\\n\\n"
+                "Jeśli nie tworzono tego profilu, skontaktuj się z nami: "
+                "kontakt@uslyapp.pl"
+            )
+            recipient_email = new_user.email
+
+            def _send_linked_profile_verification():
+                try:
+                    import asyncio
+                    asyncio.run(
+                        send_user_email(
+                            recipient_email,
+                            verify_subject,
+                            verify_body,
+                        )
+                    )
+                except Exception as mail_error:
+                    print(
+                        "LINKED PROFILE VERIFICATION EMAIL ERROR:",
+                        type(mail_error).__name__,
+                    )
+
+            import threading
+            threading.Thread(
+                target=_send_linked_profile_verification,
+                daemon=True,
+            ).start()
+
+        _audit(
+            db,
+            action="ACCOUNT_LINK_PROFILE_CREATED",
+            request=request,
+            user_id=initiator.id,
+            details=(
+                f"new_user_id={new_user.id}, "
+                f"new_role={new_role}"
+            ),
+        )
+
+        return ok({
+            "created": True,
+            "linked": True,
+            "new_user_id": new_user.id,
+            "new_role": new_role,
+            "email": new_user.email,
+            "email_verified": bool(verified_at),
+            "verification_required": verification_required,
+            "companion_user_id": link.user_id,
+            "organizer_user_id": link.partner_id,
+        })
+
+    except IntegrityError:
+        db.rollback()
+        raise ApiException(
+            status_code=409,
+            code=ErrorCode.VALIDATION_ERROR,
+            message="Nie udało się utworzyć profilu.",
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+
+class AccountLinkUnlinkRequest(BaseModel):
+    method: str = Field(
+        default="password",
+        pattern="^(password|google|apple)$",
+    )
+    current_password: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=128,
+    )
+    id_token: str | None = Field(default=None, min_length=20)
+    nonce: str | None = Field(
+        default=None,
+        min_length=16,
+        max_length=255,
+    )
+    authorization_code: str | None = Field(
+        default=None,
+        min_length=1,
+    )
+
+
+@app.post("/auth/account-links/unlink")
+@limiter.limit("3/minute")
+def unlink_account_link(
+    request: Request,
+    payload: AccountLinkUnlinkRequest,
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import or_
+    from backend.models import AccountLink
+
+    db = SessionLocal()
+
+    try:
+        initiator = db.get(User, current_user.id)
+
+        if (
+            initiator is None
+            or initiator.status != UserStatus.ACTIVE.value
+            or initiator.role not in ("user", "partner")
+        ):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.INSUFFICIENT_ROLE,
+            )
+
+        link = db.query(AccountLink).filter(
+            or_(
+                AccountLink.user_id == initiator.id,
+                AccountLink.partner_id == initiator.id,
+            )
+        ).with_for_update().first()
+
+        if link is None:
+            raise ApiException(
+                status_code=404,
+                code=ErrorCode.VALIDATION_ERROR,
+                message="Brak powiązanego konta.",
+            )
+
+        companion_id = link.user_id
+        organizer_id = link.partner_id
+
+        _verify_account_link_current_identity(
+            db,
+            initiator=initiator,
+            payload=payload,
+        )
+
+        db.delete(link)
+        db.commit()
+
+        _audit(
+            db,
+            action="ACCOUNT_LINK_UNLINKED",
+            request=request,
+            user_id=initiator.id,
+            details=(
+                f"companion_id={companion_id}, "
+                f"organizer_id={organizer_id}"
+            ),
+        )
+
+        return ok({
+            "unlinked": True,
+            "companion_user_id": companion_id,
+            "organizer_user_id": organizer_id,
+        })
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+
+class AccountLinkConfirmRequest(BaseModel):
+    proof: str = Field(min_length=20)
+
+
+@app.post("/auth/account-links")
+@limiter.limit("5/minute")
+def confirm_account_link(
+    request: Request,
+    payload: AccountLinkConfirmRequest,
+    current_user: User = Depends(get_current_user),
+):
+    from backend.account_link_service import create_verified_account_link
+
+    db = SessionLocal()
+    try:
+        link = create_verified_account_link(
+            db,
+            initiating_user_id=current_user.id,
+            proof=payload.proof,
+        )
+
+        _audit(
+            db,
+            action="ACCOUNT_LINK_CREATED",
+            request=request,
+            user_id=current_user.id,
+            details=(
+                f"companion_id={link.user_id}, "
+                f"organizer_id={link.partner_id}"
+            ),
+        )
+
+        return ok({
+            "linked": True,
+            "companion_user_id": link.user_id,
+            "organizer_user_id": link.partner_id,
+        })
+
+    except ApiException:
+        _audit(
+            db,
+            action="ACCOUNT_LINK_REJECTED",
+            request=request,
+            user_id=current_user.id,
+            details="Account linking rejected",
+        )
+        raise
     finally:
         db.close()
 
@@ -3744,6 +4744,11 @@ def login_mfa(payload: LoginMfaRequest, request: Request):
             raise ApiException(status_code=401, code=ErrorCode.INVALID_CREDENTIALS)
 
         access_token = create_access_token(user.id)
+
+        user.last_login_at = datetime.now(timezone.utc)
+        db.add(user)
+        db.commit()
+
         _audit(
             db,
             action="LOGIN_MFA_SUCCESS",
@@ -3840,6 +4845,10 @@ def change_password(
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+    expected_role: str | None = Field(
+        default=None,
+        pattern="^(user|partner)$",
+    )
 
 
 class ResetPasswordRequest(BaseModel):
@@ -3863,7 +4872,15 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request):
     db = SessionLocal()
     try:
         email = str(payload.email).strip().lower()
-        user = db.query(User).filter(User.email == email).first()
+        user_query = db.query(User).filter(User.email == email)
+        if payload.expected_role:
+            user_query = user_query.filter(User.role == payload.expected_role)
+            user = user_query.first()
+        else:
+            # Starsze klienty nie przesyłają roli.
+            # Nie wybieramy przypadkowego profilu przy wspólnym e-mailu.
+            matches = user_query.limit(2).all()
+            user = matches[0] if len(matches) == 1 else None
 
         # zawsze zwracamy ten sam wynik — nie ujawniamy, czy konto istnieje
         if not user or user.status != UserStatus.ACTIVE.value:
@@ -4282,6 +5299,31 @@ def delete_account(
             db.delete(g)
 
         cleanup_user_social_relations_for_soft_delete(db, current_user.id)
+
+        # Remove only the link involving the deleted account.
+        # The other account and its profile remain unchanged.
+        from sqlalchemy import or_
+        from backend.models import AccountLink
+
+        db.query(AccountLink).filter(
+            or_(
+                AccountLink.user_id == user.id,
+                AccountLink.partner_id == user.id,
+            )
+        ).delete(synchronize_session=False)
+
+        # Deactivate only push registrations owned by the deleted account.
+        # Do not affect registrations belonging to the linked account.
+        db.query(DevicePushToken).filter(
+            DevicePushToken.user_id == user.id,
+        ).update(
+            {
+                DevicePushToken.is_active: False,
+                DevicePushToken.ownership_proof_hash: None,
+                DevicePushToken.updated_at: datetime.utcnow(),
+            },
+            synchronize_session=False,
+        )
 
         original_email = user.email
         safe_email = f"deleted_{user.id}_{int(datetime.utcnow().timestamp())}@deleted.usly.local"
@@ -8834,6 +9876,7 @@ class PushTokenRegisterRequest(BaseModel):
     device_id: str | None = Field(default=None, max_length=120)
     app_version: str | None = Field(default=None, max_length=40)
     language: str = Field(default="pl", pattern="^(pl|en)$")
+    push_ownership_proof: str | None = Field(default=None, max_length=256)
 
 
 @app.post("/push/register-token")
@@ -8850,12 +9893,37 @@ def register_push_token(
         existing = (
             db.query(DevicePushToken)
             .filter(DevicePushToken.token == token_value)
+            .with_for_update()
             .first()
         )
 
         now = datetime.utcnow()
 
+        from backend.push_ownership_service import decide_push_registration
+        from backend.push_ownership_proof import create_push_ownership_proof
+
+        decision = decide_push_registration(
+            existing_owner=existing.user_id if existing else None,
+            requesting_user=current_user.id,
+            is_active=existing.is_active if existing else False,
+            stored_proof_hash=(
+                existing.ownership_proof_hash if existing else None
+            ),
+            supplied_proof=payload.push_ownership_proof,
+        )
+
+        if decision.startswith("DENY_"):
+            raise HTTPException(status_code=409, detail=decision)
+
+        issued_proof = None
+        if decision in ("CREATE", "BOOTSTRAP_LEGACY_OWNER"):
+            issued_proof, issued_hash = create_push_ownership_proof()
+        else:
+            issued_hash = None
+
         if existing:
+            if issued_hash is not None:
+                existing.ownership_proof_hash = issued_hash
             existing.user_id = current_user.id
             existing.platform = payload.platform
             existing.device_id = payload.device_id
@@ -8869,6 +9937,7 @@ def register_push_token(
             token_row = DevicePushToken(
                 user_id=current_user.id,
                 token=token_value,
+                ownership_proof_hash=issued_hash,
                 platform=payload.platform,
                 device_id=payload.device_id,
                 app_version=payload.app_version,
@@ -8887,8 +9956,55 @@ def register_push_token(
                 "registered": True,
                 "platform": token_row.platform,
                 "language": token_row.language,
+                "push_ownership_proof": issued_proof,
             }
         )
+    finally:
+        db.close()
+
+
+class PushTokenUnregisterRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=512)
+    push_ownership_proof: str | None = Field(
+        default=None, min_length=1, max_length=256
+    )
+
+
+@app.post("/push/unregister-token")
+def unregister_push_token(
+    payload: PushTokenUnregisterRequest,
+    current_user: User = Depends(require_role("user", "partner")),
+):
+    db = SessionLocal()
+    try:
+        token_row = (
+            db.query(DevicePushToken)
+            .filter(
+                DevicePushToken.token == payload.token.strip(),
+                DevicePushToken.user_id == current_user.id,
+            )
+            .with_for_update()
+            .first()
+        )
+
+        if token_row:
+            from backend.push_ownership_proof import verify_push_ownership_proof
+
+            if token_row.ownership_proof_hash is not None:
+                if not payload.push_ownership_proof or not verify_push_ownership_proof(
+                    payload.push_ownership_proof,
+                    token_row.ownership_proof_hash,
+                ):
+                    raise HTTPException(
+                        status_code=409,
+                        detail="INVALID_OR_MISSING_PUSH_OWNERSHIP_PROOF",
+                    )
+
+            token_row.is_active = False
+            token_row.updated_at = datetime.utcnow()
+            db.commit()
+
+        return ok({"unregistered": True})
     finally:
         db.close()
 
@@ -12493,6 +13609,79 @@ def admin_add_report_action(
     return ok({"ticket": ticket, "report": found})
 
 
+@app.post("/admin/users/{user_id}/warning")
+def admin_warn_user_directly(
+    user_id: int,
+    payload: dict,
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+):
+    require_admin_permission(current_user, "reports")
+
+    action = str((payload or {}).get("action") or "").strip()
+    note = str((payload or {}).get("note") or "").strip()
+
+    allowed_actions = {
+        "warning_community_rules",
+        "warning_abusive_content",
+        "warning_behavior",
+        "warning_profile",
+        "warning_spam",
+        "warning_misleading_activity",
+        "warning_event_rules",
+    }
+
+    if action not in allowed_actions:
+        raise HTTPException(status_code=422, detail="INVALID_WARNING_ACTION")
+
+    if len(note) > 1000:
+        raise HTTPException(status_code=422, detail="WARNING_NOTE_TOO_LONG")
+
+    db = SessionLocal()
+    try:
+        target_user = db.query(User).filter(User.id == user_id).first()
+
+        if not target_user:
+            raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
+
+        if str(target_user.status or "") == "deleted":
+            raise HTTPException(status_code=409, detail="USER_ACCOUNT_DELETED")
+
+        if str(target_user.role or "") == UserRole.ADMIN.value:
+            raise HTTPException(status_code=403, detail="CANNOT_WARN_ADMIN")
+
+        _admin_create_user_notification(
+            target_user.id,
+            f"admin_user_warning_{action}",
+        )
+
+        details = (
+            f"target_user_id={target_user.id}; "
+            f"target_role={target_user.role}; "
+            f"warning_type={action}; "
+            f"admin_id={current_user.id}; "
+            f"admin_level={current_user.admin_level or 'admin'}; "
+            f"note={note or '-'}"
+        )
+
+        _audit(
+            db,
+            action="admin_user_warning",
+            request=request,
+            user_id=target_user.id,
+            details=details,
+        )
+
+        return ok({
+            "user_id": target_user.id,
+            "action": action,
+            "note": note or None,
+            "warning_sent": True,
+        })
+    finally:
+        db.close()
+
+
 @app.post("/admin/users/{user_id}/delete-account")
 def admin_delete_user_account(
     user_id: int,
@@ -13603,6 +14792,189 @@ def admin_user_preview(
                 "events_archived": event_statuses.count(EventStatus.ARCHIVED.value),
             }
 
+        # =========================================================
+        # ADMIN USER PREVIEW — activity / trainer / ratings / events
+        # =========================================================
+
+        trainer_interests = (
+            _get_active_trainer_interests(profile)
+            if user.role == UserRole.USER.value and profile
+            else []
+        )
+        is_trainer = bool(trainer_interests)
+
+        # Aktywność zwykłego użytkownika
+        event_signups_count = (
+            db.query(EventSignup)
+            .filter(EventSignup.user_id == user.id)
+            .count()
+        )
+
+        event_saves_count = (
+            db.query(EventSave)
+            .filter(EventSave.user_id == user.id)
+            .count()
+        )
+
+        # Wydarzenia należące do tego konta:
+        # organizer -> event_type=organizer
+        # trainer   -> event_type=trainer
+        owned_events = (
+            db.query(Event)
+            .filter(Event.partner_user_id == user.id)
+            .order_by(Event.created_at.desc())
+            .all()
+        )
+
+        owned_event_ids = [event.id for event in owned_events]
+
+        signup_counts_by_event = {}
+        if owned_event_ids:
+            signup_count_rows = (
+                db.query(EventSignup.event_id, func.count(EventSignup.id))
+                .filter(EventSignup.event_id.in_(owned_event_ids))
+                .group_by(EventSignup.event_id)
+                .all()
+            )
+            signup_counts_by_event = {
+                int(event_id): int(count or 0)
+                for event_id, count in signup_count_rows
+            }
+
+        def _admin_event_row(event):
+            return {
+                "id": event.id,
+                "title": event.title,
+                "event_type": event.event_type,
+                "status": event.status,
+                "city": event.city,
+                "where": event.where,
+                "interest_tag": event.interest_tag,
+                "start_at": str(event.start_at) if event.start_at else None,
+                "end_at": str(event.end_at) if event.end_at else None,
+                "capacity": event.capacity,
+                "participants_count": signup_counts_by_event.get(event.id, 0),
+                "pricing_type": event.pricing_type,
+                "price_fixed": event.price_fixed,
+                "price_min": event.price_min,
+                "price_max": event.price_max,
+                "created_at": str(event.created_at) if event.created_at else None,
+                "updated_at": str(event.updated_at) if event.updated_at else None,
+            }
+
+        organizer_event_rows = [
+            _admin_event_row(event)
+            for event in owned_events
+            if str(event.event_type or "organizer") == "organizer"
+        ]
+
+        trainer_event_rows = [
+            _admin_event_row(event)
+            for event in owned_events
+            if str(event.event_type or "") == "trainer"
+        ]
+
+        # ---------------------------------------------------------
+        # Organizer ratings — pełna historia
+        # ---------------------------------------------------------
+
+        organizer_rating_history = []
+
+        if user.role == UserRole.PARTNER.value:
+            organizer_rating_rows = (
+                db.query(OrganizerRating, User, UserProfile, Event)
+                .join(User, User.id == OrganizerRating.user_id)
+                .outerjoin(UserProfile, UserProfile.user_id == User.id)
+                .join(Event, Event.id == OrganizerRating.event_id)
+                .filter(OrganizerRating.organizer_user_id == user.id)
+                .order_by(OrganizerRating.created_at.desc())
+                .all()
+            )
+
+            organizer_rating_history = [
+                {
+                    "id": rating.id,
+                    "rating": rating.rating,
+                    "created_at": str(rating.created_at) if rating.created_at else None,
+                    "author": {
+                        "id": author.id,
+                        "nick": getattr(author_profile, "nick", None),
+                        "email": author.email,
+                    },
+                    "event": {
+                        "id": event.id,
+                        "title": event.title,
+                        "start_at": str(event.start_at) if event.start_at else None,
+                    },
+                }
+                for rating, author, author_profile, event in organizer_rating_rows
+            ]
+
+        # ---------------------------------------------------------
+        # Trainer ratings — pełna historia + statystyki
+        # ---------------------------------------------------------
+
+        trainer_rating_history = []
+        trainer_admin_stats = None
+
+        if is_trainer:
+            trainer_rating_rows = (
+                db.query(TrainerRating, User, UserProfile, Event)
+                .join(User, User.id == TrainerRating.user_id)
+                .outerjoin(UserProfile, UserProfile.user_id == User.id)
+                .join(Event, Event.id == TrainerRating.event_id)
+                .filter(TrainerRating.trainer_user_id == user.id)
+                .order_by(TrainerRating.created_at.desc())
+                .all()
+            )
+
+            trainer_rating_history = [
+                {
+                    "id": rating.id,
+                    "rating": rating.rating,
+                    "interest_tag": rating.interest_tag,
+                    "created_at": str(rating.created_at) if rating.created_at else None,
+                    "author": {
+                        "id": author.id,
+                        "nick": getattr(author_profile, "nick", None),
+                        "email": author.email,
+                    },
+                    "event": {
+                        "id": event.id,
+                        "title": event.title,
+                        "start_at": str(event.start_at) if event.start_at else None,
+                    },
+                }
+                for rating, author, author_profile, event in trainer_rating_rows
+            ]
+
+            trainer_rating_values = [
+                int(row["rating"])
+                for row in trainer_rating_history
+            ]
+
+            trainer_admin_stats = {
+                "specializations": trainer_interests,
+                "ratings_count": len(trainer_rating_values),
+                "rating_average": (
+                    round(sum(trainer_rating_values) / len(trainer_rating_values), 2)
+                    if trainer_rating_values
+                    else None
+                ),
+                "events_total": len(trainer_event_rows),
+                "events_draft": sum(1 for event in trainer_event_rows if event["status"] == EventStatus.DRAFT.value),
+                "events_published": sum(1 for event in trainer_event_rows if event["status"] == EventStatus.PUBLISHED.value),
+                "events_archived": sum(1 for event in trainer_event_rows if event["status"] == EventStatus.ARCHIVED.value),
+                "participants_total": sum(event["participants_count"] for event in trainer_event_rows),
+            }
+
+        # Uzupełniamy organizer stats o uczestników.
+        if organizer_admin_stats is not None:
+            organizer_admin_stats["participants_total"] = sum(
+                event["participants_count"]
+                for event in organizer_event_rows
+            )
+
         plan_history_logs = (
             db.query(AuditLog)
             .filter(AuditLog.user_id == user.id)
@@ -13637,6 +15009,20 @@ def admin_user_preview(
             "category": getattr(partner_profile, "kategoria", None) if user.role == UserRole.PARTNER.value else None,
             "revenuecat_app_user_id": getattr(user, "revenuecat_app_user_id", None),
             "organizer_stats": organizer_admin_stats,
+            "organizer_events": organizer_event_rows,
+            "organizer_rating_history": organizer_rating_history,
+            "is_trainer": is_trainer,
+            "trainer_interests": trainer_interests,
+            "trainer_stats": trainer_admin_stats,
+            "trainer_events": trainer_event_rows,
+            "trainer_rating_history": trainer_rating_history,
+            "activity": {
+                "event_signups_count": event_signups_count,
+                "event_saves_count": event_saves_count,
+            },
+            "last_login_at": str(user.last_login_at) if getattr(user, "last_login_at", None) else None,
+            "last_active_at": str(user.last_active_at) if getattr(user, "last_active_at", None) else None,
+            "email_verified": bool(getattr(user, "email_verified", False)),
             "interests": interests,
             "plan": account_plan,
             "plan_source": account_plan_source,
@@ -14351,6 +15737,12 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
             user_profile = user_profiles.get(user.id)
             partner_profile = partner_profiles.get(user.id)
 
+            active_trainer_interests = (
+                _get_active_trainer_interests(user_profile)
+                if user.role == UserRole.USER.value and user_profile
+                else []
+            )
+
             interests = []
             if user_profile and user_profile.zainteresowania_json:
                 try:
@@ -14418,6 +15810,8 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "id": user.id,
                 "email": user.email,
                 "role": user.role,
+                "is_trainer": bool(active_trainer_interests),
+                "trainer_interests": active_trainer_interests,
                 "status": user.status,
                 "display_name": display_name,
                 "admin_display_name": user.admin_display_name,
@@ -14432,6 +15826,7 @@ def admin_list_users(current_user: User = Depends(require_role("admin"))):
                 "mfa_enabled": bool(getattr(user, "mfa_enabled", False)),
                 "mfa_enabled_at": str(user.mfa_enabled_at) if getattr(user, "mfa_enabled_at", None) else None,
                 "last_login_at": str(getattr(user, "last_login_at", "")) if getattr(user, "last_login_at", None) else None,
+                "last_active_at": str(getattr(user, "last_active_at", "")) if getattr(user, "last_active_at", None) else None,
                 "created_at": str(user.created_at) if user.created_at else None,
                 "plan": plan,
                 "plan_source": plan_source,
@@ -14670,6 +16065,7 @@ def admin_list_events(current_user: User = Depends(require_role("admin"))):
                 "start_at": str(ev.start_at) if ev.start_at else None,
                 "end_at": str(ev.end_at) if ev.end_at else None,
                 "capacity": ev.capacity,
+                "event_type": getattr(ev, "event_type", None) or "organizer",
                 "status": ev.status,
                 "lifecycle_status": _admin_event_lifecycle_status(ev),
                 "created_at": str(ev.created_at) if ev.created_at else None,

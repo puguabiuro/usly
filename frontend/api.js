@@ -46,7 +46,8 @@
     }
 
     const token = getToken();
-    if (token && !headers.has("Authorization")) {
+    const hasExplicitAuthorization = headers.has("Authorization");
+    if (token && !hasExplicitAuthorization) {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
@@ -63,8 +64,58 @@
     }
     if (res.status === 401) {
       const data = await readJsonSafe(res);
-      clearToken();
-      emitLogout(res.status, data);
+
+      // Nie wylogowuj nowej sesji z powodu odpowiedzi starego konta.
+      // Sprawdzamy token ponownie także po asynchronicznym odczycie body.
+      // Błędne hasło drugiego konta nie oznacza wygaśnięcia
+      // sesji aktualnie zalogowanego użytkownika.
+      const isSecondAccountCredentialError =
+        (
+          path === "/auth/account-links/password-proof" ||
+          path === "/auth/account-links/create-profile" ||
+          path === "/auth/account-links/unlink"
+        ) &&
+        (
+          data?.error_code === "INVALID_CREDENTIALS" ||
+          data?.code === "INVALID_CREDENTIALS" ||
+          data?.error?.code === "INVALID_CREDENTIALS"
+        );
+
+      // Przy przełączaniu profili zachowujemy JWT do rozstrzygnięcia
+      // niedokończonego transferu. Samo HTTP 401 nadal jest błędem.
+      // Pozostałe żądania zachowują dotychczasową obsługę wylogowania.
+      const isAccountSwitchRequest =
+        path === "/auth/account-links/switch";
+
+      // Przy nierozstrzygniętym transferze zachowujemy JWT także
+      // po 401 z /auth/me. Błąd trafia do ekranu odzyskiwania,
+      // zamiast uruchamiać zwykłe wylogowanie.
+      const isPendingTransferIdentityCheck =
+        path === "/auth/me" &&
+        Boolean(localStorage.getItem("usly_pending_push_transfer_v1"));
+
+      // Błąd ponownego uwierzytelnienia podczas odzyskiwania
+      // transferu nie oznacza wygaśnięcia aktywnej sesji.
+      const isPendingTransferAuthentication =
+        (
+          path === "/auth/login" ||
+          path === "/auth/google" ||
+          path === "/auth/apple"
+        ) &&
+        Boolean(localStorage.getItem("usly_pending_push_transfer_v1"));
+
+      if (
+        !isSecondAccountCredentialError &&
+        !isAccountSwitchRequest &&
+        !isPendingTransferIdentityCheck &&
+        !isPendingTransferAuthentication &&
+        !hasExplicitAuthorization &&
+        Boolean(token) &&
+        getToken() === token
+      ) {
+        clearToken();
+        emitLogout(res.status, data);
+      }
 
       const err = new Error("Unauthorized");
       err.status = res.status;
