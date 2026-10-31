@@ -207,6 +207,45 @@ class CreateLinkedProfileHTTPTests(unittest.TestCase):
             self.assertEqual(db.query(AccountLink).count(), 1)
             self.assertEqual(db.query(User).count(), 3)
 
+    def test_google_creates_passwordless_linked_organizer(self):
+        self._set_companion_google_sub("google-companion-123")
+
+        with patch.dict(
+            os.environ,
+            {"GOOGLE_WEB_CLIENT_ID": "usly-test-client"},
+        ), patch.object(
+            main.google_id_token,
+            "verify_oauth2_token",
+            return_value={"sub": "google-companion-123"},
+        ):
+            response = self.create_profile(
+                self.companion_id,
+                current_password=None,
+                new_password=None,
+                method="google",
+                id_token="valid-google-id-token-for-test",
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+
+        with self.Session() as db:
+            companion = db.get(User, self.companion_id)
+            created = db.query(User).filter(
+                User.email == "new-linked@example.com"
+            ).one()
+
+            self.assertEqual(created.role, "partner")
+            self.assertIsNone(created.password_hash)
+            self.assertIsNone(created.google_sub)
+            self.assertNotEqual(
+                companion.revenuecat_app_user_id,
+                created.revenuecat_app_user_id,
+            )
+
+            link = db.query(AccountLink).one()
+            self.assertEqual(link.user_id, companion.id)
+            self.assertEqual(link.partner_id, created.id)
+
     def test_google_reauth_rejects_different_sub(self):
         self._set_companion_google_sub("google-companion-123")
 

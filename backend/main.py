@@ -220,6 +220,7 @@ from sqlalchemy import func
 from backend.db.database import SessionLocal
 from backend.models import (
     User,
+    AccountLink,
     UserProfile,
     PartnerProfile,
     Event,
@@ -3472,24 +3473,105 @@ def google_login(payload: GoogleLoginRequest, request: Request):
             .first()
         )
 
+        # A disabled Google identity owner must not obtain a session
+        # through another linked profile, even if that profile is active.
+        if (
+            payload.mode == "login"
+            and user_by_sub is not None
+            and user_by_sub.status != UserStatus.ACTIVE.value
+        ):
+            raise ApiException(
+                status_code=403,
+                code=ErrorCode.ACCOUNT_INACTIVE,
+            )
+
         if (
             user_by_sub is not None
             and user_by_email is not None
             and user_by_sub.id != user_by_email.id
         ):
-            _audit(
-                db,
-                action="GOOGLE_LOGIN_FAIL_ACCOUNT_CONFLICT",
-                request=request,
-                user_id=user_by_sub.id,
-                details=f"email={email}",
-            )
-            raise HTTPException(
-                status_code=409,
-                detail="GOOGLE_ACCOUNT_CONFLICT",
-            )
+            # Distinct identities are allowed only when the two roles
+            # are explicitly linked and this is a login operation.
+            linked_identity_pair = False
+
+            if (
+                payload.mode == "login"
+                and user_by_sub.role == "user"
+                and user_by_email.role == "partner"
+            ):
+                linked_identity_pair = (
+                    db.query(AccountLink.id)
+                    .filter(
+                        AccountLink.user_id == user_by_sub.id,
+                        AccountLink.partner_id == user_by_email.id,
+                    )
+                    .first()
+                    is not None
+                )
+            elif (
+                payload.mode == "login"
+                and user_by_sub.role == "partner"
+                and user_by_email.role == "user"
+            ):
+                linked_identity_pair = (
+                    db.query(AccountLink.id)
+                    .filter(
+                        AccountLink.partner_id == user_by_sub.id,
+                        AccountLink.user_id == user_by_email.id,
+                    )
+                    .first()
+                    is not None
+                )
+
+            if not linked_identity_pair:
+                _audit(
+                    db,
+                    action="GOOGLE_LOGIN_FAIL_ACCOUNT_CONFLICT",
+                    request=request,
+                    user_id=user_by_sub.id,
+                    details=f"email={email}",
+                )
+                raise HTTPException(
+                    status_code=409,
+                    detail="GOOGLE_ACCOUNT_CONFLICT",
+                )
 
         user = user_by_sub or user_by_email
+        linked_google_login = False
+
+        # A verified Google identity may access the opposite role
+        # only through an explicit, existing account link.
+        if (
+            payload.mode == "login"
+            and user_by_sub is not None
+            and user_by_sub.role != payload.expected_role
+        ):
+            if user_by_sub.role == "user" and payload.expected_role == "partner":
+                link = (
+                    db.query(AccountLink)
+                    .filter(AccountLink.user_id == user_by_sub.id)
+                    .first()
+                )
+                linked_id = link.partner_id if link else None
+            elif user_by_sub.role == "partner" and payload.expected_role == "user":
+                link = (
+                    db.query(AccountLink)
+                    .filter(AccountLink.partner_id == user_by_sub.id)
+                    .first()
+                )
+                linked_id = link.user_id if link else None
+            else:
+                linked_id = None
+
+            if linked_id is not None:
+                linked_user = db.get(User, linked_id)
+                if (
+                    linked_user is not None
+                    and linked_user.role == payload.expected_role
+                    and linked_user.status == UserStatus.ACTIVE.value
+                ):
+                    user = linked_user
+                    linked_google_login = True
 
         # -------------------------------------------------
         # LOGIN
@@ -3531,14 +3613,15 @@ def google_login(payload: GoogleLoginRequest, request: Request):
                     code=ErrorCode.INSUFFICIENT_ROLE,
                 )
 
-            if user.google_sub and user.google_sub != google_sub:
-                raise HTTPException(
-                    status_code=409,
-                    detail="GOOGLE_ACCOUNT_CONFLICT",
-                )
+            if not linked_google_login:
+                if user.google_sub and user.google_sub != google_sub:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="GOOGLE_ACCOUNT_CONFLICT",
+                    )
 
-            if not user.google_sub:
-                user.google_sub = google_sub
+                if not user.google_sub:
+                    user.google_sub = google_sub
 
             if not user.email_verified_at:
                 user.email_verified_at = datetime.now(timezone.utc)
@@ -4185,7 +4268,7 @@ class AccountLinkCreateProfileRequest(BaseModel):
         default=None,
         min_length=1,
     )
-    new_password: str = Field(min_length=8, max_length=128)
+    new_password: str | None = Field(default=None, min_length=8, max_length=128)
     dob: date | None = None
     accept_terms: bool = False
     accept_privacy: bool = False
@@ -4381,6 +4464,13 @@ def create_linked_profile(
             payload=payload,
         )
 
+        if payload.method == "password" and not payload.new_password:
+            raise ApiException(
+                status_code=422,
+                code=ErrorCode.VALIDATION_ERROR,
+                message="Hasło nowego profilu jest wymagane.",
+            )
+
         existing_link = db.query(AccountLink).filter(
             or_(
                 AccountLink.user_id == initiator.id,
@@ -4442,7 +4532,11 @@ def create_linked_profile(
 
         new_user = User(
             email=normalized_email,
-            password_hash=hash_password(payload.new_password),
+            password_hash=(
+                hash_password(payload.new_password)
+                if payload.method == "password"
+                else None
+            ),
             dob=payload.dob if new_role == "user" else None,
             role=new_role,
             status=UserStatus.ACTIVE.value,
@@ -4633,6 +4727,28 @@ def unlink_account_link(
             initiator=initiator,
             payload=payload,
         )
+
+        companion = db.get(User, companion_id)
+        organizer = db.get(User, organizer_id)
+
+        for linked_user in (companion, organizer):
+            if (
+                linked_user is None
+                or linked_user.status != UserStatus.ACTIVE.value
+                or not (
+                    linked_user.password_hash
+                    or linked_user.google_sub
+                    or linked_user.apple_sub
+                )
+            ):
+                raise ApiException(
+                    status_code=409,
+                    code=ErrorCode.VALIDATION_ERROR,
+                    message=(
+                        "Nie można odłączyć profili, ponieważ "
+                        "jeden z nich nie ma niezależnej metody logowania."
+                    ),
+                )
 
         db.delete(link)
         db.commit()

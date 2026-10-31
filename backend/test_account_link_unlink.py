@@ -120,6 +120,35 @@ class AccountUnlinkHTTPTests(unittest.TestCase):
             self.assertIsNotNone(companion.password_hash)
             self.assertIsNotNone(organizer.password_hash)
 
+    def test_rejects_unlink_when_organizer_has_no_independent_login(self):
+        with self.Session() as db:
+            organizer = db.get(User, self.organizer_id)
+            organizer.password_hash = None
+            organizer.google_sub = None
+            organizer.apple_sub = None
+            db.commit()
+
+        response = self.unlink(
+            self.companion_id,
+            "CompanionPassword123!",
+        )
+
+        self.assertEqual(response.status_code, 409, response.text)
+
+        with self.Session() as db:
+            self.assertEqual(db.query(AccountLink).count(), 1)
+            companion = db.get(User, self.companion_id)
+            organizer = db.get(User, self.organizer_id)
+            self.assertEqual(companion.role, "user")
+            self.assertEqual(organizer.role, "partner")
+            self.assertIsNone(organizer.password_hash)
+            self.assertIsNone(organizer.google_sub)
+            self.assertIsNone(organizer.apple_sub)
+            self.assertEqual(
+                organizer.revenuecat_app_user_id,
+                self.organizer_rc,
+            )
+
     def test_companion_unlinks_organizer(self):
         response = self.unlink(
             self.companion_id,
