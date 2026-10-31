@@ -5209,7 +5209,12 @@ def reset_password_info(payload: ResetPasswordInfoRequest):
         if not reset_row or reset_row.used_at is not None:
             raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_INVALID")
 
-        if reset_row.expires_at < datetime.now(timezone.utc):
+        expires_at_utc = (
+            reset_row.expires_at.replace(tzinfo=timezone.utc)
+            if reset_row.expires_at.tzinfo is None
+            else reset_row.expires_at.astimezone(timezone.utc)
+        )
+        if expires_at_utc < datetime.now(timezone.utc):
             raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_EXPIRED")
 
         user = db.query(User).filter(User.id == reset_row.user_id).first()
@@ -5241,7 +5246,12 @@ def reset_password(payload: ResetPasswordRequest, request: Request):
         if not reset_row or reset_row.used_at is not None:
             raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_INVALID")
 
-        if reset_row.expires_at < datetime.now(timezone.utc):
+        expires_at_utc = (
+            reset_row.expires_at.replace(tzinfo=timezone.utc)
+            if reset_row.expires_at.tzinfo is None
+            else reset_row.expires_at.astimezone(timezone.utc)
+        )
+        if expires_at_utc < datetime.now(timezone.utc):
             raise HTTPException(status_code=400, detail="PASSWORD_RESET_TOKEN_EXPIRED")
 
         user = db.query(User).filter(User.id == reset_row.user_id).first()
