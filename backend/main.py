@@ -3346,14 +3346,101 @@ def apple_login(payload: AppleLoginRequest, request: Request):
         )
 
         if payload.mode == "login":
-            response = _complete_apple_login(
-                db,
-                user=user,
-                apple_sub=apple_sub,
-                email=email,
-                request=request,
-                expected_role=payload.expected_role,
+            identity_owner = (
+                db.query(User)
+                .filter(User.apple_sub == apple_sub)
+                .first()
             )
+
+            if (
+                identity_owner is not None
+                and identity_owner.status != UserStatus.ACTIVE.value
+            ):
+                raise ApiException(
+                    status_code=403,
+                    code=ErrorCode.ACCOUNT_INACTIVE,
+                )
+
+            login_user = user
+
+            if (
+                identity_owner is not None
+                and identity_owner.role != payload.expected_role
+            ):
+                link = (
+                    db.query(AccountLink)
+                    .filter(
+                        (
+                            AccountLink.user_id == identity_owner.id
+                            if identity_owner.role == "user"
+                            else AccountLink.partner_id == identity_owner.id
+                        )
+                    )
+                    .first()
+                )
+
+                target_id = None
+                if link is not None:
+                    target_id = (
+                        link.partner_id
+                        if identity_owner.role == "user"
+                        else link.user_id
+                    )
+
+                login_user = (
+                    db.get(User, target_id)
+                    if target_id is not None
+                    else identity_owner
+                )
+
+            if (
+                login_user is not None
+                and login_user.id != (
+                    identity_owner.id if identity_owner else login_user.id
+                )
+            ):
+                if login_user.status != UserStatus.ACTIVE.value:
+                    raise ApiException(
+                        status_code=403,
+                        code=ErrorCode.ACCOUNT_INACTIVE,
+                    )
+
+                if login_user.role != payload.expected_role:
+                    raise ApiException(
+                        status_code=403,
+                        code=ErrorCode.INSUFFICIENT_ROLE,
+                    )
+
+                login_user.last_login_at = datetime.now(timezone.utc)
+                db.add(login_user)
+                db.commit()
+
+                response = ok({
+                    "access_token": create_access_token(login_user.id),
+                    "token_type": "bearer",
+                    "created": False,
+                    "user": {
+                        "id": login_user.id,
+                        "email": login_user.email,
+                        "role": login_user.role,
+                        "status": login_user.status,
+                        "email_verified": bool(login_user.email_verified_at),
+                        "email_verified_at": (
+                            str(login_user.email_verified_at)
+                            if login_user.email_verified_at
+                            else None
+                        ),
+                    },
+                })
+            else:
+                response = _complete_apple_login(
+                    db,
+                    user=login_user,
+                    apple_sub=apple_sub,
+                    email=email,
+                    request=request,
+                    expected_role=payload.expected_role,
+                )
 
             resolved_user = (
                 db.query(User)
