@@ -141,6 +141,28 @@ def get_current_user(
         if user.status != UserStatus.ACTIVE.value:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ACCOUNT_INACTIVE")
 
+        # USER ACTIVITY
+        # Aktualizujemy najwyżej raz na 15 minut, aby nie wykonywać
+        # UPDATE users przy każdym uwierzytelnionym requestcie.
+        # Błąd telemetryczny nie może blokować korzystania z aplikacji.
+        try:
+            now = datetime.utcnow()
+            last_active_at = getattr(user, "last_active_at", None)
+
+            if (
+                last_active_at is None
+                or now - last_active_at >= timedelta(minutes=15)
+            ):
+                user.last_active_at = now
+                db.add(user)
+                db.commit()
+        except Exception:
+            db.rollback()
+
+        # Zapewniamy dostępność pól użytkownika po zamknięciu sesji.
+        # Jest to istotne również po db.commit(), który wygasza atrybuty ORM.
+        db.refresh(user)
+        db.expunge(user)
         return user
 
     finally:

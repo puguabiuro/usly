@@ -37,9 +37,12 @@ class User(Base):
 
     email: Mapped[str] = mapped_column(
         String(320),
-        unique=True,
         index=True,
         nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("email", "role", name="uq_users_email_role"),
     )
 
     revenuecat_app_user_id: Mapped[str] = mapped_column(
@@ -153,6 +156,20 @@ class User(Base):
         index=True,
     )
 
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    last_active_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -161,9 +178,66 @@ class User(Base):
 
 
 # =====================
+# POWIAZANE KONTA: TOWARZYSZ + ORGANIZATOR
+# =====================
+
+class AccountLink(Base):
+    __tablename__ = "account_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    )
+
+    partner_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "user_id <> partner_id",
+            name="ck_account_links_distinct_users",
+        ),
+    )
+
+
+# =====================
 # PROFILE — TOWARZYSZ (USER)
 # tabela 1:1 z users (unikalny user_id)
 # =====================
+
+
+class AccountLinkProofUse(Base):
+    """Record consumed account-link proofs without storing JWTs."""
+
+    __tablename__ = "account_link_proof_uses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    proof_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    initiating_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    second_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    consumed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+    )
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"
@@ -1504,6 +1578,7 @@ class DevicePushToken(Base):
         nullable=True,
         default=None,
     )
+    ownership_proof_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     app_version: Mapped[str | None] = mapped_column(
         String(40),

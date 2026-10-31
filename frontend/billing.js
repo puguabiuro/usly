@@ -31,6 +31,7 @@
 
   let configurePromise = null;
   let configuredAppUserId = null;
+  let identityQueue = Promise.resolve();
 
   function getProductId(role, plan) {
     const platform = getPlatform();
@@ -121,20 +122,48 @@
       throw err;
     }
 
-    if (configurePromise && configuredAppUserId === appUserID) {
-      return configurePromise;
+    if (!configurePromise) {
+      configuredAppUserId = appUserID;
+      configurePromise = Purchases.configure({ apiKey, appUserID })
+        .then(() => ({ appUserID, platform }))
+        .catch(error => {
+          configurePromise = null;
+          configuredAppUserId = null;
+          throw error;
+        });
     }
 
-    configuredAppUserId = appUserID;
-    configurePromise = (async () => {
-      await Purchases.configure({ apiKey, appUserID });
-      return { appUserID, platform };
-    })();
-    return configurePromise;
+    await configurePromise;
+    return { appUserID, platform };
   }
 
-  async function logIn(role) {
-    const { appUserID } = await configure(role);
+  let activeBillingTransactions = 0;
+
+  function isTransactionInProgress() {
+    return activeBillingTransactions > 0;
+  }
+
+  async function withBillingTransaction(operation) {
+    activeBillingTransactions += 1;
+    try {
+      return await operation();
+    } finally {
+      activeBillingTransactions -= 1;
+    }
+  }
+
+  function enqueueBillingOperation(operation) {
+    const queued = identityQueue.catch(() => {}).then(operation);
+    identityQueue = queued.catch(() => {});
+    return queued;
+  }
+
+  async function logInNative(role, session) {
+    const appUserID = session.revenueCatId;
+    assertBillingSession(session);
+    await configure(role);
+    assertBillingSession(session);
+
     const Purchases = getNativePurchasesPlugin();
 
     if (!Purchases?.logIn) {
@@ -143,20 +172,33 @@
       throw err;
     }
 
-    return Purchases.logIn({ appUserID });
+    const result = await Purchases.logIn({ appUserID });
+    assertBillingSession(session);
+    return result;
   }
 
-  async function getOfferings(role) {
-    await logIn(role);
-    const Purchases = getNativePurchasesPlugin();
+  function logIn(role) {
+    const session = captureBillingSession();
+    return enqueueBillingOperation(() => logInNative(role, session));
+  }
 
-    if (!Purchases?.getOfferings) {
-      const err = new Error("STORE_BILLING_OFFERINGS_UNAVAILABLE");
-      err.code = "STORE_BILLING_OFFERINGS_UNAVAILABLE";
-      throw err;
-    }
+  function getOfferings(role) {
+    const session = captureBillingSession();
+    return enqueueBillingOperation(async () => {
+      await logInNative(role, session);
+      const Purchases = getNativePurchasesPlugin();
 
-    return Purchases.getOfferings();
+      if (!Purchases?.getOfferings) {
+        const err = new Error("STORE_BILLING_OFFERINGS_UNAVAILABLE");
+        err.code = "STORE_BILLING_OFFERINGS_UNAVAILABLE";
+        throw err;
+      }
+
+      assertBillingSession(session);
+      const result = await Purchases.getOfferings();
+      assertBillingSession(session);
+      return result;
+    });
   }
 
   function findPackageByProductId(offerings, productId) {
@@ -203,7 +245,34 @@
     return subscriptions?.[productId] || null;
   }
 
-  async function syncCurrentRevenueCatPlan() {
+  function captureBillingSession() {
+    return {
+      token: localStorage.getItem("usly_token"),
+      userId: String(window.App?.currentUserId ?? ""),
+      role: window.App?.role,
+      revenueCatId: getAppUserId(),
+    };
+  }
+
+  function assertBillingSession(session) {
+    if (
+      !session.token ||
+      !session.userId ||
+      !session.revenueCatId ||
+      localStorage.getItem("usly_token") !== session.token ||
+      String(window.App?.currentUserId ?? "") !== session.userId ||
+      window.App?.role !== session.role ||
+      getAppUserId() !== session.revenueCatId
+    ) {
+      const error = new Error("STORE_BILLING_SESSION_CHANGED");
+      error.code = "STORE_BILLING_SESSION_CHANGED";
+      throw error;
+    }
+  }
+
+  async function syncCurrentRevenueCatPlan(session = captureBillingSession()) {
+    assertBillingSession(session);
+
     if (!window.apiFetch) {
       const err = new Error("STORE_BILLING_API_UNAVAILABLE");
       err.code = "STORE_BILLING_API_UNAVAILABLE";
@@ -215,37 +284,56 @@
     });
   }
 
-  async function getCustomerInfo(role) {
-    await logIn(role);
-    const Purchases = getNativePurchasesPlugin();
+  function getCustomerInfo(role) {
+    const session = captureBillingSession();
+    return enqueueBillingOperation(async () => {
+      await logInNative(role, session);
+      const Purchases = getNativePurchasesPlugin();
 
-    if (!Purchases?.getCustomerInfo) {
-      const err = new Error("STORE_BILLING_CUSTOMER_INFO_UNAVAILABLE");
-      err.code = "STORE_BILLING_CUSTOMER_INFO_UNAVAILABLE";
-      throw err;
-    }
+      if (!Purchases?.getCustomerInfo) {
+        const err = new Error("STORE_BILLING_CUSTOMER_INFO_UNAVAILABLE");
+        err.code = "STORE_BILLING_CUSTOMER_INFO_UNAVAILABLE";
+        throw err;
+      }
 
-    return Purchases.getCustomerInfo();
+      assertBillingSession(session);
+      const result = await Purchases.getCustomerInfo();
+      assertBillingSession(session);
+      return result;
+    });
   }
 
-  async function restorePurchases(role) {
-    await logIn(role);
-    const Purchases = getNativePurchasesPlugin();
+  async function restorePurchasesInternal(role) {
+    const session = captureBillingSession();
+    const restoreResult = await enqueueBillingOperation(async () => {
+      await logInNative(role, session);
+      const Purchases = getNativePurchasesPlugin();
 
-    if (!Purchases?.restorePurchases) {
-      const err = new Error("STORE_BILLING_RESTORE_UNAVAILABLE");
-      err.code = "STORE_BILLING_RESTORE_UNAVAILABLE";
-      throw err;
-    }
+      if (!Purchases?.restorePurchases) {
+        const err = new Error("STORE_BILLING_RESTORE_UNAVAILABLE");
+        err.code = "STORE_BILLING_RESTORE_UNAVAILABLE";
+        throw err;
+      }
 
-    const restoreResult = await Purchases.restorePurchases();
-    const syncResult = await syncCurrentRevenueCatPlan();
+      assertBillingSession(session);
+      const result = await Purchases.restorePurchases();
+      assertBillingSession(session);
+      return result;
+    });
 
+    const syncResult = await syncCurrentRevenueCatPlan(session);
     return { ...(restoreResult || {}), syncResult };
   }
 
 
-  async function purchasePlan({ role, plan }) {
+  function restorePurchases(role) {
+    return withBillingTransaction(() => restorePurchasesInternal(role));
+  }
+
+  async function purchasePlanInternal({ role, plan }) {
+    const session = captureBillingSession();
+    assertBillingSession(session);
+
     const normalizedRole = String(role || "").toLowerCase();
     const normalizedPlan = String(plan || "").toLowerCase();
     const productId = getProductId(normalizedRole, normalizedPlan);
@@ -254,27 +342,50 @@
       throw new Error("INVALID_BILLING_PRODUCT");
     }
 
-    const offerings = await getOfferings(normalizedRole);
-    const selectedPackage = findPackageByProductId(offerings, productId);
-
-    if (!selectedPackage) {
-      const err = new Error("STORE_BILLING_PACKAGE_NOT_FOUND");
-      err.code = "STORE_BILLING_PACKAGE_NOT_FOUND";
-      err.product_id = productId;
-      throw err;
+    if (normalizedRole !== session.role) {
+      throw new Error("STORE_BILLING_SESSION_CHANGED");
     }
 
-    const Purchases = getNativePurchasesPlugin();
-    if (!Purchases?.purchasePackage) {
-      const err = new Error("STORE_BILLING_PURCHASE_UNAVAILABLE");
-      err.code = "STORE_BILLING_PURCHASE_UNAVAILABLE";
-      err.product_id = productId;
-      throw err;
-    }
+    const purchaseResult = await enqueueBillingOperation(async () => {
+      await logInNative(normalizedRole, session);
+      assertBillingSession(session);
 
-    const purchaseResult = await Purchases.purchasePackage({ aPackage: selectedPackage });
-    const syncResult = await syncCurrentRevenueCatPlan();
+      const Purchases = getNativePurchasesPlugin();
 
+      if (!Purchases?.getOfferings) {
+        const err = new Error("STORE_BILLING_OFFERINGS_UNAVAILABLE");
+        err.code = "STORE_BILLING_OFFERINGS_UNAVAILABLE";
+        throw err;
+      }
+
+      const offerings = await Purchases.getOfferings();
+      assertBillingSession(session);
+
+      const selectedPackage = findPackageByProductId(offerings, productId);
+
+      if (!selectedPackage) {
+        const err = new Error("STORE_BILLING_PACKAGE_NOT_FOUND");
+        err.code = "STORE_BILLING_PACKAGE_NOT_FOUND";
+        err.product_id = productId;
+        throw err;
+      }
+
+      if (!Purchases?.purchasePackage) {
+        const err = new Error("STORE_BILLING_PURCHASE_UNAVAILABLE");
+        err.code = "STORE_BILLING_PURCHASE_UNAVAILABLE";
+        err.product_id = productId;
+        throw err;
+      }
+
+      assertBillingSession(session);
+      const result = await Purchases.purchasePackage({
+        aPackage: selectedPackage,
+      });
+      assertBillingSession(session);
+      return result;
+    });
+
+    const syncResult = await syncCurrentRevenueCatPlan(session);
     return { purchaseResult, syncResult };
   }
 
@@ -289,7 +400,12 @@
     };
   }
 
+  function purchasePlan(options) {
+    return withBillingTransaction(() => purchasePlanInternal(options));
+  }
+
   window.USLYBilling = {
+    isTransactionInProgress,
     getProductId,
     getPlatform,
     getAppUserId,

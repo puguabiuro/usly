@@ -5838,7 +5838,8 @@ html[data-theme="light"] #S0_WELCOME .uslyWelcomeSecondary{
    DEVELOPMENT A — Settings / Towarzysz premium redesign
    ========================================================================== */
 
-#settingsUserBox.settingsUserPremium{
+#settingsUserBox.settingsUserPremium,
+#settingsPartnerBox.settingsUserPremium{
   display:flex;
   flex-direction:column;
   gap:14px;
@@ -15468,6 +15469,56 @@ textarea::placeholder{
   color:var(--theme-text) !important;
   font-size:13px !important;
   font-weight:500 !important;
+}
+
+/* Account unlink: password visibility alignment */
+#accountUnlinkMethodPanel .passwordField{
+  position:relative;
+  width:100%;
+  margin-bottom:16px;
+}
+#accountUnlinkMethodPanel .passwordField .settingsFormV2Input{
+  width:100%;
+  box-sizing:border-box;
+  margin-bottom:0 !important;
+  padding-right:54px !important;
+}
+#accountUnlinkMethodPanel .passwordField .passwordToggleBtn{
+  position:absolute;
+  top:50%;
+  right:7px;
+  transform:translateY(-50%);
+  width:36px;
+  height:36px;
+  margin:0;
+  padding:0;
+  z-index:1;
+}
+
+/* Account linking: password visibility alignment */
+#existingAccountLinkForm .passwordField{
+  position:relative;
+  width:100%;
+  margin-bottom:16px;
+}
+
+#existingAccountLinkForm .passwordField .settingsFormV2Input{
+  width:100%;
+  box-sizing:border-box;
+  margin-bottom:0 !important;
+  padding-right:54px !important;
+}
+
+#existingAccountLinkForm .passwordField .passwordToggleBtn{
+  position:absolute;
+  top:50%;
+  right:7px;
+  transform:translateY(-50%);
+  width:36px;
+  height:36px;
+  margin:0;
+  padding:0;
+  z-index:1;
 }
 
 .settingsFormV2Input::placeholder{
@@ -26805,4 +26856,714 @@ html[data-theme="light"] .nearbyEventCompletedRating.canRate{
   outline:2px solid rgba(69,230,242,.38);
   outline-offset:4px;
   border-radius:3px;
+}
+
+
+/* USLY ACCOUNT SWITCHER */
+#settingsUserBox .uslyAccountSwitcher,
+#settingsPartnerBox .uslyAccountSwitcher {
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 20px;
+  background:
+    linear-gradient(125deg, rgba(255,75,212,.065), rgba(52,230,255,.055)),
+    rgba(17,24,38,.94);
+  overflow: hidden;
+}
+
+#settingsUserBox .uslyAccountSwitcher[hidden],
+#settingsPartnerBox .uslyAccountSwitcher[hidden],
+.uslyAccountSwitcherMenu[hidden] {
+  display: none !important;
+}
+
+.uslyAccountSwitcherTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.uslyAccountSwitcherTriggerText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.uslyAccountSwitcherEyebrow {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .13em;
+  color: rgba(226,233,246,.55);
+}
+
+.uslyAccountSwitcherCurrent {
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.uslyAccountSwitcherChevron {
+  font-size: 22px;
+  line-height: 1;
+  color: rgba(232,238,249,.7);
+  transition: transform .2s ease;
+}
+
+.uslyAccountSwitcherTrigger[aria-expanded="true"]
+.uslyAccountSwitcherChevron {
+  transform: rotate(180deg);
+}
+
+.uslyAccountSwitcherMenu {
+  padding: 5px 10px 10px;
+  border-top: 1px solid rgba(255,255,255,.09);
+}
+
+.uslyAccountSwitcherMenu button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uslyAccountSwitcherMenu button:hover,
+.uslyAccountSwitcherMenu button:focus-visible {
+  background: rgba(255,255,255,.07);
+}
+
+.uslyAccountSwitcherTrigger:focus-visible,
+.uslyAccountSwitcherMenu button:focus-visible {
+  outline: 2px solid #34e6ff;
+  outline-offset: -3px;
+}
+
+html[data-theme="light"] .uslyAccountSwitcher {
+  border-color: rgba(33,45,70,.13) !important;
+  background:
+    linear-gradient(125deg, rgba(255,75,212,.045), rgba(52,180,230,.045)),
+    #fff !important;
+}
+
+html[data-theme="light"] .uslyAccountSwitcherTrigger,
+html[data-theme="light"] .uslyAccountSwitcherCurrent,
+html[data-theme="light"] .uslyAccountSwitcherMenu button {
+  color: #182338;
+}
+
+html[data-theme="light"] .uslyAccountSwitcherEyebrow,
+html[data-theme="light"] .uslyAccountSwitcherChevron {
+  color: #64748b;
+}
+
+html[data-theme="light"] .uslyAccountSwitcherMenu {
+  border-top-color: rgba(33,45,70,.1);
+}
+
+html[data-theme="light"] .uslyAccountSwitcherMenu button:hover,
+html[data-theme="light"] .uslyAccountSwitcherMenu button:focus-visible {
+  background: rgba(33,45,70,.055);
+}
+
+@media (max-width: 380px) {
+  .uslyAccountSwitcherTrigger {
+    padding: 12px 14px;
+  }
+}
+
+
+/* USLY ACCOUNT SWITCHER INFO: tekst bez wewnętrznej karty */
+.uslyAccountSwitcherInfo {
+  display: block;
+  min-height: 0;
+  padding: 7px 4px 3px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(232,238,249,.76);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+html[data-theme="light"] .uslyAccountSwitcherInfo {
+  background: transparent;
+  color: #64748b;
+}
+
+/* USLY ACCOUNT SWITCHER ACTION */
+.uslyAccountSwitcherMenu button.uslyAccountSwitcherAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid rgba(52,230,255,.24);
+  border-radius: 16px;
+  background: rgba(12,31,41,.62);
+  box-shadow: none;
+  color: #f1f5ff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+
+.uslyAccountSwitcherMenu .uslyAccountSwitcherInfo + button.uslyAccountSwitcherAction {
+  margin-top: 12px;
+}
+
+.uslyAccountSwitcherMenu button.uslyAccountSwitcherAction + button.uslyAccountSwitcherAction {
+  margin-top: 8px;
+}
+
+.uslyAccountSwitcherMenu button.uslyAccountSwitcherAction:hover {
+  background: rgba(17,43,52,.78);
+  border-color: rgba(52,230,255,.43);
+}
+
+.uslyAccountSwitcherAction:focus-visible {
+  outline: 2px solid #65dce8;
+  outline-offset: 3px;
+}
+
+html[data-theme="light"] .uslyAccountSwitcherMenu button.uslyAccountSwitcherAction {
+  background: rgba(20,170,190,.045);
+  border-color: rgba(20,170,190,.27);
+  box-shadow: none;
+  color: #253047;
+}
+
+html[data-theme="light"] .uslyAccountSwitcherMenu button.uslyAccountSwitcherAction:hover {
+  background: rgba(20,170,190,.09);
+  border-color: rgba(20,170,190,.43);
+}
+
+@media (max-width: 380px) {
+  .uslyAccountSwitcherAction {
+    min-height: 38px;
+    padding: 7px 12px;
+  }
+}
+
+/* Web social login: current USLY visual language */
+#modalBox:has(.uslyWebSocialAuthModal) {
+  max-width: 380px;
+  border-radius: 20px;
+  background: var(--theme-surface, #111822);
+  border: 1px solid var(--theme-border, rgba(120,150,165,.20));
+  box-shadow: 0 24px 70px rgba(0,0,0,.30);
+}
+
+#modalBox:has(.uslyWebSocialAuthModal) .modalTop {
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid var(--theme-border, rgba(120,150,165,.18));
+}
+
+#modalBox:has(.uslyWebSocialAuthModal) .mTitle {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--theme-text, #eaf0ff);
+}
+
+#modalBox:has(.uslyWebSocialAuthModal) .xBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--theme-text-muted, #aeb8cf);
+  border: 1px solid var(--theme-border, rgba(120,150,165,.18));
+}
+
+#modalBox:has(.uslyWebSocialAuthModal) .modalScroll {
+  padding: 18px;
+}
+
+.uslyWebSocialAuthModal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.uslyWebSocialAuthMessage {
+  margin: 0;
+  color: var(--theme-text-muted, #aeb8cf);
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.uslyWebSocialAuthActions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.uslyWebSocialAuthStore,
+.uslyWebSocialAuthEmail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 14px;
+  border-radius: 13px;
+  border: 1px solid rgba(52,230,255,.26);
+  background: rgba(52,230,255,.065);
+  color: var(--theme-text, #eaf0ff);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.uslyWebSocialAuthEmail {
+  background: transparent;
+  border-color: var(--theme-border, rgba(120,150,165,.20));
+  color: var(--theme-text-muted, #aeb8cf);
+  margin-top: 3px;
+}
+
+.uslyWebSocialAuthStore:focus-visible,
+.uslyWebSocialAuthEmail:focus-visible {
+  outline: 2px solid #65dce8;
+  outline-offset: 3px;
+}
+
+html[data-theme="light"] .uslyWebSocialAuthStore {
+  background: rgba(20,170,190,.045);
+  border-color: rgba(20,170,190,.27);
+  color: var(--theme-text);
+}
+
+html[data-theme="light"] .uslyWebSocialAuthEmail {
+  color: var(--theme-text);
+}
+
+
+/* USLY ACCOUNT SWITCHER PREMIUM HIGHLIGHT */
+#settingsUserBox .uslyAccountSwitcher,
+#settingsPartnerBox .uslyAccountSwitcher {
+  position: relative;
+  border: 1px solid rgba(83,219,240,.38);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(255,75,212,.13), transparent 62%),
+    radial-gradient(ellipse at 100% 100%, rgba(52,230,255,.11), transparent 65%),
+    rgba(17,24,38,.96);
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.13),
+    0 0 0 1px rgba(255,75,212,.09);
+}
+
+#settingsUserBox .uslyAccountSwitcherTrigger,
+#settingsPartnerBox .uslyAccountSwitcherTrigger {
+  position: relative;
+  min-height: 82px;
+  padding: 15px 17px 15px 76px;
+}
+
+#settingsUserBox .uslyAccountSwitcherTrigger::before,
+#settingsPartnerBox .uslyAccountSwitcherTrigger::before {
+  content: "⇄";
+  position: absolute;
+  left: 17px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255,117,215,.30);
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(255,75,212,.17), rgba(52,230,255,.12));
+  color: #f4a4df;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+#settingsUserBox .uslyAccountSwitcherTriggerText,
+#settingsPartnerBox .uslyAccountSwitcherTriggerText {
+  gap: 6px;
+}
+
+#settingsUserBox .uslyAccountSwitcherEyebrow,
+#settingsPartnerBox .uslyAccountSwitcherEyebrow {
+  color: #e6a2db;
+  font-size: 10px;
+  letter-spacing: .12em;
+}
+
+#settingsUserBox .uslyAccountSwitcherCurrent,
+#settingsPartnerBox .uslyAccountSwitcherCurrent {
+  font-size: 16px;
+  font-weight: 850;
+}
+
+#settingsUserBox .uslyAccountSwitcherChevron,
+#settingsPartnerBox .uslyAccountSwitcherChevron {
+  color: #8deaf1;
+  font-size: 25px;
+}
+
+html[data-theme="light"] #settingsUserBox .uslyAccountSwitcher,
+html[data-theme="light"] #settingsPartnerBox .uslyAccountSwitcher {
+  border-color: rgba(103,86,216,.30) !important;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(255,75,212,.09), transparent 62%),
+    radial-gradient(ellipse at 100% 100%, rgba(52,180,230,.10), transparent 65%),
+    #fff !important;
+  box-shadow:
+    0 10px 26px rgba(35,43,59,.07),
+    0 0 0 1px rgba(103,86,216,.04);
+}
+
+html[data-theme="light"] #settingsUserBox .uslyAccountSwitcherTrigger::before,
+html[data-theme="light"] #settingsPartnerBox .uslyAccountSwitcherTrigger::before {
+  border-color: rgba(103,86,216,.20);
+  background: linear-gradient(135deg, rgba(255,75,212,.12), rgba(52,180,230,.12));
+  color: #9b45a2;
+}
+
+html[data-theme="light"] #settingsUserBox .uslyAccountSwitcherEyebrow,
+html[data-theme="light"] #settingsPartnerBox .uslyAccountSwitcherEyebrow {
+  color: #93529a;
+}
+
+html[data-theme="light"] #settingsUserBox .uslyAccountSwitcherChevron,
+html[data-theme="light"] #settingsPartnerBox .uslyAccountSwitcherChevron {
+  color: #168a9a;
+}
+
+@media (max-width: 380px) {
+  #settingsUserBox .uslyAccountSwitcherTrigger,
+  #settingsPartnerBox .uslyAccountSwitcherTrigger {
+    padding: 13px 13px 13px 67px;
+    min-height: 76px;
+  }
+
+  #settingsUserBox .uslyAccountSwitcherTrigger::before,
+  #settingsPartnerBox .uslyAccountSwitcherTrigger::before {
+    left: 13px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+
+/* USLY ACCOUNT SWITCHER ACTIVE STATUS */
+#settingsUserBox .uslyAccountSwitcherStatus,
+#settingsPartnerBox .uslyAccountSwitcherStatus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 25px;
+  padding: 0 10px;
+  margin-left: auto;
+  border: 1px solid rgba(85,225,155,.26);
+  border-radius: 999px;
+  background: rgba(51,190,119,.11);
+  color: #7ae6aa;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+html[data-theme="light"] #settingsUserBox .uslyAccountSwitcherStatus,
+html[data-theme="light"] #settingsPartnerBox .uslyAccountSwitcherStatus {
+  border-color: rgba(23,143,88,.22);
+  background: rgba(23,143,88,.08);
+  color: #16834f;
+}
+
+@media (max-width: 380px) {
+  #settingsUserBox .uslyAccountSwitcherStatus,
+  #settingsPartnerBox .uslyAccountSwitcherStatus {
+    padding: 0 7px;
+    font-size: 9px;
+  }
+}
+
+
+/* Event sharing: compact USLY modal */
+#modalBox.uslyShareModal {
+  max-width: 350px;
+  border-radius: 24px;
+  background: #10131e;
+}
+
+#modalBox.uslyShareModal .modalTop {
+  padding: 18px 20px 16px;
+}
+
+#modalBox.uslyShareModal .mTitle {
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -.2px;
+}
+
+#modalBox.uslyShareModal .modalScroll {
+  padding: 0;
+}
+
+#modalBox.uslyShareModal .modalFooter {
+  display: none !important;
+}
+
+.uslyShareModalContent {
+  padding: 22px 20px 12px;
+}
+
+.uslyShareModalEventTitle {
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.uslyShareModalEventMeta {
+  margin-top: 6px;
+  margin-bottom: 18px;
+  color: #959baa;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.uslyShareModalActions {
+  border-top: 1px solid rgba(255,255,255,.09);
+}
+
+.uslyShareModalAction {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+  background: transparent;
+  color: #e8ebf2;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uslyShareModalAction:last-child {
+  border-bottom: 0;
+}
+
+.uslyShareModalIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(52,230,255,.08);
+  color: #43d9eb;
+  font-size: 19px;
+}
+
+.uslyShareModalChevron {
+  margin-left: auto;
+  color: #777f91;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+
+/* USLY partner event actions 2x2 */
+.partnerEventManageActions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  align-items: stretch !important;
+  margin-top: 14px;
+}
+
+.partnerEventManageActions > button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  padding: 11px 8px !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 13px !important;
+  background: rgba(255,255,255,.035) !important;
+  color: #e4e8f1 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  cursor: pointer;
+  box-sizing: border-box !important;
+}
+
+.partnerEventManageActions > button:focus-visible {
+  outline: 2px solid #43d9eb;
+  outline-offset: 2px;
+}
+
+.partnerEventManageActions > button:active {
+  transform: scale(.98);
+}
+
+.partnerEventManageActions > button:nth-child(1),
+.partnerEventManageActions > button:nth-child(2) {
+  background: rgba(52,230,255,.065) !important;
+  border-color: rgba(52,230,255,.18) !important;
+  color: #d9faff !important;
+}
+
+.partnerEventManageActions > button.danger {
+  background: rgba(255,95,194,.045) !important;
+  border-color: rgba(255,95,194,.15) !important;
+  color: #f4a1cc !important;
+}
+
+.partnerEventManageActions > .partnerEventManagePrimaryAction:only-child {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 350px) {
+  .partnerEventManageActions {
+    gap: 7px !important;
+  }
+
+  .partnerEventManageActions > button {
+    font-size: 12px !important;
+    padding: 10px 6px !important;
+  }
+}
+
+
+/* USLY partner event actions compact */
+.partnerEventManageActions {
+  gap: 7px !important;
+  margin-top: 9px !important;
+}
+
+.partnerEventManageActions > button {
+  min-height: 42px !important;
+  padding: 8px 7px !important;
+  border-radius: 11px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 350px) {
+  .partnerEventManageActions > button {
+    min-height: 42px !important;
+    padding: 7px 5px !important;
+    font-size: 11.5px !important;
+  }
+}
+
+
+/* USLY partner event actions subtle */
+.partnerEventManageActions {
+  gap: 6px !important;
+  margin-top: 6px !important;
+}
+
+.partnerEventManageActions > button {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 5px 8px !important;
+  border-radius: 9px !important;
+  font-size: 11.5px !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+}
+
+.partnerEventManageActions > button:nth-child(1),
+.partnerEventManageActions > button:nth-child(2) {
+  background: rgba(52, 230, 255, .045) !important;
+  border-color: rgba(52, 230, 255, .16) !important;
+  color: #cceff5 !important;
+}
+
+.partnerEventManageActions > button:nth-child(3) {
+  background: rgba(255, 255, 255, .025) !important;
+  border-color: rgba(255, 255, 255, .09) !important;
+}
+
+.partnerEventManageActions > button:nth-child(4) {
+  background: rgba(255, 95, 194, .035) !important;
+  border-color: rgba(255, 95, 194, .16) !important;
+  color: #eea1cf !important;
+}
+
+
+/* USLY partner event actions compact 595 */
+.partnerEventManageActions {
+  gap: 3px 8px !important;
+  margin-top: 2px !important;
+  padding-top: 6px !important;
+}
+
+.partnerEventManageActions > button {
+  min-height: 0 !important;
+  height: 30px !important;
+  padding: 3px 6px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  border-radius: 8px !important;
+}
+
+.partnerEventManageActions > button:nth-child(3),
+.partnerEventManageActions > button:nth-child(4) {
+  height: 26px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.partnerEventManageActions > button:nth-child(3) {
+  color: rgba(225, 231, 244, .72) !important;
+}
+
+.partnerEventManageActions > button:nth-child(4) {
+  color: #e99ac5 !important;
 }
