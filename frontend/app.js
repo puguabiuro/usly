@@ -21783,6 +21783,23 @@ async function setupGoogleSocialLogin() {
 
 async function init() {
 
+
+  const startupUrl = new URL(window.location.href);
+  const startupPath = startupUrl.pathname.toLowerCase();
+  const startupHash = startupUrl.hash.toLowerCase();
+  const startupResetToken = (
+    startupUrl.searchParams.get("reset_token") ||
+    startupUrl.searchParams.get("token") ||
+    ""
+  ).trim();
+  const isPasswordResetStartup =
+    Boolean(startupResetToken) &&
+    (
+      startupPath.includes("reset-password") ||
+      startupHash.includes("reset-password") ||
+      startupUrl.searchParams.has("reset_token")
+    );
+
   updatePlatformAuthProviderVisibility();
 
   const startupAuthToken = localStorage.getItem("usly_token");
@@ -21797,9 +21814,13 @@ async function init() {
     });
   } else {
     // Logged-out auth screens still initialize Google before normal auth usage.
-    await setupGoogleSocialLogin();
-    go("S0_WELCOME");
-    finishSessionStartup();
+    if (!isPasswordResetStartup) {
+      await setupGoogleSocialLogin();
+      go("S0_WELCOME");
+      finishSessionStartup();
+    } else {
+      setupGoogleSocialLogin().catch(() => {});
+    }
   }
 
   // init hooks
@@ -21837,6 +21858,11 @@ async function init() {
   updateTabbars();
 
   const token = localStorage.getItem("usly_token");
+
+  // Reset hasła nie uruchamia przywracania sesji ani push.
+  if (isPasswordResetStartup) {
+    return;
+  }
 
   if (localStorage.getItem("usly_pending_push_transfer_v1")) {
     const recovered = await recoverPendingPushAccountSwitch(token);
