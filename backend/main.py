@@ -2942,16 +2942,11 @@ def _exchange_apple_code_for_identity(
         token_response.get("refresh_token") or ""
     ).strip()
 
-    if not refresh_token:
-        raise ApiException(
-            status_code=401,
-            code=ErrorCode.INVALID_CREDENTIALS,
-        )
-
-    # Preflight szyfrowania przed jakąkolwiek zmianą konta.
-    # Dzięki temu brak/nieprawidłowy klucz szyfrujący nie zostawi
-    # nowo utworzonego konta bez możliwego do przechowania credential.
-    encrypt_secret(refresh_token)
+    # Apple może nie zwrócić nowego refresh_token przy ponownej
+    # autoryzacji. Potwierdzenie tożsamości opiera się na
+    # zweryfikowanym id_token, nonce i zgodności apple_sub.
+    if refresh_token:
+        encrypt_secret(refresh_token)
 
     return client_id, token_response
 
@@ -3336,6 +3331,19 @@ def apple_login(payload: AppleLoginRequest, request: Request):
             authorization_code=payload.authorization_code,
             audience=audience,
         )
+
+        # Logowanie i rejestracja wymagają refresh_token do
+        # bezpiecznego zapisania poświadczeń Apple.
+        # Walidacja następuje przed zmianami w bazie.
+        login_refresh_token = str(
+            token_response.get("refresh_token") or ""
+        ).strip()
+
+        if not login_refresh_token:
+            raise ApiException(
+                status_code=401,
+                code=ErrorCode.INVALID_CREDENTIALS,
+            )
 
         user = _resolve_apple_auth_user(
             db,
