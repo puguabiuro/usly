@@ -5,6 +5,7 @@ from unittest.mock import patch
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from jose import jwt
+import hashlib
 from jose.utils import base64url_encode
 
 from backend.apple_auth import (
@@ -60,6 +61,7 @@ class AppleIdentityTokenVerificationTests(unittest.TestCase):
         issuer=APPLE_ISSUER,
         kid=TEST_KID,
         expires_in=300,
+        access_token=None,
     ):
         claims = {
             "iss": issuer,
@@ -73,6 +75,12 @@ class AppleIdentityTokenVerificationTests(unittest.TestCase):
 
         if nonce is not None:
             claims["nonce"] = nonce
+
+        if access_token is not None:
+            digest = hashlib.sha256(access_token.encode("ascii")).digest()
+            claims["at_hash"] = base64url_encode(
+                digest[:len(digest) // 2]
+            ).decode("ascii")
 
         private_key_pem = self.private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -93,6 +101,7 @@ class AppleIdentityTokenVerificationTests(unittest.TestCase):
         *,
         allowed_audiences=(IOS_AUDIENCE, WEB_AUDIENCE),
         expected_nonce=None,
+        access_token=None,
     ):
         with patch(
             "backend.apple_auth._fetch_apple_jwks",
@@ -102,6 +111,36 @@ class AppleIdentityTokenVerificationTests(unittest.TestCase):
                 token,
                 allowed_audiences=allowed_audiences,
                 expected_nonce=expected_nonce,
+                access_token=access_token,
+            )
+
+    def test_accepts_exchanged_token_with_matching_at_hash(self):
+        access_token = "apple-test-access-token"
+        token = self.make_token(
+            nonce="nonce-123",
+            access_token=access_token,
+        )
+
+        claims = self.verify_with_mocked_jwks(
+            token,
+            expected_nonce="nonce-123",
+            access_token=access_token,
+        )
+
+        self.assertEqual(claims["sub"], "apple-user-123")
+        self.assertIn("at_hash", claims)
+
+    def test_rejects_exchanged_token_with_wrong_access_token(self):
+        token = self.make_token(
+            nonce="nonce-123",
+            access_token="correct-apple-access-token",
+        )
+
+        with self.assertRaises(AppleAuthTokenError):
+            self.verify_with_mocked_jwks(
+                token,
+                expected_nonce="nonce-123",
+                access_token="incorrect-apple-access-token",
             )
 
     def test_accepts_valid_ios_audience(self):

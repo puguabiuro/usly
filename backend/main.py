@@ -4506,6 +4506,9 @@ def _verify_account_link_current_identity(db, *, initiator, payload):
                 exchanged_id_token,
                 allowed_audiences={apple_client_id},
                 expected_nonce=payload.nonce,
+                access_token=str(
+                    apple_token_response.get("access_token") or ""
+                ).strip() or None,
             )
         except AppleAuthError as exc:
             print("APPLE CREATE PROFILE FAIL: EXCHANGED_TOKEN_VERIFICATION", type(exc).__name__, str(exc), flush=True)
