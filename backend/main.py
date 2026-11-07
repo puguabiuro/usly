@@ -4437,6 +4437,7 @@ def _verify_account_link_current_identity(db, *, initiator, payload):
 
     elif payload.method == "apple":
         if not initiator.apple_sub:
+            print("APPLE CREATE PROFILE FAIL: MISSING_ACCOUNT_APPLE_SUB", flush=True)
             raise ApiException(
                 status_code=401,
                 code=ErrorCode.INVALID_CREDENTIALS,
@@ -4447,17 +4448,20 @@ def _verify_account_link_current_identity(db, *, initiator, payload):
             or not payload.nonce
             or not payload.authorization_code
         ):
+            print("APPLE CREATE PROFILE FAIL: MISSING_APPLE_CREDENTIALS", flush=True)
             raise ApiException(
                 status_code=401,
                 code=ErrorCode.INVALID_CREDENTIALS,
             )
 
+        print("APPLE CREATE PROFILE: VERIFY_INITIAL_TOKEN", flush=True)
         try:
             apple_identity = _verify_apple_auth_identity(
                 db,
                 payload,
             )
-        except AppleAuthError:
+        except AppleAuthError as exc:
+            print("APPLE CREATE PROFILE FAIL: INITIAL_TOKEN_VERIFICATION", type(exc).__name__, str(exc), flush=True)
             raise ApiException(
                 status_code=401,
                 code=ErrorCode.INVALID_CREDENTIALS,
@@ -4471,11 +4475,13 @@ def _verify_account_link_current_identity(db, *, initiator, payload):
             not apple_subject
             or apple_subject != initiator.apple_sub
         ):
+            print("APPLE CREATE PROFILE FAIL: INITIAL_SUB_MISMATCH", flush=True)
             raise ApiException(
                 status_code=401,
                 code=ErrorCode.INVALID_CREDENTIALS,
             )
 
+        print("APPLE CREATE PROFILE: EXCHANGE_CODE", flush=True)
         apple_client_id, apple_token_response = (
             _exchange_apple_code_for_identity(
                 authorization_code=payload.authorization_code,
@@ -4488,18 +4494,21 @@ def _verify_account_link_current_identity(db, *, initiator, payload):
         ).strip()
 
         if not exchanged_id_token:
+            print("APPLE CREATE PROFILE FAIL: MISSING_EXCHANGED_TOKEN", flush=True)
             raise ApiException(
                 status_code=401,
                 code=ErrorCode.INVALID_CREDENTIALS,
             )
 
+        print("APPLE CREATE PROFILE: VERIFY_EXCHANGED_TOKEN", flush=True)
         try:
             exchanged_claims = verify_apple_identity_token(
                 exchanged_id_token,
                 allowed_audiences={apple_client_id},
                 expected_nonce=payload.nonce,
             )
-        except AppleAuthError:
+        except AppleAuthError as exc:
+            print("APPLE CREATE PROFILE FAIL: EXCHANGED_TOKEN_VERIFICATION", type(exc).__name__, str(exc), flush=True)
             raise ApiException(
                 status_code=401,
                 code=ErrorCode.INVALID_CREDENTIALS,
@@ -4514,6 +4523,7 @@ def _verify_account_link_current_identity(db, *, initiator, payload):
             or exchanged_subject != apple_subject
             or exchanged_subject != initiator.apple_sub
         ):
+            print("APPLE CREATE PROFILE FAIL: EXCHANGED_SUB_MISMATCH", flush=True)
             raise ApiException(
                 status_code=401,
                 code=ErrorCode.INVALID_CREDENTIALS,
