@@ -111,6 +111,7 @@ def verify_apple_identity_token(
     *,
     allowed_audiences: Iterable[str],
     expected_nonce: str | None = None,
+    access_token: str | None = None,
 ) -> dict[str, Any]:
     token = str(identity_token or "").strip()
 
@@ -150,6 +151,7 @@ def verify_apple_identity_token(
             public_key_pem,
             algorithms=["RS256"],
             issuer=APPLE_ISSUER,
+            access_token=access_token,
             options={
                 "verify_aud": False,
                 "verify_exp": True,

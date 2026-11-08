@@ -33,6 +33,11 @@ def decide_push_registration(
     if existing_owner != requesting_user:
         return "DENY_OTHER_OWNER"
 
+    # Token dezaktywowany nie może zostać ponownie aktywowany
+    # przez opóźnione żądanie rejestracji starego profilu.
+    if not is_active:
+        return "DENY_INACTIVE_TOKEN"
+
     if stored_proof_hash is None:
         return "BOOTSTRAP_LEGACY_OWNER"
 
