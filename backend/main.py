@@ -4181,6 +4181,11 @@ def get_account_link_profiles(
                     "id": profile.id,
                     "role": profile.role,
                     "email": profile.email,
+                    "has_independent_login": bool(
+                        profile.password_hash
+                        or profile.google_sub
+                        or profile.apple_sub
+                    ),
                     "is_active_profile": (
                         profile.id == active_user.id
                     ),
@@ -4197,6 +4202,7 @@ class AccountLinkSwitchRequest(BaseModel):
     push_token: str | None = Field(default=None, min_length=20, max_length=512)
     push_ownership_proof: str | None = Field(default=None, min_length=1, max_length=256)
     push_next_ownership_proof: str | None = Field(default=None, min_length=43, max_length=128)
+    push_revoke_current_token: str | None = Field(default=None, min_length=20, max_length=512)
 
 
 @app.post("/auth/account-links/switch")
@@ -4272,6 +4278,33 @@ def switch_linked_account(
             )
 
         push_proof = None
+
+        if payload.push_revoke_current_token and (
+            payload.push_token
+            or payload.push_ownership_proof
+            or payload.push_next_ownership_proof
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="PUSH_RECOVERY_TRANSFER_CONFLICT",
+            )
+
+        if payload.push_revoke_current_token:
+            revoke_token = payload.push_revoke_current_token.strip()
+            owned_token = (
+                db.query(DevicePushToken)
+                .filter(DevicePushToken.token == revoke_token)
+                .with_for_update()
+                .first()
+            )
+            if owned_token is None or owned_token.user_id != source.id:
+                raise HTTPException(
+                    status_code=409,
+                    detail="PUSH_RECOVERY_NOT_CURRENT_OWNER",
+                )
+            owned_token.is_active = False
+            owned_token.updated_at = datetime.utcnow()
+
         if bool(payload.push_token) != bool(payload.push_ownership_proof):
             raise HTTPException(
                 status_code=400,
@@ -10137,6 +10170,12 @@ def register_push_token(
         )
 
         if decision.startswith("DENY_"):
+            import logging
+
+            logging.getLogger("usly.push.ownership").warning(
+                "PUSH_REGISTRATION_DENIED reason=%s",
+                decision,
+            )
             raise HTTPException(status_code=409, detail=decision)
 
         issued_proof = None
